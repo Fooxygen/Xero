@@ -43,6 +43,15 @@ namespace lexer {
         // Punctuation
         CharNext();
         switch (c) {
+            case '#': {
+                bool isMultiLineCommon =
+                    !isScanEnd() && code_[pos_] == '#'; // next '#' has been received
+                if (isMultiLineCommon) {
+                    CharNext();
+                    return TokenScanMultiComment();
+                }
+                else return TokenScanSingleComment();
+            }
             case ':':   return TokenGen(Token::Type::Colon,     ":");
             case '=':   return TokenGen(Token::Type::Assign,    "=");
             case ';':   return TokenGen(Token::Type::Semicolon, ";");
@@ -82,4 +91,22 @@ namespace lexer {
         );
     }
 
+    Token Lexer::TokenScanSingleComment() {
+        while (!isScanEnd() && code_[pos_] != '\n') CharNext();
+        return Token{};
+    }
+
+    Token Lexer::TokenScanMultiComment() {
+        while (!isScanEnd()) {
+            if (code_[pos_] == '#' &&
+                pos_ + 1 < code_.size() &&
+                code_[pos_ + 1] == '#')
+            {
+                CharNext(2);
+                return Token{};
+            }
+            CharNext();
+        }
+        return Token{};
+    }
 }

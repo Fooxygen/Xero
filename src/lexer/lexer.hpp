@@ -44,8 +44,8 @@ namespace lexer {
                 char c = code_[pos_];
                 if (c == ' ' || c == '\n' || c == '\r' || c == '\t')
                     CharNext();
-                else
-                    break;
+                
+                else break;
             }
         }
 
@@ -58,8 +58,13 @@ namespace lexer {
             
             pos_++;
         }
+        void  CharNext(size_t cnt) {
+            for (size_t i = 0; i < cnt; i++) CharNext();
+        }
         Token TokenScanWord();
         Token TokenScanNumber();
+        Token TokenScanSingleComment();
+        Token TokenScanMultiComment();
 
     public:
         Lexer(std::string_view code)
