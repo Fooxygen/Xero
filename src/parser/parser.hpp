@@ -104,7 +104,7 @@ namespace parser {
     // Parsing Rule
     // [TokenType, Token, AstType, ....] -> AstType
     class Rule {
-    private:
+    public:
         using ReduceCallback = std::function<
             std::unique_ptr<AstNode>(
                 std::vector<Symbol>& symbols,
@@ -112,6 +112,7 @@ namespace parser {
             )
         >;
 
+    private:
         std::vector<SymbolPattern> patterns_;
         ReduceCallback             reduce_callback_;
 
@@ -156,6 +157,13 @@ namespace parser {
 
             return true;
         }
+    
+        // Move AstNode as type T from symbols
+        template<typename T>
+        static std::unique_ptr<T> Move(std::vector<Symbol>& syms, int rpos) {
+            return std::unique_ptr<T>(
+                static_cast<T*>(syms[syms.size() - rpos].astnode().release()));
+        }
     };
 
     // Syntactic Analyzer
@@ -184,6 +192,13 @@ namespace parser {
         void Execute();
         std::unique_ptr<AstNode>& root() {
             return root_;
+        }
+    
+        void RuleAdd(
+            std::initializer_list<SymbolPattern> patterns,
+            Rule::ReduceCallback reduce_callback)
+        {
+            rules_.emplace_back(patterns, reduce_callback);
         }
     };
 }
