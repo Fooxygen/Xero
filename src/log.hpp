@@ -8,6 +8,16 @@
 #include <iostream>
 #include <string>
 
+#define COLOR_DEFAULT   "\033[0m"
+#define COLOR_GRAY      "\033[90m"
+#define COLOR_RED       "\033[91m"
+#define COLOR_GREEN     "\033[92m"
+#define COLOR_YELLOW    "\033[93m"
+#define COLOR_BLUE      "\033[94m"
+#define COLOR_MAGENTA   "\033[95m"
+#define COLOR_CYAN      "\033[96m"
+#define COLOR_WHITE     "\033[97m"
+
 enum class LogModule {
     Undefined,
     File,
@@ -25,7 +35,7 @@ public:
     Log(
         LogModule        module,
         std::string_view msg,
-        std::string_view color = "\033[0m")
+        std::string_view color = COLOR_DEFAULT)
     :   module_(module), 
         msg_(msg),
         color_(color) {}
@@ -39,8 +49,8 @@ public:
         }
     }
     void Print() const {
-        std::cout << "\033[90m" << "[" << ModulePrint() << "]" << std::string("\033[0m");
-        std::cout << color_ << msg_ << std::string("\033[0m") << std::endl;
+        std::cout << COLOR_GRAY << "[" << ModulePrint() << "]" << COLOR_DEFAULT;
+        std::cout << color_ << msg_ << COLOR_DEFAULT << std::endl;
     }
 };
 
@@ -53,24 +63,24 @@ public:
 class LogWarn : public Log {
 public:
     LogWarn(LogModule module, std::string_view msg)
-    :   Log(module, std::format("[warn] {}", msg), "\033[93m") {}
+    :   Log(module, std::format("[warn] {}", msg), COLOR_YELLOW) {}
 };
 
 class LogErr : public Log {
 public:
     LogErr(LogModule module, std::string_view msg)
-    :   Log(module, std::format("[err] {}", msg), "\033[91m") {}
+    :   Log(module, std::format("[err] {}", msg), COLOR_RED) {}
 };
 
 class LogStart : public Log {
 public:
     LogStart(LogModule module, std::string_view msg)
-    :   Log(module, std::format("[start] {}", msg), "\033[94m") {}
+    :   Log(module, std::format("[start] {}", msg), COLOR_BLUE) {}
 };
 
 class LogFinish : public Log {
 public:
     LogFinish(LogModule module, std::string_view msg)
-    :   Log(module, std::format("[finish] {}", msg), "\033[92m") {}
+    :   Log(module, std::format("[finish] {}", msg), COLOR_GREEN) {}
 };
 

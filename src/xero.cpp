@@ -40,7 +40,11 @@ int main() {
         // Parser
         parser::Parser parser(lexer.tokens());
         parser.Execute();
+
+        LogStart(LogModule::Parser, "output ast").Print();
         parser.root()->AstPrint();
+        std::cout << std::endl;
+        LogFinish(LogModule::Parser, "output ast").Print();
     }
     catch(const Log& log) {
         log.Print();

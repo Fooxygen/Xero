@@ -87,13 +87,29 @@ public:
         std::cout << TypeName();
     }
 
-    virtual void AstPrint(std::string layer = "") {}
-    std::string  AstLayerUpdate(std::string prev) {
-        return prev + "    ";
+    // Structure Print
+    void         AstPrint(std::string indent = "", size_t expand = 4) {
+        // Expand indent for the next layer
+        indent += std::string(expand, ' ');
+        TypePrint();
+        AstPrintImpl(indent, expand);
     }
-    void         AstLayerPrint(std::string layer, std::string label) {
-        std::cout << '\n' << layer;
-        if (!label.empty()) std::cout << label << ": ";
+    // Structture Print Implement
+    virtual void AstPrintImpl(std::string indent = "", size_t expand = 4) {}
+    
+    // New Line and Insert Indent, Label
+    // exp:
+    //      [normal indent      Program
+    //       4 whitespace]          DeclStmt
+    //      [custom indent      [id] IdExpr
+    //       label length]           [id] i
+    // notice:
+    //      indent should be updated before use as sublayer
+    void         AstLayerPrint(std::string indent, std::string label) {
+        std::cout << '\n' << indent;
+        if (!label.empty()) {
+            std::cout << COLOR_YELLOW << "[" << label << "] " << COLOR_DEFAULT;
+        }
     }
 };
 
@@ -109,11 +125,8 @@ public:
         type_ = AstType::IdExpr;
     }
 
-    void AstPrint(std::string layer) override {
-        layer = AstLayerUpdate(layer);
-        TypePrint();
-        
-        AstLayerPrint(layer, "id");
+    void AstPrintImpl(std::string indent, size_t expand) override {       
+        AstLayerPrint(indent, "id");
         std::cout << id_;
     }
 };
@@ -135,18 +148,15 @@ public:
         type_ = AstType::OperExpr;
     }
 
-    void AstPrint(std::string layer) override {
-        layer = AstLayerUpdate(layer);
-        TypePrint();
-        
-        AstLayerPrint(layer, "oper");
+    void AstPrintImpl(std::string indent, size_t expand) override {      
+        AstLayerPrint(indent, "oper");
         Token::TypePrint(opertype_);
 
-        AstLayerPrint(layer, "lexpr");
-        lexpr_->AstPrint(layer);
+        AstLayerPrint(indent, "lexpr");
+        lexpr_->AstPrint(indent, 8);
 
-        AstLayerPrint(layer, "rexpr");
-        rexpr_->AstPrint(layer);
+        AstLayerPrint(indent, "rexpr");
+        rexpr_->AstPrint(indent, 8);
     }
 };
 class NegExpr : public Expr {
@@ -159,12 +169,9 @@ public:
         type_ = AstType::NegExpr;
     }
 
-    void AstPrint(std::string layer) override {
-        layer = AstLayerUpdate(layer);
-        TypePrint();
-        
-        AstLayerPrint(layer, "expr");
-        expr_->AstPrint(layer);
+    void AstPrintImpl(std::string indent, size_t expand) override {
+        AstLayerPrint(indent, "expr");
+        expr_->AstPrint(indent, 7);
     }
 };
 
@@ -182,11 +189,8 @@ public:
         type_ = AstType::NumConst;
     }
 
-    void AstPrint(std::string layer) override {
-        layer = AstLayerUpdate(layer);
-        TypePrint();
-
-        AstLayerPrint(layer, "value");
+    void AstPrintImpl(std::string indent, size_t expand) override {
+        AstLayerPrint(indent, "value");
         std::cout << value_;
     }
 };
@@ -213,18 +217,15 @@ public:
         type_ = AstType::DeclStmt;
     }
 
-    void AstPrint(std::string layer) override {
-        layer = AstLayerUpdate(layer);
-        TypePrint();
-        
-        AstLayerPrint(layer, "id");
-        id_->AstPrint(layer);
+    void AstPrintImpl(std::string indent, size_t expand) override {
+        AstLayerPrint(indent, "id");
+        id_->AstPrint(indent, 5);
 
-        AstLayerPrint(layer, "value");
-        value_->AstPrint(layer);
+        AstLayerPrint(indent, "value");
+        value_->AstPrint(indent, 8);
 
-        AstLayerPrint(layer, "value_type");
-        value_type_->AstPrint(layer);
+        AstLayerPrint(indent, "value_type");
+        value_type_->AstPrint(indent, 13);
     }
 };
 
@@ -242,19 +243,12 @@ public:
         type_ = AstType::Program;
     }
 
-    void AstPrint(std::string layer) override {
-        LogStart(LogModule::Parser, "output ast").Print();
-
-        layer = AstLayerUpdate(layer);
-        TypePrint();
-
+    void AstPrintImpl(std::string indent, size_t expand) override {
         for (auto& child : children_) {
-            AstLayerPrint(layer, "");
-            child->AstPrint(layer);
+            AstLayerPrint(indent, "");
+            child->AstPrint(indent, expand);
         }
-        
         std::cout << std::endl;
-        LogFinish(LogModule::Parser, "output ast").Print();
     }
 
     std::vector<std::unique_ptr<AstNode>>& children() {
