@@ -15,7 +15,10 @@ namespace lexer {
             LogStart(LogModule::Lexer, "output tokens").Print();
         }
         while (!isScanEnd()) {
-            auto next = TokenNext();
+            auto next_opt = TokenNext();
+            if (!next_opt.has_value()) break;
+
+            auto next = next_opt.value();
             if (next.type != Token::Type::Undefined) {
                 auto& token = tokens_.emplace_back(next);
 
@@ -28,9 +31,9 @@ namespace lexer {
         }
     }
 
-    Token Lexer::TokenNext() {
+    std::optional<Token> Lexer::TokenNext() {
         WhitespaceSkip();
-        if (isScanEnd()) return Token{};
+        if (isScanEnd()) return std::nullopt;
 
         char c = code_[pos_];
 

@@ -127,7 +127,7 @@ public:
 
     void AstPrintImpl(std::string indent, size_t expand) override {       
         AstLayerPrint(indent, "id");
-        std::cout << id_;
+        std::cout << COLOR_CYAN << id_ << COLOR_DEFAULT;
     }
 };
 class OperExpr : public Expr {
@@ -191,7 +191,7 @@ public:
 
     void AstPrintImpl(std::string indent, size_t expand) override {
         AstLayerPrint(indent, "value");
-        std::cout << value_;
+        std::cout << COLOR_GREEN << value_ << COLOR_DEFAULT;
     }
 };
 

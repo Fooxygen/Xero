@@ -43,7 +43,6 @@ int main() {
 
         LogStart(LogModule::Parser, "output ast").Print();
         parser.root()->AstPrint();
-        std::cout << std::endl;
         LogFinish(LogModule::Parser, "output ast").Print();
     }
     catch(const Log& log) {

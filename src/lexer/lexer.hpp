@@ -75,7 +75,8 @@ namespace lexer {
         bool  isScanEnd() {
             return pos_ >= code_.length();
         };
-        Token TokenNext();
+        
+        std::optional<Token> TokenNext();
         Token TokenGen(Token::Type type, const std::string& lexeme) {
             prev_token_line_ = line_;
             prev_token_col_  = col_ - lexeme.length();

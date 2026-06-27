@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <functional>
+#include <variant>
 
 #include "common/token.hpp"
 #include "common/ast.hpp"
@@ -33,43 +34,43 @@ namespace parser {
 
     class Symbol {
     public:
+        using Data = std::variant<Token, std::unique_ptr<AstNode>>;
         enum class Type {
             Undefined, Token, AstNode
         };
 
     private:
         Type type_ = Type::Undefined;
-
-        Token token_;
-        std::unique_ptr<AstNode> astnode_;
+        Data data_;
 
     public:
         Symbol(const Token& token) {
-            type_    = Type::Token;
-            token_   = token;
-            astnode_ = nullptr;
+            type_ = Type::Token;
+            data_ = token;
         }
         Symbol(std::unique_ptr<AstNode> node) {
-            type_    = Type::AstNode;
-            astnode_ = std::move(node);
+            type_ = Type::AstNode;
+            data_ = std::move(node);
         }
 
-        Type      type() const {
+        Type  type() const {
             return type_;
         }
+        Data& data() {
+            return data_;
+        }
+    
         Token::Type type_token() const {
-            return token_.type;
+            if (auto token = std::get_if<Token>(&data_)) {
+                return token->type;
+            }
+            return Token::Type::Undefined;
         }
-        AstType   type_astnode() const {
-            if (!astnode_) return AstType::Undefined;
-            return astnode_->type_;
-        }
-        
-        Token& token() {
-            return token_;
-        }
-        std::unique_ptr<AstNode>& astnode() {
-            return astnode_;
+        AstType     type_astnode() const {
+            if (auto astnode = std::get_if<std::unique_ptr<AstNode>>(&data_)) {
+                return astnode->get()->type_;
+            }
+            return AstType::Undefined;
         }
     };
 
@@ -77,8 +78,8 @@ namespace parser {
     private:
         Symbol::Type type_ = Symbol::Type::Undefined;
 
-        Token::Type type_token_ = Token::Type::Undefined;
-        AstType   type_astnode_ = AstType::Undefined;
+        Token::Type type_token_   = Token::Type::Undefined;
+        AstType     type_astnode_ = AstType::Undefined;
 
     public:
         SymbolPattern(Token::Type type) {
@@ -161,8 +162,9 @@ namespace parser {
         // Move AstNode as type T from symbols
         template<typename T>
         static std::unique_ptr<T> Move(std::vector<Symbol>& syms, int rpos) {
+            auto& astnode = std::get<std::unique_ptr<AstNode>>(syms[syms.size() - rpos].data());
             return std::unique_ptr<T>(
-                static_cast<T*>(syms[syms.size() - rpos].astnode().release()));
+                static_cast<T*>(astnode.release()));
         }
     };
 

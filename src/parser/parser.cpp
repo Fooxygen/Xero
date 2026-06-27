@@ -41,7 +41,9 @@ namespace parser {
         // Program (Root Node)
         std::vector<std::unique_ptr<AstNode>> program_children;
         for (auto& sym : symbols_) {
-            program_children.emplace_back(std::move(sym.astnode()));
+            program_children.emplace_back(std::move(
+                std::get<std::unique_ptr<AstNode>>(sym.data())
+            ));
         }
         root_ = std::make_unique<Program>(program_children);
     }
@@ -51,13 +53,13 @@ namespace parser {
 
         // conversion of Semantics Tokens
         // do not handle Unsemantics tokens
-        switch (sym.token().type) {
+        switch (token.type) {
             case Token::Type::Id: {
-                sym = Symbol(std::make_unique<IdExpr>(sym.token().lexeme));
+                sym = Symbol(std::make_unique<IdExpr>(token.lexeme));
                 break;
             }
             case Token::Type::Number: {
-                sym = Symbol(std::make_unique<NumConst>(sym.token().lexeme));
+                sym = Symbol(std::make_unique<NumConst>(token.lexeme));
                 break;
             }
         }

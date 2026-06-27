@@ -53,7 +53,7 @@ namespace parser {
                     -> std::unique_ptr<AstNode>
                 {
                     size_t syms_len = symbols.size();
-                    auto   opertype = symbols[syms_len - 2].token().type;
+                    auto   opertype = std::get<Token>(symbols[syms_len - 2].data()).type;
                     return std::make_unique<OperExpr>(
                         opertype,
                         Rule::Move<Expr>(symbols, 3),
@@ -76,7 +76,7 @@ namespace parser {
                     size_t syms_len = symbols.size();
 
                     // Oper Priority Check
-                    auto opertype = symbols[syms_len - 2].token().type;
+                    auto opertype = std::get<Token>(symbols[syms_len - 2].data()).type;
                     if (token_next && isOperPriority(token_next->type, opertype))
                     return nullptr;     // postpone
 

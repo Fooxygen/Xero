@@ -17,6 +17,7 @@
 #define COLOR_MAGENTA   "\033[95m"
 #define COLOR_CYAN      "\033[96m"
 #define COLOR_WHITE     "\033[97m"
+#define COLOR_ORANGE    "\033[38;5;214m"
 
 enum class LogModule {
     Undefined,
