@@ -1,6 +1,6 @@
 
-i:  int   = 7;
-f:  float = 6.4;
+i: int   = 7;
+f: float = 6.4;
 
 x: int = (1);
 y: int = (1 + 2) * 3;

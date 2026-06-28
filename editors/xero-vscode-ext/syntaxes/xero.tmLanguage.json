@@ -1,0 +1,44 @@
+{
+    "scopeName": "source.xero",
+    "name": "Xero",
+    "patterns": [
+        { "include": "#comments" },
+        { "include": "#numbers" },
+        { "include": "#types" },
+        { "include": "#operators" },
+        { "include": "#punctuation" }
+    ],
+    "repository": {
+        "comments": {
+            "patterns": [
+                { "include": "#blockComment" },
+                { "include": "#lineComment" }
+            ]
+        },
+        "blockComment": {
+            "name": "comment.block.xero",
+            "begin": "##",
+            "end": "##"
+        },
+        "lineComment": {
+            "name": "comment.line.number-sign.xero",
+            "match": "#.*"
+        },
+        "numbers": {
+            "name": "constant.numeric.xero",
+            "match": "\\b\\d+(\\.\\d+)?\\b"
+        },
+        "types": {
+            "name": "storage.type.xero",
+            "match": "\\b(int|float)\\b"
+        },
+        "operators": {
+            "name": "keyword.operator.xero",
+            "match": "[+\\-*/]"
+        },
+        "punctuation": {
+            "name": "punctuation.xero",
+            "match": "[:;=(),.]"
+        }
+    }
+}

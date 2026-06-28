@@ -1,0 +1,31 @@
+{
+    "name": "xero",
+    "displayName": "Xero",
+    "description": "Xero language support",
+    "version": "2026.0.0",
+    "publisher": "xero",
+    "private": true,
+    "engines": {
+        "vscode": "^1.80.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [
+            {
+                "id": "xero",
+                "aliases": [ "Xero", "xero" ],
+                "extensions": [ ".xe" ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "xero",
+                "scopeName": "source.xero",
+                "path": "./syntaxes/xero.tmLanguage.json"
+            }
+        ]
+    }
+}

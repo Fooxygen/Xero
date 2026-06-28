@@ -16,6 +16,7 @@ public:
 
     inline static const std::string version_major = "2026";
     inline static const std::string version_minor = "0";
+    inline static const std::string version_patch = "0";
 
     static std::string ChannelPrint() {
         switch (channel) {
@@ -31,8 +32,8 @@ public:
         return "";
     }
     static std::string Print() {
-        return std::format("Xero {}.{} {}", 
-            version_major, version_minor, ChannelPrint()
+        return std::format("Xero {}.{}.{} {}", 
+            version_major, version_minor, version_patch, ChannelPrint()
         );
     }
 };
