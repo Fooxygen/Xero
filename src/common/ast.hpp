@@ -29,6 +29,7 @@ enum class AstType {
     // Stmt
     Stmt,           //  Base ------
     DeclStmt,       //  Declaration
+    AssignStmt,     //  Assignment
 };
 
 static AstType BaseOfAstType(AstType type) {
@@ -44,6 +45,7 @@ static AstType BaseOfAstType(AstType type) {
             return AstType::Expr;
 
         case AstType::DeclStmt:
+        case AstType::AssignStmt:
             return AstType::Stmt;
 
         default:
@@ -65,18 +67,19 @@ public:
 
     const std::string TypeName() const {
         switch (type_) {
-            case AstType::Program:  return "Program";
+            case AstType::Program:      return "Program";
 
-            case AstType::Const:    return "Const";
-            case AstType::NumConst: return "NumConst";
+            case AstType::Const:        return "Const";
+            case AstType::NumConst:     return "NumConst";
 
-            case AstType::Expr:     return "Expr";
-            case AstType::IdExpr:   return "IdExpr";
-            case AstType::OperExpr: return "OperExpr";
-            case AstType::NegExpr:  return "NegExpr";
+            case AstType::Expr:         return "Expr";
+            case AstType::IdExpr:       return "IdExpr";
+            case AstType::OperExpr:     return "OperExpr";
+            case AstType::NegExpr:      return "NegExpr";
 
-            case AstType::Stmt:     return "Stmt";
-            case AstType::DeclStmt: return "DeclStmt";
+            case AstType::Stmt:         return "Stmt";
+            case AstType::DeclStmt:     return "DeclStmt";
+            case AstType::AssignStmt:   return "AssignStmt";
 
             default: 
                 LogWarn(LogModule::Parser, "undefined print name for AstNode");
@@ -226,6 +229,29 @@ public:
 
         AstLayerPrint(indent, "value_type");
         value_type_->AstPrint(indent, 13);
+    }
+};
+class AssignStmt : public Stmt {
+public:
+    std::unique_ptr<IdExpr> id_;
+    std::unique_ptr<Expr>   value_;
+
+    AssignStmt(
+        std::unique_ptr<IdExpr> id,
+        std::unique_ptr<Expr>   value
+    )
+    :   id_(std::move(id)),
+        value_(std::move(value))
+    {
+        type_ = AstType::AssignStmt;
+    }
+
+    void AstPrintImpl(std::string indent, size_t expand) override {
+        AstLayerPrint(indent, "id");
+        id_->AstPrint(indent, 5);
+
+        AstLayerPrint(indent, "value");
+        value_->AstPrint(indent, 8);
     }
 };
 

@@ -14,7 +14,7 @@ namespace parser {
 
         rules_.clear();
         
-        // Definition
+        // Var and Const
         
         // └─ i: int = 7;
         {
@@ -34,6 +34,26 @@ namespace parser {
                         Rule::Move<IdExpr>(symbols, 6),
                         Rule::Move<Expr>(symbols, 2),
                         Rule::Move<IdExpr>(symbols, 4)
+                    );
+                }
+            );
+        }
+
+        // └─ i = 3;
+        {
+            RuleAdd(
+                PATS{
+                    AT::IdExpr,
+                    TT::Assign,
+                    AT::Expr,
+                    TT::Semicolon
+                },
+                [](std::vector<Symbol>& symbols, const Token* token_next)
+                    -> std::unique_ptr<AstNode>
+                {
+                    return std::make_unique<AssignStmt>(
+                        Rule::Move<IdExpr>(symbols, 4),
+                        Rule::Move<Expr>(symbols, 2)
                     );
                 }
             );
