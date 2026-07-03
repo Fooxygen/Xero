@@ -9,6 +9,8 @@
 #include <memory>
 #include <vector>
 
+#include "token.hpp"
+
 // Type of Abstract Syntax Tree's Node
 enum class AstType {
     Undefined,
@@ -122,15 +124,15 @@ class Expr : public AstNode {
 };
 class IdExpr : public Expr {
 public:
-    std::string id_ = "";
+    std::string value_ = "";
 
-    IdExpr(const std::string& id) : id_(id) {
+    IdExpr(const std::string& value) : value_(value) {
         type_ = AstType::IdExpr;
     }
 
     void AstPrintImpl(std::string indent, size_t expand) override {       
         AstLayerPrint(indent, "id");
-        std::cout << COLOR_CYAN << id_ << COLOR_DEFAULT;
+        std::cout << COLOR_CYAN << value_ << COLOR_DEFAULT;
     }
 };
 class OperExpr : public Expr {
@@ -141,8 +143,8 @@ public:
 
     OperExpr(
         Token::Type opertype,
-        std::unique_ptr<Expr>     lexpr,
-        std::unique_ptr<Expr>     rexpr
+        std::unique_ptr<Expr> lexpr,
+        std::unique_ptr<Expr> rexpr
     )
     :   opertype_(opertype),
         lexpr_(std::move(lexpr)),  

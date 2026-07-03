@@ -13,6 +13,7 @@ add_executable(xero
     lexer/lexer.cpp
     parser/parser.cpp
     parser/rule.cpp
+    runtime/engine.cpp
 )
 
 target_include_directories(xero PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

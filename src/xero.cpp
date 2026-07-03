@@ -12,6 +12,7 @@
 #include "log.hpp"
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
+#include "runtime/engine.hpp"
 
 std::string FileRead(const std::string& path) {
     std::ifstream file(path, std::ios::binary);
@@ -44,6 +45,10 @@ int main() {
         LogStart(LogModule::Parser, "output ast").Print();
         parser.root()->AstPrint();
         LogFinish(LogModule::Parser, "output ast").Print();
+
+        // Runtime
+        rt::Engine engine;
+        engine.Exec(*parser.root());
     }
     catch(const Log& log) {
         log.Print();

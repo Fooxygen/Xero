@@ -19,17 +19,21 @@ namespace rt {
 
     class TypeTable {
     private:
-        static inline const Type t_none_       = { .name = "none",  .size = 0   };
-        static inline const Type t_int32_      = { .name = "i32",   .size = 32  };
-        static inline const Type t_float32_    = { .name = "f32",   .size = 32  };
+        static inline const Type t_none_    = { .name = "none",  .size = 0  };
+        static inline const Type t_i32_     = { .name = "i32",   .size = 32 };
+        static inline const Type t_i64_     = { .name = "i64",   .size = 64 };
+        static inline const Type t_f32_     = { .name = "f32",   .size = 32 };
+        static inline const Type t_f64_     = { .name = "f64",   .size = 64 };
 
-        static std::unordered_map<std::string, const Type*> table_;
+        static inline std::unordered_map<std::string, const Type*> table_;
 
     public:
         static const Type* Get(std::string_view name) {
-            if (name == t_none_.name)       return &t_none_;
-            if (name == t_int32_.name)      return &t_int32_;
-            if (name == t_float32_.name)    return &t_float32_;
+            if (name == t_none_.name)   return &t_none_;
+            if (name == t_i32_.name)    return &t_i32_;
+            if (name == t_i64_.name)    return &t_i64_;
+            if (name == t_f32_.name)    return &t_f32_;
+            if (name == t_f64_.name)    return &t_f64_;
 
             auto type_it = table_.find(std::string(name));
             if (type_it != table_.end()) {
