@@ -66,7 +66,7 @@ namespace lexer {
             case '*':   return TokenGen(Token::Type::Star,      "*");
             case '/':   return TokenGen(Token::Type::Slash,     "/");
             default:
-                throw LogErr(LogModule::Lexer, "failed to identify token");
+                throw LogErr(LogModule::Lexer, "invalid token");
         }
     }
 

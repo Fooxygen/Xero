@@ -23,7 +23,8 @@ enum class LogModule {
     Undefined,
     File,
     Lexer,
-    Parser
+    Parser,
+    Runtime
 };
 
 class Log {
@@ -43,9 +44,10 @@ public:
 
     std::string ModulePrint() const {
         switch (module_) {
-            case LogModule::File:   return "file";
-            case LogModule::Lexer:  return "lexer";
-            case LogModule::Parser: return "parser";
+            case LogModule::File:       return "file";
+            case LogModule::Lexer:      return "lexer";
+            case LogModule::Parser:     return "parser";
+            case LogModule::Runtime:    return "rt";
             default: return "Undefined";
         }
     }

@@ -16,7 +16,7 @@
 std::string FileRead(const std::string& path) {
     std::ifstream file(path, std::ios::binary);
     if (!file) {
-        throw LogErr(LogModule::File, "failed to open file!");
+        throw LogErr(LogModule::File, "failed to open file");
     }
 
     std::stringstream ss;
