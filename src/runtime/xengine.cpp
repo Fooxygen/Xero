@@ -6,7 +6,7 @@
 #include <charconv>
 
 #include "log.hpp"
-#include "engine.hpp"
+#include "xengine.hpp"
 
 namespace rt {
         
@@ -19,7 +19,7 @@ namespace rt {
     }
 
     Obj Engine::Exec(NumConst& node) {
-        const auto& numstr = node.value_;
+        const auto& numstr = node.value_str_;
 
         // integer
         if (numstr.find(".") == std::string::npos) {

@@ -186,17 +186,17 @@ class Const : public Expr {
 };
 class NumConst : public Const {
 public:
-    std::string value_;
+    std::string value_str_;
 
-    NumConst(const std::string& value)
-    :   value_(value)
+    NumConst(const std::string& value_str)
+    :   value_str_(value_str)
     {
         type_ = AstType::NumConst;
     }
 
     void AstPrintImpl(std::string indent, size_t expand) override {
-        AstLayerPrint(indent, "value");
-        std::cout << COLOR_GREEN << value_ << COLOR_DEFAULT;
+        AstLayerPrint(indent, "value_str");
+        std::cout << COLOR_GREEN << value_str_ << COLOR_DEFAULT;
     }
 };
 
