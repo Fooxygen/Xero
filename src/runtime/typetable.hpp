@@ -28,6 +28,10 @@ namespace rt {
         static inline std::unordered_map<std::string, const Type*> table_;
 
     public:
+        static void Reset() {
+            table_ = std::unordered_map<std::string, const Type*>();
+        }
+
         static const Type* Get(std::string_view name) {
             if (name == t_none_.name)   return &t_none_;
             if (name == t_i32_.name)    return &t_i32_;

@@ -56,7 +56,12 @@ namespace rt {
             return o;
         }
 
-        bool    isNone()  const { return type_ == TypeTable::Get("none"); }
+        const Type* type() { return type_; }
+        bool isNone() const { return type_ == TypeTable::Get("none"); }
+        bool is(std::string_view type_name) const {
+            return type_->name == type_name;
+        }
+
         int32_t Get_i32() const { return data_.i32_; }
         int64_t Get_i64() const { return data_.i64_; }
         float   Get_f32() const { return data_.f32_; }

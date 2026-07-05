@@ -6,26 +6,38 @@
 #pragma once
 
 #include "common/ast.hpp"
+#include "typetable.hpp"
+#include "opertable.hpp"
 #include "obj.hpp"
 #include "env.hpp"
 
 namespace rt {
 
-    class Engine {
+    class Xengine {
     private:
         Env env_;
 
     public:
+        Xengine() {
+            TypeTable::Reset();
+            OperTable::Reset();
+            OperTableRegister();
+        }
+        
+        void OperTableRegister();
+
         Obj Exec(AstNode& node) {
             switch (node.type_) {
-                case AstType::IdExpr:   return Exec((IdExpr&)node);
-                case AstType::OperExpr: return Exec((OperExpr&)node);
+                case AstType::IdExpr:       return Exec((IdExpr&)node);
+                case AstType::OperExpr:     return Exec((OperExpr&)node);
+                case AstType::NegExpr:      return Exec((NegExpr&)node);
 
-                case AstType::NumConst: return Exec((NumConst&)node);
+                case AstType::NumConst:     return Exec((NumConst&)node);
 
-                case AstType::DeclStmt: return Exec((DeclStmt&)node);
+                case AstType::DeclStmt:     return Exec((DeclStmt&)node);
+                case AstType::AssignStmt:   return Exec((AssignStmt&)node);
 
-                case AstType::Program:  return Exec((Program&)node);
+                case AstType::Program:      return Exec((Program&)node);
 
                 default: return Obj();
             }
@@ -33,10 +45,12 @@ namespace rt {
 
         Obj Exec(IdExpr& node);
         Obj Exec(OperExpr& node);
+        Obj Exec(NegExpr& node);
 
         Obj Exec(NumConst& node);
 
         Obj Exec(DeclStmt& node);
+        Obj Exec(AssignStmt& node);
 
         Obj Exec(Program& node);
     };

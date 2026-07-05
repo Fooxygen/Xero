@@ -47,8 +47,10 @@ int main() {
         LogFinish(LogModule::Parser, "output ast").Print();
 
         // Runtime
-        rt::Engine engine;
-        engine.Exec(*parser.root());
+        rt::Xengine xengine;
+        LogStart(LogModule::Parser, "program").Print();
+        xengine.Exec(*parser.root());
+        LogFinish(LogModule::Parser, "program").Print();
     }
     catch(const Log& log) {
         log.Print();
