@@ -8,6 +8,7 @@
 #include <vector>
 #include <functional>
 #include <variant>
+#include <algorithm>
 
 #include "common/token.hpp"
 #include "common/ast.hpp"
@@ -76,10 +77,11 @@ namespace parser {
 
     class SymbolPattern {
     private:
-        Symbol::Type type_ = Symbol::Type::Undefined;
+        Symbol::Type type_         = Symbol::Type::Undefined;
+        Token::Type  type_token_   = Token::Type::Undefined;
+        AstType      type_astnode_ = AstType::Undefined;
 
-        Token::Type type_token_   = Token::Type::Undefined;
-        AstType     type_astnode_ = AstType::Undefined;
+        bool isOptional_ = false;
 
     public:
         SymbolPattern(Token::Type type) {
@@ -100,6 +102,23 @@ namespace parser {
         AstType      type_astnode() const {
             return type_astnode_;
         }
+    
+        bool isOptional() const {
+            return isOptional_;
+        }
+    
+        // Make Optional SP for TT
+        static SymbolPattern Opt(Token::Type type) {
+            auto sp = SymbolPattern(type);
+            sp.isOptional_ = true;
+            return sp;
+        }
+        // Make Optional SP for AT
+        static SymbolPattern Opt(AstType type) {
+            auto sp = SymbolPattern(type);
+            sp.isOptional_ = true;
+            return sp;
+        }
     };
 
     // Parsing Rule
@@ -112,6 +131,12 @@ namespace parser {
                 const Token* token_next
             )
         >;
+
+        // mps for Move():
+        // while rule = AB[C]DE
+        //     if pats = ABCDE, mps = [5, 4, 3, 2, 1]
+        //     if pats = _ABDE, mps = [4, 3, 0, 2, 1]
+        static inline std::vector<size_t> move_positions_;
 
     private:
         std::vector<SymbolPattern> patterns_;
@@ -133,38 +158,100 @@ namespace parser {
             return patterns_;
         }
 
-        bool  PatternMatch(const std::vector<Symbol>& symbols) const {
-            size_t len = patterns_.size();
-            if (symbols.size() < patterns_.size()) return false;
-            
-            for (size_t i = 0; i < len; i++) {
-                auto& pat = patterns_[i];
-                auto& sym = symbols[symbols.size() - len + i];
+        bool  PatternMatch(const SymbolPattern& pat, const Symbol& sym) {
+            // Token
+            if (pat.type() == Symbol::Type::Token) {
+                if (sym.type() != Symbol::Type::Token ||
+                    !Token::isTypeCompatible(pat.type_token(), sym.type_token())
+                ) return false;
+            }
 
-                // Token
-                if (pat.type() == Symbol::Type::Token) {
-                    if (sym.type() != Symbol::Type::Token ||
-                        !Token::isTypeCompatible(pat.type_token(), sym.type_token())
-                    ) return false;
-                }
-
-                // AstNode
-                else {
-                    if (sym.type() != Symbol::Type::AstNode ||
-                        !isAstTypeCompatible(pat.type_astnode(), sym.type_astnode())
-                    ) return false;
-                }
+            // AstNode
+            else {
+                if (sym.type() != Symbol::Type::AstNode ||
+                    !isAstTypeCompatible(pat.type_astnode(), sym.type_astnode())
+                ) return false;
             }
 
             return true;
         }
+        bool  PatternsMatch(const std::vector<Symbol>& symbols, size_t& out_reduce_len) {
+
+            // Match Check
+            size_t np = patterns_.size();
+            size_t ns = symbols.size();
+
+            size_t start = (ns > np) ? (ns - np) : 0;
+            size_t len   = ns - start;
+
+            std::vector<std::vector<bool>> dp(len + 1, std::vector<bool>(np + 1, false));
+            dp[0][0] = true;
+
+            for (size_t j = 0; j < np; j++) {
+                bool isOpt = patterns_[j].isOptional();
+
+                for (size_t i = 0; i <= len; i++) {
+                    if (!dp[i][j]) continue;  // unreachable
+
+                    if (isOpt) {
+                        // Optional 1: Mismatch
+                        dp[i][j + 1] = true;
+
+                        // Optional 2: Match
+                        if (i < len && PatternMatch(patterns_[j], symbols[start + i])) dp[i + 1][j + 1] = true;
+                    }
+                    
+                    else {
+                        // Match
+                        if (i < len && PatternMatch(patterns_[j], symbols[start + i]))dp[i + 1][j + 1] = true;
+                    }
+                }
+            }
+
+            // Success
+            if (dp[len][np]) {
+
+                // Fill Move Positions for Move()
+                move_positions_.resize(np);
+
+                size_t cnt_skip = 0;
+                size_t i = len, j = np;
+                while (j > 0) {
+
+                    // Skiped
+                    // exist path: (i, j - 1) -> (i, j) dir: →
+                    if (patterns_[j - 1].isOptional() && dp[i][j - 1]) {
+                        // mark zero: not used
+                        move_positions_[j - 1] = 0;
+                        cnt_skip++;
+                    }
+
+                    // Not Skiped
+                    // exist path: (i - 1, j - 1) -> (i, j) dir: ↘
+                    else {
+                        move_positions_[j - 1] = (int)(np - j) - (int)cnt_skip + 1;
+                        i--;
+                    }
+
+                    j--;
+                }
+
+                out_reduce_len = 0;
+                for (auto& p : move_positions_)
+                    if (p != 0) out_reduce_len++;
+
+                return true;
+            }
+
+            return false;
+        }
     
         // Move AstNode as type T from symbols
         template<typename T>
-        static std::unique_ptr<T> Move(std::vector<Symbol>& syms, int rpos) {
-            auto& astnode = std::get<std::unique_ptr<AstNode>>(syms[syms.size() - rpos].data());
-            return std::unique_ptr<T>(
-                static_cast<T*>(astnode.release()));
+        static std::unique_ptr<T> Move(std::vector<Symbol>& syms, int pos) {
+            size_t p = move_positions_[pos - 1];
+            auto& astnode = std::get<std::unique_ptr<AstNode>>(syms[syms.size() - p].data());
+            return std::unique_ptr<T>(static_cast<T*>(astnode.release()));
         }
     };
 
@@ -182,7 +269,7 @@ namespace parser {
         void RulesInit();
 
         void Shift(const Token& token);
-        bool TryReduce(const Rule& rule, const Token* token_next);
+        bool TryReduce(const Rule& rule, const Token* token_next, size_t reduce_len);
 
         Symbol Token2Symbol(const Token& token);
 

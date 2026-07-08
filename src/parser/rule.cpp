@@ -31,9 +31,9 @@ namespace parser {
                     -> std::unique_ptr<AstNode>
                 {
                     return std::make_unique<DeclStmt>(
-                        Rule::Move<IdExpr>(symbols, 6),
-                        Rule::Move<Expr>(symbols, 2),
-                        Rule::Move<IdExpr>(symbols, 4)
+                        Rule::Move<IdExpr>(symbols, 1),
+                        Rule::Move<Expr>(symbols, 5),
+                        Rule::Move<IdExpr>(symbols, 3)
                     );
                 }
             );
@@ -52,8 +52,8 @@ namespace parser {
                     -> std::unique_ptr<AstNode>
                 {
                     return std::make_unique<AssignStmt>(
-                        Rule::Move<IdExpr>(symbols, 4),
-                        Rule::Move<Expr>(symbols, 2)
+                        Rule::Move<IdExpr>(symbols, 1),
+                        Rule::Move<Expr>(symbols, 3)
                     );
                 }
             );
@@ -76,8 +76,8 @@ namespace parser {
                     auto   opertype = std::get<Token>(symbols[syms_len - 2].data()).type;
                     return std::make_unique<OperExpr>(
                         opertype,
-                        Rule::Move<Expr>(symbols, 3),
-                        Rule::Move<Expr>(symbols, 1)
+                        Rule::Move<Expr>(symbols, 1),
+                        Rule::Move<Expr>(symbols, 3)
                     );
                 }
             );
@@ -102,8 +102,8 @@ namespace parser {
 
                     return std::make_unique<OperExpr>(
                         opertype,
-                        Rule::Move<Expr>(symbols, 3),
-                        Rule::Move<Expr>(symbols, 1)
+                        Rule::Move<Expr>(symbols, 1),
+                        Rule::Move<Expr>(symbols, 3)
                     );
                 }
             );
@@ -123,7 +123,7 @@ namespace parser {
                 }
             );
         }
-        // └─ - expr -> negexpr
+        // └─ -expr -> negexpr
         {
             RuleAdd(
                 PATS{
@@ -134,7 +134,7 @@ namespace parser {
                     -> std::unique_ptr<AstNode>
                 {
                     return std::make_unique<NegExpr>(
-                        Rule::Move<Expr>(symbols, 1)
+                        Rule::Move<Expr>(symbols, 2)
                     );
                 }
             );

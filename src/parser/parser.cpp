@@ -26,11 +26,12 @@ namespace parser {
                 for (auto& rule : rules_) {
 
                     // Match
-                    if (!rule.PatternMatch(symbols_))
+                    size_t len = 0;
+                    if (!rule.PatternsMatch(symbols_, len))
                         continue;
                 
                     // Execute
-                    if (TryReduce(rule, token_next)) {
+                    if (TryReduce(rule, token_next, len)) {
                         isNeedTryAgain = true;
                         break;
                     }
@@ -71,15 +72,14 @@ namespace parser {
         symbols_.emplace_back(Token2Symbol(token));
     }
 
-    bool   Parser::TryReduce(const Rule& rule, const Token* token_next) {
+    bool   Parser::TryReduce(const Rule& rule, const Token* token_next, size_t reduce_len) {
 
         // Target
         auto target = rule.reduce_callback()(symbols_, token_next);
         if (!target) return false;
 
         // Remove
-        size_t len = rule.patterns().size();
-        symbols_.erase(symbols_.end() - len, symbols_.end());
+        symbols_.erase(symbols_.end() - reduce_len, symbols_.end());
 
         // Push
         symbols_.emplace_back(std::move(target));
