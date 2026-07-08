@@ -27,7 +27,7 @@ namespace parser {
                     AT::Expr,
                     TT::Semicolon
                 },
-                [](std::vector<Symbol>& symbols, const Token* token_next)
+                [](std::vector<Symbol>& symbols, auto*)
                     -> std::unique_ptr<AstNode>
                 {
                     return std::make_unique<DeclStmt>(
@@ -38,7 +38,6 @@ namespace parser {
                 }
             );
         }
-
         // └─ i = 3;
         {
             RuleAdd(
@@ -48,12 +47,116 @@ namespace parser {
                     AT::Expr,
                     TT::Semicolon
                 },
-                [](std::vector<Symbol>& symbols, const Token* token_next)
+                [](std::vector<Symbol>& symbols, auto*)
                     -> std::unique_ptr<AstNode>
                 {
                     return std::make_unique<AssignStmt>(
                         Rule::Move<IdExpr>(symbols, 1),
                         Rule::Move<Expr>(symbols, 3)
+                    );
+                }
+            );
+        }
+
+        // Call
+
+        // └─ func(); -> func()
+        {
+            RuleAdd(
+                PATS{
+                    AT::CallExpr,
+                    TT::Semicolon
+                },
+                [](auto& symbols, auto*)
+                    -> std::unique_ptr<AstNode>
+                {
+                    return Rule::Move<CallExpr>(symbols, 1);
+                }
+            );
+        }
+        // └─ expr, expr -> arglist
+        {
+            RuleAdd(
+                PATS{
+                    AT::Expr,
+                    TT::Comma,
+                    AT::Expr
+                },
+                [](std::vector<Symbol>& symbols, auto*)
+                    -> std::unique_ptr<AstNode>
+                {
+                    std::vector<std::unique_ptr<Expr>> args;
+                    args.emplace_back(Rule::Move<Expr>(symbols, 1));
+                    args.emplace_back(Rule::Move<Expr>(symbols, 3));
+                    return std::make_unique<ArgList>(args);
+                }
+            );
+        }
+        // └─ arglist , expr -> arglist
+        {
+            RuleAdd(
+                PATS{
+                    AT::ArgList,
+                    TT::Comma,
+                    AT::Expr
+                },
+                [](std::vector<Symbol>& symbols, auto*)
+                    -> std::unique_ptr<AstNode>
+                {
+                    auto arglist = Rule::Move<ArgList>(symbols, 1);
+                    auto expr    = Rule::Move<Expr>(symbols, 3);
+                    arglist->args().emplace_back(std::move(expr));
+                    return arglist;
+                }
+            );
+        }
+        // └─ expr(expr) -> callexpr
+        {
+            RuleAdd(
+                PATS{
+                    AT::Expr,
+                    TT::LParen,
+                    AT::Expr,
+                    TT::RParen
+                },
+                [](std::vector<Symbol>& symbols, auto*)
+                    -> std::unique_ptr<AstNode>
+                {
+                    std::vector<std::unique_ptr<Expr>> args;
+                    args.emplace_back(
+                        Rule::Move<Expr>(symbols, 3)
+                    );
+
+                    return std::make_unique<CallExpr>(
+                        std::make_unique<ArgList>(args)
+                    );
+                }
+            );
+        }
+        // └─ expr(arglist?) -> callexpr
+        {
+            RuleAdd(
+                PATS{
+                    AT::Expr,
+                    TT::LParen,
+                    SymbolPattern::Opt(AT::ArgList),
+                    TT::RParen
+                },
+                [](std::vector<Symbol>& symbols, auto*)
+                    -> std::unique_ptr<AstNode>
+                {
+                    //auto callee = Rule::Move<Expr>(symbols, 1);
+                    std::vector<std::unique_ptr<Expr>> args;
+
+                    // Option [ArgList] Check
+                    if (Rule::move_positions_[2] != 0) {
+                        auto arglist = Rule::Move<ArgList>(symbols, 3);
+                        for (auto& arg : arglist->args())
+                            args.push_back(std::move(arg));
+                    }
+
+                    return std::make_unique<CallExpr>(
+                        std::make_unique<ArgList>(args)
                     );
                 }
             );
@@ -116,7 +219,7 @@ namespace parser {
                     AT::Expr,
                     TT::RParen,
                 },
-                [](std::vector<Symbol>& symbols, const Token* token_next)
+                [](std::vector<Symbol>& symbols, auto*)
                     -> std::unique_ptr<AstNode>
                 {
                     return Rule::Move<Expr>(symbols, 2);
@@ -130,7 +233,7 @@ namespace parser {
                     TT::Minus,
                     AT::Expr,
                 },
-                [](std::vector<Symbol>& symbols, const Token* token_next)
+                [](std::vector<Symbol>& symbols, auto*)
                     -> std::unique_ptr<AstNode>
                 {
                     return std::make_unique<NegExpr>(

@@ -27,11 +27,15 @@ enum class AstType {
     IdExpr,         //  Identity
     OperExpr,       //  Operation
     NegExpr,        //  Negative
+    CallExpr,       //  Func Call
 
     // Stmt
     Stmt,           //  Base ------
     DeclStmt,       //  Declaration
     AssignStmt,     //  Assignment
+
+    // Common
+    ArgList,        // List of Args
 };
 
 static AstType BaseOfAstType(AstType type) {
@@ -44,6 +48,7 @@ static AstType BaseOfAstType(AstType type) {
         case AstType::IdExpr:
         case AstType::OperExpr:
         case AstType::NegExpr:
+        case AstType::CallExpr:
             return AstType::Expr;
 
         case AstType::DeclStmt:
@@ -71,6 +76,8 @@ public:
         switch (type_) {
             case AstType::Program:      return "Program";
 
+            case AstType::ArgList:      return "ArgList";
+
             case AstType::Const:        return "Const";
             case AstType::NumConst:     return "NumConst";
 
@@ -78,6 +85,7 @@ public:
             case AstType::IdExpr:       return "IdExpr";
             case AstType::OperExpr:     return "OperExpr";
             case AstType::NegExpr:      return "NegExpr";
+            case AstType::CallExpr:     return "CallExpr";
 
             case AstType::Stmt:         return "Stmt";
             case AstType::DeclStmt:     return "DeclStmt";
@@ -117,12 +125,40 @@ public:
         }
     }
 };
-
-// Expr
-class Expr : public AstNode {
+class Expr          : public AstNode {
 
 };
-class IdExpr : public Expr {
+class Const         : public Expr {
+};
+class Stmt          : public AstNode {
+
+};
+
+// Common
+class ArgList       : public AstNode {
+private:
+    std::vector<std::unique_ptr<Expr>> args_;
+
+public:
+    ArgList(std::vector<std::unique_ptr<Expr>>& args) : args_(std::move(args)) {
+        type_ = AstType::ArgList;
+    }
+
+    void AstPrintImpl(std::string indent, size_t expand) override {
+        AstLayerPrint(indent, "args");
+        for (auto& arg : args_) {
+            AstLayerPrint(indent, "");
+            arg->AstPrint(indent, expand);
+        }
+    }
+    
+    std::vector<std::unique_ptr<Expr>>& args() {
+        return args_;
+    }
+};
+
+// Expr
+class IdExpr        : public Expr {
 public:
     std::string value_ = "";
 
@@ -135,7 +171,7 @@ public:
         std::cout << COLOR_CYAN << value_ << COLOR_DEFAULT;
     }
 };
-class OperExpr : public Expr {
+class OperExpr      : public Expr {
 public:
     Token::Type opertype_ = Token::Type::Undefined;
     std::unique_ptr<Expr> lexpr_;
@@ -164,7 +200,7 @@ public:
         rexpr_->AstPrint(indent, 8);
     }
 };
-class NegExpr : public Expr {
+class NegExpr       : public Expr {
 public:
     std::unique_ptr<Expr> expr_;
 
@@ -179,12 +215,27 @@ public:
         expr_->AstPrint(indent, 7);
     }
 };
+class CallExpr      : public Expr {
+private:
+    std::unique_ptr<ArgList> arglist_;
+
+public:
+    CallExpr(
+        std::unique_ptr<ArgList> arglist
+    )
+    :   arglist_(std::move(arglist))
+    {
+        type_ = AstType::CallExpr;
+    }
+
+    void AstPrintImpl(std::string indent, size_t expand) override {
+        AstLayerPrint(indent, "arglist");
+        arglist_->AstPrint(indent, 10);
+    }
+};
 
 // Const
-class Const : public Expr {
-
-};
-class NumConst : public Const {
+class NumConst      : public Const {
 public:
     std::string value_str_;
 
@@ -201,10 +252,7 @@ public:
 };
 
 // Stmt
-class Stmt : public AstNode {
-
-};
-class DeclStmt : public Stmt {
+class DeclStmt      : public Stmt {
 public:
     std::unique_ptr<IdExpr> id_;
     std::unique_ptr<Expr>   value_;
@@ -233,7 +281,7 @@ public:
         value_type_->AstPrint(indent, 13);
     }
 };
-class AssignStmt : public Stmt {
+class AssignStmt    : public Stmt {
 public:
     std::unique_ptr<IdExpr> id_;
     std::unique_ptr<Expr>   value_;
@@ -258,16 +306,12 @@ public:
 };
 
 // Program
-class Program : public AstNode {
+class Program       : public AstNode {
 private:
     std::vector<std::unique_ptr<AstNode>> children_;
 
 public:
-    Program(
-        std::vector<std::unique_ptr<AstNode>>& children
-    )
-    :   children_(std::move(children))
-    {
+    Program(std::vector<std::unique_ptr<AstNode>>& children) : children_(std::move(children)) {
         type_ = AstType::Program;
     }
 

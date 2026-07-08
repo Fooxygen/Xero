@@ -182,6 +182,10 @@ namespace rt {
         throw LogErr(LogModule::Runtime, "unsupported unary negation");
     }
 
+    Obj Xengine::Exec(CallExpr& node) {
+        return Obj{};
+    }
+
     Obj Xengine::Exec(NumConst& node) {
         const auto& numstr = node.value_str_;
 

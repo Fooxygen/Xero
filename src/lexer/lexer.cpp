@@ -65,6 +65,7 @@ namespace lexer {
             case '-':   return TokenGen(Token::Type::Minus,     "-");
             case '*':   return TokenGen(Token::Type::Star,      "*");
             case '/':   return TokenGen(Token::Type::Slash,     "/");
+            case ',':   return TokenGen(Token::Type::Comma,     ",");
             default:
                 throw LogErr(LogModule::Lexer, "invalid token");
         }
