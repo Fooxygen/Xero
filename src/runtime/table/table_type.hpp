@@ -46,7 +46,7 @@ namespace rt {
                 return type_it->second;
             }
 
-            throw LogErr(LogModule::Runtime, "undefined type");
+            throw LogErr(LogModule::Runtime, std::format("undefined type '{}'", name));
             return nullptr;
         }
     };

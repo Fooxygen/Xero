@@ -6,4 +6,4 @@ z: f32 = 3.14;
 x = x + y;
 z = y + z;
 
-print(x, y, z);
+println(x, y, z);

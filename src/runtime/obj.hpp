@@ -7,7 +7,7 @@
 
 #include <cstdint>
 
-#include "table/typetable.hpp"
+#include "runtime/table/table_type.hpp"
 
 namespace rt {
 
@@ -66,8 +66,12 @@ namespace rt {
             return o;
         }
 
-        const Type* type() { return type_; }
-        bool isNone() const { return type_ == TypeTable::Get("none"); }
+        const Type* type() {
+            return type_;
+        }
+        bool isNone() const {
+            return type_ == TypeTable::Get("none");
+        }
         bool is(std::string_view type_name) const {
             return type_->name == type_name;
         }

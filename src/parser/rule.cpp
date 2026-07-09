@@ -8,9 +8,10 @@
 namespace parser {
 
     void Parser::RulesInit() {
-        using TT   = Token::Type;
-        using AT   = AstType;
-        using PATS = std::initializer_list<SymbolPattern>;
+        using TT      = Token::Type;
+        using AT      = AstType;
+        using PATS    = std::initializer_list<SymbolPattern>;
+        using ASTNODE = std::unique_ptr<AstNode>;
 
         rules_.clear();
         
@@ -27,9 +28,7 @@ namespace parser {
                     AT::Expr,
                     TT::Semicolon
                 },
-                [](std::vector<Symbol>& symbols, auto*)
-                    -> std::unique_ptr<AstNode>
-                {
+                [](std::vector<Symbol>& symbols, auto*) {
                     return std::make_unique<DeclStmt>(
                         Rule::Move<IdExpr>(symbols, 1),
                         Rule::Move<Expr>(symbols, 5),
@@ -47,9 +46,7 @@ namespace parser {
                     AT::Expr,
                     TT::Semicolon
                 },
-                [](std::vector<Symbol>& symbols, auto*)
-                    -> std::unique_ptr<AstNode>
-                {
+                [](std::vector<Symbol>& symbols, auto*) {
                     return std::make_unique<AssignStmt>(
                         Rule::Move<IdExpr>(symbols, 1),
                         Rule::Move<Expr>(symbols, 3)
@@ -67,9 +64,7 @@ namespace parser {
                     AT::CallExpr,
                     TT::Semicolon
                 },
-                [](auto& symbols, auto*)
-                    -> std::unique_ptr<AstNode>
-                {
+                [](auto& symbols, auto*) {
                     return Rule::Move<CallExpr>(symbols, 1);
                 }
             );
@@ -82,9 +77,7 @@ namespace parser {
                     TT::Comma,
                     AT::Expr
                 },
-                [](std::vector<Symbol>& symbols, auto*)
-                    -> std::unique_ptr<AstNode>
-                {
+                [](std::vector<Symbol>& symbols, auto*) {
                     std::vector<std::unique_ptr<Expr>> args;
                     args.emplace_back(Rule::Move<Expr>(symbols, 1));
                     args.emplace_back(Rule::Move<Expr>(symbols, 3));
@@ -100,9 +93,7 @@ namespace parser {
                     TT::Comma,
                     AT::Expr
                 },
-                [](std::vector<Symbol>& symbols, auto*)
-                    -> std::unique_ptr<AstNode>
-                {
+                [](std::vector<Symbol>& symbols, auto*) {
                     auto arglist = Rule::Move<ArgList>(symbols, 1);
                     auto expr    = Rule::Move<Expr>(symbols, 3);
                     arglist->args().emplace_back(std::move(expr));
@@ -119,9 +110,7 @@ namespace parser {
                     AT::Expr,
                     TT::RParen
                 },
-                [](std::vector<Symbol>& symbols, auto*)
-                    -> std::unique_ptr<AstNode>
-                {
+                [](std::vector<Symbol>& symbols, auto*) {
                     std::vector<std::unique_ptr<Expr>> args;
                     args.emplace_back(
                         Rule::Move<Expr>(symbols, 3)
@@ -143,9 +132,7 @@ namespace parser {
                     SymbolPattern::Opt(AT::ArgList),
                     TT::RParen
                 },
-                [](std::vector<Symbol>& symbols, auto*)
-                    -> std::unique_ptr<AstNode>
-                {
+                [](std::vector<Symbol>& symbols, auto*) {
                     std::vector<std::unique_ptr<Expr>> args;
 
                     // Option [ArgList] Check
@@ -173,9 +160,7 @@ namespace parser {
                     TT::StarOrSlash,
                     AT::Expr,
                 },
-                [](std::vector<Symbol>& symbols, const Token* token_next)
-                    -> std::unique_ptr<AstNode>
-                {
+                [](std::vector<Symbol>& symbols, const Token* token_next) {
                     size_t syms_len = symbols.size();
                     auto   opertype = std::get<Token>(symbols[syms_len - 2].data()).type;
                     return std::make_unique<OperExpr>(
@@ -194,9 +179,7 @@ namespace parser {
                     TT::PlusOrMinus,
                     AT::Expr,
                 },
-                [](std::vector<Symbol>& symbols, const Token* token_next)
-                    -> std::unique_ptr<AstNode>
-                {
+                [](std::vector<Symbol>& symbols, const Token* token_next) -> ASTNODE {
                     size_t syms_len = symbols.size();
 
                     // Oper Priority Check
@@ -220,9 +203,7 @@ namespace parser {
                     AT::Expr,
                     TT::RParen,
                 },
-                [](std::vector<Symbol>& symbols, auto*)
-                    -> std::unique_ptr<AstNode>
-                {
+                [](std::vector<Symbol>& symbols, auto*) {
                     return Rule::Move<Expr>(symbols, 2);
                 }
             );
@@ -234,9 +215,7 @@ namespace parser {
                     TT::Minus,
                     AT::Expr,
                 },
-                [](std::vector<Symbol>& symbols, auto*)
-                    -> std::unique_ptr<AstNode>
-                {
+                [](std::vector<Symbol>& symbols, auto*) {
                     return std::make_unique<NegExpr>(
                         Rule::Move<Expr>(symbols, 2)
                     );

@@ -7,7 +7,7 @@
 
 #include "log.hpp"
 #include "xengine.hpp"
-#include "table/binfntable.hpp"
+#include "runtime/table/table_binfn.hpp"
 
 namespace rt {
         
@@ -150,19 +150,30 @@ namespace rt {
     }
     
     void Xengine::BinfnRegister() {
+        using ARGS = const std::vector<Obj>&;
+        
+        // print and println
+        {
+            static const auto impl = [](ARGS args) {
+                for (size_t i = 0; i < args.size(); i++) {
+                    if (i > 0) std::cout << " ";
+                    if      (args[i].is("i32")) std::cout << args[i].Get_i32();
+                    else if (args[i].is("i64")) std::cout << args[i].Get_i64();
+                    else if (args[i].is("f32")) std::cout << args[i].Get_f32();
+                    else if (args[i].is("f64")) std::cout << args[i].Get_f64();
+                }
+                return Obj{};
+            };
 
-        // print
-        BinfnTable::Set("print", [](const std::vector<Obj>& args) -> Obj {
-            for (size_t i = 0; i < args.size(); i++) {
-                if (i > 0) std::cout << " ";
-                if      (args[i].is("i32")) std::cout << args[i].Get_i32();
-                else if (args[i].is("i64")) std::cout << args[i].Get_i64();
-                else if (args[i].is("f32")) std::cout << args[i].Get_f32();
-                else if (args[i].is("f64")) std::cout << args[i].Get_f64();
-            }
-            std::cout << std::endl;
-            return Obj{};
-        });
+            BinfnTable::Set("print", [](ARGS args) {
+                return impl(args);
+            });
+            BinfnTable::Set("println", [](ARGS args) {
+                auto obj = impl(args);
+                std::cout << std::endl;
+                return obj;
+            });
+        }
     }
 
     Obj Xengine::Exec(IdExpr& node) {

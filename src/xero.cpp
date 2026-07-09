@@ -50,6 +50,7 @@ int main() {
         rt::Xengine xengine;
         LogStart(LogModule::Parser, "program").Print();
         xengine.Exec(*parser.root());
+        std::cout << std::endl;
         LogFinish(LogModule::Parser, "program").Print();
     }
     catch(const Log& log) {
