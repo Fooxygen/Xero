@@ -107,7 +107,7 @@ public:
         TypePrint();
         AstPrintImpl(indent, expand);
     }
-    // Structture Print Implement
+    // Structure Print Implement
     virtual void AstPrintImpl(std::string indent = "", size_t expand = 4) {}
     
     // New Line and Insert Indent, Label

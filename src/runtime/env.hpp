@@ -13,23 +13,23 @@ namespace rt {
 
     class Env {
     private:
-        std::unordered_map<std::string, Obj> map_obj;
+        std::unordered_map<std::string, Obj> map_obj_;
 
     public:
         void Declare(const std::string& name, const Obj& obj) {
-            map_obj[name] = obj;
+            map_obj_[name] = obj;
         }
         void Assign(const std::string& name, const Obj& value) {
-            map_obj[name] = value;
+            map_obj_[name] = value;
         }
 
         const Obj* Get(const std::string& name) const {
-            auto it = map_obj.find(name);
-            return it != map_obj.end() ? &it->second : nullptr;
+            auto it = map_obj_.find(name);
+            return it != map_obj_.end() ? &it->second : nullptr;
         }
 
         bool isExist(const std::string& name) const {
-            return map_obj.find(name) != map_obj.end();
+            return map_obj_.find(name) != map_obj_.end();
         }
     };
 }

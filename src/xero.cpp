@@ -48,10 +48,10 @@ int main() {
 
         // Runtime
         rt::Xengine xengine;
-        LogStart(LogModule::Parser, "program").Print();
+        LogStart(LogModule::Runtime, "program").Print();
         xengine.Exec(*parser.root());
         std::cout << std::endl;
-        LogFinish(LogModule::Parser, "program").Print();
+        LogFinish(LogModule::Runtime, "program").Print();
     }
     catch(const Log& log) {
         log.Print();

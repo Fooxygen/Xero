@@ -3,6 +3,8 @@
 //  Copyright (c) 2026 Fooxygen.
 //  Licensed under the MIT License.
 
+#pragma once
+
 #include <string>
 
 class BuildInfo {
