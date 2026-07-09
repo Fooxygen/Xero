@@ -19,11 +19,12 @@ namespace rt {
 
     class TypeTable {
     private:
-        static inline const Type t_none_    = { .name = "none",  .size = 0  };
-        static inline const Type t_i32_     = { .name = "i32",   .size = 32 };
-        static inline const Type t_i64_     = { .name = "i64",   .size = 64 };
-        static inline const Type t_f32_     = { .name = "f32",   .size = 32 };
-        static inline const Type t_f64_     = { .name = "f64",   .size = 64 };
+        static inline const Type t_none_    = { .name = "none",     .size = 0  };
+        static inline const Type t_i32_     = { .name = "i32",      .size = 32 };
+        static inline const Type t_i64_     = { .name = "i64",      .size = 64 };
+        static inline const Type t_f32_     = { .name = "f32",      .size = 32 };
+        static inline const Type t_f64_     = { .name = "f64",      .size = 64 };
+        static inline const Type t_binfn_   = { .name = "binfn",    .size = 64 };   // Built-in Func
 
         static inline std::unordered_map<std::string, const Type*> table_;
 
@@ -38,6 +39,7 @@ namespace rt {
             if (name == t_i64_.name)    return &t_i64_;
             if (name == t_f32_.name)    return &t_f32_;
             if (name == t_f64_.name)    return &t_f64_;
+            if (name == t_binfn_.name)  return &t_binfn_;
 
             auto type_it = table_.find(std::string(name));
             if (type_it != table_.end()) {

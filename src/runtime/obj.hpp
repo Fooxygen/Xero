@@ -7,18 +7,22 @@
 
 #include <cstdint>
 
-#include "typetable.hpp"
+#include "table/typetable.hpp"
 
 namespace rt {
 
     class Obj {
+    public:
+        using binfn = Obj(*)(const std::vector<Obj>&);
+
     private:
         union {
-            void*   ptr_;
-            int32_t i32_;
-            int64_t i64_;
-            float   f32_;
-            double  f64_;
+            void*       ptr_;
+            int32_t     i32_;
+            int64_t     i64_;
+            float       f32_;
+            double      f64_;
+            binfn       binfn_;
         } data_;
         const Type* type_;
 
@@ -55,6 +59,12 @@ namespace rt {
             o.data_.f64_ = x;
             return o;
         }
+        static Obj Make_binfn(binfn f) {
+            Obj o;
+            o.type_ = TypeTable::Get("binfn");
+            o.data_.binfn_ = f;
+            return o;
+        }
 
         const Type* type() { return type_; }
         bool isNone() const { return type_ == TypeTable::Get("none"); }
@@ -62,9 +72,10 @@ namespace rt {
             return type_->name == type_name;
         }
 
-        int32_t Get_i32() const { return data_.i32_; }
-        int64_t Get_i64() const { return data_.i64_; }
-        float   Get_f32() const { return data_.f32_; }
-        double  Get_f64() const { return data_.f64_; }
+        int32_t Get_i32()   const { return data_.i32_;   }
+        int64_t Get_i64()   const { return data_.i64_;   }
+        float   Get_f32()   const { return data_.f32_;   }
+        double  Get_f64()   const { return data_.f64_;   }
+        binfn   Get_binfn() const { return data_.binfn_; }
     };
 }

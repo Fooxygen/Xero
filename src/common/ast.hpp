@@ -217,13 +217,16 @@ public:
 };
 class CallExpr      : public Expr {
 private:
+    std::unique_ptr<Expr>    callee_;
     std::unique_ptr<ArgList> arglist_;
 
 public:
     CallExpr(
+        std::unique_ptr<Expr>    callee,
         std::unique_ptr<ArgList> arglist
     )
-    :   arglist_(std::move(arglist))
+    :   callee_(std::move(callee)),
+        arglist_(std::move(arglist))
     {
         type_ = AstType::CallExpr;
     }
@@ -232,6 +235,9 @@ public:
         AstLayerPrint(indent, "arglist");
         arglist_->AstPrint(indent, 10);
     }
+
+    Expr*    callee()  const { return callee_.get(); }
+    ArgList* arglist() const { return arglist_.get(); }
 };
 
 // Const

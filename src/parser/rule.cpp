@@ -128,6 +128,7 @@ namespace parser {
                     );
 
                     return std::make_unique<CallExpr>(
+                        Rule::Move<Expr>(symbols, 1),
                         std::make_unique<ArgList>(args)
                     );
                 }
@@ -145,17 +146,17 @@ namespace parser {
                 [](std::vector<Symbol>& symbols, auto*)
                     -> std::unique_ptr<AstNode>
                 {
-                    //auto callee = Rule::Move<Expr>(symbols, 1);
                     std::vector<std::unique_ptr<Expr>> args;
 
                     // Option [ArgList] Check
                     if (Rule::move_positions_[2] != 0) {
                         auto arglist = Rule::Move<ArgList>(symbols, 3);
                         for (auto& arg : arglist->args())
-                            args.push_back(std::move(arg));
+                            args.emplace_back(std::move(arg));
                     }
 
                     return std::make_unique<CallExpr>(
+                        Rule::Move<Expr>(symbols, 1),
                         std::make_unique<ArgList>(args)
                     );
                 }

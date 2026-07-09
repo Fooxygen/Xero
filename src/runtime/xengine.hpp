@@ -6,8 +6,7 @@
 #pragma once
 
 #include "common/ast.hpp"
-#include "typetable.hpp"
-#include "opertable.hpp"
+#include "table/opertable.hpp"
 #include "obj.hpp"
 #include "env.hpp"
 
@@ -22,9 +21,11 @@ namespace rt {
             TypeTable::Reset();
             OperTable::Reset();
             OperTableRegister();
+            BinfnRegister();
         }
         
         void OperTableRegister();
+        void BinfnRegister();
 
         Obj Exec(AstNode& node) {
             switch (node.type_) {

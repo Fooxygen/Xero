@@ -7,6 +7,7 @@
 
 #include "log.hpp"
 #include "xengine.hpp"
+#include "table/binfntable.hpp"
 
 namespace rt {
         
@@ -41,28 +42,28 @@ namespace rt {
         {
             OperTable::Set(TypeTable::Get("i64"), TT::Plus, [](const Obj& a, const Obj& b) {
                 int64_t xb = 0;
-                     if (b.is("i64")) xb = b.Get_i64();
+                if      (b.is("i64")) xb = b.Get_i64();
                 else if (b.is("i32")) xb = b.Get_i32();
                 else                  return Obj();
                 return Obj::Make_i64(a.Get_i64() + xb);
             });
             OperTable::Set(TypeTable::Get("i64"), TT::Minus, [](const Obj& a, const Obj& b) {
                 int64_t xb = 0;
-                     if (b.is("i64")) xb = b.Get_i64();
+                if      (b.is("i64")) xb = b.Get_i64();
                 else if (b.is("i32")) xb = b.Get_i32();
                 else                  return Obj();
                 return Obj::Make_i64(a.Get_i64() - xb);
             });
             OperTable::Set(TypeTable::Get("i64"), TT::Star, [](const Obj& a, const Obj& b) {
                 int64_t xb = 0;
-                     if (b.is("i64")) xb = b.Get_i64();
+                if      (b.is("i64")) xb = b.Get_i64();
                 else if (b.is("i32")) xb = b.Get_i32();
                 else                  return Obj();
                 return Obj::Make_i64(a.Get_i64() * xb);
             });
             OperTable::Set(TypeTable::Get("i64"), TT::Slash, [](const Obj& a, const Obj& b) {
                 int64_t xb = 0;
-                     if (b.is("i64")) xb = b.Get_i64();
+                if      (b.is("i64")) xb = b.Get_i64();
                 else if (b.is("i32")) xb = b.Get_i32();
                 else                  return Obj();
 
@@ -75,7 +76,7 @@ namespace rt {
         {
             OperTable::Set(TypeTable::Get("f32"), TT::Plus, [](const Obj& a, const Obj& b) {
                 float xb = 0.0f;
-                     if (b.is("f32"))  xb = b.Get_f32();
+                if      (b.is("f32"))  xb = b.Get_f32();
                 else if (b.is("i32"))  xb = (float)b.Get_i32();
                 else if (b.is("i64"))  xb = (float)b.Get_i64();
                 else                   return Obj();
@@ -83,7 +84,7 @@ namespace rt {
             });
             OperTable::Set(TypeTable::Get("f32"), TT::Minus, [](const Obj& a, const Obj& b) {
                 float xb = 0.0f;
-                     if (b.is("f32"))  xb = b.Get_f32();
+                if      (b.is("f32"))  xb = b.Get_f32();
                 else if (b.is("i32"))  xb = (float)b.Get_i32();
                 else if (b.is("i64"))  xb = (float)b.Get_i64();
                 else                   return Obj();
@@ -91,7 +92,7 @@ namespace rt {
             });
             OperTable::Set(TypeTable::Get("f32"), TT::Star, [](const Obj& a, const Obj& b) {
                 float xb = 0.0f;
-                     if (b.is("f32"))  xb = b.Get_f32();
+                if      (b.is("f32"))  xb = b.Get_f32();
                 else if (b.is("i32"))  xb = (float)b.Get_i32();
                 else if (b.is("i64"))  xb = (float)b.Get_i64();
                 else                   return Obj();
@@ -99,7 +100,7 @@ namespace rt {
             });
             OperTable::Set(TypeTable::Get("f32"), TT::Slash, [](const Obj& a, const Obj& b) {
                 float xb = 0.0f;
-                     if (b.is("f32"))  xb = b.Get_f32();
+                if      (b.is("f32"))  xb = b.Get_f32();
                 else if (b.is("i32"))  xb = (float)b.Get_i32();
                 else if (b.is("i64"))  xb = (float)b.Get_i64();
                 else                   return Obj();
@@ -111,7 +112,7 @@ namespace rt {
         {
             OperTable::Set(TypeTable::Get("f64"), TT::Plus, [](const Obj& a, const Obj& b) {
                 double xb = 0.0;
-                     if (b.is("f64"))  xb = b.Get_f64();
+                if      (b.is("f64"))  xb = b.Get_f64();
                 else if (b.is("f32"))  xb = b.Get_f32();
                 else if (b.is("i64"))  xb = (double)b.Get_i64();
                 else if (b.is("i32"))  xb = (double)b.Get_i32();
@@ -120,7 +121,7 @@ namespace rt {
             });
             OperTable::Set(TypeTable::Get("f64"), TT::Minus, [](const Obj& a, const Obj& b) {
                 double xb = 0.0;
-                     if (b.is("f64"))  xb = b.Get_f64();
+                if      (b.is("f64"))  xb = b.Get_f64();
                 else if (b.is("f32"))  xb = b.Get_f32();
                 else if (b.is("i64"))  xb = (double)b.Get_i64();
                 else if (b.is("i32"))  xb = (double)b.Get_i32();
@@ -129,7 +130,7 @@ namespace rt {
             });
             OperTable::Set(TypeTable::Get("f64"), TT::Star, [](const Obj& a, const Obj& b) {
                 double xb = 0.0;
-                     if (b.is("f64"))  xb = b.Get_f64();
+                if      (b.is("f64"))  xb = b.Get_f64();
                 else if (b.is("f32"))  xb = b.Get_f32();
                 else if (b.is("i64"))  xb = (double)b.Get_i64();
                 else if (b.is("i32"))  xb = (double)b.Get_i32();
@@ -138,7 +139,7 @@ namespace rt {
             });
             OperTable::Set(TypeTable::Get("f64"), TT::Slash, [](const Obj& a, const Obj& b) {
                 double xb = 0.0;
-                     if (b.is("f64"))  xb = b.Get_f64();
+                if      (b.is("f64"))  xb = b.Get_f64();
                 else if (b.is("f32"))  xb = b.Get_f32();
                 else if (b.is("i64"))  xb = (double)b.Get_i64();
                 else if (b.is("i32"))  xb = (double)b.Get_i32();
@@ -147,7 +148,23 @@ namespace rt {
             });
         }
     }
-        
+    
+    void Xengine::BinfnRegister() {
+
+        // print
+        BinfnTable::Set("print", [](const std::vector<Obj>& args) -> Obj {
+            for (size_t i = 0; i < args.size(); i++) {
+                if (i > 0) std::cout << " ";
+                if      (args[i].is("i32")) std::cout << args[i].Get_i32();
+                else if (args[i].is("i64")) std::cout << args[i].Get_i64();
+                else if (args[i].is("f32")) std::cout << args[i].Get_f32();
+                else if (args[i].is("f64")) std::cout << args[i].Get_f64();
+            }
+            std::cout << std::endl;
+            return Obj{};
+        });
+    }
+
     Obj Xengine::Exec(IdExpr& node) {
         return *env_.Get(node.value_);
     }
@@ -183,7 +200,16 @@ namespace rt {
     }
 
     Obj Xengine::Exec(CallExpr& node) {
-        return Obj{};
+        auto& id = (IdExpr&)*node.callee();
+        auto  fn = BinfnTable::Get(id.value_);
+        if (!fn)
+            throw LogErr(LogModule::Runtime, "undefined binfn: " + id.value_);
+
+        std::vector<Obj> args;
+        for (auto& arg : node.arglist()->args())
+            args.emplace_back(Exec(*arg));
+
+        return fn(args);
     }
 
     Obj Xengine::Exec(NumConst& node) {
