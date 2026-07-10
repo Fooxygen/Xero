@@ -7,7 +7,7 @@
 
 #include "log.hpp"
 #include "xengine.hpp"
-#include "runtime/table/table_binfn.hpp"
+#include "runtime/table/binfn.hpp"
 
 namespace rt {
         

@@ -7,7 +7,7 @@
 
 #include <cstdint>
 
-#include "runtime/table/table_type.hpp"
+#include "runtime/table/type.hpp"
 
 namespace rt {
 

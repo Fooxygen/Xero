@@ -6,7 +6,7 @@
 #pragma once
 
 #include "common/ast.hpp"
-#include "runtime/table/table_oper.hpp"
+#include "runtime/table/oper.hpp"
 #include "obj.hpp"
 #include "env.hpp"
 
