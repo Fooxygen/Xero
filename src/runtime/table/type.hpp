@@ -15,7 +15,7 @@ namespace rt {
 
     struct Type {
         std::string_view name;
-        size_t           size;  // bit width
+        size_t           size;  // byte width
 
         // Bulit-in Function
         std::string (*to_string)(const Obj&);

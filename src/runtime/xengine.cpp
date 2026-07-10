@@ -16,19 +16,19 @@ namespace rt {
             .name = "none", .size = 0
         });
         TypeTable::Set(Type{
-            .name = "i32", .size = 32,
+            .name = "i32", .size = 4,
             .to_string = [](const Obj& o) { return std::to_string(o.Get_i32()); }
         });
         TypeTable::Set(Type{
-            .name = "i64", .size = 64,
+            .name = "i64", .size = 8,
             .to_string = [](const Obj& o) { return std::to_string(o.Get_i64()); }
         });
         TypeTable::Set(Type{
-            .name = "f32", .size = 32,
+            .name = "f32", .size = 4,
             .to_string = [](const Obj& o) { return std::to_string(o.Get_f32()); }
         });
         TypeTable::Set(Type{
-            .name = "f64", .size = 64,
+            .name = "f64", .size = 8,
             .to_string = [](const Obj& o) { return std::to_string(o.Get_f64()); }
         });
     }
