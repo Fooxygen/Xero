@@ -20,10 +20,13 @@ namespace rt {
         Xengine() {
             TypeTable::Reset();
             OperTable::Reset();
+
+            TypeTableRegister();
             OperTableRegister();
             BinfnRegister();
         }
         
+        void TypeTableRegister();
         void OperTableRegister();
         void BinfnRegister();
 

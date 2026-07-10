@@ -11,6 +11,28 @@
 
 namespace rt {
         
+    void Xengine::TypeTableRegister() {
+        TypeTable::Set(Type{
+            .name = "none", .size = 0
+        });
+        TypeTable::Set(Type{
+            .name = "i32", .size = 32,
+            .to_string = [](const Obj& o) { return std::to_string(o.Get_i32()); }
+        });
+        TypeTable::Set(Type{
+            .name = "i64", .size = 64,
+            .to_string = [](const Obj& o) { return std::to_string(o.Get_i64()); }
+        });
+        TypeTable::Set(Type{
+            .name = "f32", .size = 32,
+            .to_string = [](const Obj& o) { return std::to_string(o.Get_f32()); }
+        });
+        TypeTable::Set(Type{
+            .name = "f64", .size = 64,
+            .to_string = [](const Obj& o) { return std::to_string(o.Get_f64()); }
+        });
+    }
+
     void Xengine::OperTableRegister() {
         using TT = Token::Type;
 
@@ -150,17 +172,15 @@ namespace rt {
     }
     
     void Xengine::BinfnRegister() {
-        using ARGS = const std::vector<Obj>&;
+        using ARGS = std::vector<Obj>&;
         
         // print and println
         {
             static const auto impl = [](ARGS args) {
                 for (size_t i = 0; i < args.size(); i++) {
+                    auto& arg = args[i];
                     if (i > 0) std::cout << " ";
-                    if      (args[i].is("i32")) std::cout << args[i].Get_i32();
-                    else if (args[i].is("i64")) std::cout << args[i].Get_i64();
-                    else if (args[i].is("f32")) std::cout << args[i].Get_f32();
-                    else if (args[i].is("f64")) std::cout << args[i].Get_f64();
+                    std::cout << arg.type()->to_string(arg);
                 }
                 return Obj{};
             };

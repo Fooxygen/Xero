@@ -11,21 +11,18 @@
 #include "log.hpp"
 
 namespace rt {
+    class Obj;
 
     struct Type {
         std::string_view name;
         size_t           size;  // bit width
+
+        // Bulit-in Function
+        std::string (*to_string)(const Obj&);
     };
 
     class TypeTable {
     private:
-        static inline const Type t_none_    = { .name = "none",     .size = 0  };
-        static inline const Type t_i32_     = { .name = "i32",      .size = 32 };
-        static inline const Type t_i64_     = { .name = "i64",      .size = 64 };
-        static inline const Type t_f32_     = { .name = "f32",      .size = 32 };
-        static inline const Type t_f64_     = { .name = "f64",      .size = 64 };
-        static inline const Type t_binfn_   = { .name = "binfn",    .size = 64 };   // Built-in Func
-
         static inline std::unordered_map<std::string, const Type*> table_;
 
     public:
@@ -33,14 +30,15 @@ namespace rt {
             table_ = std::unordered_map<std::string, const Type*>();
         }
 
-        static const Type* Get(std::string_view name) {
-            if (name == t_none_.name)   return &t_none_;
-            if (name == t_i32_.name)    return &t_i32_;
-            if (name == t_i64_.name)    return &t_i64_;
-            if (name == t_f32_.name)    return &t_f32_;
-            if (name == t_f64_.name)    return &t_f64_;
-            if (name == t_binfn_.name)  return &t_binfn_;
+        static const void Set(const Type& t) {
+            auto it = table_.find(std::string(t.name));
+            if (it == table_.end()) {
+                table_.emplace(t.name, new Type(t));
+            }
+            else throw LogErr(LogModule::Runtime, std::format("existing type '{}'", t.name));
+        }
 
+        static const Type* Get(std::string_view name) {
             auto type_it = table_.find(std::string(name));
             if (type_it != table_.end()) {
                 return type_it->second;

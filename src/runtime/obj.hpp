@@ -13,7 +13,7 @@ namespace rt {
 
     class Obj {
     public:
-        using binfn = Obj(*)(const std::vector<Obj>&);
+        using binfn = Obj(*)(std::vector<Obj>&);  // Built-in Function
 
     private:
         union {
