@@ -12,9 +12,6 @@
 namespace rt {
 
     class Obj {
-    public:
-        using binfn = Obj(*)(std::vector<Obj>&);  // Built-in Function
-
     private:
         union {
             void*       ptr_;
@@ -22,7 +19,6 @@ namespace rt {
             int64_t     i64_;
             float       f32_;
             double      f64_;
-            binfn       binfn_;
         } data_;
         const Type* type_;
 
@@ -59,12 +55,6 @@ namespace rt {
             o.data_.f64_ = x;
             return o;
         }
-        static Obj Make_binfn(binfn f) {
-            Obj o;
-            o.type_ = TypeTable::Get("binfn");
-            o.data_.binfn_ = f;
-            return o;
-        }
 
         const Type* type() {
             return type_;
@@ -80,6 +70,5 @@ namespace rt {
         int64_t Get_i64()   const { return data_.i64_;   }
         float   Get_f32()   const { return data_.f32_;   }
         double  Get_f64()   const { return data_.f64_;   }
-        binfn   Get_binfn() const { return data_.binfn_; }
     };
 }

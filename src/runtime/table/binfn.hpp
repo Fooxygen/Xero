@@ -13,19 +13,22 @@
 namespace rt {
 
     class BinfnTable {
+    public:
+        using binfn = Obj(*)(std::vector<Obj>&);  // Built-in Function
+
     private:
-        static inline std::unordered_map<std::string, Obj::binfn> table_;
+        static inline std::unordered_map<std::string, binfn> table_;
 
     public:
         static void Reset() {
-            table_ = std::unordered_map<std::string, Obj::binfn>();
+            table_ = std::unordered_map<std::string, binfn>();
         }
 
-        static void Set(const std::string& name, Obj::binfn func) {
+        static void Set(const std::string& name, binfn func) {
             table_[name] = func;
         }
 
-        static Obj::binfn Get(const std::string& name) {
+        static binfn Get(const std::string& name) {
             auto it = table_.find(name);
             return it != table_.end() ? it->second : nullptr;
         }
