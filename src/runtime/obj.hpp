@@ -12,9 +12,15 @@
 namespace rt {
 
     class Obj {
+    public:
+        struct RefData {
+            void*  data = nullptr;
+            size_t cnt  = 0;
+        };
+
     private:
         union {
-            void*       ptr_;
+            void*       ref_;
             int32_t     i32_;
             int64_t     i64_;
             float       f32_;
@@ -25,6 +31,51 @@ namespace rt {
     public:
         Obj() {
             type_ = TypeTable::Get("none");
+            data_.ref_ = nullptr;
+        }
+        Obj(const Obj& other)
+        :   type_(other.type_)
+        {
+            if (type_->isRef) {
+                data_.ref_ = other.data_.ref_;
+                ((RefData*)data_.ref_)->cnt++;
+            }
+            else data_ = other.data_;
+        }
+        Obj& operator=(const Obj& other) {
+            if (this == &other) return *this;
+
+            // Destroy this
+            if (type_->isRef && data_.ref_) {
+                auto refdata = (RefData*)data_.ref_;
+
+                // No obj uses
+                if (--refdata->cnt == 0) {
+                    type_->destroy(refdata->data);
+                    delete refdata;
+                }
+            }
+
+            // Copy other to this
+            type_ = other.type_;
+            if (type_->isRef) {
+                data_.ref_ = other.data_.ref_;
+                ((RefData*)data_.ref_)->cnt++;
+            }
+            else data_ = other.data_;
+
+            return *this;
+        }
+        ~Obj() {
+            if (hasRef()) {
+                auto refdata = (RefData*)data_.ref_;
+
+                // No obj uses
+                if (--refdata->cnt == 0) {
+                    type_->destroy(refdata->data);
+                    delete refdata;
+                }
+            }
         }
 
         static Obj Make_none() {
@@ -64,6 +115,9 @@ namespace rt {
         }
         bool is(std::string_view type_name) const {
             return type_->name == type_name;
+        }
+        bool hasRef() const {
+            return type_->isRef && data_.ref_;
         }
 
         int32_t Get_i32()   const { return data_.i32_;   }

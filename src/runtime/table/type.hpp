@@ -14,10 +14,12 @@ namespace rt {
     class Obj;
 
     struct Type {
-        std::string_view name;
-        size_t           size;  // byte width
+        std::string_view name  = "";
+        size_t           size  = 0;         // Byte width
+        bool             isRef = false;     // Reference Type
 
         // Bulit-in Function
+        void        (*destroy)(void*);          // destroy real data from pointer
         std::string (*to_string)(const Obj&);
     };
 
