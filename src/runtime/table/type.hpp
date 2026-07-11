@@ -18,9 +18,16 @@ namespace rt {
         size_t           size  = 0;         // Byte width
         bool             isRef = false;     // Reference Type
 
-        // Bulit-in Function
-        void        (*destroy)(void*);          // destroy real data from pointer
-        std::string (*to_string)(const Obj&);
+        // Methods
+        static void destroy_default(void*) {
+            throw LogErr(LogModule::Runtime, "method 'destroy()' not implemented for type");
+        }
+        static std::string to_string_default(const Obj&) {
+            throw LogErr(LogModule::Runtime, "method 'to_string()' not implemented for type");
+        }
+
+        void        (*destroy)(void*)           = destroy_default;
+        std::string (*to_string)(const Obj&)    = to_string_default;
     };
 
     class TypeTable {
