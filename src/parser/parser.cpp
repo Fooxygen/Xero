@@ -36,7 +36,7 @@ namespace parser {
                         break;
                     }
                 }
-            } while(isNeedTryAgain);
+            } while (isNeedTryAgain);
         }
 
         // Program (Root Node)

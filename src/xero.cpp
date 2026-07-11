@@ -17,7 +17,7 @@
 std::string FileRead(const std::string& path) {
     std::ifstream file(path, std::ios::binary);
     if (!file) {
-        throw LogErr(LogModule::File, "failed to open file");
+        throw LogErr(LogModule::File, std::format("failed to open file '{}'", path));
     }
 
     std::stringstream ss;
@@ -53,7 +53,7 @@ int main() {
         std::cout << std::endl;
         LogFinish(LogModule::Runtime, "program").Print();
     }
-    catch(const Log& log) {
+    catch (const Log& log) {
         log.Print();
     }
     

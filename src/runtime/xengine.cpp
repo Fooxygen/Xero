@@ -221,7 +221,9 @@ namespace rt {
             if (!obj.isNone()) return obj;
         }
 
-        throw LogErr(LogModule::Runtime, "unsupported operator");
+        throw LogErr(LogModule::Runtime,
+            std::format("unsupported operator '{}'", Token::TypeName(node.opertype_))
+        );
     }
 
     Obj Xengine::Exec(NegExpr& node) {
@@ -239,7 +241,7 @@ namespace rt {
         auto& id = (IdExpr&)*node.callee();
         auto  fn = BinfnTable::Get(id.value_);
         if (!fn)
-            throw LogErr(LogModule::Runtime, "undefined binfn: " + id.value_);
+            throw LogErr(LogModule::Runtime, "undefined built-in fn: " + id.value_);
 
         std::vector<Obj> args;
         for (auto& arg : node.arglist()->args())
@@ -286,8 +288,7 @@ namespace rt {
             }
         }
 
-        throw LogErr(LogModule::Runtime, "numeric overflow");
-        return Obj();
+        throw LogErr(LogModule::Runtime, std::format("numeric overflow '{}'", numstr));
     }
 
     Obj Xengine::Exec(StringConst& node) {

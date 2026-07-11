@@ -23,7 +23,7 @@ namespace lexer {
                 auto& token = tokens_.emplace_back(next);
 
                 if (isPrint && token.type != Token::Type::Undefined)
-                std::cout << token.MetaPrint() << std::endl;
+                    std::cout << token.MetaPrint() << std::endl;
             }
         }
         if (isPrint) {
@@ -65,9 +65,9 @@ namespace lexer {
             case '*':   return TokenGen(Token::Type::Star,      "*");
             case '/':   return TokenGen(Token::Type::Slash,     "/");
             case ',':   return TokenGen(Token::Type::Comma,     ",");
-            default:
-                throw LogErr(LogModule::Lexer, "invalid token");
         }
+
+        throw LogErr(LogModule::Lexer, "invalid token");
     }
 
     Token Lexer::TokenScanWord() {
@@ -121,7 +121,7 @@ namespace lexer {
                     case 'r':  lexeme += '\r'; break;
                     case '"':  lexeme += '"';  break;
                     case '\\': lexeme += '\\'; break;
-                    default:   throw LogErr(LogModule::Lexer, "unknown escape");
+                    default:   throw LogErr(LogModule::Lexer, std::format("unknown escape '{}'", code_[pos_]));
                 }
                 CharNext();
                 continue;
