@@ -31,6 +31,11 @@ namespace rt {
             .name = "f64", .size = 8,
             .to_string = [](const Obj& o) { return std::to_string(o.Get_f64()); }
         });
+        TypeTable::Set(Type{
+            .name = "string", .size = 0, .isRef = true,
+            .destroy = [](void* data) { delete (String*)data; },
+            .to_string = [](const Obj& o) { return o.Get_string(); }
+        });
     }
 
     void Xengine::OperTableRegister() {
@@ -244,7 +249,7 @@ namespace rt {
     }
 
     Obj Xengine::Exec(NumConst& node) {
-        const auto& numstr = node.value_str_;
+        const auto& numstr = node.value_;
 
         // integer
         if (numstr.find(".") == std::string::npos) {
@@ -283,6 +288,10 @@ namespace rt {
 
         throw LogErr(LogModule::Runtime, "numeric overflow");
         return Obj();
+    }
+
+    Obj Xengine::Exec(StringConst& node) {
+        return Obj::Make_string(node.value_);
     }
 
     Obj Xengine::Exec(DeclStmt& node) {

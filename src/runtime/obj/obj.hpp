@@ -8,14 +8,20 @@
 #include <cstdint>
 
 #include "runtime/table/type.hpp"
+#include "runtime/obj/impl/string.hpp"
 
 namespace rt {
 
     class Obj {
     public:
-        struct RefData {
+        class RefData {
+        public:
             void*  data = nullptr;
             size_t cnt  = 0;
+
+            RefData(void* data_) : data(data_) {
+                cnt = 1;
+            }
         };
 
     private:
@@ -106,6 +112,12 @@ namespace rt {
             o.data_.f64_ = x;
             return o;
         }
+        static Obj Make_string(std::string s) {
+            Obj o;
+            o.type_ = TypeTable::Get("string");
+            o.data_.ref_ = new RefData(new String(s));
+            return o;
+        }
 
         const Type* type() {
             return type_;
@@ -120,9 +132,14 @@ namespace rt {
             return type_->isRef && data_.ref_;
         }
 
-        int32_t Get_i32()   const { return data_.i32_;   }
-        int64_t Get_i64()   const { return data_.i64_;   }
-        float   Get_f32()   const { return data_.f32_;   }
-        double  Get_f64()   const { return data_.f64_;   }
+        int32_t     Get_i32()       const { return data_.i32_;   }
+        int64_t     Get_i64()       const { return data_.i64_;   }
+        float       Get_f32()       const { return data_.f32_;   }
+        double      Get_f64()       const { return data_.f64_;   }
+        std::string Get_string()    const {
+            RefData* ref = (RefData*)(data_.ref_);
+            String*  str = (String*)(ref->data);
+            return str->ToCppString();
+        }
     };
 }

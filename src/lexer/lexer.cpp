@@ -37,13 +37,12 @@ namespace lexer {
 
         char c = code_[pos_];
 
-        // Literal | DataType
-        if (isAlpha(c)) return TokenScanWord();
+        // Multiple Chars
+        if (isAlpha(c))  return TokenScanWord();            // a...
+        if (isNumber(c)) return TokenScanNumber();          // 1...
+        if (c == '"')    return TokenScanString();          // "..."
 
-        // Number
-        if (isNumber(c)) return TokenScanNumber();
-
-        // Punctuation
+        // Single Char
         CharNext();
         switch (c) {
             case '#': {
@@ -93,6 +92,46 @@ namespace lexer {
             Token::Type::Number,
             std::string(code_.substr(pbeg, pos_ - pbeg))
         );
+    }
+
+    Token Lexer::TokenScanString() {
+        std::string lexeme = "";
+        CharNext();
+
+        while (!isScanEnd()) {
+            char c = code_[pos_];
+
+            if (c == '"') {
+                CharNext();
+                return TokenGen(Token::Type::String, lexeme);
+            }
+
+            if (c == '\n')
+                throw LogErr(LogModule::Lexer, "unclosed string");
+
+            if (c == '\\') {
+                CharNext();
+                
+                if (isScanEnd())
+                    throw LogErr(LogModule::Lexer, "unclosed string");
+
+                switch (code_[pos_]) {
+                    case 'n':  lexeme += '\n'; break;
+                    case 't':  lexeme += '\t'; break;
+                    case 'r':  lexeme += '\r'; break;
+                    case '"':  lexeme += '"';  break;
+                    case '\\': lexeme += '\\'; break;
+                    default:   throw LogErr(LogModule::Lexer, "unknown escape");
+                }
+                CharNext();
+                continue;
+            }
+
+            lexeme += c;
+            CharNext();
+        }
+
+        throw LogErr(LogModule::Lexer, "unclosed string");
     }
 
     Token Lexer::TokenScanSingleComment() {

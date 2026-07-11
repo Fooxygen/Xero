@@ -21,6 +21,7 @@ enum class AstType {
     // Const
     Const,          //  Base ------
     NumConst,       //  Number Type
+    StringConst,    //  String Type
 
     // Expr
     Expr,           //  Base ------
@@ -41,6 +42,7 @@ enum class AstType {
 static AstType BaseOfAstType(AstType type) {
     switch (type) {
         case AstType::NumConst:
+        case AstType::StringConst:
             return AstType::Const;
         case AstType::Const:
             return AstType::Expr;
@@ -80,6 +82,7 @@ public:
 
             case AstType::Const:        return "Const";
             case AstType::NumConst:     return "NumConst";
+            case AstType::StringConst:  return "StringConst";
 
             case AstType::Expr:         return "Expr";
             case AstType::IdExpr:       return "IdExpr";
@@ -243,17 +246,32 @@ public:
 // Const
 class NumConst      : public Const {
 public:
-    std::string value_str_;
+    std::string value_;
 
-    NumConst(const std::string& value_str)
-    :   value_str_(value_str)
+    NumConst(const std::string& value)
+    :   value_(value)
     {
         type_ = AstType::NumConst;
     }
 
     void AstPrintImpl(std::string indent, size_t expand) override {
-        AstLayerPrint(indent, "value_str");
-        std::cout << COLOR_GREEN << value_str_ << COLOR_DEFAULT;
+        AstLayerPrint(indent, "value");
+        std::cout << COLOR_GREEN << value_ << COLOR_DEFAULT;
+    }
+};
+class StringConst    : public Const {
+public:
+    std::string value_;
+
+    StringConst(const std::string& value)
+    :   value_(value)
+    {
+        type_ = AstType::StringConst;
+    }
+
+    void AstPrintImpl(std::string indent, size_t expand) override {
+        AstLayerPrint(indent, "value");
+        std::cout << COLOR_GREEN << '\"' << value_ << '\"' << COLOR_DEFAULT;
     }
 };
 

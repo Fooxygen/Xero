@@ -24,12 +24,14 @@ struct Token {
         RParen,             //  )
         Dot,                //  .
         Comma,              //  ,
+        Quota,              //  "
 
         // Semantic
         // └─ Literal
         Semantic,           //  Base
         Id,                 //  Identity
         Number,             //  Continuous Integer
+        String,             //  String
 
         // └─ Operator
         Operator,           //  Base
@@ -56,10 +58,12 @@ struct Token {
             case Type::RParen:
             case Type::Dot:
             case Type::Comma:
+            case Type::Quota:
                 return Type::Unsemantic;
 
             case Type::Id:
             case Type::Number:
+            case Type::String:
                 return Type::Semantic;
 
             case Type::PlusOrMinus:
@@ -95,9 +99,11 @@ struct Token {
             case Type::RParen:      return "RParen";
             case Type::Dot:         return "Dot";
             case Type::Comma:       return "Comma";
+            case Type::Quota:       return "Quota";
 
             case Type::Id:          return "Id";
             case Type::Number:      return "Number";
+            case Type::String:      return "String";
 
             case Type::PlusOrMinus: return "PlusOrMinus";
             case Type::Plus:        return "Plus";

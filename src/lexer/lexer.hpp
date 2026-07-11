@@ -63,6 +63,7 @@ namespace lexer {
         }
         Token TokenScanWord();
         Token TokenScanNumber();
+        Token TokenScanString();
         Token TokenScanSingleComment();
         Token TokenScanMultiComment();
 
@@ -74,6 +75,9 @@ namespace lexer {
 
         bool  isScanEnd() {
             return pos_ >= code_.length();
+        };
+        bool  isNextScanEnd() {
+            return pos_ + 1 >= code_.length();
         };
         
         std::optional<Token> TokenNext();

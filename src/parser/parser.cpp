@@ -52,7 +52,7 @@ namespace parser {
     Symbol Parser::Token2Symbol(const Token& token) {
         auto sym = Symbol(token);
 
-        // conversion of Semantics Tokens
+        // Conversion of Semantics Tokens
         // do not handle Unsemantics tokens
         switch (token.type) {
             case Token::Type::Id: {
@@ -61,6 +61,10 @@ namespace parser {
             }
             case Token::Type::Number: {
                 sym = Symbol(std::make_unique<NumConst>(token.lexeme));
+                break;
+            }
+            case Token::Type::String: {
+                sym = Symbol(std::make_unique<StringConst>(token.lexeme));
                 break;
             }
         }

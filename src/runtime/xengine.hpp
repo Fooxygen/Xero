@@ -7,7 +7,7 @@
 
 #include "common/ast.hpp"
 #include "runtime/table/oper.hpp"
-#include "obj.hpp"
+#include "runtime/obj/obj.hpp"
 #include "env.hpp"
 
 namespace rt {
@@ -38,6 +38,7 @@ namespace rt {
                 case AstType::CallExpr:     return Exec((CallExpr&)node);
 
                 case AstType::NumConst:     return Exec((NumConst&)node);
+                case AstType::StringConst:  return Exec((StringConst&)node);
 
                 case AstType::DeclStmt:     return Exec((DeclStmt&)node);
                 case AstType::AssignStmt:   return Exec((AssignStmt&)node);
@@ -54,6 +55,7 @@ namespace rt {
         Obj Exec(CallExpr& node);
 
         Obj Exec(NumConst& node);
+        Obj Exec(StringConst& node);
 
         Obj Exec(DeclStmt& node);
         Obj Exec(AssignStmt& node);

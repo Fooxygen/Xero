@@ -7,7 +7,7 @@
 
 #include <unordered_map>
 
-#include "obj.hpp"
+#include "runtime/obj/obj.hpp"
 
 namespace rt {
 

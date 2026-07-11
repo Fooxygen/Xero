@@ -6,7 +6,7 @@
 #pragma once
 
 #include "common/token.hpp"
-#include "runtime/obj.hpp"
+#include "runtime/obj/obj.hpp"
 
 namespace rt {
 

@@ -8,7 +8,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "runtime/obj.hpp"
+#include "runtime/obj/obj.hpp"
 
 namespace rt {
 
