@@ -29,6 +29,12 @@ namespace rt {
         String(std::string s) : String() {
             Write(s.c_str());
         }
+        String(const String& other) {
+            data_ = new char[other.capacity_];
+            length_ = other.length_;
+            capacity_ = other.capacity_;
+            memcpy(data_, other.data_, length_ + 1);
+        }
         ~String() {
             delete[] data_;
         }
@@ -63,11 +69,28 @@ namespace rt {
             memcpy(data_, s, sizeof(char) * (len + 1));
         }
 
-        String operator +(const char* s) {
+        String& operator =(const String& other) {
+            if (this == &other) return *this;
+
+            delete[] data_;
+            data_ = new char[other.capacity_];
+            length_ = other.length_;
+            capacity_ = other.capacity_;
+            memcpy(data_, other.data_, length_ + 1);
+
+            return *this;
+        }
+        String  operator +(const char* s) {
+            String res = *this;
             auto len = std::strlen(s);
-            Expand(length_ + len);
-            length_ += len;
-            memcpy(data_ + length_, s, sizeof(char) * (len + 1));
+            res.Expand(res.length_ + len);
+
+            memcpy(res.data_ + res.length_, s, len + 1);
+            res.length_ += len;
+            return res;
+        }
+        String& operator+=(const char* s) {
+            *this = *this + s;
             return *this;
         }
     };
