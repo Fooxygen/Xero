@@ -129,12 +129,10 @@ public:
     }
 };
 class Expr          : public AstNode {
-
 };
 class Const         : public Expr {
 };
 class Stmt          : public AstNode {
-
 };
 
 // Common

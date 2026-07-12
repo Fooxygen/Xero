@@ -132,7 +132,7 @@ namespace parser {
             )
         >;
 
-        // mps for Move():
+        // for Move():
         // while rule = AB[C]DE
         //     if pats = ABCDE, mps = [5, 4, 3, 2, 1]
         //     if pats = _ABDE, mps = [4, 3, 0, 2, 1]
@@ -259,10 +259,12 @@ namespace parser {
     class Parser {
     private:
         // Predefined
+
         inline static std::vector<Rule> rules_;     // Reduce Rules
         const std::vector<Token>&       tokens_;    // Lexer's Tokens
 
         // Cache
+        
         std::vector<Symbol>             symbols_;   // Symbols Stack
         std::unique_ptr<AstNode>        root_;      // Program as AST Root Node.
 
