@@ -132,14 +132,14 @@ namespace rt {
             return type_->isRef && data_.ref_;
         }
 
-        int32_t     Get_i32()       const { return data_.i32_;   }
-        int64_t     Get_i64()       const { return data_.i64_;   }
-        float       Get_f32()       const { return data_.f32_;   }
-        double      Get_f64()       const { return data_.f64_;   }
-        std::string Get_string()    const {
+        int32_t  Get_i32()       const { return data_.i32_;   }
+        int64_t  Get_i64()       const { return data_.i64_;   }
+        float    Get_f32()       const { return data_.f32_;   }
+        double   Get_f64()       const { return data_.f64_;   }
+        String&  Get_string()    const {
             RefData* ref = (RefData*)(data_.ref_);
             String*  str = (String*)(ref->data);
-            return str->ToCppString();
+            return *str;
         }
     };
 }

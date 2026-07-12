@@ -23,9 +23,6 @@ namespace rt {
             data_[0] = '\0';
             capacity_ = 1;
         }
-        String(const char* s) : String() {
-            Write(s);
-        }
         String(std::string s) : String() {
             Write(s.c_str());
         }
@@ -80,17 +77,17 @@ namespace rt {
 
             return *this;
         }
-        String  operator + (const char* s) {
-            String res = *this;
-            auto len = std::strlen(s);
-            res.Expand(res.length_ + len);
-
-            memcpy(res.data_ + res.length_, s, len + 1);
-            res.length_ += len;
+        String  operator + (const String& other) const {
+            String res;
+            res.Expand(length_ + other.length_);
+            memcpy(res.data_, data_, length_);
+            memcpy(res.data_ + length_, other.data_, other.length_);
+            res.length_ = length_ + other.length_;
+            res.data_[res.length_] = '\0';
             return res;
         }
-        String& operator +=(const char* s) {
-            *this = *this + s;
+        String& operator +=(const String& other) {
+            *this = *this + other;
             return *this;
         }
     };

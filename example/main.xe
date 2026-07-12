@@ -2,9 +2,11 @@
 x: i32 = 1;
 y: i32 = -2;
 z: f32 = 3.14;
-s: string = "Hello\nWorld!";
+s: string = "Hello World!";
+t: string = "Xero";
 
 x = x + y;
 z = y + z;
+u = s + t;
 
-println(x, y, z, s);
+println(x, y, z, u);
