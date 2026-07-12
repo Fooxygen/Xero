@@ -41,6 +41,9 @@ namespace rt {
                 if (xb == 0) throw LogErr(LogModule::Runtime, "division by zero");
                 return Obj::Make_i32(a.Get_i32() / xb);
             },
+            .neg        = [](const Obj& a) {
+                return Obj::Make_i32(-a.Get_i32());
+            }
         });
 
         // i64
@@ -76,6 +79,9 @@ namespace rt {
                 if (xb == 0) throw LogErr(LogModule::Runtime, "division by zero");
                 return Obj::Make_i64(a.Get_i64() / xb);
             },
+            .neg        = [](const Obj& a) {
+                return Obj::Make_i64(-a.Get_i64());
+            }
         });
 
         // f32
@@ -114,6 +120,9 @@ namespace rt {
                 else                   return Obj();
                 return Obj::Make_f32(a.Get_f32() / xb);
             },
+            .neg        = [](const Obj& a) {
+                return Obj::Make_f32(-a.Get_f32());
+            }
         });
 
         // f64
@@ -156,6 +165,9 @@ namespace rt {
                 else                   return Obj();
                 return Obj::Make_f64(a.Get_f64() / xb);
             },
+            .neg        = [](const Obj& a) {
+                return Obj::Make_f64(-a.Get_f64());
+            }
         });
 
         // string
@@ -175,7 +187,7 @@ namespace rt {
                 for (size_t i = 0; i < args.size(); i++) {
                     auto& arg = args[i];
                     if (i > 0) std::cout << " ";
-                    std::cout << arg.type()->to_string(arg);
+                    std::cout << CallThrow(arg.type()->to_string, arg);
                 }
                 return Obj{};
             };
@@ -209,43 +221,34 @@ namespace rt {
             }
         };
 
-        if (auto fn = pick(lobj.type())) {
-            auto obj = fn(lobj, robj);
-            if (!obj.isNone()) return obj;
-        }
+        auto obj = CallTry(pick(lobj.type()), lobj, robj);
+        if (!obj.isNone()) return obj;
 
-        if (auto fn = pick(robj.type())) {
-            auto obj = fn(robj, lobj);
-            if (!obj.isNone()) return obj;
-        }
+        obj = CallTry(pick(robj.type()), robj, lobj);
+        if (!obj.isNone()) return obj;
 
         throw LogErr(LogModule::Runtime,
-            std::format("unsupported operator '{}'", Token::TypeName(node.opertype_))
-        );
+            std::format("unsupported operator '{}'", Token::TypeName(node.opertype_)));
     }
 
     Obj Xengine::Exec(NegExpr& node) {
         auto obj = Exec(*node.expr_);
-
-        if (obj.is("i32"))  return Obj::Make_i32(-obj.Get_i32());
-        if (obj.is("i64"))  return Obj::Make_i64(-obj.Get_i64());
-        if (obj.is("f32"))  return Obj::Make_f32(-obj.Get_f32());
-        if (obj.is("f64"))  return Obj::Make_f64(-obj.Get_f64());
-
-        throw LogErr(LogModule::Runtime, "unsupported unary negation");
+        auto neg = CallTry(obj.type()->neg, obj);
+        if (neg.isNone()) {
+            throw LogErr(LogModule::Runtime, "unsupported unary negation");
+        }
+        return neg;
     }
 
     Obj Xengine::Exec(CallExpr& node) {
         auto& id = (IdExpr&)*node.callee();
-        auto  fn = BinfnTable::Get(id.value_);
-        if (!fn)
-            throw LogErr(LogModule::Runtime, "undefined built-in fn: " + id.value_);
 
         std::vector<Obj> args;
-        for (auto& arg : node.arglist()->args())
+        for (auto& arg : node.arglist()->args()) {
             args.emplace_back(Exec(*arg));
+        }
 
-        return fn(args);
+        return CallThrow(BinfnTable::Get(id.value_), args);
     }
 
     Obj Xengine::Exec(NumConst& node) {

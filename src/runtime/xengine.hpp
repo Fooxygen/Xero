@@ -57,5 +57,22 @@ namespace rt {
         Obj Exec(AssignStmt& node);
 
         Obj Exec(Program& node);
+
+    public:
+        // Call Wrapper
+
+        // Throw while call equals null
+        template<typename Call, typename... Args>
+        static decltype(auto) CallThrow(Call call, Args&&... args) {
+            if (!call) throw LogErr(LogModule::Runtime, "call not implemented for type");
+            return call(std::forward<Args>(args)...);
+        }
+
+        // Return None Obj while call equals null
+        template<typename Call, typename... Args>
+        static decltype(auto) CallTry(Call call, Args&&... args) {
+            if (!call) return Obj();
+            return call(std::forward<Args>(args)...);
+        }
     };
 }
