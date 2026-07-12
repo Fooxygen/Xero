@@ -14,6 +14,7 @@ add_executable(xero
     parser/parser.cpp
     parser/rule.cpp
     runtime/xengine.cpp
+    runtime/register.cpp
 )
 
 target_include_directories(xero PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
