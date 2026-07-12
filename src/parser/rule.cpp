@@ -13,6 +13,15 @@ namespace parser {
         using PATS    = std::initializer_list<SymbolPattern>;
         using ASTNODE = std::unique_ptr<AstNode>;
 
+        // Tools
+
+        static auto isArgTerminator = [](const Token* next) {
+            if (!next) return true;                             // EOF
+            return  next->type == Token::Type::Comma ||         // ,
+                    next->type == Token::Type::Semicolon ||     // ;
+                    next->type == Token::Type::RParen;          // )
+        };
+
         rules_.clear();
         
         // Var and Const
@@ -77,7 +86,9 @@ namespace parser {
                     TT::Comma,
                     AT::Expr
                 },
-                [](std::vector<Symbol>& symbols, auto*) {
+                [](std::vector<Symbol>& symbols, const Token* token_next) -> ASTNODE {
+                    if (!isArgTerminator(token_next)) return nullptr;
+
                     std::vector<std::unique_ptr<Expr>> args;
                     args.emplace_back(Rule::Move<Expr>(symbols, 1));
                     args.emplace_back(Rule::Move<Expr>(symbols, 3));
@@ -93,7 +104,9 @@ namespace parser {
                     TT::Comma,
                     AT::Expr
                 },
-                [](std::vector<Symbol>& symbols, auto*) {
+                [](std::vector<Symbol>& symbols, const Token* token_next) -> ASTNODE {
+                    if (!isArgTerminator(token_next)) return nullptr;
+                    
                     auto arglist = Rule::Move<ArgList>(symbols, 1);
                     auto expr    = Rule::Move<Expr>(symbols, 3);
                     arglist->args().emplace_back(std::move(expr));
