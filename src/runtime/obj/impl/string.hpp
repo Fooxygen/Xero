@@ -69,7 +69,7 @@ namespace rt {
             memcpy(data_, s, sizeof(char) * (len + 1));
         }
 
-        String& operator =(const String& other) {
+        String& operator = (const String& other) {
             if (this == &other) return *this;
 
             delete[] data_;
@@ -80,7 +80,7 @@ namespace rt {
 
             return *this;
         }
-        String  operator +(const char* s) {
+        String  operator + (const char* s) {
             String res = *this;
             auto len = std::strlen(s);
             res.Expand(res.length_ + len);
@@ -89,7 +89,7 @@ namespace rt {
             res.length_ += len;
             return res;
         }
-        String& operator+=(const char* s) {
+        String& operator +=(const char* s) {
             *this = *this + s;
             return *this;
         }

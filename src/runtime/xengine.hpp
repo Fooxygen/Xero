@@ -6,7 +6,6 @@
 #pragma once
 
 #include "common/ast.hpp"
-#include "runtime/table/oper.hpp"
 #include "runtime/obj/obj.hpp"
 #include "env.hpp"
 
@@ -19,15 +18,12 @@ namespace rt {
     public:
         Xengine() {
             TypeTable::Reset();
-            OperTable::Reset();
 
             TypeTableRegister();
-            OperTableRegister();
             BinfnRegister();
         }
         
         void TypeTableRegister();
-        void OperTableRegister();
         void BinfnRegister();
 
         Obj Exec(AstNode& node) {

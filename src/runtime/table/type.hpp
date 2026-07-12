@@ -19,7 +19,8 @@ namespace rt {
         bool             isRef = false;     // Reference Type
 
         // Methods
-        static void destroy_default(void*) {
+
+        static void        destroy_default(void*) {
             throw LogErr(LogModule::Runtime, "method 'destroy()' not implemented for type");
         }
         static std::string to_string_default(const Obj&) {
@@ -28,6 +29,13 @@ namespace rt {
 
         void        (*destroy)(void*)           = destroy_default;
         std::string (*to_string)(const Obj&)    = to_string_default;
+
+        // Oper
+
+        Obj (*plus)(const Obj&, const Obj&)  = nullptr;
+        Obj (*minus)(const Obj&, const Obj&) = nullptr;
+        Obj (*star)(const Obj&, const Obj&)  = nullptr;
+        Obj (*slash)(const Obj&, const Obj&) = nullptr;
     };
 
     class TypeTable {

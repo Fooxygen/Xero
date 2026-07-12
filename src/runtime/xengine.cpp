@@ -12,132 +12,115 @@
 namespace rt {
         
     void Xengine::TypeTableRegister() {
+
+        // none
         TypeTable::Set(Type{
             .name = "none", .size = 0
         });
-        TypeTable::Set(Type{
-            .name = "i32", .size = 4,
-            .to_string = [](const Obj& o) { return std::to_string(o.Get_i32()); }
-        });
-        TypeTable::Set(Type{
-            .name = "i64", .size = 8,
-            .to_string = [](const Obj& o) { return std::to_string(o.Get_i64()); }
-        });
-        TypeTable::Set(Type{
-            .name = "f32", .size = 4,
-            .to_string = [](const Obj& o) { return std::to_string(o.Get_f32()); }
-        });
-        TypeTable::Set(Type{
-            .name = "f64", .size = 8,
-            .to_string = [](const Obj& o) { return std::to_string(o.Get_f64()); }
-        });
-        TypeTable::Set(Type{
-            .name = "string", .size = 0, .isRef = true,
-            .destroy = [](void* data) { delete (String*)data; },
-            .to_string = [](const Obj& o) { return o.Get_string(); }
-        });
-    }
-
-    void Xengine::OperTableRegister() {
-        using TT = Token::Type;
 
         // i32
-        {
-            OperTable::Set(TypeTable::Get("i32"), TT::Plus, [](const Obj& a, const Obj& b) {
+        TypeTable::Set(Type{
+            .name = "i32", .size = 4,
+            .to_string  = [](const Obj& o) { return std::to_string(o.Get_i32()); },
+            .plus       = [](const Obj& a, const Obj& b) {
                 if (b.is("i32")) return Obj::Make_i32(a.Get_i32() + b.Get_i32());
-                return Obj();    // unsupported
-            });
-            OperTable::Set(TypeTable::Get("i32"), TT::Minus, [](const Obj& a, const Obj& b) {
+                return Obj();
+            },
+            .minus      = [](const Obj& a, const Obj& b) {
                 if (b.is("i32")) return Obj::Make_i32(a.Get_i32() - b.Get_i32());
                 return Obj();
-            });
-            OperTable::Set(TypeTable::Get("i32"), TT::Star, [](const Obj& a, const Obj& b) {
+            },
+            .star       = [](const Obj& a, const Obj& b) {
                 if (b.is("i32")) return Obj::Make_i32(a.Get_i32() * b.Get_i32());
                 return Obj();
-            });
-            OperTable::Set(TypeTable::Get("i32"), TT::Slash, [](const Obj& a, const Obj& b) {
+            },
+            .slash      = [](const Obj& a, const Obj& b) {
                 int32_t xb = 0;
                 if (b.is("i32")) xb = b.Get_i32();
                 else return Obj();
-
                 if (xb == 0) throw LogErr(LogModule::Runtime, "division by zero");
                 return Obj::Make_i32(a.Get_i32() / xb);
-            });
-        }
+            },
+        });
 
         // i64
-        {
-            OperTable::Set(TypeTable::Get("i64"), TT::Plus, [](const Obj& a, const Obj& b) {
+        TypeTable::Set(Type{
+            .name = "i64", .size = 8,
+            .to_string  = [](const Obj& o) { return std::to_string(o.Get_i64()); },
+            .plus       = [](const Obj& a, const Obj& b) {
                 int64_t xb = 0;
                 if      (b.is("i64")) xb = b.Get_i64();
                 else if (b.is("i32")) xb = b.Get_i32();
                 else                  return Obj();
                 return Obj::Make_i64(a.Get_i64() + xb);
-            });
-            OperTable::Set(TypeTable::Get("i64"), TT::Minus, [](const Obj& a, const Obj& b) {
+            },
+            .minus      = [](const Obj& a, const Obj& b) {
                 int64_t xb = 0;
                 if      (b.is("i64")) xb = b.Get_i64();
                 else if (b.is("i32")) xb = b.Get_i32();
                 else                  return Obj();
                 return Obj::Make_i64(a.Get_i64() - xb);
-            });
-            OperTable::Set(TypeTable::Get("i64"), TT::Star, [](const Obj& a, const Obj& b) {
+            },
+            .star       = [](const Obj& a, const Obj& b) {
                 int64_t xb = 0;
                 if      (b.is("i64")) xb = b.Get_i64();
                 else if (b.is("i32")) xb = b.Get_i32();
                 else                  return Obj();
                 return Obj::Make_i64(a.Get_i64() * xb);
-            });
-            OperTable::Set(TypeTable::Get("i64"), TT::Slash, [](const Obj& a, const Obj& b) {
+            },
+            .slash      = [](const Obj& a, const Obj& b) {
                 int64_t xb = 0;
                 if      (b.is("i64")) xb = b.Get_i64();
                 else if (b.is("i32")) xb = b.Get_i32();
                 else                  return Obj();
-
                 if (xb == 0) throw LogErr(LogModule::Runtime, "division by zero");
                 return Obj::Make_i64(a.Get_i64() / xb);
-            });
-        }
+            },
+        });
 
         // f32
-        {
-            OperTable::Set(TypeTable::Get("f32"), TT::Plus, [](const Obj& a, const Obj& b) {
+        TypeTable::Set(Type{
+            .name = "f32", .size = 4,
+            .to_string  = [](const Obj& o) { return std::to_string(o.Get_f32()); },
+            .plus       = [](const Obj& a, const Obj& b) {
                 float xb = 0.0f;
                 if      (b.is("f32"))  xb = b.Get_f32();
                 else if (b.is("i32"))  xb = (float)b.Get_i32();
                 else if (b.is("i64"))  xb = (float)b.Get_i64();
                 else                   return Obj();
                 return Obj::Make_f32(a.Get_f32() + xb);
-            });
-            OperTable::Set(TypeTable::Get("f32"), TT::Minus, [](const Obj& a, const Obj& b) {
+            },
+            .minus      = [](const Obj& a, const Obj& b) {
                 float xb = 0.0f;
                 if      (b.is("f32"))  xb = b.Get_f32();
                 else if (b.is("i32"))  xb = (float)b.Get_i32();
                 else if (b.is("i64"))  xb = (float)b.Get_i64();
                 else                   return Obj();
                 return Obj::Make_f32(a.Get_f32() - xb);
-            });
-            OperTable::Set(TypeTable::Get("f32"), TT::Star, [](const Obj& a, const Obj& b) {
+            },
+            .star       = [](const Obj& a, const Obj& b) {
                 float xb = 0.0f;
                 if      (b.is("f32"))  xb = b.Get_f32();
                 else if (b.is("i32"))  xb = (float)b.Get_i32();
                 else if (b.is("i64"))  xb = (float)b.Get_i64();
                 else                   return Obj();
                 return Obj::Make_f32(a.Get_f32() * xb);
-            });
-            OperTable::Set(TypeTable::Get("f32"), TT::Slash, [](const Obj& a, const Obj& b) {
+            },
+            .slash      = [](const Obj& a, const Obj& b) {
                 float xb = 0.0f;
                 if      (b.is("f32"))  xb = b.Get_f32();
                 else if (b.is("i32"))  xb = (float)b.Get_i32();
                 else if (b.is("i64"))  xb = (float)b.Get_i64();
                 else                   return Obj();
                 return Obj::Make_f32(a.Get_f32() / xb);
-            });
-        }
+            },
+        });
 
         // f64
-        {
-            OperTable::Set(TypeTable::Get("f64"), TT::Plus, [](const Obj& a, const Obj& b) {
+        TypeTable::Set(Type{
+            .name = "f64", .size = 8,
+            .to_string  = [](const Obj& o) { return std::to_string(o.Get_f64()); },
+            .plus       = [](const Obj& a, const Obj& b) {
                 double xb = 0.0;
                 if      (b.is("f64"))  xb = b.Get_f64();
                 else if (b.is("f32"))  xb = b.Get_f32();
@@ -145,8 +128,8 @@ namespace rt {
                 else if (b.is("i32"))  xb = (double)b.Get_i32();
                 else                   return Obj();
                 return Obj::Make_f64(a.Get_f64() + xb);
-            });
-            OperTable::Set(TypeTable::Get("f64"), TT::Minus, [](const Obj& a, const Obj& b) {
+            },
+            .minus      = [](const Obj& a, const Obj& b) {
                 double xb = 0.0;
                 if      (b.is("f64"))  xb = b.Get_f64();
                 else if (b.is("f32"))  xb = b.Get_f32();
@@ -154,8 +137,8 @@ namespace rt {
                 else if (b.is("i32"))  xb = (double)b.Get_i32();
                 else                   return Obj();
                 return Obj::Make_f64(a.Get_f64() - xb);
-            });
-            OperTable::Set(TypeTable::Get("f64"), TT::Star, [](const Obj& a, const Obj& b) {
+            },
+            .star       = [](const Obj& a, const Obj& b) {
                 double xb = 0.0;
                 if      (b.is("f64"))  xb = b.Get_f64();
                 else if (b.is("f32"))  xb = b.Get_f32();
@@ -163,8 +146,8 @@ namespace rt {
                 else if (b.is("i32"))  xb = (double)b.Get_i32();
                 else                   return Obj();
                 return Obj::Make_f64(a.Get_f64() * xb);
-            });
-            OperTable::Set(TypeTable::Get("f64"), TT::Slash, [](const Obj& a, const Obj& b) {
+            },
+            .slash      = [](const Obj& a, const Obj& b) {
                 double xb = 0.0;
                 if      (b.is("f64"))  xb = b.Get_f64();
                 else if (b.is("f32"))  xb = b.Get_f32();
@@ -172,10 +155,17 @@ namespace rt {
                 else if (b.is("i32"))  xb = (double)b.Get_i32();
                 else                   return Obj();
                 return Obj::Make_f64(a.Get_f64() / xb);
-            });
-        }
+            },
+        });
+
+        // string
+        TypeTable::Set(Type{
+            .name = "string", .size = 0, .isRef = true,
+            .destroy    = [](void* data) { delete (String*)data; },
+            .to_string  = [](const Obj& o) { return o.Get_string(); },
+        });
     }
-    
+
     void Xengine::BinfnRegister() {
         using ARGS = std::vector<Obj>&;
         
@@ -209,15 +199,23 @@ namespace rt {
         auto lobj = Exec(*node.lexpr_);
         auto robj = Exec(*node.rexpr_);
 
-        auto func = OperTable::Get(lobj.type(), node.opertype_);
-        if (func) {
-            auto obj = func(lobj, robj);
+        auto pick = [&](const Type* t) -> Obj(*)(const Obj&, const Obj&) {
+            switch (node.opertype_) {
+                case Token::Type::Plus:  return t->plus;
+                case Token::Type::Minus: return t->minus;
+                case Token::Type::Star:  return t->star;
+                case Token::Type::Slash: return t->slash;
+                default:                 return nullptr;
+            }
+        };
+
+        if (auto fn = pick(lobj.type())) {
+            auto obj = fn(lobj, robj);
             if (!obj.isNone()) return obj;
         }
 
-        func = OperTable::Get(robj.type(), node.opertype_);
-        if (func) {
-            auto obj = func(robj, lobj);
+        if (auto fn = pick(robj.type())) {
+            auto obj = fn(robj, lobj);
             if (!obj.isNone()) return obj;
         }
 
