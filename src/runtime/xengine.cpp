@@ -255,7 +255,7 @@ namespace rt {
         const auto& numstr = node.value_;
 
         // integer
-        if (numstr.contains(".")) {
+        if (!numstr.contains(".")) {
             
             // i32
             {
