@@ -181,66 +181,71 @@ namespace parser {
             size_t np = patterns_.size();
             size_t ns = symbols.size();
 
-            size_t start = (ns > np) ? (ns - np) : 0;
-            size_t len   = ns - start;
+            size_t start_max = (ns > np) ? (ns - np) : 0;
 
-            std::vector<std::vector<bool>> dp(len + 1, std::vector<bool>(np + 1, false));
-            dp[0][0] = true;
+            for (size_t start = start_max; start <= ns; start++) {
+                
+                size_t len = ns - start;
+                if (len == 0) break;
 
-            for (size_t j = 0; j < np; j++) {
-                bool isOpt = patterns_[j].isOptional();
+                std::vector<std::vector<bool>> dp(len + 1, std::vector<bool>(np + 1, false));
+                dp[0][0] = true;
 
-                for (size_t i = 0; i <= len; i++) {
-                    if (!dp[i][j]) continue;  // unreachable
+                for (size_t j = 0; j < np; j++) {
+                    bool isOpt = patterns_[j].isOptional();
 
-                    if (isOpt) {
-                        // Optional 1: Mismatch
-                        dp[i][j + 1] = true;
+                    for (size_t i = 0; i <= len; i++) {
+                        if (!dp[i][j]) continue;  // unreachable
 
-                        // Optional 2: Match
-                        if (i < len && PatternMatch(patterns_[j], symbols[start + i])) dp[i + 1][j + 1] = true;
-                    }
-                    
-                    else {
-                        // Match
-                        if (i < len && PatternMatch(patterns_[j], symbols[start + i]))dp[i + 1][j + 1] = true;
+                        if (isOpt) {
+                            // Optional 1: Mismatch
+                            dp[i][j + 1] = true;
+
+                            // Optional 2: Match
+                            if (i < len && PatternMatch(patterns_[j], symbols[start + i])) dp[i + 1][j + 1] = true;
+                        }
+                        
+                        else {
+                            // Match
+                            if (i < len && PatternMatch(patterns_[j], symbols[start + i]))dp[i + 1][j + 1] = true;
+                        }
                     }
                 }
-            }
 
-            // Success
-            if (dp[len][np]) {
+                // Success
+                if (dp[len][np]) {
 
-                // Fill Move Positions for Move()
-                move_positions_.resize(np);
+                    // Fill Move Positions for Move()
+                    move_positions_.resize(np);
 
-                size_t cnt_skip = 0;
-                size_t i = len, j = np;
-                while (j > 0) {
+                    size_t cnt_skip = 0;
+                    size_t i = len, j = np;
+                    while (j > 0) {
 
-                    // Skiped
-                    // exist path: (i, j - 1) -> (i, j) dir: →
-                    if (patterns_[j - 1].isOptional() && dp[i][j - 1]) {
-                        // mark zero: not used
-                        move_positions_[j - 1] = 0;
-                        cnt_skip++;
+                        // Skiped
+                        // exist path: (i, j - 1) -> (i, j) dir: →
+                        if (patterns_[j - 1].isOptional() && dp[i][j - 1]) {
+                            // mark zero: not used
+                            move_positions_[j - 1] = 0;
+                            cnt_skip++;
+                        }
+
+                        // Not Skiped
+                        // exist path: (i - 1, j - 1) -> (i, j) dir: ↘
+                        else {
+                            move_positions_[j - 1] = (int)(np - j) - (int)cnt_skip + 1;
+                            i--;
+                        }
+
+                        j--;
                     }
 
-                    // Not Skiped
-                    // exist path: (i - 1, j - 1) -> (i, j) dir: ↘
-                    else {
-                        move_positions_[j - 1] = (int)(np - j) - (int)cnt_skip + 1;
-                        i--;
-                    }
+                    out_reduce_len = 0;
+                    for (auto& p : move_positions_)
+                        if (p != 0) out_reduce_len++;
 
-                    j--;
+                    return true;
                 }
-
-                out_reduce_len = 0;
-                for (auto& p : move_positions_)
-                    if (p != 0) out_reduce_len++;
-
-                return true;
             }
 
             return false;
