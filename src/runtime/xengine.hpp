@@ -20,26 +20,29 @@ namespace rt {
             TypeTable::Reset();
 
             TypeRegister();
-            BinfnRegister();
+            FnRegister();
+            MethodRegister();
         }
         
         void TypeRegister();
-        void BinfnRegister();
+        void FnRegister();
+        void MethodRegister();
 
         Obj Exec(AstNode& node) {
             switch (node.type_) {
-                case AstType::IdExpr:       return Exec((IdExpr&)node);
-                case AstType::OperExpr:     return Exec((OperExpr&)node);
-                case AstType::NegExpr:      return Exec((NegExpr&)node);
-                case AstType::CallExpr:     return Exec((CallExpr&)node);
+                case AstType::IdExpr:           return Exec((IdExpr&)node);
+                case AstType::OperExpr:         return Exec((OperExpr&)node);
+                case AstType::NegExpr:          return Exec((NegExpr&)node);
+                case AstType::FnCallExpr:       return Exec((FnCallExpr&)node);
+                case AstType::MethodCallExpr:   return Exec((MethodCallExpr&)node);
 
-                case AstType::NumConst:     return Exec((NumConst&)node);
-                case AstType::StringConst:  return Exec((StringConst&)node);
+                case AstType::NumConst:         return Exec((NumConst&)node);
+                case AstType::StringConst:      return Exec((StringConst&)node);
 
-                case AstType::DeclStmt:     return Exec((DeclStmt&)node);
-                case AstType::AssignStmt:   return Exec((AssignStmt&)node);
+                case AstType::DeclStmt:         return Exec((DeclStmt&)node);
+                case AstType::AssignStmt:       return Exec((AssignStmt&)node);
 
-                case AstType::Program:      return Exec((Program&)node);
+                case AstType::Program:          return Exec((Program&)node);
 
                 default: return Obj();
             }
@@ -48,7 +51,8 @@ namespace rt {
         Obj Exec(IdExpr& node);
         Obj Exec(OperExpr& node);
         Obj Exec(NegExpr& node);
-        Obj Exec(CallExpr& node);
+        Obj Exec(FnCallExpr& node);
+        Obj Exec(MethodCallExpr& node);
 
         Obj Exec(NumConst& node);
         Obj Exec(StringConst& node);

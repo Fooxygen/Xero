@@ -8,4 +8,4 @@ t: string = "Xero!";
 x = x + y;
 z = y + z;
 
-println(x, y, z, s + t);
+println(x, y, z, s.len());

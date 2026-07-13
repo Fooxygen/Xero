@@ -4,7 +4,8 @@
 //  Licensed under the MIT License.
 
 #include "xengine.hpp"
-#include "table/binfn.hpp"
+#include "table/fn.hpp"
+#include "table/method.hpp"
 
 namespace rt {
 
@@ -178,7 +179,7 @@ namespace rt {
         });
     }
 
-    void Xengine::BinfnRegister() {
+    void Xengine::FnRegister() {
         using ARGS = std::vector<Obj>&;
         
         // print and println
@@ -192,13 +193,26 @@ namespace rt {
                 return Obj{};
             };
 
-            BinfnTable::Set("print", [](ARGS args) {
+            FnTable::Set("print", [](ARGS args) {
                 return impl(args);
             });
-            BinfnTable::Set("println", [](ARGS args) {
+            FnTable::Set("println", [](ARGS args) {
                 auto obj = impl(args);
                 std::cout << std::endl;
                 return obj;
+            });
+        }
+    }
+
+    void Xengine::MethodRegister() {
+        using ARGS = std::vector<Obj>&;
+        
+        // string
+        {
+            auto type = TypeTable::Get("string");
+
+            MethodTable::Set(type, "len", [](ARGS args) {
+                return Obj::Make_i32(args[0].Get_string().length());
             });
         }
     }

@@ -24,6 +24,8 @@ namespace rt {
             }
         };
 
+        using Fn = Obj(*)(std::vector<Obj>&);
+
     private:
         union {
             void*       ref_;

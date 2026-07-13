@@ -70,11 +70,11 @@ namespace parser {
         {
             RuleAdd(
                 PATS{
-                    AT::CallExpr,
+                    AT::FnCallExpr,
                     TT::Semicolon
                 },
                 [](auto& symbols, auto*) {
-                    return Rule::Move<CallExpr>(symbols, 1);
+                    return Rule::Move<FnCallExpr>(symbols, 1);
                 }
             );
         }
@@ -114,11 +114,67 @@ namespace parser {
                 }
             );
         }
-        // └─ expr(expr) -> callexpr
+        
+        // └─ target.expr(expr) -> methodcallexpr
         {
             RuleAdd(
                 PATS{
                     AT::Expr,
+                    TT::Dot,
+                    AT::IdExpr,
+                    TT::LParen,
+                    AT::Expr,
+                    TT::RParen
+                },
+                [](std::vector<Symbol>& symbols, auto*) {
+                    std::vector<std::unique_ptr<Expr>> args;
+                    args.emplace_back(
+                        Rule::Move<Expr>(symbols, 5)
+                    );
+
+                    return std::make_unique<MethodCallExpr>(
+                        Rule::Move<Expr>(symbols, 1),
+                        Rule::Move<IdExpr>(symbols, 3),
+                        std::make_unique<ArgList>(args)
+                    );
+                }
+            );
+        }
+        // └─ target.expr(arglist?) -> methodcallexpr
+        {
+            RuleAdd(
+                PATS{
+                    AT::Expr,
+                    TT::Dot,
+                    AT::IdExpr,
+                    TT::LParen,
+                    SymbolPattern::Opt(AT::ArgList),
+                    TT::RParen
+                },
+                [](std::vector<Symbol>& symbols, auto*) {
+                    std::vector<std::unique_ptr<Expr>> args;
+
+                    // Option [ArgList] Check
+                    if (Rule::move_positions_[4] != 0) {
+                        auto arglist = Rule::Move<ArgList>(symbols, 5);
+                        for (auto& arg : arglist->args())
+                            args.emplace_back(std::move(arg));
+                    }
+
+                    return std::make_unique<MethodCallExpr>(
+                        Rule::Move<Expr>(symbols, 1),
+                        Rule::Move<IdExpr>(symbols, 3),
+                        std::make_unique<ArgList>(args)
+                    );
+                }
+            );
+        }
+        
+        // └─ expr(expr) -> fncallexpr
+        {
+            RuleAdd(
+                PATS{
+                    AT::IdExpr,
                     TT::LParen,
                     AT::Expr,
                     TT::RParen
@@ -129,18 +185,18 @@ namespace parser {
                         Rule::Move<Expr>(symbols, 3)
                     );
 
-                    return std::make_unique<CallExpr>(
-                        Rule::Move<Expr>(symbols, 1),
+                    return std::make_unique<FnCallExpr>(
+                        Rule::Move<IdExpr>(symbols, 1),
                         std::make_unique<ArgList>(args)
                     );
                 }
             );
         }
-        // └─ expr(arglist?) -> callexpr
+        // └─ expr(arglist?) -> fncallexpr
         {
             RuleAdd(
                 PATS{
-                    AT::Expr,
+                    AT::IdExpr,
                     TT::LParen,
                     SymbolPattern::Opt(AT::ArgList),
                     TT::RParen
@@ -155,8 +211,8 @@ namespace parser {
                             args.emplace_back(std::move(arg));
                     }
 
-                    return std::make_unique<CallExpr>(
-                        Rule::Move<Expr>(symbols, 1),
+                    return std::make_unique<FnCallExpr>(
+                        Rule::Move<IdExpr>(symbols, 1),
                         std::make_unique<ArgList>(args)
                     );
                 }

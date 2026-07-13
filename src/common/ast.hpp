@@ -16,27 +16,28 @@ enum class AstType {
     Undefined,
 
     // Entry
-    Program,        //  Entrance
+    Program,            //  Entrance
 
     // Const
-    Const,          //  Base ------
-    NumConst,       //  Number Type
-    StringConst,    //  String Type
+    Const,              //  Base ------
+    NumConst,           //  Number Type
+    StringConst,        //  String Type
 
     // Expr
-    Expr,           //  Base ------
-    IdExpr,         //  Identity
-    OperExpr,       //  Operation
-    NegExpr,        //  Negative
-    CallExpr,       //  Func Call
+    Expr,               //  Base ------
+    IdExpr,             //  Identity
+    OperExpr,           //  Operation
+    NegExpr,            //  Negative
+    FnCallExpr,         //  Func Call
+    MethodCallExpr,     //  Method Call
 
     // Stmt
-    Stmt,           //  Base ------
-    DeclStmt,       //  Declaration
-    AssignStmt,     //  Assignment
+    Stmt,               //  Base ------
+    DeclStmt,           //  Declaration
+    AssignStmt,         //  Assignment
 
     // Common
-    ArgList,        // List of Args
+    ArgList,            // List of Args
 };
 
 static AstType BaseOfAstType(AstType type) {
@@ -50,7 +51,8 @@ static AstType BaseOfAstType(AstType type) {
         case AstType::IdExpr:
         case AstType::OperExpr:
         case AstType::NegExpr:
-        case AstType::CallExpr:
+        case AstType::FnCallExpr:
+        case AstType::MethodCallExpr:
             return AstType::Expr;
 
         case AstType::DeclStmt:
@@ -76,23 +78,24 @@ public:
 
     const std::string TypeName() const {
         switch (type_) {
-            case AstType::Program:      return "Program";
+            case AstType::Program:          return "Program";
 
-            case AstType::ArgList:      return "ArgList";
+            case AstType::ArgList:          return "ArgList";
 
-            case AstType::Const:        return "Const";
-            case AstType::NumConst:     return "NumConst";
-            case AstType::StringConst:  return "StringConst";
+            case AstType::Const:            return "Const";
+            case AstType::NumConst:         return "NumConst";
+            case AstType::StringConst:      return "StringConst";
 
-            case AstType::Expr:         return "Expr";
-            case AstType::IdExpr:       return "IdExpr";
-            case AstType::OperExpr:     return "OperExpr";
-            case AstType::NegExpr:      return "NegExpr";
-            case AstType::CallExpr:     return "CallExpr";
+            case AstType::Expr:             return "Expr";
+            case AstType::IdExpr:           return "IdExpr";
+            case AstType::OperExpr:         return "OperExpr";
+            case AstType::NegExpr:          return "NegExpr";
+            case AstType::FnCallExpr:       return "FnCallExpr";
+            case AstType::MethodCallExpr:   return "MethodCallExpr";
 
-            case AstType::Stmt:         return "Stmt";
-            case AstType::DeclStmt:     return "DeclStmt";
-            case AstType::AssignStmt:   return "AssignStmt";
+            case AstType::Stmt:             return "Stmt";
+            case AstType::DeclStmt:         return "DeclStmt";
+            case AstType::AssignStmt:       return "AssignStmt";
 
             default: 
                 LogWarn(LogModule::Parser, "undefined print name for AstNode");
@@ -128,15 +131,15 @@ public:
         }
     }
 };
-class Expr          : public AstNode {
+class Expr              : public AstNode {
 };
-class Const         : public Expr {
+class Const             : public Expr {
 };
-class Stmt          : public AstNode {
+class Stmt              : public AstNode {
 };
 
 // Common
-class ArgList       : public AstNode {
+class ArgList           : public AstNode {
 private:
     std::vector<std::unique_ptr<Expr>> args_;
 
@@ -159,7 +162,7 @@ public:
 };
 
 // Expr
-class IdExpr        : public Expr {
+class IdExpr            : public Expr {
 public:
     std::string value_ = "";
 
@@ -172,7 +175,7 @@ public:
         std::cout << COLOR_CYAN << value_ << COLOR_DEFAULT;
     }
 };
-class OperExpr      : public Expr {
+class OperExpr          : public Expr {
 public:
     Token::Type opertype_ = Token::Type::Undefined;
     std::unique_ptr<Expr> lexpr_;
@@ -201,7 +204,7 @@ public:
         rexpr_->AstPrint(indent, 8);
     }
 };
-class NegExpr       : public Expr {
+class NegExpr           : public Expr {
 public:
     std::unique_ptr<Expr> expr_;
 
@@ -216,33 +219,70 @@ public:
         expr_->AstPrint(indent, 7);
     }
 };
-class CallExpr      : public Expr {
+class FnCallExpr        : public Expr {
 private:
-    std::unique_ptr<Expr>    callee_;
+    std::unique_ptr<IdExpr>  callee_;
     std::unique_ptr<ArgList> arglist_;
 
 public:
-    CallExpr(
-        std::unique_ptr<Expr>    callee,
+    FnCallExpr(
+        std::unique_ptr<IdExpr>  callee,
         std::unique_ptr<ArgList> arglist
     )
     :   callee_(std::move(callee)),
         arglist_(std::move(arglist))
     {
-        type_ = AstType::CallExpr;
+        type_ = AstType::FnCallExpr;
     }
 
     void AstPrintImpl(std::string indent, size_t expand) override {
+        AstLayerPrint(indent, "callee");
+        callee_->AstPrint(indent, 9);
+
         AstLayerPrint(indent, "arglist");
         arglist_->AstPrint(indent, 10);
     }
 
-    Expr*    callee()  const { return callee_.get(); }
+    IdExpr*  callee()  const { return callee_.get(); }
+    ArgList* arglist() const { return arglist_.get(); }
+};
+class MethodCallExpr    : public Expr {
+private:
+    std::unique_ptr<Expr>    target_;
+    std::unique_ptr<IdExpr>  callee_;
+    std::unique_ptr<ArgList> arglist_;
+
+public:
+    MethodCallExpr(
+        std::unique_ptr<Expr>    target,
+        std::unique_ptr<IdExpr>  callee,
+        std::unique_ptr<ArgList> arglist
+    )
+    :   target_(std::move(target)),
+        callee_(std::move(callee)),
+        arglist_(std::move(arglist))
+    {
+        type_ = AstType::MethodCallExpr;
+    }
+
+    void AstPrintImpl(std::string indent, size_t expand) override {
+        AstLayerPrint(indent, "target");
+        target_->AstPrint(indent, 9);
+
+        AstLayerPrint(indent, "callee");
+        callee_->AstPrint(indent, 9);
+
+        AstLayerPrint(indent, "arglist");
+        arglist_->AstPrint(indent, 10);
+    }
+
+    Expr*    target()  const { return target_.get(); }
+    IdExpr*  callee()  const { return callee_.get(); }
     ArgList* arglist() const { return arglist_.get(); }
 };
 
 // Const
-class NumConst      : public Const {
+class NumConst          : public Const {
 public:
     std::string value_;
 
@@ -257,7 +297,7 @@ public:
         std::cout << COLOR_GREEN << value_ << COLOR_DEFAULT;
     }
 };
-class StringConst    : public Const {
+class StringConst       : public Const {
 public:
     std::string value_;
 
@@ -274,7 +314,7 @@ public:
 };
 
 // Stmt
-class DeclStmt      : public Stmt {
+class DeclStmt          : public Stmt {
 public:
     std::unique_ptr<IdExpr> id_;
     std::unique_ptr<Expr>   value_;
@@ -303,7 +343,7 @@ public:
         value_type_->AstPrint(indent, 13);
     }
 };
-class AssignStmt    : public Stmt {
+class AssignStmt        : public Stmt {
 public:
     std::unique_ptr<IdExpr> id_;
     std::unique_ptr<Expr>   value_;
@@ -328,7 +368,7 @@ public:
 };
 
 // Program
-class Program       : public AstNode {
+class Program           : public AstNode {
 private:
     std::vector<std::unique_ptr<AstNode>> children_;
 

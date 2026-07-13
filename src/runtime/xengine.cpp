@@ -7,7 +7,8 @@
 
 #include "log.hpp"
 #include "xengine.hpp"
-#include "table/binfn.hpp"
+#include "table/fn.hpp"
+#include "table/method.hpp"
 
 namespace rt {
         
@@ -48,15 +49,28 @@ namespace rt {
         return neg;
     }
 
-    Obj Xengine::Exec(CallExpr& node) {
-        auto& id = (IdExpr&)*node.callee();
+    Obj Xengine::Exec(FnCallExpr& node) {
+        auto& callee = *node.callee();
 
         std::vector<Obj> args;
         for (auto& arg : node.arglist()->args()) {
             args.emplace_back(Exec(*arg));
         }
 
-        return CallThrow(BinfnTable::Get(id.value_), args);
+        return CallThrow(FnTable::Get(callee.value_), args);
+    }
+
+    Obj Xengine::Exec(MethodCallExpr& node) {
+        auto  target = Exec(*node.target());
+        auto& callee = *node.callee();
+
+        std::vector<Obj> args;
+        args.emplace_back(target);  // args[0] as target, args[1...n] as arguments
+        for (auto& arg : node.arglist()->args()) {
+            args.emplace_back(Exec(*arg));
+        }
+
+        return CallThrow(MethodTable::Get(target.type(), callee.value_), args);
     }
 
     Obj Xengine::Exec(NumConst& node) {
