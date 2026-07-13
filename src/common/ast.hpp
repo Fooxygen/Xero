@@ -21,6 +21,7 @@ enum class AstType {
     // Const
     Const,              //  Base ------
     NumConst,           //  Number Type
+    BoolConst,          //  Boolean Type
     StringConst,        //  String Type
 
     // Expr
@@ -43,6 +44,7 @@ enum class AstType {
 static AstType BaseOfAstType(AstType type) {
     switch (type) {
         case AstType::NumConst:
+        case AstType::BoolConst:
         case AstType::StringConst:
             return AstType::Const;
         case AstType::Const:
@@ -84,6 +86,7 @@ public:
 
             case AstType::Const:            return "Const";
             case AstType::NumConst:         return "NumConst";
+            case AstType::BoolConst:        return "BoolConst";
             case AstType::StringConst:      return "StringConst";
 
             case AstType::Expr:             return "Expr";
@@ -178,8 +181,8 @@ public:
 class OperExpr          : public Expr {
 public:
     Token::Type opertype_ = Token::Type::Undefined;
-    std::unique_ptr<Expr> lexpr_;
-    std::unique_ptr<Expr> rexpr_;
+    std::unique_ptr<Expr> lexpr_ = nullptr;
+    std::unique_ptr<Expr> rexpr_ = nullptr;
 
     OperExpr(
         Token::Type opertype,
@@ -206,7 +209,7 @@ public:
 };
 class NegExpr           : public Expr {
 public:
-    std::unique_ptr<Expr> expr_;
+    std::unique_ptr<Expr> expr_ = nullptr;
 
     NegExpr(std::unique_ptr<Expr> expr)
     :   expr_(std::move(expr))
@@ -221,8 +224,8 @@ public:
 };
 class FnCallExpr        : public Expr {
 private:
-    std::unique_ptr<IdExpr>  callee_;
-    std::unique_ptr<ArgList> arglist_;
+    std::unique_ptr<IdExpr>  callee_  = nullptr;
+    std::unique_ptr<ArgList> arglist_ = nullptr;
 
 public:
     FnCallExpr(
@@ -248,9 +251,9 @@ public:
 };
 class MethodCallExpr    : public Expr {
 private:
-    std::unique_ptr<Expr>    target_;
-    std::unique_ptr<IdExpr>  callee_;
-    std::unique_ptr<ArgList> arglist_;
+    std::unique_ptr<Expr>    target_  = nullptr;
+    std::unique_ptr<IdExpr>  callee_  = nullptr;
+    std::unique_ptr<ArgList> arglist_ = nullptr;
 
 public:
     MethodCallExpr(
@@ -284,7 +287,7 @@ public:
 // Const
 class NumConst          : public Const {
 public:
-    std::string value_;
+    std::string value_ = "";
 
     NumConst(const std::string& value)
     :   value_(value)
@@ -297,9 +300,29 @@ public:
         std::cout << COLOR_GREEN << value_ << COLOR_DEFAULT;
     }
 };
+class BoolConst         : public Const {
+public:
+    bool value_ = false;
+
+    BoolConst(bool value)
+    :   value_(value)
+    {
+        type_ = AstType::BoolConst;
+    }
+
+    void AstPrintImpl(std::string indent, size_t expand) override {
+        AstLayerPrint(indent, "value");
+        if (value_) {
+            std::cout << COLOR_GREEN << "true" << COLOR_DEFAULT;
+        }
+        else {
+            std::cout << COLOR_RED << "false" << COLOR_DEFAULT;
+        }
+    }
+};
 class StringConst       : public Const {
 public:
-    std::string value_;
+    std::string value_ = "";
 
     StringConst(const std::string& value)
     :   value_(value)
@@ -316,9 +339,9 @@ public:
 // Stmt
 class DeclStmt          : public Stmt {
 public:
-    std::unique_ptr<IdExpr> id_;
-    std::unique_ptr<Expr>   value_;
-    std::unique_ptr<IdExpr> value_type_;
+    std::unique_ptr<IdExpr> id_ = nullptr;
+    std::unique_ptr<Expr>   value_ = nullptr;
+    std::unique_ptr<IdExpr> value_type_ = nullptr;
 
     DeclStmt(
         std::unique_ptr<IdExpr> id,
@@ -345,8 +368,8 @@ public:
 };
 class AssignStmt        : public Stmt {
 public:
-    std::unique_ptr<IdExpr> id_;
-    std::unique_ptr<Expr>   value_;
+    std::unique_ptr<IdExpr> id_    = nullptr;
+    std::unique_ptr<Expr>   value_ = nullptr;
 
     AssignStmt(
         std::unique_ptr<IdExpr> id,

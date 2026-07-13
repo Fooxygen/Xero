@@ -4,10 +4,11 @@
     "patterns": [
         { "include": "#comments" },
         { "include": "#numbers" },
+        { "include": "#booleans" },
         { "include": "#strings" },
-        { "include": "#types" },
         { "include": "#operators" },
         { "include": "#punctuation" },
+        { "include": "#types" },
         { "include": "#functions" }
     ],
     "repository": {
@@ -30,6 +31,10 @@
             "name": "constant.numeric.xero",
             "match": "\\b\\d+(\\.\\d+)?\\b"
         },
+        "booleans": {
+            "name": "constant.language.boolean.xero",
+            "match": "\\b(true|false)\\b"
+        },
         "strings": {
             "name": "string.quoted.double.xero",
             "begin": "\"",
@@ -41,10 +46,6 @@
                 }
             ]
         },
-        "types": {
-            "name": "storage.type.xero",
-            "match": "\\b(u?i(?:8|16|32|64)|f(?:32|64)|string)\\b"
-        },
         "operators": {
             "name": "keyword.operator.xero",
             "match": "[+\\-*/]"
@@ -52,6 +53,10 @@
         "punctuation": {
             "name": "punctuation.xero",
             "match": "[:;=(),.]"
+        },
+        "types": {
+            "name": "storage.type.xero",
+            "match": "\\b(u?i(?:8|16|32|64)|f(?:32|64)|bool|string)\\b"
         },
         "functions": {
             "name": "support.function.builtin.xero",

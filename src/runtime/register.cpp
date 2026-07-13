@@ -16,6 +16,18 @@ namespace rt {
             .name = "none", .size = 0
         });
 
+        // bool
+        TypeTable::Set(Type{
+            .name = "bool", .size = 1,
+            .to_string  = [](const Obj& o) {
+                if (o.Get_bool()) return std::string("true");
+                return std::string("false");
+            },
+            .neg        = [](const Obj& o) {
+                return Obj::Make_bool(!o.Get_bool());
+            }
+        });
+
         // i32
         TypeTable::Set(Type{
             .name = "i32", .size = 4,
@@ -39,8 +51,8 @@ namespace rt {
                 if (xb == 0) throw LogErr(LogModule::Runtime, "division by zero");
                 return Obj::Make_i32(a.Get_i32() / xb);
             },
-            .neg        = [](const Obj& a) {
-                return Obj::Make_i32(-a.Get_i32());
+            .neg        = [](const Obj& o) {
+                return Obj::Make_i32(-o.Get_i32());
             }
         });
 
@@ -77,8 +89,8 @@ namespace rt {
                 if (xb == 0) throw LogErr(LogModule::Runtime, "division by zero");
                 return Obj::Make_i64(a.Get_i64() / xb);
             },
-            .neg        = [](const Obj& a) {
-                return Obj::Make_i64(-a.Get_i64());
+            .neg        = [](const Obj& o) {
+                return Obj::Make_i64(-o.Get_i64());
             }
         });
 
@@ -118,8 +130,8 @@ namespace rt {
                 else                   return Obj();
                 return Obj::Make_f32(a.Get_f32() / xb);
             },
-            .neg        = [](const Obj& a) {
-                return Obj::Make_f32(-a.Get_f32());
+            .neg        = [](const Obj& o) {
+                return Obj::Make_f32(-o.Get_f32());
             }
         });
 
@@ -163,8 +175,8 @@ namespace rt {
                 else                   return Obj();
                 return Obj::Make_f64(a.Get_f64() / xb);
             },
-            .neg        = [](const Obj& a) {
-                return Obj::Make_f64(-a.Get_f64());
+            .neg        = [](const Obj& o) {
+                return Obj::Make_f64(-o.Get_f64());
             }
         });
 

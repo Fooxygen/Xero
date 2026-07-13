@@ -56,7 +56,15 @@ namespace parser {
         // do not handle Unsemantics tokens
         switch (token.type) {
             case Token::Type::Id: {
-                sym = Symbol(std::make_unique<IdExpr>(token.lexeme));
+                if (token.lexeme == "true") {
+                    sym = Symbol(std::make_unique<BoolConst>(true));
+                }
+                else if (token.lexeme == "false") {
+                    sym = Symbol(std::make_unique<BoolConst>(false));
+                }
+                else {
+                    sym = Symbol(std::make_unique<IdExpr>(token.lexeme));
+                }
                 break;
             }
             case Token::Type::Number: {

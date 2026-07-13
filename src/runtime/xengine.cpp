@@ -114,6 +114,10 @@ namespace rt {
         throw LogErr(LogModule::Runtime, std::format("numeric overflow '{}'", numstr));
     }
 
+    Obj Xengine::Exec(BoolConst& node) {
+        return Obj::Make_bool(node.value_);
+    }
+
     Obj Xengine::Exec(StringConst& node) {
         return Obj::Make_string(node.value_);
     }

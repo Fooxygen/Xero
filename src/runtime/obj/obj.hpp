@@ -29,6 +29,7 @@ namespace rt {
     private:
         union {
             void*       ref_;
+            bool        bool_;
             int32_t     i32_;
             int64_t     i64_;
             float       f32_;
@@ -90,6 +91,12 @@ namespace rt {
             Obj o;
             return o;
         }
+        static Obj Make_bool(bool b) {
+            Obj o;
+            o.type_ = TypeTable::Get("bool");
+            o.data_.bool_ = b;
+            return o;
+        }
         static Obj Make_i32(int32_t x) {
             Obj o;
             o.type_ = TypeTable::Get("i32");
@@ -134,6 +141,7 @@ namespace rt {
             return type_->isRef && data_.ref_;
         }
 
+        bool     Get_bool()      const { return data_.bool_;  }
         int32_t  Get_i32()       const { return data_.i32_;   }
         int64_t  Get_i64()       const { return data_.i64_;   }
         float    Get_f32()       const { return data_.f32_;   }

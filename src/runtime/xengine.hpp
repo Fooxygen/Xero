@@ -37,6 +37,7 @@ namespace rt {
                 case AstType::MethodCallExpr:   return Exec((MethodCallExpr&)node);
 
                 case AstType::NumConst:         return Exec((NumConst&)node);
+                case AstType::BoolConst:        return Exec((BoolConst&)node);
                 case AstType::StringConst:      return Exec((StringConst&)node);
 
                 case AstType::DeclStmt:         return Exec((DeclStmt&)node);
@@ -55,6 +56,7 @@ namespace rt {
         Obj Exec(MethodCallExpr& node);
 
         Obj Exec(NumConst& node);
+        Obj Exec(BoolConst& node);
         Obj Exec(StringConst& node);
 
         Obj Exec(DeclStmt& node);
