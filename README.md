@@ -29,6 +29,8 @@ Xero 是一门静态类型编程语言。你可以在仓库根目录找到示例
 
 要执行程序，请在启动后输入任意 ``.xe`` 源代码文件路径。
 
+你可以在 [Wiki](https://github.com/Fooxygen/Xero/wiki) 中获取更多内容来了解 Xero。
+
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
 ## 构建技术
@@ -43,7 +45,7 @@ Xero 是一门静态类型编程语言。你可以在仓库根目录找到示例
 
 ## 编译与启动
 
-暂只提供 Visual Studio Code 环境的参考步骤。
+> 暂只提供 Visual Studio Code 环境的参考步骤。
 
 ### 编译
 

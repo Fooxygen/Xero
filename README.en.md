@@ -26,12 +26,7 @@ The repository includes the language specification and its toolchain.
 
 To execute a program, provide the path to a `.xe` source file at startup.
 
-<p align="right"><a href="#readme-top">⭱ Back to top</a></p>
-
-## What's Implemented
-
-- **Lexer** — Produces a token stream from source input.
-- **Parser** — Builds an abstract syntax tree (AST) from the token stream.
+You can find more information about Xero on the [Wiki](https://github.com/Fooxygen/Xero/wiki).
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
