@@ -31,13 +31,6 @@ Xero 是一门静态类型编程语言。你可以在仓库根目录找到示例
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
-## 已实现功能
-
-- 词法解析器 Lexer：生成 Token 流；
-- 语法解析器 Parser：生成 AST；
-
-<p align="right"><a href="#readme-top">⭱ Back to top</a></p>
-
 ## 构建技术
 
 | 类别 | 技术 | 版本 |
