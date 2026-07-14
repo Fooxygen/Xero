@@ -49,6 +49,15 @@ namespace rt {
         return neg;
     }
 
+    Obj Xengine::Exec(NotExpr& node) {
+        auto obj = Exec(*node.expr_);
+        auto not_ = CallTry(obj.type()->not_, obj);
+        if (not_.isNone()) {
+            throw LogErr(LogModule::Runtime, "unsupported bool negation");
+        }
+        return not_;
+    }
+
     Obj Xengine::Exec(FnCallExpr& node) {
         auto& callee = *node.callee();
 

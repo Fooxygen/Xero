@@ -65,7 +65,7 @@ namespace rt {
             length_ = len;
             memcpy(data_, s, sizeof(char) * (len + 1));
         }
-
+        
         String& operator = (const String& other) {
             if (this == &other) return *this;
 

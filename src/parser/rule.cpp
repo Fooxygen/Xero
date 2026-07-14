@@ -291,5 +291,19 @@ namespace parser {
                 }
             );
         }
+        // └─ !expr -> notexpr
+        {
+            RuleAdd(
+                PATS{
+                    TT::Not,
+                    AT::Expr,
+                },
+                [](std::vector<Symbol>& symbols, auto*) {
+                    return std::make_unique<NotExpr>(
+                        Rule::Move<Expr>(symbols, 2)
+                    );
+                }
+            );
+        }
     }
 }

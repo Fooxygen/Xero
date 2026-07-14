@@ -29,6 +29,7 @@ enum class AstType {
     IdExpr,             //  Identity
     OperExpr,           //  Operation
     NegExpr,            //  Negative
+    NotExpr,            //  Not
     FnCallExpr,         //  Func Call
     MethodCallExpr,     //  Method Call
 
@@ -53,6 +54,7 @@ static AstType BaseOfAstType(AstType type) {
         case AstType::IdExpr:
         case AstType::OperExpr:
         case AstType::NegExpr:
+        case AstType::NotExpr:
         case AstType::FnCallExpr:
         case AstType::MethodCallExpr:
             return AstType::Expr;
@@ -93,6 +95,7 @@ public:
             case AstType::IdExpr:           return "IdExpr";
             case AstType::OperExpr:         return "OperExpr";
             case AstType::NegExpr:          return "NegExpr";
+            case AstType::NotExpr:          return "NotExpr";
             case AstType::FnCallExpr:       return "FnCallExpr";
             case AstType::MethodCallExpr:   return "MethodCallExpr";
 
@@ -105,7 +108,7 @@ public:
                 return "Undefined";
         }
     }
-    const void TypePrint() const {
+    const void        TypePrint() const {
         std::cout << TypeName();
     }
 
@@ -215,6 +218,21 @@ public:
     :   expr_(std::move(expr))
     {
         type_ = AstType::NegExpr;
+    }
+
+    void AstPrintImpl(std::string indent, size_t expand) override {
+        AstLayerPrint(indent, "expr");
+        expr_->AstPrint(indent, 7);
+    }
+};
+class NotExpr           : public Expr {
+public:
+    std::unique_ptr<Expr> expr_ = nullptr;
+
+    NotExpr(std::unique_ptr<Expr> expr)
+    :   expr_(std::move(expr))
+    {
+        type_ = AstType::NotExpr;
     }
 
     void AstPrintImpl(std::string indent, size_t expand) override {

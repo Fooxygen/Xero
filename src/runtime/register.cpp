@@ -23,7 +23,7 @@ namespace rt {
                 if (o.Get_bool()) return std::string("true");
                 return std::string("false");
             },
-            .neg        = [](const Obj& o) {
+            .not_       = [](const Obj& o) {
                 return Obj::Make_bool(!o.Get_bool());
             }
         });

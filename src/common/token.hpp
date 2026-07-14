@@ -41,6 +41,8 @@ struct Token {
         StarOrSlash,        //  Base
         Star,               //  *
         Slash,              //  /
+        
+        Not,                //  !
     };
 
     Type        type    = Type::Undefined;
@@ -68,6 +70,7 @@ struct Token {
 
             case Type::PlusOrMinus:
             case Type::StarOrSlash:
+            case Type::Not:
                 return Type::Operator;
 
             case Type::Plus:
@@ -111,6 +114,7 @@ struct Token {
             case Type::StarOrSlash: return "StarOrSlash";
             case Type::Star:        return "Star";
             case Type::Slash:       return "Slash";
+            case Type::Not:         return "Not";
 
             default: 
                 LogWarn(LogModule::Lexer, "undefined print name for TokenType").Print();

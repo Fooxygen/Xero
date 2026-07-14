@@ -32,11 +32,12 @@ namespace rt {
 
         // Oper
 
-        Obj (*plus) (const Obj&, const Obj&)    = nullptr;
-        Obj (*minus)(const Obj&, const Obj&)    = nullptr;
-        Obj (*star) (const Obj&, const Obj&)    = nullptr;
-        Obj (*slash)(const Obj&, const Obj&)    = nullptr;
-        Obj (*neg)  (const Obj&)                = nullptr;
+        Obj (*plus)  (const Obj&, const Obj&)    = nullptr;
+        Obj (*minus) (const Obj&, const Obj&)    = nullptr;
+        Obj (*star)  (const Obj&, const Obj&)    = nullptr;
+        Obj (*slash) (const Obj&, const Obj&)    = nullptr;
+        Obj (*neg)   (const Obj&)                = nullptr;
+        Obj (*not_)  (const Obj&)                = nullptr;
     };
 
     class TypeTable {

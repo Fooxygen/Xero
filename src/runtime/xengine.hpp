@@ -33,6 +33,7 @@ namespace rt {
                 case AstType::IdExpr:           return Exec((IdExpr&)node);
                 case AstType::OperExpr:         return Exec((OperExpr&)node);
                 case AstType::NegExpr:          return Exec((NegExpr&)node);
+                case AstType::NotExpr:          return Exec((NotExpr&)node);
                 case AstType::FnCallExpr:       return Exec((FnCallExpr&)node);
                 case AstType::MethodCallExpr:   return Exec((MethodCallExpr&)node);
 
@@ -52,6 +53,7 @@ namespace rt {
         Obj Exec(IdExpr& node);
         Obj Exec(OperExpr& node);
         Obj Exec(NegExpr& node);
+        Obj Exec(NotExpr& node);
         Obj Exec(FnCallExpr& node);
         Obj Exec(MethodCallExpr& node);
 

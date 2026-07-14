@@ -60,11 +60,12 @@ namespace lexer {
             case '(':   return TokenGen(Token::Type::LParen,    "(");
             case ')':   return TokenGen(Token::Type::RParen,    ")");
             case '.':   return TokenGen(Token::Type::Dot,       ".");
+            case ',':   return TokenGen(Token::Type::Comma,     ",");
             case '+':   return TokenGen(Token::Type::Plus,      "+");
             case '-':   return TokenGen(Token::Type::Minus,     "-");
             case '*':   return TokenGen(Token::Type::Star,      "*");
             case '/':   return TokenGen(Token::Type::Slash,     "/");
-            case ',':   return TokenGen(Token::Type::Comma,     ",");
+            case '!':   return TokenGen(Token::Type::Not,       "!");
         }
 
         throw LogErr(LogModule::Lexer, "invalid token");
