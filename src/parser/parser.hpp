@@ -271,7 +271,7 @@ namespace parser {
         // Cache
         
         std::vector<Symbol>         symbols_;       // Symbols Stack
-        std::vector<size_t>         scopes_lbrace;  // LBrace Scope
+        std::vector<size_t>         scopes_brace;   // Brace Scope
         std::unique_ptr<AstNode>    root_;          // Program as AST Root Node.
 
         void RulesInit();

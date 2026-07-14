@@ -272,7 +272,10 @@ namespace parser {
                     AT::Expr,
                     TT::RParen,
                 },
-                [](std::vector<Symbol>& symbols, auto*) {
+                [](std::vector<Symbol>& symbols, const Token* token_next) -> ASTNODE {
+                    if (token_next && token_next->type == Token::Type::LBrace)
+                        return nullptr;
+
                     return Rule::Move<Expr>(symbols, 2);
                 }
             );
@@ -301,6 +304,28 @@ namespace parser {
                 [](std::vector<Symbol>& symbols, auto*) {
                     return std::make_unique<NotExpr>(
                         Rule::Move<Expr>(symbols, 2)
+                    );
+                }
+            );
+        }
+    
+        // Logic
+
+        // └─ if (cond) { } -> condstmt
+        {
+            RuleAdd(
+                PATS{
+                    TT::If,
+                    TT::LParen,
+                    AT::Expr,
+                    TT::RParen,
+                    AT::BlockStmt
+                },
+                [](std::vector<Symbol>& symbols, auto*) {
+                    return std::make_unique<CondStmt>(
+                        Rule::Move<Expr>(symbols, 3),
+                        Rule::Move<BlockStmt>(symbols, 5),
+                        nullptr
                     );
                 }
             );

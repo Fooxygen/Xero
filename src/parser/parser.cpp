@@ -9,7 +9,7 @@ namespace parser {
 
     void   Parser::Execute() {
         symbols_.clear();
-        scopes_lbrace.clear();
+        scopes_brace.clear();
 
         // Symbols
         for (size_t i = 0; i < tokens_.size(); i++) {
@@ -94,20 +94,19 @@ namespace parser {
     void   Parser::Shift(const Token& token) {
         using TT = Token::Type;
 
-        // LBrace Scope
+        // Brace Scope
         {
-            if (token.type == TT::LBrace) {
-                scopes_lbrace.emplace_back(symbols_.size());
-                return;
+            if      (token.type == TT::LBrace) {
+                scopes_brace.emplace_back(symbols_.size() + 1);
             }
-            if (token.type == TT::RBrace) {
-                if (scopes_lbrace.empty()) {
+            else if (token.type == TT::RBrace) {
+                if (scopes_brace.empty()) {
                     throw LogErr(LogModule::Parser, "unclosed brace");
                 }
 
-                size_t pbeg = scopes_lbrace.back();
+                size_t pbeg = scopes_brace.back();
                 size_t pend = symbols_.size() - 1;
-                scopes_lbrace.pop_back();
+                scopes_brace.pop_back();
 
                 std::vector<std::unique_ptr<AstNode>> children;
                 for (size_t i = 0; i < pend - pbeg + 1; i++) {
@@ -119,6 +118,7 @@ namespace parser {
                 }
 
                 std::reverse(children.begin(), children.end());
+                symbols_.pop_back();                                // erase '{'
                 symbols_.emplace_back(
                     std::make_unique<BlockStmt>(children)
                 );

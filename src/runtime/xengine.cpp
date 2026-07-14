@@ -150,6 +150,23 @@ namespace rt {
         return Obj();
     }
 
+    Obj Xengine::Exec(CondStmt& node) {
+        bool isPass = false;
+        if (!node.cond_) isPass = true;
+        else {
+            auto cond = Exec(*node.cond_);
+            if (cond.type() == TypeTable::Get("bool")) {
+                isPass = cond.Get_bool();
+            }
+            else throw LogErr(LogModule::Runtime, "condition must be bool");
+        }
+
+        if (isPass && node.block_) Exec(*node.block_);
+        if (node.sub_) Exec(*node.sub_);
+        
+        return Obj();
+    }
+
     Obj Xengine::Exec(Program& node) {
         for (auto& child : node.children()) {
             Exec(*child);

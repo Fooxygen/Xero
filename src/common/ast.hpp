@@ -38,6 +38,7 @@ enum class AstType {
     BlockStmt,          //  Grouped Stmts
     DeclStmt,           //  Declaration
     AssignStmt,         //  Assignment
+    CondStmt,           //  Condition
 
     // Common
     ArgList,            // List of Args
@@ -63,6 +64,7 @@ static AstType BaseOfAstType(AstType type) {
         case AstType::BlockStmt:
         case AstType::DeclStmt:
         case AstType::AssignStmt:
+        case AstType::CondStmt:
             return AstType::Stmt;
 
         default:
@@ -105,6 +107,7 @@ public:
             case AstType::BlockStmt:        return "BlockStmt";
             case AstType::DeclStmt:         return "DeclStmt";
             case AstType::AssignStmt:       return "AssignStmt";
+            case AstType::CondStmt:         return "CondStmt";
 
             default: 
                 LogWarn(LogModule::Parser, "undefined print name for AstNode");
@@ -430,6 +433,35 @@ public:
 
         AstLayerPrint(indent, "value");
         value_->AstPrint(indent, 8);
+    }
+};
+class CondStmt          : public Stmt {
+public:
+    std::unique_ptr<Expr>      cond_  = nullptr;
+    std::unique_ptr<BlockStmt> block_ = nullptr;
+    std::unique_ptr<CondStmt>  sub_   = nullptr;
+
+    CondStmt(
+        std::unique_ptr<Expr>      cond,
+        std::unique_ptr<BlockStmt> block,
+        std::unique_ptr<CondStmt>  sub
+    )
+    :   cond_(std::move(cond)),
+        block_(std::move(block)),
+        sub_(std::move(sub))
+    {
+        type_ = AstType::CondStmt;
+    }
+
+    void AstPrintImpl(std::string indent, size_t expand) override {
+        AstLayerPrint(indent, "cond");
+        if (cond_) cond_->AstPrint(indent, 7);
+
+        AstLayerPrint(indent, "block");
+        block_->AstPrint(indent, 8);
+
+        AstLayerPrint(indent, "sub");
+        if (sub_) sub_->AstPrint(indent, 6);
     }
 };
 

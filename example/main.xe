@@ -2,8 +2,14 @@
 b: bool   = true;
 s: string = "Hello Xero!";
 
-{
-    println(b, s);
-    println(b, s);
-    println(b, s);
+if (b) {
+    println(s);
+    println(s + s);
+    println(-s);
+}
+
+if (!b) {
+    println(s);
+    println(s + s);
+    println(-s);
 }
