@@ -1,5 +1,9 @@
 
-b: bool   = false;
-s: string = ".edoc naelc evol srezimitpO";
+b: bool   = true;
+s: string = "Hello Xero!";
 
-println(-s);    # "Optimizers love clean code."
+{
+    println(b, s);
+    println(b, s);
+    println(b, s);
+}

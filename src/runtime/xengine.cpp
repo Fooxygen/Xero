@@ -131,6 +131,13 @@ namespace rt {
         return Obj::Make_string(node.value_);
     }
 
+    Obj Xengine::Exec(BlockStmt& node) {
+        for (auto& child : node.children()) {
+            Exec(*child.get());
+        }
+        return Obj();
+    }
+
     Obj Xengine::Exec(DeclStmt& node) {
         auto value = Exec(*node.value_);
         //auto type = TypeTable::Get(node.id_->value_);

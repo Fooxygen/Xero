@@ -35,6 +35,7 @@ enum class AstType {
 
     // Stmt
     Stmt,               //  Base ------
+    BlockStmt,          //  Grouped Stmts
     DeclStmt,           //  Declaration
     AssignStmt,         //  Assignment
 
@@ -59,6 +60,7 @@ static AstType BaseOfAstType(AstType type) {
         case AstType::MethodCallExpr:
             return AstType::Expr;
 
+        case AstType::BlockStmt:
         case AstType::DeclStmt:
         case AstType::AssignStmt:
             return AstType::Stmt;
@@ -100,6 +102,7 @@ public:
             case AstType::MethodCallExpr:   return "MethodCallExpr";
 
             case AstType::Stmt:             return "Stmt";
+            case AstType::BlockStmt:        return "BlockStmt";
             case AstType::DeclStmt:         return "DeclStmt";
             case AstType::AssignStmt:       return "AssignStmt";
 
@@ -355,6 +358,28 @@ public:
 };
 
 // Stmt
+class BlockStmt         : public Stmt {
+private:
+    std::vector<std::unique_ptr<AstNode>> children_;
+
+public:
+    BlockStmt(std::vector<std::unique_ptr<AstNode>>& children)
+    :   children_(std::move(children))
+    {
+        type_ = AstType::BlockStmt;
+    }
+
+    void AstPrintImpl(std::string indent, size_t expand) override {
+        for (auto& child : children_) {
+            AstLayerPrint(indent, "");
+            child->AstPrint(indent, expand);
+        }
+    }
+
+    std::vector<std::unique_ptr<AstNode>>& children() {
+        return children_;
+    }
+};
 class DeclStmt          : public Stmt {
 public:
     std::unique_ptr<IdExpr> id_ = nullptr;
@@ -409,24 +434,16 @@ public:
 };
 
 // Program
-class Program           : public AstNode {
-private:
-    std::vector<std::unique_ptr<AstNode>> children_;
-
+class Program           : public BlockStmt {
 public:
-    Program(std::vector<std::unique_ptr<AstNode>>& children) : children_(std::move(children)) {
+    Program(std::vector<std::unique_ptr<AstNode>>& children)
+    :   BlockStmt(children)
+    {
         type_ = AstType::Program;
     }
 
     void AstPrintImpl(std::string indent, size_t expand) override {
-        for (auto& child : children_) {
-            AstLayerPrint(indent, "");
-            child->AstPrint(indent, expand);
-        }
+        BlockStmt::AstPrintImpl(indent, expand);
         std::cout << std::endl;
-    }
-
-    std::vector<std::unique_ptr<AstNode>>& children() {
-        return children_;
     }
 };

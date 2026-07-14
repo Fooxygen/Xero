@@ -41,6 +41,7 @@ namespace rt {
                 case AstType::BoolConst:        return Exec((BoolConst&)node);
                 case AstType::StringConst:      return Exec((StringConst&)node);
 
+                case AstType::BlockStmt:        return Exec((BlockStmt&)node);
                 case AstType::DeclStmt:         return Exec((DeclStmt&)node);
                 case AstType::AssignStmt:       return Exec((AssignStmt&)node);
 
@@ -61,6 +62,7 @@ namespace rt {
         Obj Exec(BoolConst& node);
         Obj Exec(StringConst& node);
 
+        Obj Exec(BlockStmt& node);
         Obj Exec(DeclStmt& node);
         Obj Exec(AssignStmt& node);
 

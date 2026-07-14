@@ -9,6 +9,7 @@ namespace parser {
 
     void   Parser::Execute() {
         symbols_.clear();
+        scopes_lbrace.clear();
 
         // Symbols
         for (size_t i = 0; i < tokens_.size(); i++) {
@@ -50,10 +51,11 @@ namespace parser {
     }
 
     Symbol Parser::Token2Symbol(const Token& token) {
-        auto sym = Symbol(token);
+        using TT = Token::Type;
 
+        auto sym = Symbol(token);
         switch (token.type) {
-            case Token::Type::Id: {
+            case TT::Id: {
                 if      (token.lexeme == "true") {
                     sym = Symbol(std::make_unique<BoolConst>(true));
                 }
@@ -76,11 +78,11 @@ namespace parser {
                 }
                 break;
             }
-            case Token::Type::Number: {
+            case TT::Number: {
                 sym = Symbol(std::make_unique<NumConst>(token.lexeme));
                 break;
             }
-            case Token::Type::String: {
+            case TT::String: {
                 sym = Symbol(std::make_unique<StringConst>(token.lexeme));
                 break;
             }
@@ -90,6 +92,41 @@ namespace parser {
     }
 
     void   Parser::Shift(const Token& token) {
+        using TT = Token::Type;
+
+        // LBrace Scope
+        {
+            if (token.type == TT::LBrace) {
+                scopes_lbrace.emplace_back(symbols_.size());
+                return;
+            }
+            if (token.type == TT::RBrace) {
+                if (scopes_lbrace.empty()) {
+                    throw LogErr(LogModule::Parser, "unclosed brace");
+                }
+
+                size_t pbeg = scopes_lbrace.back();
+                size_t pend = symbols_.size() - 1;
+                scopes_lbrace.pop_back();
+
+                std::vector<std::unique_ptr<AstNode>> children;
+                for (size_t i = 0; i < pend - pbeg + 1; i++) {
+                    auto& data = symbols_.back().data();
+                    children.emplace_back(
+                        std::move(std::get<std::unique_ptr<AstNode>>(data))
+                    );
+                    symbols_.pop_back();
+                }
+
+                std::reverse(children.begin(), children.end());
+                symbols_.emplace_back(
+                    std::make_unique<BlockStmt>(children)
+                );
+
+                return;
+            }
+        }
+
         symbols_.emplace_back(Token2Symbol(token));
     }
 
