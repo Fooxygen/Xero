@@ -84,12 +84,7 @@ namespace lexer {
         Token TokenGen(Token::Type type, const std::string& lexeme) {
             prev_token_line_ = line_;
             prev_token_col_  = col_ - lexeme.length();
-            return Token{
-                .type   = type,
-                .lexeme = lexeme,
-                .line   = prev_token_line_,
-                .col    = prev_token_col_
-            };
+            return Token(type, lexeme, prev_token_line_, prev_token_col_);
         }
         void  TokensGen(bool isPrint = false);
         

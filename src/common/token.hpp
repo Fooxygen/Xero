@@ -10,7 +10,8 @@
 
 #include "log.hpp"
 
-struct Token {
+class Token {
+public:
     enum class Type {
         Undefined,
 
@@ -22,6 +23,8 @@ struct Token {
         Semicolon,          //  ;
         LParen,             //  (
         RParen,             //  )
+        LBrace,             //  {
+        RBrace,             //  }
         Dot,                //  .
         Comma,              //  ,
         Quote,              //  "
@@ -43,6 +46,12 @@ struct Token {
         Slash,              //  /
         
         Not,                //  !
+
+        // └─ Keyword
+        Keyword,            // Base
+        If,                 // If
+        Elif,               // Else if
+        Else,               // Else
     };
 
     Type        type    = Type::Undefined;
@@ -51,6 +60,14 @@ struct Token {
     size_t line = 0;
     size_t col  = 0;
     
+    Token() {}
+    Token(Type type_, const std::string& lexeme_, size_t line_, size_t col_) {
+        type   = type_;
+        lexeme = lexeme_;
+        line   = line_;
+        col    = col_;
+    }
+
     static Type BaseOfType(Type type) {
         switch (type) {
             case Type::Colon:
@@ -58,6 +75,8 @@ struct Token {
             case Type::Semicolon:
             case Type::LParen:
             case Type::RParen:
+            case Type::LBrace:
+            case Type::RBrace:
             case Type::Dot:
             case Type::Comma:
             case Type::Quote:
@@ -81,6 +100,11 @@ struct Token {
             case Type::Slash:
                 return Type::StarOrSlash;
 
+            case Type::If:
+            case Type::Elif:
+            case Type::Else:
+                return Type::Keyword;
+
             default:
                 return Type::Undefined;
         }
@@ -100,6 +124,8 @@ struct Token {
             case Type::Semicolon:   return "Semicolon";
             case Type::LParen:      return "LParen";
             case Type::RParen:      return "RParen";
+            case Type::LBrace:      return "LBrace";
+            case Type::RBrace:      return "RBrace";
             case Type::Dot:         return "Dot";
             case Type::Comma:       return "Comma";
             case Type::Quote:       return "Quote";
@@ -116,12 +142,16 @@ struct Token {
             case Type::Slash:       return "Slash";
             case Type::Not:         return "Not";
 
+            case Type::If:          return "If";
+            case Type::Elif:        return "Elif";
+            case Type::Else:        return "Else";
+
             default: 
                 LogWarn(LogModule::Lexer, "undefined print name for TokenType").Print();
                 return "Undefined";
         }
     }
-    static void TypePrint(Type type) {
+    static void        TypePrint(Type type) {
         std::cout << TypeName(type);
     }
     

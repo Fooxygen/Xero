@@ -59,6 +59,8 @@ namespace lexer {
             case ';':   return TokenGen(Token::Type::Semicolon, ";");
             case '(':   return TokenGen(Token::Type::LParen,    "(");
             case ')':   return TokenGen(Token::Type::RParen,    ")");
+            case '{':   return TokenGen(Token::Type::LBrace,    "{");
+            case '}':   return TokenGen(Token::Type::RBrace,    "}");
             case '.':   return TokenGen(Token::Type::Dot,       ".");
             case ',':   return TokenGen(Token::Type::Comma,     ",");
             case '+':   return TokenGen(Token::Type::Plus,      "+");
@@ -137,7 +139,7 @@ namespace lexer {
 
     Token Lexer::TokenScanSingleComment() {
         while (!isScanEnd() && code_[pos_] != '\n') CharNext();
-        return Token{};
+        return Token();
     }
 
     Token Lexer::TokenScanMultiComment() {
@@ -147,10 +149,10 @@ namespace lexer {
                 code_[pos_ + 1] == '#')
             {
                 CharNext(2);
-                return Token{};
+                return Token();
             }
             CharNext();
         }
-        return Token{};
+        return Token();
     }
 }
