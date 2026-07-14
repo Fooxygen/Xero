@@ -65,6 +65,14 @@ namespace rt {
             length_ = len;
             memcpy(data_, s, sizeof(char) * (len + 1));
         }
+        void Reverse() {
+            if (length_ <= 1) return;
+            for (size_t i = 0, j = length_ - 1; i < j; i++, j--) {
+                char t = data_[i];
+                data_[i] = data_[j];
+                data_[j] = t;
+            }
+        }
         
         String& operator = (const String& other) {
             if (this == &other) return *this;

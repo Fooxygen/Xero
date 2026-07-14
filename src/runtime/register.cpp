@@ -183,10 +183,14 @@ namespace rt {
         // string
         TypeTable::Set(Type{
             .name = "string", .size = 0, .isRef = true,
-            .destroy    = [](void* data) { delete (String*)data; },
-            .to_string  = [](const Obj& o) { return o.Get_string().ToCppString(); },
-            .plus       = [](const Obj& a, const Obj& b) {
+            .destroy   = [](void* data) { delete (String*)data; },
+            .to_string = [](const Obj& o) { return o.Get_string().ToCppString(); },
+            .plus      = [](const Obj& a, const Obj& b) {
                 return Obj::Make_string((a.Get_string() + b.Get_string()).ToCppString());
+            },
+            .neg       = [](const Obj& o) {
+                o.Get_string().Reverse();
+                return o;
             }
         });
     }
