@@ -1,0 +1,21 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "mingw-debug-x64-template",
+            "displayName": "MinGW Debug",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/../build",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "mingw-debug-x64-template",
+            "displayName": "MinGW Debug x64 Template",
+            "configurePreset": "mingw-debug-x64-template"
+        }
+    ]
+}

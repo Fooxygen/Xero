@@ -1,2 +1,2 @@
 
-i: f32 = 3.14.23;
+println("Hello Xero!");

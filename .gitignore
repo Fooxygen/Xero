@@ -1,2 +1,6 @@
 .vscode/
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/tasks.json
 build/
+src/CMakeUserPresets.json
