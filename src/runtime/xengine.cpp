@@ -113,6 +113,11 @@ namespace rt {
 
         // float
         else {
+            // error: 3.14.15
+            if (numstr.substr(numstr.find(".") + 1).contains(".")) {
+                throw LogErr(LogModule::Runtime, std::format("invalid float format '{}'", numstr));
+            }
+
             // f32
             {
                 float x = 0.0f;

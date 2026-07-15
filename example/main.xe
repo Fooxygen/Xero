@@ -1,7 +1,2 @@
 
-if (1 + 3 >= 3) {
-    println("Xero!Xero!Xero!Xero!Xero!");
-}
-else {
-    println("Wow Wow Wow!");
-}
+i: f32 = 3.14.23;
