@@ -46,7 +46,7 @@ namespace lexer {
         CharNext();
 
         // └─ Multiple Chars
-        char nextc = !isNextScanEnd() ? code_[pos_] : '\0';
+        char nextc = !isScanEnd() ? code_[pos_] : '\0';
         switch (c) {
             case '=': {
                 if (nextc == '=') {

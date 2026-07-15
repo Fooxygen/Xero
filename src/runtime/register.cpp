@@ -20,8 +20,7 @@ namespace rt {
         TypeTable::Set(Type{
             .name = "bool", .size = 1,
             .to_string  = [](const Obj& o) {
-                if (o.Get_bool()) return std::string("true");
-                return std::string("false");
+                return o.Get_bool() ? std::string("true") : std::string("false");
             },
             .gt   = [](const Obj& l, const Obj& r) { return Obj::Make_bool(l.Get_bool() >  r.Get_bool()); },
             .lt   = [](const Obj& l, const Obj& r) { return Obj::Make_bool(l.Get_bool() <  r.Get_bool()); },
@@ -31,9 +30,7 @@ namespace rt {
             .neq  = [](const Obj& l, const Obj& r) { return Obj::Make_bool(l.Get_bool() != r.Get_bool()); },
             .and_ = [](const Obj& l, const Obj& r) { return Obj::Make_bool(l.Get_bool() && r.Get_bool()); },
             .or_  = [](const Obj& l, const Obj& r) { return Obj::Make_bool(l.Get_bool() || r.Get_bool()); },
-            .not_ = [](const Obj& o) {
-                return Obj::Make_bool(!o.Get_bool());
-            },
+            .not_ = [](const Obj& o) { return Obj::Make_bool(!o.Get_bool()); },
         });
 
         // i32
@@ -61,7 +58,13 @@ namespace rt {
             },
             .neg        = [](const Obj& o) {
                 return Obj::Make_i32(-o.Get_i32());
-            }
+            },
+            .gt         = [](const Obj& a, const Obj& b) { if (!b.is("i32")) return Obj(); return Obj::Make_bool(a.Get_i32() >  b.Get_i32()); },
+            .lt         = [](const Obj& a, const Obj& b) { if (!b.is("i32")) return Obj(); return Obj::Make_bool(a.Get_i32() <  b.Get_i32()); },
+            .ge         = [](const Obj& a, const Obj& b) { if (!b.is("i32")) return Obj(); return Obj::Make_bool(a.Get_i32() >= b.Get_i32()); },
+            .le         = [](const Obj& a, const Obj& b) { if (!b.is("i32")) return Obj(); return Obj::Make_bool(a.Get_i32() <= b.Get_i32()); },
+            .eq         = [](const Obj& a, const Obj& b) { if (!b.is("i32")) return Obj(); return Obj::Make_bool(a.Get_i32() == b.Get_i32()); },
+            .neq        = [](const Obj& a, const Obj& b) { if (!b.is("i32")) return Obj(); return Obj::Make_bool(a.Get_i32() != b.Get_i32()); },
         });
 
         // i64
@@ -99,7 +102,49 @@ namespace rt {
             },
             .neg        = [](const Obj& o) {
                 return Obj::Make_i64(-o.Get_i64());
-            }
+            },
+            .gt         = [](const Obj& a, const Obj& b) {
+                int64_t xb = 0;
+                if      (b.is("i64")) xb = b.Get_i64();
+                else if (b.is("i32")) xb = b.Get_i32();
+                else                  return Obj();
+                return Obj::Make_bool(a.Get_i64() > xb);
+            },
+            .lt         = [](const Obj& a, const Obj& b) {
+                int64_t xb = 0;
+                if      (b.is("i64")) xb = b.Get_i64();
+                else if (b.is("i32")) xb = b.Get_i32();
+                else                  return Obj();
+                return Obj::Make_bool(a.Get_i64() < xb);
+            },
+            .ge         = [](const Obj& a, const Obj& b) {
+                int64_t xb = 0;
+                if      (b.is("i64")) xb = b.Get_i64();
+                else if (b.is("i32")) xb = b.Get_i32();
+                else                  return Obj();
+                return Obj::Make_bool(a.Get_i64() >= xb);
+            },
+            .le         = [](const Obj& a, const Obj& b) {
+                int64_t xb = 0;
+                if      (b.is("i64")) xb = b.Get_i64();
+                else if (b.is("i32")) xb = b.Get_i32();
+                else                  return Obj();
+                return Obj::Make_bool(a.Get_i64() <= xb);
+            },
+            .eq         = [](const Obj& a, const Obj& b) {
+                int64_t xb = 0;
+                if      (b.is("i64")) xb = b.Get_i64();
+                else if (b.is("i32")) xb = b.Get_i32();
+                else                  return Obj();
+                return Obj::Make_bool(a.Get_i64() == xb);
+            },
+            .neq        = [](const Obj& a, const Obj& b) {
+                int64_t xb = 0;
+                if      (b.is("i64")) xb = b.Get_i64();
+                else if (b.is("i32")) xb = b.Get_i32();
+                else                  return Obj();
+                return Obj::Make_bool(a.Get_i64() != xb);
+            },
         });
 
         // f32
@@ -140,7 +185,55 @@ namespace rt {
             },
             .neg        = [](const Obj& o) {
                 return Obj::Make_f32(-o.Get_f32());
-            }
+            },
+            .gt         = [](const Obj& a, const Obj& b) {
+                float xb = 0.0f;
+                if      (b.is("f32"))  xb = b.Get_f32();
+                else if (b.is("i32"))  xb = (float)b.Get_i32();
+                else if (b.is("i64"))  xb = (float)b.Get_i64();
+                else                   return Obj();
+                return Obj::Make_bool(a.Get_f32() > xb);
+            },
+            .lt         = [](const Obj& a, const Obj& b) {
+                float xb = 0.0f;
+                if      (b.is("f32"))  xb = b.Get_f32();
+                else if (b.is("i32"))  xb = (float)b.Get_i32();
+                else if (b.is("i64"))  xb = (float)b.Get_i64();
+                else                   return Obj();
+                return Obj::Make_bool(a.Get_f32() < xb);
+            },
+            .ge         = [](const Obj& a, const Obj& b) {
+                float xb = 0.0f;
+                if      (b.is("f32"))  xb = b.Get_f32();
+                else if (b.is("i32"))  xb = (float)b.Get_i32();
+                else if (b.is("i64"))  xb = (float)b.Get_i64();
+                else                   return Obj();
+                return Obj::Make_bool(a.Get_f32() >= xb);
+            },
+            .le         = [](const Obj& a, const Obj& b) {
+                float xb = 0.0f;
+                if      (b.is("f32"))  xb = b.Get_f32();
+                else if (b.is("i32"))  xb = (float)b.Get_i32();
+                else if (b.is("i64"))  xb = (float)b.Get_i64();
+                else                   return Obj();
+                return Obj::Make_bool(a.Get_f32() <= xb);
+            },
+            .eq         = [](const Obj& a, const Obj& b) {
+                float xb = 0.0f;
+                if      (b.is("f32"))  xb = b.Get_f32();
+                else if (b.is("i32"))  xb = (float)b.Get_i32();
+                else if (b.is("i64"))  xb = (float)b.Get_i64();
+                else                   return Obj();
+                return Obj::Make_bool(a.Get_f32() == xb);
+            },
+            .neq        = [](const Obj& a, const Obj& b) {
+                float xb = 0.0f;
+                if      (b.is("f32"))  xb = b.Get_f32();
+                else if (b.is("i32"))  xb = (float)b.Get_i32();
+                else if (b.is("i64"))  xb = (float)b.Get_i64();
+                else                   return Obj();
+                return Obj::Make_bool(a.Get_f32() != xb);
+            },
         });
 
         // f64
@@ -185,7 +278,61 @@ namespace rt {
             },
             .neg        = [](const Obj& o) {
                 return Obj::Make_f64(-o.Get_f64());
-            }
+            },
+            .gt         = [](const Obj& a, const Obj& b) {
+                double xb = 0.0;
+                if      (b.is("f64"))  xb = b.Get_f64();
+                else if (b.is("f32"))  xb = b.Get_f32();
+                else if (b.is("i64"))  xb = (double)b.Get_i64();
+                else if (b.is("i32"))  xb = (double)b.Get_i32();
+                else                   return Obj();
+                return Obj::Make_bool(a.Get_f64() > xb);
+            },
+            .lt         = [](const Obj& a, const Obj& b) {
+                double xb = 0.0;
+                if      (b.is("f64"))  xb = b.Get_f64();
+                else if (b.is("f32"))  xb = b.Get_f32();
+                else if (b.is("i64"))  xb = (double)b.Get_i64();
+                else if (b.is("i32"))  xb = (double)b.Get_i32();
+                else                   return Obj();
+                return Obj::Make_bool(a.Get_f64() < xb);
+            },
+            .ge         = [](const Obj& a, const Obj& b) {
+                double xb = 0.0;
+                if      (b.is("f64"))  xb = b.Get_f64();
+                else if (b.is("f32"))  xb = b.Get_f32();
+                else if (b.is("i64"))  xb = (double)b.Get_i64();
+                else if (b.is("i32"))  xb = (double)b.Get_i32();
+                else                   return Obj();
+                return Obj::Make_bool(a.Get_f64() >= xb);
+            },
+            .le         = [](const Obj& a, const Obj& b) {
+                double xb = 0.0;
+                if      (b.is("f64"))  xb = b.Get_f64();
+                else if (b.is("f32"))  xb = b.Get_f32();
+                else if (b.is("i64"))  xb = (double)b.Get_i64();
+                else if (b.is("i32"))  xb = (double)b.Get_i32();
+                else                   return Obj();
+                return Obj::Make_bool(a.Get_f64() <= xb);
+            },
+            .eq         = [](const Obj& a, const Obj& b) {
+                double xb = 0.0;
+                if      (b.is("f64"))  xb = b.Get_f64();
+                else if (b.is("f32"))  xb = b.Get_f32();
+                else if (b.is("i64"))  xb = (double)b.Get_i64();
+                else if (b.is("i32"))  xb = (double)b.Get_i32();
+                else                   return Obj();
+                return Obj::Make_bool(a.Get_f64() == xb);
+            },
+            .neq        = [](const Obj& a, const Obj& b) {
+                double xb = 0.0;
+                if      (b.is("f64"))  xb = b.Get_f64();
+                else if (b.is("f32"))  xb = b.Get_f32();
+                else if (b.is("i64"))  xb = (double)b.Get_i64();
+                else if (b.is("i32"))  xb = (double)b.Get_i32();
+                else                   return Obj();
+                return Obj::Make_bool(a.Get_f64() != xb);
+            },
         });
 
         // string
@@ -200,7 +347,15 @@ namespace rt {
                 auto s = o.Get_string();
                 s.Reverse();
                 return Obj::Make_string(s.ToCppString());
-            }
+            },
+            .eq  = [](const Obj& a, const Obj& b) {
+                if (!b.is("string")) return Obj();
+                return Obj::Make_bool(a.Get_string().ToCppString() == b.Get_string().ToCppString());
+            },
+            .neq = [](const Obj& a, const Obj& b) {
+                if (!b.is("string")) return Obj();
+                return Obj::Make_bool(a.Get_string().ToCppString() != b.Get_string().ToCppString());
+            },        
         });
     }
 

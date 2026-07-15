@@ -1,9 +1,7 @@
 
-x: bool   = true;
-y: bool   = true;
-z: i32    = 64;
-s: string = "Xero!";
-
-if (x == true && y == true) {
-    println(s);
+if (1 + 3 >= 3) {
+    println("Xero!Xero!Xero!Xero!Xero!");
+}
+else {
+    println("Wow Wow Wow!");
 }

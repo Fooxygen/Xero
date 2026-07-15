@@ -128,7 +128,7 @@ namespace rt {
             return o;
         }
 
-        const Type* type() {
+        const Type* type() const {
             return type_;
         }
         bool isNone() const {
