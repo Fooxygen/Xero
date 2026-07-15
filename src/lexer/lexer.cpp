@@ -85,12 +85,14 @@ namespace lexer {
                     CharNext();
                     return TokenGen(Token::Type::And, "&&");
                 }
+                break;
             }
             case '|': {
                 if (nextc == '|') {
                     CharNext();
                     return TokenGen(Token::Type::Or, "||");
                 }
+                break;
             }
         }
 

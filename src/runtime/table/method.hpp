@@ -42,8 +42,7 @@ namespace rt {
         }
 
         static Obj::Fn Get(const Type* type, const std::string& name) {
-            auto it = table_.find({type, name});
-            return it != table_.end() ? it->second : nullptr;
+            return table_.contains({type, name}) ? table_.at({type, name}) : nullptr;
         }
     };
 }

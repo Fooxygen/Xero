@@ -64,8 +64,7 @@ namespace rt {
         }
 
         static void Set(const Type& t) {
-            auto it = table_.find(std::string(t.name));
-            if (it == table_.end()) {
+            if (!table_.contains(std::string(t.name))) {
                 table_.emplace(t.name, new Type(t));
             }
             else throw LogErr(LogModule::Runtime, std::format("existing type '{}'", t.name));
