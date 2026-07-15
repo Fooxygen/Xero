@@ -36,8 +36,8 @@ public:
         Number,             //  Continuous Integer
         String,             //  String
 
-        // └─ Operator
-        Operator,           //  Base
+        // └─ Arith Operator
+        ArithOper,          //  Base
         PlusOrMinus,        //  Base
         Plus,               //  +
         Minus,              //  -
@@ -45,6 +45,19 @@ public:
         Star,               //  *
         Slash,              //  /
         
+        // └─ Relation Operator
+        RelationOper,       //  Base
+        Gt,                 //  >
+        Lt,                 //  <
+        Ge,                 //  >=
+        Le,                 //  <=
+        Eq,                 //  ==
+        Neq,                //  !=
+
+        // └─ Logical Operator
+        LogicalOper,        //  Base
+        And,                //  &&
+        Or,                 //  ||
         Not,                //  !
 
         // └─ Keyword
@@ -94,11 +107,6 @@ public:
             case Type::String:
                 return Type::Semantic;
 
-            case Type::PlusOrMinus:
-            case Type::StarOrSlash:
-            case Type::Not:
-                return Type::Operator;
-
             case Type::Plus:
             case Type::Minus:
                 return Type::PlusOrMinus;
@@ -106,6 +114,23 @@ public:
             case Type::Star:
             case Type::Slash:
                 return Type::StarOrSlash;
+
+            case Type::PlusOrMinus:
+            case Type::StarOrSlash:
+                return Type::ArithOper;
+
+            case Type::Gt:
+            case Type::Ge:
+            case Type::Lt:
+            case Type::Le:
+            case Type::Eq:
+            case Type::Neq:
+                return Type::RelationOper;
+
+            case Type::Not:
+            case Type::And:
+            case Type::Or:
+                return Type::LogicalOper;
 
             case Type::If:
             case Type::Elif:
@@ -147,7 +172,17 @@ public:
             case Type::StarOrSlash: return "StarOrSlash";
             case Type::Star:        return "Star";
             case Type::Slash:       return "Slash";
+
+            case Type::Gt:          return "Gt";
+            case Type::Ge:          return "Ge";
+            case Type::Lt:          return "Lt";
+            case Type::Le:          return "Le";
+            case Type::Eq:          return "Eq";
+            case Type::Neq:         return "Neq";
+
             case Type::Not:         return "Not";
+            case Type::And:         return "And";
+            case Type::Or:          return "Or";
 
             case Type::If:          return "If";
             case Type::Elif:        return "Elif";

@@ -308,7 +308,52 @@ namespace parser {
                 }
             );
         }
-    
+        // └─ expr relationoper expr
+        {
+            RuleAdd(
+                PATS{
+                    AT::Expr,
+                    TT::RelationOper,
+                    AT::Expr
+                },
+                [](std::vector<Symbol>& symbols, const Token* token_next) -> ASTNODE {
+                    size_t syms_len = symbols.size();
+
+                    auto op = std::get<Token>(symbols[syms_len - 2].data()).type();
+                    if (token_next && isOperPriority(token_next->type(), op))
+                        return nullptr;
+
+                    return std::make_unique<OperExpr>(op,
+                        Rule::Move<Expr>(symbols, 1),
+                        Rule::Move<Expr>(symbols, 3)
+                    );
+                }
+            );
+        }
+
+        // └─ expr logicaloper expr
+        {
+            RuleAdd(
+                PATS{
+                    AT::Expr,
+                    TT::LogicalOper,
+                    AT::Expr
+                },
+                [](std::vector<Symbol>& symbols, const Token* token_next) -> ASTNODE {
+                    size_t syms_len = symbols.size();
+
+                    auto op = std::get<Token>(symbols[syms_len - 2].data()).type();
+                    if (token_next && isOperPriority(token_next->type(), op))
+                        return nullptr;
+
+                    return std::make_unique<OperExpr>(op,
+                        Rule::Move<Expr>(symbols, 1),
+                        Rule::Move<Expr>(symbols, 3)
+                    );
+                }
+            );
+        }
+        
         // Logic
 
         // └─ if (cond) { } -> condstmt

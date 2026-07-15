@@ -37,13 +37,64 @@ namespace lexer {
 
         char c = code_[pos_];
 
-        // Multiple Chars
+        // Indef Length
         if (isAlpha(c))  return TokenScanWord();            // a...
         if (isNumber(c)) return TokenScanNumber();          // 1...
         if (c == '"')    return TokenScanString();          // "..."
-
-        // Single Char
+        
+        // Fixed Length
         CharNext();
+
+        // └─ Multiple Chars
+        char nextc = !isNextScanEnd() ? code_[pos_] : '\0';
+        switch (c) {
+            case '=': {
+                if (nextc == '=') {
+                    CharNext();
+                    return TokenGen(Token::Type::Eq, "==");
+                }
+                else
+                    return TokenGen(Token::Type::Assign, "=");
+            }
+            case '!': {
+                if (nextc == '=') {
+                    CharNext();
+                    return TokenGen(Token::Type::Neq, "!=");
+                }
+                else
+                    return TokenGen(Token::Type::Not, "!");
+            }
+            case '>': {
+                if (nextc == '=') {
+                    CharNext();
+                    return TokenGen(Token::Type::Ge, ">=");
+                }
+                else
+                    return TokenGen(Token::Type::Gt, ">");
+            }
+            case '<': {
+                if (nextc == '=') {
+                    CharNext();
+                    return TokenGen(Token::Type::Le, "<=");
+                }
+                else
+                    return TokenGen(Token::Type::Lt, "<");
+            }
+            case '&': {
+                if (nextc == '&') {
+                    CharNext();
+                    return TokenGen(Token::Type::And, "&&");
+                }
+            }
+            case '|': {
+                if (nextc == '|') {
+                    CharNext();
+                    return TokenGen(Token::Type::Or, "||");
+                }
+            }
+        }
+
+        // └─ Single Char
         switch (c) {
             case '#': {
                 bool isMultiLineCommon =
@@ -55,7 +106,6 @@ namespace lexer {
                 else return TokenScanSingleComment();
             }
             case ':':   return TokenGen(Token::Type::Colon,     ":");
-            case '=':   return TokenGen(Token::Type::Assign,    "=");
             case ';':   return TokenGen(Token::Type::Semicolon, ";");
             case '(':   return TokenGen(Token::Type::LParen,    "(");
             case ')':   return TokenGen(Token::Type::RParen,    ")");
@@ -67,7 +117,6 @@ namespace lexer {
             case '-':   return TokenGen(Token::Type::Minus,     "-");
             case '*':   return TokenGen(Token::Type::Star,      "*");
             case '/':   return TokenGen(Token::Type::Slash,     "/");
-            case '!':   return TokenGen(Token::Type::Not,       "!");
         }
 
         throw LogErr(LogModule::Lexer, "invalid token");

@@ -26,6 +26,14 @@ namespace rt {
                 case Token::Type::Minus: return t->minus;
                 case Token::Type::Star:  return t->star;
                 case Token::Type::Slash: return t->slash;
+                case Token::Type::Gt:    return t->gt;
+                case Token::Type::Lt:    return t->lt;
+                case Token::Type::Ge:    return t->ge;
+                case Token::Type::Le:    return t->le;
+                case Token::Type::Eq:    return t->eq;
+                case Token::Type::Neq:   return t->neq;
+                case Token::Type::And:   return t->and_;
+                case Token::Type::Or:    return t->or_;
                 default:                 return nullptr;
             }
         };

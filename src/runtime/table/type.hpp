@@ -30,14 +30,28 @@ namespace rt {
         void        (*destroy)(void*)           = destroy_default;
         std::string (*to_string)(const Obj&)    = to_string_default;
 
-        // Oper
+        // ArithOper
 
-        Obj (*plus)  (const Obj&, const Obj&)    = nullptr;
-        Obj (*minus) (const Obj&, const Obj&)    = nullptr;
-        Obj (*star)  (const Obj&, const Obj&)    = nullptr;
-        Obj (*slash) (const Obj&, const Obj&)    = nullptr;
-        Obj (*neg)   (const Obj&)                = nullptr;
-        Obj (*not_)  (const Obj&)                = nullptr;
+        Obj (*plus)  (const Obj&, const Obj&)   = nullptr;
+        Obj (*minus) (const Obj&, const Obj&)   = nullptr;
+        Obj (*star)  (const Obj&, const Obj&)   = nullptr;
+        Obj (*slash) (const Obj&, const Obj&)   = nullptr;
+        Obj (*neg)   (const Obj&)               = nullptr;
+        
+        // RelationOper
+
+        Obj (*gt)   (const Obj&, const Obj&)    = nullptr;
+        Obj (*lt)   (const Obj&, const Obj&)    = nullptr;
+        Obj (*ge)   (const Obj&, const Obj&)    = nullptr;
+        Obj (*le)   (const Obj&, const Obj&)    = nullptr;
+        Obj (*eq)   (const Obj&, const Obj&)    = nullptr;
+        Obj (*neq)  (const Obj&, const Obj&)    = nullptr;
+
+        // LogicalOper
+
+        Obj (*and_) (const Obj&, const Obj&)    = nullptr;
+        Obj (*or_)  (const Obj&, const Obj&)    = nullptr;
+        Obj (*not_) (const Obj&)                = nullptr;
     };
 
     class TypeTable {

@@ -23,9 +23,17 @@ namespace rt {
                 if (o.Get_bool()) return std::string("true");
                 return std::string("false");
             },
-            .not_       = [](const Obj& o) {
+            .gt   = [](const Obj& l, const Obj& r) { return Obj::Make_bool(l.Get_bool() >  r.Get_bool()); },
+            .lt   = [](const Obj& l, const Obj& r) { return Obj::Make_bool(l.Get_bool() <  r.Get_bool()); },
+            .ge   = [](const Obj& l, const Obj& r) { return Obj::Make_bool(l.Get_bool() >= r.Get_bool()); },
+            .le   = [](const Obj& l, const Obj& r) { return Obj::Make_bool(l.Get_bool() <= r.Get_bool()); },
+            .eq   = [](const Obj& l, const Obj& r) { return Obj::Make_bool(l.Get_bool() == r.Get_bool()); },
+            .neq  = [](const Obj& l, const Obj& r) { return Obj::Make_bool(l.Get_bool() != r.Get_bool()); },
+            .and_ = [](const Obj& l, const Obj& r) { return Obj::Make_bool(l.Get_bool() && r.Get_bool()); },
+            .or_  = [](const Obj& l, const Obj& r) { return Obj::Make_bool(l.Get_bool() || r.Get_bool()); },
+            .not_ = [](const Obj& o) {
                 return Obj::Make_bool(!o.Get_bool());
-            }
+            },
         });
 
         // i32

@@ -1,4 +1,9 @@
 
+x: bool   = true;
+y: bool   = true;
+z: i32    = 64;
 s: string = "Xero!";
 
-println(-s, s + s, s);
+if (x == true && y == true) {
+    println(s);
+}
