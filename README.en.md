@@ -33,9 +33,10 @@ You can find more information about Xero on the [Wiki](https://github.com/Fooxyg
 ## Build Stack
 
 | Category       | Technology | Version |
-|----------------|------------|---------|
+| -              | -          | -       |
 | Language       | C++        | 23      |
-| Build System   | CMake      | 3.15+   |
+| Build System   | CMake      | 3.21+   |
+| Build Tools    | Ninja      | 1.13.2   |
 | Compiler       | MinGW-w64  | 16.1.0  |
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>

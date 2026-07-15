@@ -24,7 +24,8 @@ namespace rt {
         }
 
         const Obj* Get(const std::string& name) const {
-            return isExist(name) ? &objs_.at(name) : nullptr;
+            if (isExist(name)) return &objs_.at(name);
+            throw LogErr(LogModule::Runtime, std::format("undefined object '{}'", name));
         }
 
         bool isExist(const std::string& name) const {
