@@ -63,7 +63,7 @@ namespace parser {
     
         Token::Type type_token() const {
             if (auto token = std::get_if<Token>(&data_)) {
-                return token->type;
+                return token->type();
             }
             return Token::Type::Undefined;
         }

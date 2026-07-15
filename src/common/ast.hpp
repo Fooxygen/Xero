@@ -356,7 +356,7 @@ public:
 
     void AstPrintImpl(std::string indent, size_t expand) override {
         AstLayerPrint(indent, "value");
-        std::cout << COLOR_GREEN << '\"' << value_ << '\"' << COLOR_DEFAULT;
+        std::cout << COLOR_ORANGE << '\"' << value_ << '\"' << COLOR_DEFAULT;
     }
 };
 

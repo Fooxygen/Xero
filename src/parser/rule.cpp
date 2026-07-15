@@ -17,9 +17,9 @@ namespace parser {
 
         static auto isArgTerminator = [](const Token* next) {
             if (!next) return true;                             // EOF
-            return  next->type == Token::Type::Comma ||         // ,
-                    next->type == Token::Type::Semicolon ||     // ;
-                    next->type == Token::Type::RParen;          // )
+            return  next->type() == Token::Type::Comma ||         // ,
+                    next->type() == Token::Type::Semicolon ||     // ;
+                    next->type() == Token::Type::RParen;          // )
         };
 
         rules_.clear();
@@ -231,7 +231,7 @@ namespace parser {
                 },
                 [](std::vector<Symbol>& symbols, const Token* token_next) {
                     size_t syms_len = symbols.size();
-                    auto   opertype = std::get<Token>(symbols[syms_len - 2].data()).type;
+                    auto   opertype = std::get<Token>(symbols[syms_len - 2].data()).type();
                     return std::make_unique<OperExpr>(
                         opertype,
                         Rule::Move<Expr>(symbols, 1),
@@ -252,8 +252,8 @@ namespace parser {
                     size_t syms_len = symbols.size();
 
                     // Oper Priority Check
-                    auto opertype = std::get<Token>(symbols[syms_len - 2].data()).type;
-                    if (token_next && isOperPriority(token_next->type, opertype))
+                    auto opertype = std::get<Token>(symbols[syms_len - 2].data()).type();
+                    if (token_next && isOperPriority(token_next->type(), opertype))
                     return nullptr;     // postpone
 
                     return std::make_unique<OperExpr>(
@@ -273,7 +273,7 @@ namespace parser {
                     TT::RParen,
                 },
                 [](std::vector<Symbol>& symbols, const Token* token_next) -> ASTNODE {
-                    if (token_next && token_next->type == Token::Type::LBrace)
+                    if (token_next && token_next->type() == Token::Type::LBrace)
                         return nullptr;
 
                     return Rule::Move<Expr>(symbols, 2);

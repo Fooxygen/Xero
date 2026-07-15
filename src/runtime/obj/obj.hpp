@@ -141,15 +141,19 @@ namespace rt {
             return type_->isRef && data_.ref_;
         }
 
-        bool     Get_bool()      const { return data_.bool_;  }
-        int32_t  Get_i32()       const { return data_.i32_;   }
-        int64_t  Get_i64()       const { return data_.i64_;   }
-        float    Get_f32()       const { return data_.f32_;   }
-        double   Get_f64()       const { return data_.f64_;   }
-        String&  Get_string()    const {
+        bool     Get_bool()         const { return data_.bool_;  }
+        int32_t  Get_i32()          const { return data_.i32_;   }
+        int64_t  Get_i64()          const { return data_.i64_;   }
+        float    Get_f32()          const { return data_.f32_;   }
+        double   Get_f64()          const { return data_.f64_;   }
+        String&  Get_string_ref()   const {
             RefData* ref = (RefData*)(data_.ref_);
             String*  str = (String*)(ref->data);
             return *str;
+        }
+        String   Get_string()     const {
+            auto ref = Get_string_ref();
+            return String(ref);
         }
     };
 }

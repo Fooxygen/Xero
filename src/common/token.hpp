@@ -54,19 +54,26 @@ public:
         Else,               // Else
     };
 
-    Type        type    = Type::Undefined;
-    std::string lexeme  = "";
+private:
+    Type        type_   = Type::Undefined;
+    std::string lexeme_ = "";
 
-    size_t line = 0;
-    size_t col  = 0;
+    size_t line_ = 0;
+    size_t col_  = 0;
     
+public:
     Token() {}
-    Token(Type type_, const std::string& lexeme_, size_t line_, size_t col_) {
-        type   = type_;
-        lexeme = lexeme_;
-        line   = line_;
-        col    = col_;
+    Token(Type type, const std::string& lexeme, size_t line, size_t col) {
+        type_   = type;
+        lexeme_ = lexeme;
+        line_   = line;
+        col_    = col;
     }
+
+    const Type&        type()   const { return type_; }
+    const std::string& lexeme() const { return lexeme_; }
+    size_t line() const { return line_; }
+    size_t col() const { return col_; }
 
     static Type BaseOfType(Type type) {
         switch (type) {
@@ -156,7 +163,7 @@ public:
     }
     
     std::string MetaPrint() const {
-        return std::format("[{}:{}] {}('{}')", line, col,
-            TypeName(type), lexeme);
+        return std::format("[{}:{}] {}('{}')", line_, col_,
+            TypeName(type_), lexeme_);
     }
 };

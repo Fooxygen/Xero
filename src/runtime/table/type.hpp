@@ -49,7 +49,7 @@ namespace rt {
             table_ = std::unordered_map<std::string, const Type*>();
         }
 
-        static const void Set(const Type& t) {
+        static void Set(const Type& t) {
             auto it = table_.find(std::string(t.name));
             if (it == table_.end()) {
                 table_.emplace(t.name, new Type(t));

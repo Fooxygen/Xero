@@ -1,14 +1,4 @@
 
-b: bool   = false;
-c: bool   = false;
-s: string = "Hello Xero!";
+s: string = "Xero!";
 
-if   (b) {
-    println(s);
-}
-elif (c) {
-    println(-s);
-}
-else {
-    println(s + s);
-}
+println(-s, s + s, s);

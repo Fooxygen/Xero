@@ -189,8 +189,9 @@ namespace rt {
                 return Obj::Make_string((a.Get_string() + b.Get_string()).ToCppString());
             },
             .neg       = [](const Obj& o) {
-                o.Get_string().Reverse();
-                return o;
+                auto s = o.Get_string();
+                s.Reverse();
+                return Obj::Make_string(s.ToCppString());
             }
         });
     }

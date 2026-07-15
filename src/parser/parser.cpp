@@ -54,36 +54,36 @@ namespace parser {
         using TT = Token::Type;
 
         auto sym = Symbol(token);
-        switch (token.type) {
+        switch (token.type()) {
             case TT::Id: {
-                if      (token.lexeme == "true") {
+                if      (token.lexeme() == "true") {
                     sym = Symbol(std::make_unique<BoolConst>(true));
                 }
-                else if (token.lexeme == "false") {
+                else if (token.lexeme() == "false") {
                     sym = Symbol(std::make_unique<BoolConst>(false));
                 }
                 
-                else if (token.lexeme == "if") {
-                    sym = Symbol(Token(Token::Type::If, token.lexeme, token.line, token.col));
+                else if (token.lexeme() == "if") {
+                    sym = Symbol(Token(Token::Type::If, token.lexeme(), token.line(), token.col()));
                 }
-                else if (token.lexeme == "elif") {
-                    sym = Symbol(Token(Token::Type::Elif, token.lexeme, token.line, token.col));
+                else if (token.lexeme() == "elif") {
+                    sym = Symbol(Token(Token::Type::Elif, token.lexeme(), token.line(), token.col()));
                 }
-                else if (token.lexeme == "else") {
-                    sym = Symbol(Token(Token::Type::Else, token.lexeme, token.line, token.col));
+                else if (token.lexeme() == "else") {
+                    sym = Symbol(Token(Token::Type::Else, token.lexeme(), token.line(), token.col()));
                 }
 
                 else {
-                    sym = Symbol(std::make_unique<IdExpr>(token.lexeme));
+                    sym = Symbol(std::make_unique<IdExpr>(token.lexeme()));
                 }
                 break;
             }
             case TT::Number: {
-                sym = Symbol(std::make_unique<NumConst>(token.lexeme));
+                sym = Symbol(std::make_unique<NumConst>(token.lexeme()));
                 break;
             }
             case TT::String: {
-                sym = Symbol(std::make_unique<StringConst>(token.lexeme));
+                sym = Symbol(std::make_unique<StringConst>(token.lexeme()));
                 break;
             }
         }
@@ -96,10 +96,10 @@ namespace parser {
 
         // Brace Scope
         {
-            if      (token.type == TT::LBrace) {
+            if      (token.type() == TT::LBrace) {
                 scopes_brace.emplace_back(symbols_.size() + 1);
             }
-            else if (token.type == TT::RBrace) {
+            else if (token.type() == TT::RBrace) {
                 if (scopes_brace.empty()) {
                     throw LogErr(LogModule::Parser, "unclosed brace");
                 }

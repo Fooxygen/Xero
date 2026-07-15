@@ -19,10 +19,10 @@ namespace lexer {
             if (!next_opt.has_value()) break;
 
             auto next = next_opt.value();
-            if (next.type != Token::Type::Undefined) {
+            if (next.type() != Token::Type::Undefined) {
                 auto& token = tokens_.emplace_back(next);
 
-                if (isPrint && token.type != Token::Type::Undefined)
+                if (isPrint && token.type() != Token::Type::Undefined)
                     std::cout << token.MetaPrint() << std::endl;
             }
         }
