@@ -161,8 +161,10 @@ namespace rt {
             else throw LogErr(LogModule::Runtime, "condition must be bool");
         }
 
-        if (isPass && node.block_) Exec(*node.block_);
-        if (node.sub_) Exec(*node.sub_);
+        if (isPass && node.block_)
+            Exec(*node.block_);
+        else if (node.sub_)
+            Exec(*node.sub_);
         
         return Obj();
     }

@@ -1,15 +1,14 @@
 
-b: bool   = true;
+b: bool   = false;
+c: bool   = false;
 s: string = "Hello Xero!";
 
-if (b) {
+if   (b) {
     println(s);
-    println(s + s);
+}
+elif (c) {
     println(-s);
 }
-
-if (!b) {
-    println(s);
+else {
     println(s + s);
-    println(-s);
 }

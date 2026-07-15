@@ -330,5 +330,56 @@ namespace parser {
                 }
             );
         }
+    
+        // └─ condstmt elif (cond) { } -> condstmt
+        {
+            RuleAdd(
+                PATS{
+                    AT::CondStmt,
+                    TT::Elif,
+                    TT::LParen,
+                    AT::Expr,
+                    TT::RParen,
+                    AT::BlockStmt
+                },
+                [](std::vector<Symbol>& symbols, auto*) {
+                    auto stmt = Rule::Move<CondStmt>(symbols, 1);
+
+                    CondStmt* tail = stmt.get();
+                    while (tail->sub_) tail = tail->sub_.get();
+
+                    tail->sub_ = std::make_unique<CondStmt>(
+                        Rule::Move<Expr>(symbols, 4),
+                        Rule::Move<BlockStmt>(symbols, 6),
+                        nullptr
+                    );
+                    return stmt;
+                }
+            );
+        }
+
+        // └─ condstmt else { } -> condstmt
+        {
+            RuleAdd(
+                PATS{
+                    AT::CondStmt,
+                    TT::Else,
+                    AT::BlockStmt
+                },
+                [](std::vector<Symbol>& symbols, auto*) {
+                    auto stmt = Rule::Move<CondStmt>(symbols, 1);
+
+                    CondStmt* tail = stmt.get();
+                    while (tail->sub_) tail = tail->sub_.get();
+
+                    tail->sub_ = std::make_unique<CondStmt>(
+                        nullptr,
+                        Rule::Move<BlockStmt>(symbols, 3),
+                        nullptr
+                    );
+                    return stmt;
+                }
+            );
+        }
     }
 }
