@@ -46,10 +46,11 @@ namespace lexer {
         CharNext();
 
         // └─ Multiple Chars
-        char nextc = !isScanEnd() ? code_[pos_] : '\0';
+        char cn  = !isScanEnd()     ? code_[pos_]     : '\0';
+        char cnn = !isNextScanEnd() ? code_[pos_ + 1] : '\0';
         switch (c) {
             case '=': {
-                if (nextc == '=') {
+                if (cn == '=') {
                     CharNext();
                     return TokenGen(Token::Type::Eq, "==");
                 }
@@ -57,7 +58,7 @@ namespace lexer {
                     return TokenGen(Token::Type::Assign, "=");
             }
             case '!': {
-                if (nextc == '=') {
+                if (cn == '=') {
                     CharNext();
                     return TokenGen(Token::Type::Neq, "!=");
                 }
@@ -65,7 +66,7 @@ namespace lexer {
                     return TokenGen(Token::Type::Not, "!");
             }
             case '>': {
-                if (nextc == '=') {
+                if (cn == '=') {
                     CharNext();
                     return TokenGen(Token::Type::Ge, ">=");
                 }
@@ -73,7 +74,7 @@ namespace lexer {
                     return TokenGen(Token::Type::Gt, ">");
             }
             case '<': {
-                if (nextc == '=') {
+                if (cn == '=') {
                     CharNext();
                     return TokenGen(Token::Type::Le, "<=");
                 }
@@ -81,18 +82,32 @@ namespace lexer {
                     return TokenGen(Token::Type::Lt, "<");
             }
             case '&': {
-                if (nextc == '&') {
+                if (cn == '&') {
                     CharNext();
                     return TokenGen(Token::Type::And, "&&");
                 }
                 break;
             }
             case '|': {
-                if (nextc == '|') {
+                if (cn == '|') {
                     CharNext();
                     return TokenGen(Token::Type::Or, "||");
                 }
                 break;
+            }
+            case '.': {
+                if (cn == '.') {
+                    if (cnn == '=') {
+                        CharNext(2);
+                        return TokenGen(Token::Type::DotDotEq, "..=");
+                    }
+                    else {
+                        CharNext();
+                        return TokenGen(Token::Type::DotDot, "..");
+                    }
+                }
+                else
+                    return TokenGen(Token::Type::Dot, ".");
             }
         }
 
@@ -113,7 +128,6 @@ namespace lexer {
             case ')':   return TokenGen(Token::Type::RParen,    ")");
             case '{':   return TokenGen(Token::Type::LBrace,    "{");
             case '}':   return TokenGen(Token::Type::RBrace,    "}");
-            case '.':   return TokenGen(Token::Type::Dot,       ".");
             case ',':   return TokenGen(Token::Type::Comma,     ",");
             case '+':   return TokenGen(Token::Type::Plus,      "+");
             case '-':   return TokenGen(Token::Type::Minus,     "-");
@@ -136,9 +150,27 @@ namespace lexer {
     }
 
     Token Lexer::TokenScanNumber() {
-        size_t pbeg = pos_;
-        while (pos_ + 1 < code_.length() && isNumberOrDot(code_[pos_ + 1])) {
-            CharNext();
+        size_t pbeg   = pos_;
+        bool   hasDot = false;
+
+        while (pos_ + 1 < code_.length()) {
+            char cn = code_[pos_ + 1];
+            
+            if (isNumber(cn)) CharNext();
+
+            // 123.
+            else if (isDot(cn) && !hasDot) {
+
+                // 123.4
+                if (pos_ + 2 < code_.length() && isNumber(code_[pos_ + 2])) {
+                    hasDot = true;
+                    CharNext();
+                }
+
+                // 123.. or 123.a
+                else break;
+            }
+            else break;
         }
         CharNext();
 

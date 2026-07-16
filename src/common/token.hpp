@@ -26,6 +26,8 @@ public:
         LBrace,             //  {
         RBrace,             //  }
         Dot,                //  .
+        DotDot,             //  ..
+        DotDotEq,           //  ..=
         Comma,              //  ,
         Quote,              //  "
 
@@ -98,6 +100,8 @@ public:
             case Type::LBrace:
             case Type::RBrace:
             case Type::Dot:
+            case Type::DotDot:
+            case Type::DotDotEq:
             case Type::Comma:
             case Type::Quote:
                 return Type::Unsemantic;
@@ -159,6 +163,8 @@ public:
             case Type::LBrace:      return "LBrace";
             case Type::RBrace:      return "RBrace";
             case Type::Dot:         return "Dot";
+            case Type::DotDot:      return "DotDot";
+            case Type::DotDotEq:    return "DotDotEq";
             case Type::Comma:       return "Comma";
             case Type::Quote:       return "Quote";
 

@@ -28,6 +28,7 @@ enum class AstType {
     Expr,               //  Base ------
     IdExpr,             //  Identity
     OperExpr,           //  Operation
+    RangeExpr,          //  Range
     NegExpr,            //  Negative
     NotExpr,            //  Not
     FnCallExpr,         //  Func Call
@@ -55,6 +56,7 @@ static AstType BaseOfAstType(AstType type) {
 
         case AstType::IdExpr:
         case AstType::OperExpr:
+        case AstType::RangeExpr:
         case AstType::NegExpr:
         case AstType::NotExpr:
         case AstType::FnCallExpr:
@@ -98,6 +100,7 @@ public:
             case AstType::Expr:             return "Expr";
             case AstType::IdExpr:           return "IdExpr";
             case AstType::OperExpr:         return "OperExpr";
+            case AstType::RangeExpr:        return "RangeExpr";
             case AstType::NegExpr:          return "NegExpr";
             case AstType::NotExpr:          return "NotExpr";
             case AstType::FnCallExpr:       return "FnCallExpr";
@@ -205,6 +208,38 @@ public:
 
         lexpr_->Print(prefix, "lexpr");
         rexpr_->Print(prefix, "rexpr");
+    }
+};
+class RangeExpr         : public Expr {
+public:
+    Token::Type rangetype_ = Token::Type::Undefined;
+    std::unique_ptr<Expr> lexpr_ = nullptr;
+    std::unique_ptr<Expr> rexpr_ = nullptr;
+    std::unique_ptr<Expr> step_  = nullptr;
+
+    RangeExpr(
+        Token::Type rangetype,
+        std::unique_ptr<Expr> lexpr,
+        std::unique_ptr<Expr> rexpr,
+        std::unique_ptr<Expr> step
+    )
+    :   rangetype_(rangetype),
+        lexpr_(std::move(lexpr)),  
+        rexpr_(std::move(rexpr)),
+        step_(std::move(step))
+    {
+        type_ = AstType::RangeExpr;
+    }
+
+    void PrintImpl(std::string prefix) override {
+        PrintLabel("type", prefix);
+        std::cout << COLOR_MAGENTA;
+        Token::TypePrint(rangetype_);
+        std::cout << COLOR_DEFAULT << std::endl;
+
+        lexpr_->Print(prefix, "lexpr");
+        rexpr_->Print(prefix, "rexpr");
+        if (step_) step_->Print(prefix, "step");
     }
 };
 class NegExpr           : public Expr {

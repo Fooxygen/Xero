@@ -24,7 +24,7 @@ namespace parser {
 
         rules_.clear();
         
-        // Var and Const
+        // Declare and Assign
         
         // └─ i: int = 7;
         {
@@ -64,7 +64,7 @@ namespace parser {
             );
         }
 
-        // Call
+        // Fn and Method
 
         // └─ func(); -> func()
         {
@@ -219,7 +219,7 @@ namespace parser {
             );
         }
 
-        // Operation
+        // Basic Oper
 
         // └─ expr *|/ expr
         {
@@ -330,7 +330,6 @@ namespace parser {
                 }
             );
         }
-
         // └─ expr logicaloper expr
         {
             RuleAdd(
@@ -354,7 +353,7 @@ namespace parser {
             );
         }
         
-        // Logic
+        // Logic Stmt
 
         // └─ if (cond) { } -> condstmt
         {
@@ -423,6 +422,50 @@ namespace parser {
                         nullptr
                     );
                     return stmt;
+                }
+            );
+        }
+    
+        // Range
+
+        // └─ expr .. expr -> rangeexpr
+        {
+            RuleAdd(
+                PATS{
+                    AT::Expr,
+                    TT::DotDot,
+                    AT::Expr,
+                },
+                [](std::vector<Symbol>& symbols, const Token* token_next) -> ASTNODE {
+                    if (token_next && (
+                        token_next->type() == TT::DotDot ||
+                        token_next->type() == TT::DotDotEq
+                    )) return nullptr;
+
+                    return std::make_unique<RangeExpr>(
+                        TT::DotDot,
+                        Rule::Move<Expr>(symbols, 1),
+                        Rule::Move<Expr>(symbols, 3),
+                        nullptr
+                    );
+                }
+            );
+        }
+        // └─ expr ..= expr -> rangeexpr
+        {
+            RuleAdd(
+                PATS{
+                    AT::Expr,
+                    TT::DotDotEq,
+                    AT::Expr,
+                },
+                [](std::vector<Symbol>& symbols, auto*) {
+                    return std::make_unique<RangeExpr>(
+                        TT::DotDotEq,
+                        Rule::Move<Expr>(symbols, 1),
+                        Rule::Move<Expr>(symbols, 3),
+                        nullptr
+                    );
                 }
             );
         }
