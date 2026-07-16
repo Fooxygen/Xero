@@ -14,6 +14,10 @@
 #include "parser/parser.hpp"
 #include "runtime/xengine.hpp"
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 std::string FileRead(const std::string& path) {
     std::ifstream file(path, std::ios::binary);
     if (!file) {
@@ -26,6 +30,8 @@ std::string FileRead(const std::string& path) {
 }
 
 int main() {
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
     std::cout << BuildInfo::Print() << std::endl;
 
     try {
@@ -43,7 +49,7 @@ int main() {
         parser.Execute();
 
         LogStart(LogModule::Parser, "output ast").Print();
-        parser.root()->AstPrint();
+        parser.root()->Print("", "", true);
         LogFinish(LogModule::Parser, "output ast").Print();
 
         // Runtime

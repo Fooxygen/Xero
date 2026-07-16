@@ -118,29 +118,23 @@ public:
         std::cout << TypeName();
     }
 
-    // Structure Print
-    void         AstPrint(std::string indent = "", size_t expand = 4) {
-        // Expand indent for the next layer
-        indent += std::string(expand, ' ');
-        TypePrint();
-        AstPrintImpl(indent, expand);
-    }
-    // Structure Print Implement
-    virtual void AstPrintImpl(std::string indent = "", size_t expand = 4) {}
-    
-    // New Line and Insert Indent, Label
-    // exp:
-    //      [normal indent      Program
-    //       4 whitespace]          DeclStmt
-    //      [custom indent      [id] IdExpr
-    //       label length]           [id] i
-    // notice:
-    //      indent should be updated before use as sublayer
-    void         AstLayerPrint(std::string indent, std::string label) {
-        std::cout << '\n' << indent;
-        if (!label.empty()) {
-            std::cout << COLOR_YELLOW << "[" << label << "] " << COLOR_DEFAULT;
+    virtual void PrintImpl(std::string prefix) {}
+    void         Print(std::string prefix = "", std::string alias = "", bool isBegin = false) {
+        std::cout << prefix;
+        if (!isBegin) std::cout << "└── ";
+
+        size_t indent_alias = 0;
+        if (alias != "") {
+            indent_alias = alias.length() + 3;
+            std::cout << COLOR_ORANGE << "[" << alias << "] " << COLOR_DEFAULT;
         }
+        std::cout << TypeName() << std::endl;
+
+        PrintImpl(prefix + "    " + std::string(indent_alias, ' '));
+    }
+    void         PrintLabel(const std::string& name, std::string prefix = "") {
+        std::cout << prefix;
+        std::cout << "└── " << COLOR_ORANGE << "[" << name << "] " << COLOR_DEFAULT;
     }
 };
 class Expr              : public AstNode {
@@ -159,17 +153,15 @@ public:
     ArgList(std::vector<std::unique_ptr<Expr>>& args) : args_(std::move(args)) {
         type_ = AstType::ArgList;
     }
-
-    void AstPrintImpl(std::string indent, size_t expand) override {
-        AstLayerPrint(indent, "args");
-        for (auto& arg : args_) {
-            AstLayerPrint(indent, "");
-            arg->AstPrint(indent, expand);
-        }
-    }
     
     std::vector<std::unique_ptr<Expr>>& args() {
         return args_;
+    }
+
+    void PrintImpl(std::string prefix) override {
+        for (auto& arg : args_) {
+            arg->Print(prefix);
+        }
     }
 };
 
@@ -182,9 +174,9 @@ public:
         type_ = AstType::IdExpr;
     }
 
-    void AstPrintImpl(std::string indent, size_t expand) override {       
-        AstLayerPrint(indent, "id");
-        std::cout << COLOR_CYAN << value_ << COLOR_DEFAULT;
+    void PrintImpl(std::string prefix) override {
+        PrintLabel("value", prefix);
+        std::cout << COLOR_BLUE << value_ << COLOR_DEFAULT << std::endl;
     }
 };
 class OperExpr          : public Expr {
@@ -205,15 +197,14 @@ public:
         type_ = AstType::OperExpr;
     }
 
-    void AstPrintImpl(std::string indent, size_t expand) override {      
-        AstLayerPrint(indent, "oper");
+    void PrintImpl(std::string prefix) override {
+        PrintLabel("type", prefix);
+        std::cout << COLOR_MAGENTA;
         Token::TypePrint(opertype_);
+        std::cout << COLOR_DEFAULT << std::endl;
 
-        AstLayerPrint(indent, "lexpr");
-        lexpr_->AstPrint(indent, 8);
-
-        AstLayerPrint(indent, "rexpr");
-        rexpr_->AstPrint(indent, 8);
+        lexpr_->Print(prefix, "lexpr");
+        rexpr_->Print(prefix, "rexpr");
     }
 };
 class NegExpr           : public Expr {
@@ -226,9 +217,8 @@ public:
         type_ = AstType::NegExpr;
     }
 
-    void AstPrintImpl(std::string indent, size_t expand) override {
-        AstLayerPrint(indent, "expr");
-        expr_->AstPrint(indent, 7);
+    void PrintImpl(std::string prefix) override {
+        expr_->Print(prefix, "expr");
     }
 };
 class NotExpr           : public Expr {
@@ -241,9 +231,8 @@ public:
         type_ = AstType::NotExpr;
     }
 
-    void AstPrintImpl(std::string indent, size_t expand) override {
-        AstLayerPrint(indent, "expr");
-        expr_->AstPrint(indent, 7);
+    void PrintImpl(std::string prefix) override {
+        expr_->Print(prefix, "expr");
     }
 };
 class FnCallExpr        : public Expr {
@@ -262,16 +251,13 @@ public:
         type_ = AstType::FnCallExpr;
     }
 
-    void AstPrintImpl(std::string indent, size_t expand) override {
-        AstLayerPrint(indent, "callee");
-        callee_->AstPrint(indent, 9);
-
-        AstLayerPrint(indent, "arglist");
-        arglist_->AstPrint(indent, 10);
-    }
-
     IdExpr*  callee()  const { return callee_.get(); }
     ArgList* arglist() const { return arglist_.get(); }
+
+    void PrintImpl(std::string prefix) override {
+        callee_->Print(prefix, "callee");
+        arglist_->Print(prefix, "arglist");
+    }
 };
 class MethodCallExpr    : public Expr {
 private:
@@ -292,20 +278,15 @@ public:
         type_ = AstType::MethodCallExpr;
     }
 
-    void AstPrintImpl(std::string indent, size_t expand) override {
-        AstLayerPrint(indent, "target");
-        target_->AstPrint(indent, 9);
-
-        AstLayerPrint(indent, "callee");
-        callee_->AstPrint(indent, 9);
-
-        AstLayerPrint(indent, "arglist");
-        arglist_->AstPrint(indent, 10);
-    }
-
     Expr*    target()  const { return target_.get(); }
     IdExpr*  callee()  const { return callee_.get(); }
     ArgList* arglist() const { return arglist_.get(); }
+
+    void PrintImpl(std::string prefix) override {
+        target_->Print(prefix, "target");
+        callee_->Print(prefix, "callee");
+        arglist_->Print(prefix, "arglist");
+    }
 };
 
 // Const
@@ -319,9 +300,9 @@ public:
         type_ = AstType::NumConst;
     }
 
-    void AstPrintImpl(std::string indent, size_t expand) override {
-        AstLayerPrint(indent, "value");
-        std::cout << COLOR_GREEN << value_ << COLOR_DEFAULT;
+    void PrintImpl(std::string prefix) override {
+        PrintLabel("value", prefix);
+        std::cout << COLOR_ORANGE << value_ << COLOR_DEFAULT << std::endl;
     }
 };
 class BoolConst         : public Const {
@@ -333,15 +314,13 @@ public:
     {
         type_ = AstType::BoolConst;
     }
-
-    void AstPrintImpl(std::string indent, size_t expand) override {
-        AstLayerPrint(indent, "value");
-        if (value_) {
-            std::cout << COLOR_GREEN << "true" << COLOR_DEFAULT;
-        }
-        else {
-            std::cout << COLOR_RED << "false" << COLOR_DEFAULT;
-        }
+    
+    void PrintImpl(std::string prefix) override {
+        PrintLabel("value", prefix);
+        if (value_)
+            std::cout << COLOR_GREEN << "true" << COLOR_DEFAULT << std::endl;
+        else
+            std::cout << COLOR_RED << "false" << COLOR_DEFAULT << std::endl;
     }
 };
 class StringConst       : public Const {
@@ -354,9 +333,9 @@ public:
         type_ = AstType::StringConst;
     }
 
-    void AstPrintImpl(std::string indent, size_t expand) override {
-        AstLayerPrint(indent, "value");
-        std::cout << COLOR_ORANGE << '\"' << value_ << '\"' << COLOR_DEFAULT;
+    void PrintImpl(std::string prefix) override {
+        PrintLabel("value", prefix);
+        std::cout << COLOR_GREEN << "'" << value_ << "'" << COLOR_DEFAULT << std::endl;
     }
 };
 
@@ -372,15 +351,14 @@ public:
         type_ = AstType::BlockStmt;
     }
 
-    void AstPrintImpl(std::string indent, size_t expand) override {
-        for (auto& child : children_) {
-            AstLayerPrint(indent, "");
-            child->AstPrint(indent, expand);
-        }
-    }
-
     std::vector<std::unique_ptr<AstNode>>& children() {
         return children_;
+    }
+
+    void PrintImpl(std::string prefix) override {
+        for (auto& child : children_) {
+            child->Print(prefix);
+        }
     }
 };
 class DeclStmt          : public Stmt {
@@ -401,15 +379,10 @@ public:
         type_ = AstType::DeclStmt;
     }
 
-    void AstPrintImpl(std::string indent, size_t expand) override {
-        AstLayerPrint(indent, "id");
-        id_->AstPrint(indent, 5);
-
-        AstLayerPrint(indent, "value");
-        value_->AstPrint(indent, 8);
-
-        AstLayerPrint(indent, "value_type");
-        value_type_->AstPrint(indent, 13);
+    void PrintImpl(std::string prefix) override {
+        id_->Print(prefix, "id");
+        value_->Print(prefix, "value");
+        value_type_->Print(prefix, "type");
     }
 };
 class AssignStmt        : public Stmt {
@@ -427,12 +400,9 @@ public:
         type_ = AstType::AssignStmt;
     }
 
-    void AstPrintImpl(std::string indent, size_t expand) override {
-        AstLayerPrint(indent, "id");
-        id_->AstPrint(indent, 5);
-
-        AstLayerPrint(indent, "value");
-        value_->AstPrint(indent, 8);
+    void PrintImpl(std::string prefix) override {
+        id_->Print(prefix, "id");
+        value_->Print(prefix, "value");
     }
 };
 class CondStmt          : public Stmt {
@@ -453,15 +423,10 @@ public:
         type_ = AstType::CondStmt;
     }
 
-    void AstPrintImpl(std::string indent, size_t expand) override {
-        AstLayerPrint(indent, "cond");
-        if (cond_) cond_->AstPrint(indent, 7);
-
-        AstLayerPrint(indent, "block");
-        block_->AstPrint(indent, 8);
-
-        AstLayerPrint(indent, "sub");
-        if (sub_) sub_->AstPrint(indent, 6);
+    void PrintImpl(std::string prefix) override {
+        if (cond_) cond_->Print(prefix, "cond");
+        block_->Print(prefix, "block");
+        if (sub_) sub_->Print(prefix, "sub");
     }
 };
 
@@ -472,10 +437,5 @@ public:
     :   BlockStmt(children)
     {
         type_ = AstType::Program;
-    }
-
-    void AstPrintImpl(std::string indent, size_t expand) override {
-        BlockStmt::AstPrintImpl(indent, expand);
-        std::cout << std::endl;
     }
 };
