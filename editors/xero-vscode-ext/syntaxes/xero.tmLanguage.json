@@ -9,7 +9,8 @@
         { "include": "#operators" },
         { "include": "#punctuation" },
         { "include": "#types" },
-        { "include": "#functions" }
+        { "include": "#functions" },
+        { "include": "#keywords" }
     ],
     "repository": {
         "comments": {
@@ -47,12 +48,28 @@
             ]
         },
         "operators": {
-            "name": "keyword.operator.xero",
-            "match": "[+\\-*/]"
+            "patterns": [
+                {
+                    "name": "keyword.operator.comparison.xero",
+                    "match": ">=|<=|==|!=|>|<"
+                },
+                {
+                    "name": "keyword.operator.logical.xero",
+                    "match": "&&|\\|\\||!"
+                },
+                {
+                    "name": "keyword.operator.arithmetic.xero",
+                    "match": "[+\\-*/]"
+                },
+                {
+                    "name": "keyword.operator.assignment.xero",
+                    "match": "="
+                }
+            ]
         },
         "punctuation": {
             "name": "punctuation.xero",
-            "match": "[:;=(),.]"
+            "match": "[:;(),.]"
         },
         "types": {
             "name": "storage.type.xero",
@@ -61,6 +78,10 @@
         "functions": {
             "name": "support.function.builtin.xero",
             "match": "\\b(print|println)\\b"
+        },
+        "keywords": {
+            "name": "keyword.control.xero",
+            "match": "\\b(if|elif|else)\\b"
         }
     }
 }
