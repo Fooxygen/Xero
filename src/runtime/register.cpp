@@ -365,6 +365,15 @@ namespace rt {
     void Xengine::FnRegister() {
         using ARGS = std::vector<Obj>&;
         
+        // type
+        {
+            FnTable::Set("type", [](ARGS args) {
+                return Obj::Make_string(
+                    std::string(args[0].type()->name)
+                );
+            });
+        }
+
         // print and println
         {
             static const auto impl = [](ARGS args) {
