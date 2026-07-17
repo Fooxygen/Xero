@@ -35,7 +35,8 @@ namespace rt {
 
         // i32
         TypeTable::Set(Type{
-            .name = "i32", .size = 4,
+            .name  = "i32", .size = 4,
+            .reach = { "i64", "f32", "f64" },
             .to_string  = [](const Obj& o) { return std::to_string(o.Get_i32()); },
             .plus       = [](const Obj& a, const Obj& b) {
                 if (b.is("i32")) return Obj::Make_i32(a.Get_i32() + b.Get_i32());
@@ -69,7 +70,8 @@ namespace rt {
 
         // i64
         TypeTable::Set(Type{
-            .name = "i64", .size = 8,
+            .name  = "i64", .size = 8,
+            .reach = { "f32", "f64" },
             .to_string  = [](const Obj& o) { return std::to_string(o.Get_i64()); },
             .plus       = [](const Obj& a, const Obj& b) {
                 int64_t xb = 0;
@@ -149,7 +151,8 @@ namespace rt {
 
         // f32
         TypeTable::Set(Type{
-            .name = "f32", .size = 4,
+            .name  = "f32", .size = 4,
+            .reach = { "f64" },
             .to_string  = [](const Obj& o) { return std::to_string(o.Get_f32()); },
             .plus       = [](const Obj& a, const Obj& b) {
                 float xb = 0.0f;

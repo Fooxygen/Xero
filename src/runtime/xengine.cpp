@@ -144,11 +144,14 @@ namespace rt {
         return Obj::Make_string(node.value_);
     }
 
-    Obj Xengine::Exec(BlockStmt& node) {
+    Obj Xengine::Exec(BlockStmt& node, std::function<void()> OnScopeReady) {
         env_.ScopePush();
+        if (OnScopeReady) OnScopeReady();
+
         for (auto& child : node.children()) {
             Exec(*child);
         }
+        
         env_.ScopePop();
         return Obj();
     }

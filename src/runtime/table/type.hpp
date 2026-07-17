@@ -5,8 +5,11 @@
 
 #pragma once
 
+#include <algorithm>
 #include <string>
+#include <set>
 #include <unordered_map>
+#include <ranges>
 
 #include "log.hpp"
 
@@ -14,9 +17,10 @@ namespace rt {
     class Obj;
 
     struct Type {
-        std::string_view name  = "";
-        size_t           size  = 0;         // Byte width
-        bool             isRef = false;     // Reference Type
+        std::string_view      name  = "";
+        size_t                size  = 0;        // Byte width
+        bool                  isRef = false;    // Reference Type
+        std::set<std::string> reach = {};        // Collection of promoted types
 
         // Methods
 
@@ -63,13 +67,12 @@ namespace rt {
             table_ = std::unordered_map<std::string, const Type*>();
         }
 
-        static void Set(const Type& t) {
+        static void        Set(const Type& t) {
             if (!table_.contains(std::string(t.name))) {
                 table_.emplace(t.name, new Type(t));
             }
             else throw LogErr(LogModule::Runtime, std::format("existing type '{}'", t.name));
         }
-
         static const Type* Get(std::string_view name) {
             auto type_it = table_.find(std::string(name));
             if (type_it != table_.end()) {
@@ -77,6 +80,53 @@ namespace rt {
             }
 
             throw LogErr(LogModule::Runtime, std::format("undefined type '{}'", name));
+            return nullptr;
+        }
+    
+        static const Type* Common(std::set<const Type*> input) {
+            
+            // Common
+            std::set<std::string> common;
+            {
+                bool isFirstAdd = false;
+                for (auto i : input) {
+                    if (!isFirstAdd) {
+                        isFirstAdd = true;
+                        common = i->reach;
+                        common.emplace(i->name);
+                        continue;
+                    }
+
+                    std::set<std::string> reach = i->reach;
+                    reach.emplace(i->name);
+
+                    std::set<std::string> temp;
+                    std::set_intersection(
+                        common.begin(), common.end(),
+                        reach.begin(), reach.end(),
+                        std::inserter(temp, temp.begin())
+                    );
+                    common = std::move(temp);
+
+                    if (common.empty()) return nullptr;
+                }
+            }
+
+            // Find Minimal
+            for (auto& i : common) {
+                bool isFind = true;
+
+                for (auto& j : common) {
+                    if (i == j) continue;
+                    if (Get(j)->reach.contains(i)) {
+                        isFind = false;
+                        break;
+                    }
+                }
+
+                if (isFind) return Get(i);
+            }
+
             return nullptr;
         }
     };

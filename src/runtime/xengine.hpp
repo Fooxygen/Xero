@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <functional>
+
 #include "common/ast.hpp"
 #include "obj/obj.hpp"
 #include "env.hpp"
@@ -63,7 +65,7 @@ namespace rt {
         Obj Exec(BoolConst& node);
         Obj Exec(StringConst& node);
 
-        Obj Exec(BlockStmt& node);
+        Obj Exec(BlockStmt& node, std::function<void()> OnScopeReady = nullptr);
         Obj Exec(DeclStmt& node);
         Obj Exec(AssignStmt& node);
         Obj Exec(CondStmt& node);
