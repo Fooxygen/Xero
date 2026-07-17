@@ -187,6 +187,30 @@ namespace rt {
         return Obj();
     }
 
+    Obj Xengine::Exec(ForStmt& node) {
+        if (node.data_->type_ == AstType::RangeExpr) {
+            auto range = (RangeExpr*)node.data_.get();
+            auto lobj  = Exec(*range->lexpr_);
+            auto robj  = Exec(*range->rexpr_);
+
+            auto ltype = lobj.type();
+            auto rtype = robj.type();
+            auto itype = TypeTable::Common({ ltype, rtype });   // iter type
+            if (!itype) {
+                throw LogErr(LogModule::Runtime,
+                    std::format(
+                        "range failed to produce a valid iterator with '{}' and '{}'",
+                        ltype->name, rtype->name
+                    )
+                );
+            }
+
+            // Internal Iterator
+        }
+
+        return Obj();
+    }
+
     Obj Xengine::Exec(Program& node) {
         Exec((BlockStmt&)node);
         return Obj();

@@ -64,13 +64,19 @@ namespace parser {
                 }
                 
                 else if (token.lexeme() == "if") {
-                    sym = Symbol(Token(Token::Type::If, token.lexeme(), token.line(), token.col()));
+                    sym = Symbol(Token(TT::If, token.lexeme(), token.line(), token.col()));
                 }
                 else if (token.lexeme() == "elif") {
-                    sym = Symbol(Token(Token::Type::Elif, token.lexeme(), token.line(), token.col()));
+                    sym = Symbol(Token(TT::Elif, token.lexeme(), token.line(), token.col()));
                 }
                 else if (token.lexeme() == "else") {
-                    sym = Symbol(Token(Token::Type::Else, token.lexeme(), token.line(), token.col()));
+                    sym = Symbol(Token(TT::Else, token.lexeme(), token.line(), token.col()));
+                }
+                else if (token.lexeme() == "for") {
+                    sym = Symbol(Token(TT::For, token.lexeme(), token.line(), token.col()));
+                }
+                else if (token.lexeme() == "in") {
+                    sym = Symbol(Token(TT::In, token.lexeme(), token.line(), token.col()));
                 }
 
                 else {

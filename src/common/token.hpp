@@ -67,6 +67,8 @@ public:
         If,                 // If
         Elif,               // Else if
         Else,               // Else
+        For,                // For
+        In,                 // In
     };
 
 private:
@@ -139,6 +141,8 @@ public:
             case Type::If:
             case Type::Elif:
             case Type::Else:
+            case Type::For:
+            case Type::In:
                 return Type::Keyword;
 
             default:
@@ -193,6 +197,8 @@ public:
             case Type::If:          return "If";
             case Type::Elif:        return "Elif";
             case Type::Else:        return "Else";
+            case Type::For:         return "For";
+            case Type::In:          return "In";
 
             default: 
                 LogWarn(LogModule::Lexer, "undefined print name for TokenType").Print();

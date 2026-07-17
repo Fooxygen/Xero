@@ -40,6 +40,7 @@ enum class AstType {
     DeclStmt,           //  Declaration
     AssignStmt,         //  Assignment
     CondStmt,           //  Condition
+    ForStmt,            //  For Loop
 
     // Common
     ArgList,            // List of Args
@@ -67,6 +68,7 @@ static AstType BaseOfAstType(AstType type) {
         case AstType::DeclStmt:
         case AstType::AssignStmt:
         case AstType::CondStmt:
+        case AstType::ForStmt:
             return AstType::Stmt;
 
         default:
@@ -111,6 +113,7 @@ public:
             case AstType::DeclStmt:         return "DeclStmt";
             case AstType::AssignStmt:       return "AssignStmt";
             case AstType::CondStmt:         return "CondStmt";
+            case AstType::ForStmt:          return "ForStmt";
 
             default: 
                 LogWarn(LogModule::Parser, "undefined print name for AstNode");
@@ -462,6 +465,26 @@ public:
         if (cond_) cond_->Print(prefix, "cond");
         block_->Print(prefix, "block");
         if (sub_) sub_->Print(prefix, "sub");
+    }
+};
+class ForStmt           : public Stmt {
+public:
+    std::unique_ptr<IdExpr> iter_;
+    std::unique_ptr<Expr>   data_;
+
+    ForStmt(
+        std::unique_ptr<IdExpr> iter,
+        std::unique_ptr<Expr>   data
+    )
+    :   iter_(std::move(iter)),
+        data_(std::move(data))
+    {
+        type_ = AstType::ForStmt;
+    }
+
+    void PrintImpl(std::string prefix) override {
+        iter_->Print(prefix, "iter");
+        data_->Print(prefix, "data");
     }
 };
 

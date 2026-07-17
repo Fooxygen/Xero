@@ -469,5 +469,28 @@ namespace parser {
                 }
             );
         }
+    
+        // ForStmt
+
+        // └─ for ( x in rangeexpr ) {} -> forstmt
+        {
+            RuleAdd(
+                PATS{
+                    TT::For,
+                    TT::LParen,
+                    AT::IdExpr,
+                    TT::In,
+                    AT::RangeExpr,
+                    TT::RParen,
+                    AT::BlockStmt
+                },
+                [](std::vector<Symbol>& symbols, auto*) {
+                    return std::make_unique<ForStmt>(
+                        Rule::Move<IdExpr>(symbols, 3),
+                        Rule::Move<Expr>(symbols, 5)
+                    );
+                }
+            );
+        }
     }
 }
