@@ -145,9 +145,11 @@ namespace rt {
     }
 
     Obj Xengine::Exec(BlockStmt& node) {
+        env_.ScopePush();
         for (auto& child : node.children()) {
-            Exec(*child.get());
+            Exec(*child);
         }
+        env_.ScopePop();
         return Obj();
     }
 
@@ -183,9 +185,7 @@ namespace rt {
     }
 
     Obj Xengine::Exec(Program& node) {
-        for (auto& child : node.children()) {
-            Exec(*child);
-        }
+        Exec((BlockStmt&)node);
         return Obj();
     }
 }

@@ -348,11 +348,11 @@ namespace rt {
                 s.Reverse();
                 return Obj::Make_string(s.ToCppString());
             },
-            .eq  = [](const Obj& a, const Obj& b) {
+            .eq        = [](const Obj& a, const Obj& b) {
                 if (!b.is("string")) return Obj();
                 return Obj::Make_bool(a.Get_string().ToCppString() == b.Get_string().ToCppString());
             },
-            .neq = [](const Obj& a, const Obj& b) {
+            .neq       = [](const Obj& a, const Obj& b) {
                 if (!b.is("string")) return Obj();
                 return Obj::Make_bool(a.Get_string().ToCppString() != b.Get_string().ToCppString());
             },        
