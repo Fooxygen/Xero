@@ -189,22 +189,49 @@ namespace rt {
 
     Obj Xengine::Exec(ForStmt& node) {
         if (node.data_->type_ == AstType::RangeExpr) {
-            auto range = (RangeExpr*)node.data_.get();
+            auto range   = (RangeExpr*)node.data_.get();
+            bool hasStep = range->step_ ? true : false;
+
             auto lobj  = Exec(*range->lexpr_);
             auto robj  = Exec(*range->rexpr_);
-
             auto ltype = lobj.type();
             auto rtype = robj.type();
-            auto itype = TypeTable::Common({ ltype, rtype });   // iter type
+
+            // Step
+            Obj sobj = Obj();
+            const Type* stype = nullptr;
+            if (hasStep) {
+                sobj  = Exec(*range->step_);
+                stype = sobj.type();
+            }
+
+            // Iterator
+            const Type* itype = nullptr;
+            if (hasStep) {
+                itype = TypeTable::Common({ ltype, rtype, stype });
+            }
+            else {
+                itype = TypeTable::Common({ ltype, rtype });
+            }
 
             // Failed to produce type
             if (!itype) {
-                throw LogErr(LogModule::Runtime,
-                    std::format(
-                        "range failed to produce a valid iterator with '{}' and '{}'",
-                        ltype->name, rtype->name
-                    )
-                );
+                if (hasStep) {
+                    throw LogErr(LogModule::Runtime,
+                        std::format(
+                            "range failed to produce a valid iterator with '{}', '{}' and '{}'",
+                            ltype->name, rtype->name, stype->name
+                        )
+                    );
+                }
+                else {
+                    throw LogErr(LogModule::Runtime,
+                        std::format(
+                            "range failed to produce a valid iterator with '{}' and '{}'",
+                            ltype->name, rtype->name
+                        )
+                    );
+                }
             }
 
             // Illegal type
@@ -221,11 +248,12 @@ namespace rt {
                 );
             }
 
-            // Iter and Boundary
+            // Convert Type
             lobj = TypeTable::Convert(lobj, itype);
             robj = TypeTable::Convert(robj, itype);
-            Obj step = Obj::Make_i32(1);
+            Obj step = hasStep ? sobj : Obj::Make_i32(1);
 
+            // Execute
             for (Obj o = lobj; ; o = itype->plus(o, step)) {
                 if (range->rangetype_ == Token::Type::DotDot) {
                     if (itype->ge(o, robj).Get_bool()) break;

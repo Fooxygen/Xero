@@ -427,6 +427,47 @@ namespace parser {
         }
     
         // Range
+ 
+        // └─ expr .. expr .. expr -> rangeexpr
+        {
+            RuleAdd(
+                PATS{
+                    AT::Expr,
+                    TT::DotDot,
+                    AT::Expr,
+                    TT::DotDot,
+                    AT::Expr,
+                },
+                [](std::vector<Symbol>& symbols, auto*) {
+                    return std::make_unique<RangeExpr>(
+                        TT::DotDot,
+                        Rule::Move<Expr>(symbols, 1),
+                        Rule::Move<Expr>(symbols, 5),
+                        Rule::Move<Expr>(symbols, 3)
+                    );
+                }
+            );
+        }
+        // └─ expr .. expr ..= expr -> rangeexpr
+        {
+            RuleAdd(
+                PATS{
+                    AT::Expr,
+                    TT::DotDot,
+                    AT::Expr,
+                    TT::DotDotEq,
+                    AT::Expr,
+                },
+                [](std::vector<Symbol>& symbols, auto*) {
+                    return std::make_unique<RangeExpr>(
+                        TT::DotDotEq,
+                        Rule::Move<Expr>(symbols, 1),
+                        Rule::Move<Expr>(symbols, 5),
+                        Rule::Move<Expr>(symbols, 3)
+                    );
+                }
+            );
+        }
 
         // └─ expr .. expr -> rangeexpr
         {
@@ -469,7 +510,7 @@ namespace parser {
                 }
             );
         }
-    
+
         // ForStmt
 
         // └─ for ( x in rangeexpr ) {} -> forstmt

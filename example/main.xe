@@ -1,12 +1,4 @@
 
-for (x in -3 + 2..10) {
-    println(x);
-}
-
-for (x in -3 + 2..=10) {
-    println(x);
-}
-
-for (x in "hello"..="HELLO") {
+for (x in 1..3..24) {
     println(x);
 }
