@@ -1,6 +1,4 @@
 
-x: i32 = 3;
-println(type(x));
-
-x = 3.14;
-println(type(x));
+for (x in 0..5) {
+    println(x);
+}

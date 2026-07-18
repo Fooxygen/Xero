@@ -9,7 +9,9 @@
 #include <string>
 #include <set>
 #include <unordered_map>
+#include <map>
 #include <ranges>
+#include <vector>
 
 #include "log.hpp"
 
@@ -20,7 +22,7 @@ namespace rt {
         std::string_view      name  = "";
         size_t                size  = 0;        // Byte width
         bool                  isRef = false;    // Reference Type
-        std::set<std::string> reach = {};        // Collection of promoted types
+        std::set<std::string> reach = {};       // Collection of promoted types
 
         // Methods
 
@@ -60,11 +62,55 @@ namespace rt {
 
     class TypeTable {
     private:
-        static inline std::unordered_map<std::string, const Type*> table_;
+        static inline std::unordered_map<std::string, Type*> table_;
+        static inline std::map<
+            std::pair<const Type*, const Type*>, Obj(*)(const Obj&)
+        > converts_;
+
+        static void TypeTable::ReachRecompute() {
+
+            // Clear
+            for (auto& [name, type] : table_) {
+                type->reach.clear();
+            }
+
+            // Recompute
+            for (auto& [name, type] : table_) {
+
+                // Self
+                type->reach.emplace(std::string(name));
+
+                // Search
+                std::vector<const Type*> stack = { type };
+                while (!stack.empty()) {
+                    auto* cur = stack.back(); stack.pop_back();
+                    for (auto& [edge, fn] : converts_) {
+                        if (edge.first == cur) {
+                            type->reach.emplace(std::string(edge.second->name));
+                            stack.push_back(edge.second);
+                        }
+                    }
+                }
+            }
+        }
 
     public:
         static void Reset() {
-            table_ = std::unordered_map<std::string, const Type*>();
+            table_ = std::unordered_map<std::string, Type*>();
+            converts_.clear();
+        }
+
+        static void ConvertSet(const Type* from, const Type* to, Obj(*fn)(const Obj&)) {
+            converts_[{from, to}] = fn;
+            ReachRecompute();
+        }
+        static Obj  Convert(const Obj& obj, const Type* target) {
+            if (obj.type() == target) return obj;
+
+            auto it = converts_.find({obj.type(), target});
+            if (it != converts_.end())
+                return it->second(obj);
+            return Obj();
         }
 
         static void        Set(const Type& t) {
