@@ -21,7 +21,7 @@ namespace rt {
         std::string_view      name  = "";
         size_t                size  = 0;        // Byte width
         bool                  isRef = false;    // Reference Type
-        std::set<std::string> converts = {};       // List of convertible types
+        std::set<const Type*> converts = {};    // List of convertible types
 
         // Methods
 
@@ -65,35 +65,7 @@ namespace rt {
         static inline std::map<
             std::pair<const Type*, const Type*>, Obj(*)(const Obj&)
         > converts_;
-
-        static void ConvertsRecompute() {
-
-            // Clear
-            for (auto& [name, type] : table_) {
-                type->converts.clear();
-            }
-
-            // Recompute
-            for (auto& [name, type] : table_) {
-
-                // Emplace itself
-                type->converts.emplace(std::string(name));
-
-                // Search all path
-                std::vector<const Type*> stack = { type };
-                while (!stack.empty()) {
-                    auto* o = stack.back();
-                    stack.pop_back();
-
-                    for (auto& [edge, fn] : converts_) {
-                        if (edge.first == o) {
-                            type->converts.emplace(std::string(edge.second->name));
-                            stack.push_back(edge.second);
-                        }
-                    }
-                }
-            }
-        }
+        static inline std::map<std::set<const Type*>, const Type*> common_cache_;
 
     public:
         static void Reset() {
@@ -103,6 +75,7 @@ namespace rt {
 
         static void ConvertSet(const Type* from, const Type* to, Obj(*fn)(const Obj&));
         static Obj  Convert(const Obj& obj, const Type* type);
+        static void ConvertsRecompute();
 
         static void        Set(const Type& t) {
             if (!table_.contains(std::string(t.name))) {
@@ -120,23 +93,26 @@ namespace rt {
             return nullptr;
         }
     
-        static const Type* Common(std::set<const Type*> input) {
+        static const Type* Common(std::set<const Type*> ts) {
             
-            // Common
-            std::set<std::string> common;
+            // Search Cache
+            if (common_cache_.contains(ts)) return common_cache_[ts];
+
+            // Get Common
+            std::set<const Type*> common;
             {
                 bool isFirstAdd = false;
-                for (auto i : input) {
+                for (auto t : ts) {
                     if (!isFirstAdd) {
                         isFirstAdd = true;
-                        common = i->converts;
+                        common = t->converts;
                         continue;
                     }
 
-                    std::set<std::string> temp;
+                    std::set<const Type*> temp;
                     std::set_intersection(
                         common.begin(), common.end(),
-                        i->converts.begin(), i->converts.end(),
+                        t->converts.begin(), t->converts.end(),
                         std::inserter(temp, temp.begin())
                     );
                     common = std::move(temp);
@@ -151,13 +127,13 @@ namespace rt {
 
                 for (auto& j : common) {
                     if (i == j) continue;
-                    if (Get(j)->converts.contains(i)) {
+                    if (j->converts.contains(i)) {
                         isFind = false;
                         break;
                     }
                 }
 
-                if (isFind) return Get(i);
+                if (isFind) return i;
             }
 
             return nullptr;

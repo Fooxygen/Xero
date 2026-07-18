@@ -374,6 +374,8 @@ namespace rt {
             TypeTable::ConvertSet(t_i64, t_f32, [](const Obj& o) { return Obj::Make_f32((float)o.Get_i64());  });
             TypeTable::ConvertSet(t_i64, t_f64, [](const Obj& o) { return Obj::Make_f64((double)o.Get_i64()); });
             TypeTable::ConvertSet(t_f32, t_f64, [](const Obj& o) { return Obj::Make_f64((double)o.Get_f32()); });
+        
+            TypeTable::ConvertsRecompute();
         }
     }
 
