@@ -10,7 +10,6 @@
 #include <set>
 #include <unordered_map>
 #include <map>
-#include <ranges>
 #include <vector>
 
 #include "log.hpp"

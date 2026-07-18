@@ -47,32 +47,33 @@ enum class AstType {
 };
 
 static AstType BaseOfAstType(AstType type) {
+    using enum AstType;
     switch (type) {
-        case AstType::NumConst:
-        case AstType::BoolConst:
-        case AstType::StringConst:
-            return AstType::Const;
-        case AstType::Const:
-            return AstType::Expr;
+        case NumConst:
+        case BoolConst:
+        case StringConst:
+            return Const;
+        case Const:
+            return Expr;
 
-        case AstType::IdExpr:
-        case AstType::OperExpr:
-        case AstType::RangeExpr:
-        case AstType::NegExpr:
-        case AstType::NotExpr:
-        case AstType::FnCallExpr:
-        case AstType::MethodCallExpr:
-            return AstType::Expr;
+        case IdExpr:
+        case OperExpr:
+        case RangeExpr:
+        case NegExpr:
+        case NotExpr:
+        case FnCallExpr:
+        case MethodCallExpr:
+            return Expr;
 
-        case AstType::BlockStmt:
-        case AstType::DeclStmt:
-        case AstType::AssignStmt:
-        case AstType::CondStmt:
-        case AstType::ForStmt:
-            return AstType::Stmt;
+        case BlockStmt:
+        case DeclStmt:
+        case AssignStmt:
+        case CondStmt:
+        case ForStmt:
+            return Stmt;
 
         default:
-            return AstType::Undefined;
+            return Undefined;
     }
 }
 

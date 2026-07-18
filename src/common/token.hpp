@@ -93,60 +93,61 @@ public:
     size_t col() const { return col_; }
 
     static Type BaseOfType(Type type) {
+        using enum Type;
         switch (type) {
-            case Type::Colon:
-            case Type::Assign:
-            case Type::Semicolon:
-            case Type::LParen:
-            case Type::RParen:
-            case Type::LBrace:
-            case Type::RBrace:
-            case Type::Dot:
-            case Type::DotDot:
-            case Type::DotDotEq:
-            case Type::Comma:
-            case Type::Quote:
-                return Type::Unsemantic;
+            case Colon:
+            case Assign:
+            case Semicolon:
+            case LParen:
+            case RParen:
+            case LBrace:
+            case RBrace:
+            case Dot:
+            case DotDot:
+            case DotDotEq:
+            case Comma:
+            case Quote:
+                return Unsemantic;
 
-            case Type::Id:
-            case Type::Number:
-            case Type::String:
-                return Type::Semantic;
+            case Id:
+            case Number:
+            case String:
+                return Semantic;
 
-            case Type::Plus:
-            case Type::Minus:
-                return Type::PlusOrMinus;
+            case Plus:
+            case Minus:
+                return PlusOrMinus;
 
-            case Type::Star:
-            case Type::Slash:
-                return Type::StarOrSlash;
+            case Star:
+            case Slash:
+                return StarOrSlash;
 
-            case Type::PlusOrMinus:
-            case Type::StarOrSlash:
-                return Type::ArithOper;
+            case PlusOrMinus:
+            case StarOrSlash:
+                return ArithOper;
 
-            case Type::Gt:
-            case Type::Ge:
-            case Type::Lt:
-            case Type::Le:
-            case Type::Eq:
-            case Type::Neq:
-                return Type::RelationOper;
+            case Gt:
+            case Ge:
+            case Lt:
+            case Le:
+            case Eq:
+            case Neq:
+                return RelationOper;
 
-            case Type::Not:
-            case Type::And:
-            case Type::Or:
-                return Type::LogicalOper;
+            case Not:
+            case And:
+            case Or:
+                return LogicalOper;
 
-            case Type::If:
-            case Type::Elif:
-            case Type::Else:
-            case Type::For:
-            case Type::In:
-                return Type::Keyword;
+            case If:
+            case Elif:
+            case Else:
+            case For:
+            case In:
+                return Keyword;
 
             default:
-                return Type::Undefined;
+                return Undefined;
         }
     }
 

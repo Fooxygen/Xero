@@ -30,8 +30,12 @@ std::string FileRead(const std::string& path) {
 }
 
 int main() {
+
+#ifdef _WIN32
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
+#endif
+
     std::cout << BuildInfo::Print() << std::endl;
 
     try {
