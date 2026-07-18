@@ -469,15 +469,18 @@ public:
 };
 class ForStmt           : public Stmt {
 public:
-    std::unique_ptr<IdExpr> iter_;
-    std::unique_ptr<Expr>   data_;
+    std::unique_ptr<IdExpr>     iter_;
+    std::unique_ptr<Expr>       data_;
+    std::unique_ptr<BlockStmt>  block_;
 
     ForStmt(
-        std::unique_ptr<IdExpr> iter,
-        std::unique_ptr<Expr>   data
+        std::unique_ptr<IdExpr>     iter,
+        std::unique_ptr<Expr>       data,
+        std::unique_ptr<BlockStmt>  block
     )
     :   iter_(std::move(iter)),
-        data_(std::move(data))
+        data_(std::move(data)),
+        block_(std::move(block))
     {
         type_ = AstType::ForStmt;
     }
@@ -485,6 +488,7 @@ public:
     void PrintImpl(std::string prefix) override {
         iter_->Print(prefix, "iter");
         data_->Print(prefix, "data");
+        block_->Print(prefix, "block");
     }
 };
 

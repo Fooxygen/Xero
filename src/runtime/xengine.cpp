@@ -196,6 +196,8 @@ namespace rt {
             auto ltype = lobj.type();
             auto rtype = robj.type();
             auto itype = TypeTable::Common({ ltype, rtype });   // iter type
+
+            // Failed to produce type
             if (!itype) {
                 throw LogErr(LogModule::Runtime,
                     std::format(
@@ -205,7 +207,37 @@ namespace rt {
                 );
             }
 
-            // Internal Iterator
+            // Illegal type
+            if (itype->name != "i32" &&
+                itype->name != "i64" &&
+                itype->name != "f32" &&
+                itype->name != "f64")
+            {
+                throw LogErr(LogModule::Runtime,
+                    std::format(
+                        "invalid range iterator type '{}'",
+                        itype->name
+                    )
+                );
+            }
+
+            // Iter and Boundary
+            lobj = TypeTable::Convert(lobj, itype);
+            robj = TypeTable::Convert(robj, itype);
+            Obj step = Obj::Make_i32(1);
+
+            for (Obj o = lobj; ; o = itype->plus(o, step)) {
+                if (range->rangetype_ == Token::Type::DotDot) {
+                    if (itype->ge(o, robj).Get_bool()) break;
+                }
+                else {
+                    if (itype->gt(o, robj).Get_bool()) break;
+                }
+
+                Exec(*node.block_, [&]() {
+                    env_.Declare(node.iter_->value_, o);
+                });
+            }
         }
 
         return Obj();

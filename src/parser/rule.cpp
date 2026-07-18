@@ -487,7 +487,8 @@ namespace parser {
                 [](std::vector<Symbol>& symbols, auto*) {
                     return std::make_unique<ForStmt>(
                         Rule::Move<IdExpr>(symbols, 3),
-                        Rule::Move<Expr>(symbols, 5)
+                        Rule::Move<Expr>(symbols, 5),
+                        Rule::Move<BlockStmt>(symbols, 7)
                     );
                 }
             );

@@ -22,7 +22,7 @@ namespace rt {
         std::string_view      name  = "";
         size_t                size  = 0;        // Byte width
         bool                  isRef = false;    // Reference Type
-        std::set<std::string> reach = {};       // Collection of promoted types
+        std::set<std::string> converts = {};       // List of convertible types
 
         // Methods
 
@@ -67,26 +67,28 @@ namespace rt {
             std::pair<const Type*, const Type*>, Obj(*)(const Obj&)
         > converts_;
 
-        static void TypeTable::ReachRecompute() {
+        static void ConvertsRecompute() {
 
             // Clear
             for (auto& [name, type] : table_) {
-                type->reach.clear();
+                type->converts.clear();
             }
 
             // Recompute
             for (auto& [name, type] : table_) {
 
-                // Self
-                type->reach.emplace(std::string(name));
+                // Emplace itself
+                type->converts.emplace(std::string(name));
 
-                // Search
+                // Search all path
                 std::vector<const Type*> stack = { type };
                 while (!stack.empty()) {
-                    auto* cur = stack.back(); stack.pop_back();
+                    auto* o = stack.back();
+                    stack.pop_back();
+
                     for (auto& [edge, fn] : converts_) {
-                        if (edge.first == cur) {
-                            type->reach.emplace(std::string(edge.second->name));
+                        if (edge.first == o) {
+                            type->converts.emplace(std::string(edge.second->name));
                             stack.push_back(edge.second);
                         }
                     }
@@ -100,18 +102,8 @@ namespace rt {
             converts_.clear();
         }
 
-        static void ConvertSet(const Type* from, const Type* to, Obj(*fn)(const Obj&)) {
-            converts_[{from, to}] = fn;
-            ReachRecompute();
-        }
-        static Obj  Convert(const Obj& obj, const Type* target) {
-            if (obj.type() == target) return obj;
-
-            auto it = converts_.find({obj.type(), target});
-            if (it != converts_.end())
-                return it->second(obj);
-            return Obj();
-        }
+        static void ConvertSet(const Type* from, const Type* to, Obj(*fn)(const Obj&));
+        static Obj  Convert(const Obj& obj, const Type* type);
 
         static void        Set(const Type& t) {
             if (!table_.contains(std::string(t.name))) {
@@ -138,18 +130,14 @@ namespace rt {
                 for (auto i : input) {
                     if (!isFirstAdd) {
                         isFirstAdd = true;
-                        common = i->reach;
-                        common.emplace(i->name);
+                        common = i->converts;
                         continue;
                     }
-
-                    std::set<std::string> reach = i->reach;
-                    reach.emplace(i->name);
 
                     std::set<std::string> temp;
                     std::set_intersection(
                         common.begin(), common.end(),
-                        reach.begin(), reach.end(),
+                        i->converts.begin(), i->converts.end(),
                         std::inserter(temp, temp.begin())
                     );
                     common = std::move(temp);
@@ -164,7 +152,7 @@ namespace rt {
 
                 for (auto& j : common) {
                     if (i == j) continue;
-                    if (Get(j)->reach.contains(i)) {
+                    if (Get(j)->converts.contains(i)) {
                         isFind = false;
                         break;
                     }
