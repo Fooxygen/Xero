@@ -112,10 +112,15 @@ namespace rt {
     Obj Xengine::Exec(ArrayExpr& node) {
         auto  obj   = Obj::Make_array();
         auto& array = obj.Get_array_ref();
+        
         for (auto& e : node.elements_->exprs_) {
+
+            // ref count = 1
             Obj element = Exec(*e);
-            array.Insert(array.size(), new Obj(element));
+            array.Insert(array.size(), new Obj(element));   // ref count = 2
         }
+        // ref count = 1;
+
         return obj;
     }
 
@@ -243,6 +248,11 @@ namespace rt {
     }
 
     Obj Xengine::Exec(ForStmt& node) {
+        bool isCatch = false;
+
+        // Ungenerated Obj
+
+        // Range
         if (node.data_->type_ == AstType::RangeExpr) {
 
             // Boundary
@@ -315,8 +325,31 @@ namespace rt {
                     env_.Declare(node.iter_->value_, o);
                 });
             }
+
+            isCatch = true;
         }
 
+        else {
+            auto obj  = Exec(*node.data_);
+            auto type = obj.type();
+
+            // Array
+            if (type->name == "array") {
+                auto& array = obj.Get_array_ref();
+
+                for (size_t i = 0; i < array.size(); i++) {
+                    Exec(*node.block_, [&]() {
+                        env_.Declare(node.iter_->value_, *array.Get(i));
+                    });
+                }
+
+                isCatch = true;
+            }
+        }
+
+        if (!isCatch) {
+            throw LogErr(LogModule::Runtime, "unsupported 'for' statement");
+        }
         return Obj();
     }
 

@@ -159,8 +159,7 @@ namespace rt {
             return *str;
         }
         String   Get_string()       const {
-            auto ref = Get_string_ref();
-            return String(ref);
+            return Get_string_ref();
         }
         Array&   Get_array_ref( )   const {
             RefData* ref = (RefData*)(data_.ref_);

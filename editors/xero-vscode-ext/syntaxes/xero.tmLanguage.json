@@ -64,12 +64,16 @@
                 {
                     "name": "keyword.operator.assignment.xero",
                     "match": "="
+                },
+                {
+                    "name": "keyword.operator.range.xero",
+                    "match": "\\.\\.=|\\.\\."
                 }
             ]
         },
         "punctuation": {
             "name": "punctuation.xero",
-            "match": "[:;(),.]"
+            "match": "[:;(){}\\[\\],.]"
         },
         "types": {
             "name": "storage.type.xero",
@@ -81,7 +85,7 @@
         },
         "keywords": {
             "name": "keyword.control.xero",
-            "match": "\\b(if|elif|else)\\b"
+            "match": "\\b(if|elif|else|for|in)\\b"
         }
     }
 }

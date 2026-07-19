@@ -1,3 +1,24 @@
 
-arr: array = [1, "Hello"];
-arr.pushback(2);
+a: array = [1, 2, "Hello"];
+
+for (x in a) {
+    println(x);
+}
+
+for (x in [3, 4, "Xero"]) {
+    println(x);
+}
+
+a.pushfront("front");
+a.pushback("back");
+
+for (x in a) {
+    println(x);
+}
+
+a.popfront();
+a.popback();
+
+for (x in a) {
+    println(x);
+}

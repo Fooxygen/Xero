@@ -585,7 +585,7 @@ namespace parser {
     
         // ForStmt
 
-        // └─ for ( x in rangeexpr ) {} -> forstmt
+        // └─ for ( x in expr ) {} -> forstmt
         {
             RuleAdd(
                 PATS{
@@ -593,7 +593,7 @@ namespace parser {
                     TT::LParen,
                     AT::IdExpr,
                     TT::In,
-                    AT::RangeExpr,
+                    AT::Expr,
                     TT::RParen,
                     AT::BlockStmt
                 },

@@ -23,8 +23,8 @@ namespace rt {
             data_[0] = '\0';
             capacity_ = 1;
         }
-        String(std::string s) : String() {
-            Write(s.c_str());
+        String(const std::string& s) : String() {
+            Write(s);
         }
         String(const String& other) {
             data_ = new char[other.capacity_];
@@ -43,9 +43,6 @@ namespace rt {
             return capacity_;
         }
         
-        std::string ToCppString() const {
-            return std::string(data_, length_);
-        }
         void Expand(size_t len) {
             if (len + 1 < capacity_) return;
 
@@ -58,13 +55,16 @@ namespace rt {
             data_ = expand;
             capacity_ = capa;
         }
-        void Write(const char* s) {
-            auto len = std::strlen(s);
+        void Write(const std::string& s) {
+            auto len = s.length();
             Expand(len);
             length_ = len;
-            memcpy(data_, s, sizeof(char) * (len + 1));
+            memcpy(data_, s.data(), sizeof(char) * (len + 1));
         }
-        
+
+        std::string ToCppString() const {
+            return std::string(data_, length_);
+        }
         void Reverse() {
             if (length_ <= 1) return;
             for (size_t i = 0, j = length_ - 1; i < j; i++, j--) {
