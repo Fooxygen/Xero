@@ -15,11 +15,13 @@ namespace parser {
 
         // Tools
 
-        static auto isArgTerminator = [](const Token* next) {
-            if (!next) return true;                             // EOF
-            return  next->type() == Token::Type::Comma ||         // ,
-                    next->type() == Token::Type::Semicolon ||     // ;
-                    next->type() == Token::Type::RParen;          // )
+        // Is boundary symbol of Exprs?
+        static auto isExprsBoundary = [](const Token* next) {
+            if (!next) return true;                                 // EOF
+            return  next->type() == Token::Type::Comma ||           // ,
+                    next->type() == Token::Type::Semicolon ||       // ;
+                    next->type() == Token::Type::RParen ||          // )
+                    next->type() == Token::Type::RBkt;              // ]
         };
 
         rules_.clear();
@@ -64,9 +66,48 @@ namespace parser {
             );
         }
 
+        // Exprs
+
+        // └─ expr, expr -> exprs
+        {
+            RuleAdd(
+                PATS{
+                    AT::Expr,
+                    TT::Comma,
+                    AT::Expr
+                },
+                [](std::vector<Symbol>& symbols, const Token* token_next) -> ASTNODE {
+                    if (!isExprsBoundary(token_next)) return nullptr;
+
+                    std::vector<std::unique_ptr<Expr>> args;
+                    args.emplace_back(Rule::Move<Expr>(symbols, 1));
+                    args.emplace_back(Rule::Move<Expr>(symbols, 3));
+                    return std::make_unique<Exprs>(args);
+                }
+            );
+        }
+        // └─ exprs , expr -> exprs
+        {
+            RuleAdd(
+                PATS{
+                    AT::Exprs,
+                    TT::Comma,
+                    AT::Expr
+                },
+                [](std::vector<Symbol>& symbols, const Token* token_next) -> ASTNODE {
+                    if (!isExprsBoundary(token_next)) return nullptr;
+                    
+                    auto exprs = Rule::Move<Exprs>(symbols, 1);
+                    auto expr  = Rule::Move<Expr>(symbols, 3);
+                    exprs->exprs_.emplace_back(std::move(expr));
+                    return exprs;
+                }
+            );
+        }
+        
         // Fn and Method
 
-        // └─ func(); -> func()
+        // └─ fncallexpr; -> fncallexpr
         {
             RuleAdd(
                 PATS{
@@ -78,43 +119,21 @@ namespace parser {
                 }
             );
         }
-        // └─ expr, expr -> arglist
+        
+        // └─ methodcallexpr; -> methodcallexpr
         {
             RuleAdd(
                 PATS{
-                    AT::Expr,
-                    TT::Comma,
-                    AT::Expr
+                    AT::MethodCallExpr,
+                    TT::Semicolon
                 },
-                [](std::vector<Symbol>& symbols, const Token* token_next) -> ASTNODE {
-                    if (!isArgTerminator(token_next)) return nullptr;
-
-                    std::vector<std::unique_ptr<Expr>> args;
-                    args.emplace_back(Rule::Move<Expr>(symbols, 1));
-                    args.emplace_back(Rule::Move<Expr>(symbols, 3));
-                    return std::make_unique<ArgList>(args);
-                }
-            );
-        }
-        // └─ arglist , expr -> arglist
-        {
-            RuleAdd(
-                PATS{
-                    AT::ArgList,
-                    TT::Comma,
-                    AT::Expr
-                },
-                [](std::vector<Symbol>& symbols, const Token* token_next) -> ASTNODE {
-                    if (!isArgTerminator(token_next)) return nullptr;
-                    
-                    auto arglist = Rule::Move<ArgList>(symbols, 1);
-                    auto expr    = Rule::Move<Expr>(symbols, 3);
-                    arglist->args().emplace_back(std::move(expr));
-                    return arglist;
+                [](auto& symbols, auto*) {
+                    return Rule::Move<MethodCallExpr>(symbols, 1);
                 }
             );
         }
         
+
         // └─ target.expr(expr) -> methodcallexpr
         {
             RuleAdd(
@@ -135,12 +154,12 @@ namespace parser {
                     return std::make_unique<MethodCallExpr>(
                         Rule::Move<Expr>(symbols, 1),
                         Rule::Move<IdExpr>(symbols, 3),
-                        std::make_unique<ArgList>(args)
+                        std::make_unique<Exprs>(args)
                     );
                 }
             );
         }
-        // └─ target.expr(arglist?) -> methodcallexpr
+        // └─ target.expr(exprs?) -> methodcallexpr
         {
             RuleAdd(
                 PATS{
@@ -148,24 +167,27 @@ namespace parser {
                     TT::Dot,
                     AT::IdExpr,
                     TT::LParen,
-                    SymbolPattern::Opt(AT::ArgList),
+                    SymbolPattern::Opt(AT::Exprs),
                     TT::RParen
                 },
                 [](std::vector<Symbol>& symbols, auto*) {
-                    std::vector<std::unique_ptr<Expr>> args;
 
-                    // Option [ArgList] Check
-                    if (Rule::move_positions_[4] != 0) {
-                        auto arglist = Rule::Move<ArgList>(symbols, 5);
-                        for (auto& arg : arglist->args())
-                            args.emplace_back(std::move(arg));
+                    // Option Check
+                    if (Rule::move_positions_[4] == 0) {
+                        std::vector<std::unique_ptr<Expr>> args;
+                        return std::make_unique<MethodCallExpr>(
+                            Rule::Move<Expr>(symbols, 1),
+                            Rule::Move<IdExpr>(symbols, 3),
+                            std::make_unique<Exprs>(args)
+                        );
                     }
-
-                    return std::make_unique<MethodCallExpr>(
-                        Rule::Move<Expr>(symbols, 1),
-                        Rule::Move<IdExpr>(symbols, 3),
-                        std::make_unique<ArgList>(args)
-                    );
+                    else {
+                        return std::make_unique<MethodCallExpr>(
+                            Rule::Move<Expr>(symbols, 1),
+                            Rule::Move<IdExpr>(symbols, 3),
+                            Rule::Move<Exprs>(symbols, 5)
+                        );
+                    }
                 }
             );
         }
@@ -187,34 +209,84 @@ namespace parser {
 
                     return std::make_unique<FnCallExpr>(
                         Rule::Move<IdExpr>(symbols, 1),
-                        std::make_unique<ArgList>(args)
+                        std::make_unique<Exprs>(args)
                     );
                 }
             );
         }
-        // └─ expr(arglist?) -> fncallexpr
+        // └─ expr(exprs?) -> fncallexpr
         {
             RuleAdd(
                 PATS{
                     AT::IdExpr,
                     TT::LParen,
-                    SymbolPattern::Opt(AT::ArgList),
+                    SymbolPattern::Opt(AT::Exprs),
                     TT::RParen
                 },
                 [](std::vector<Symbol>& symbols, auto*) {
-                    std::vector<std::unique_ptr<Expr>> args;
 
-                    // Option [ArgList] Check
-                    if (Rule::move_positions_[2] != 0) {
-                        auto arglist = Rule::Move<ArgList>(symbols, 3);
-                        for (auto& arg : arglist->args())
-                            args.emplace_back(std::move(arg));
+                    // Option Check
+                    if (Rule::move_positions_[2] == 0) {
+                        std::vector<std::unique_ptr<Expr>> args;
+                        return std::make_unique<FnCallExpr>(
+                            Rule::Move<IdExpr>(symbols, 1),
+                            std::make_unique<Exprs>(args)
+                        );
                     }
+                    else {
+                        return std::make_unique<FnCallExpr>(
+                            Rule::Move<IdExpr>(symbols, 1),
+                            Rule::Move<Exprs>(symbols, 3)
+                        );
+                    }
+                }
+            );
+        }
 
-                    return std::make_unique<FnCallExpr>(
-                        Rule::Move<IdExpr>(symbols, 1),
-                        std::make_unique<ArgList>(args)
+        // Array
+
+        // └─ [expr] -> arrayexpr
+        {
+            RuleAdd(
+                PATS{
+                    TT::LBkt,
+                    AT::Expr,
+                    TT::RBkt
+                },
+                [](std::vector<Symbol>& symbols, auto*) {
+                    std::vector<std::unique_ptr<Expr>> elements;
+                    elements.emplace_back(
+                        Rule::Move<Expr>(symbols, 2)
                     );
+
+                    return std::make_unique<ArrayExpr>(
+                        std::make_unique<Exprs>(elements)
+                    );
+                }
+            );
+        }
+        // └─ [exprs?] -> arrayexpr
+        {
+            RuleAdd(
+                PATS{
+                    TT::LBkt,
+                    SymbolPattern::Opt(AT::Exprs),
+                    TT::RBkt
+                },
+                [](std::vector<Symbol>& symbols, auto*) {
+
+                    // Option Check
+                    if (Rule::move_positions_[1] == 0) {
+                        std::vector<std::unique_ptr<Expr>> elements;
+                        return std::make_unique<ArrayExpr>(
+                            std::make_unique<Exprs>(elements)
+                        );
+                    }
+                    else {
+                        return std::make_unique<ArrayExpr>(
+                            Rule::Move<Exprs>(symbols, 2)
+                        );
+                    }
                 }
             );
         }
@@ -353,79 +425,6 @@ namespace parser {
             );
         }
         
-        // Logic Stmt
-
-        // └─ if (cond) { } -> condstmt
-        {
-            RuleAdd(
-                PATS{
-                    TT::If,
-                    TT::LParen,
-                    AT::Expr,
-                    TT::RParen,
-                    AT::BlockStmt
-                },
-                [](std::vector<Symbol>& symbols, auto*) {
-                    return std::make_unique<CondStmt>(
-                        Rule::Move<Expr>(symbols, 3),
-                        Rule::Move<BlockStmt>(symbols, 5),
-                        nullptr
-                    );
-                }
-            );
-        }
-    
-        // └─ condstmt elif (cond) { } -> condstmt
-        {
-            RuleAdd(
-                PATS{
-                    AT::CondStmt,
-                    TT::Elif,
-                    TT::LParen,
-                    AT::Expr,
-                    TT::RParen,
-                    AT::BlockStmt
-                },
-                [](std::vector<Symbol>& symbols, auto*) {
-                    auto stmt = Rule::Move<CondStmt>(symbols, 1);
-
-                    CondStmt* tail = stmt.get();
-                    while (tail->sub_) tail = tail->sub_.get();
-
-                    tail->sub_ = std::make_unique<CondStmt>(
-                        Rule::Move<Expr>(symbols, 4),
-                        Rule::Move<BlockStmt>(symbols, 6),
-                        nullptr
-                    );
-                    return stmt;
-                }
-            );
-        }
-
-        // └─ condstmt else { } -> condstmt
-        {
-            RuleAdd(
-                PATS{
-                    AT::CondStmt,
-                    TT::Else,
-                    AT::BlockStmt
-                },
-                [](std::vector<Symbol>& symbols, auto*) {
-                    auto stmt = Rule::Move<CondStmt>(symbols, 1);
-
-                    CondStmt* tail = stmt.get();
-                    while (tail->sub_) tail = tail->sub_.get();
-
-                    tail->sub_ = std::make_unique<CondStmt>(
-                        nullptr,
-                        Rule::Move<BlockStmt>(symbols, 3),
-                        nullptr
-                    );
-                    return stmt;
-                }
-            );
-        }
-    
         // Range
  
         // └─ expr .. expr .. expr -> rangeexpr
@@ -511,6 +510,79 @@ namespace parser {
             );
         }
 
+        // Logic Stmt
+
+        // └─ if (cond) { } -> condstmt
+        {
+            RuleAdd(
+                PATS{
+                    TT::If,
+                    TT::LParen,
+                    AT::Expr,
+                    TT::RParen,
+                    AT::BlockStmt
+                },
+                [](std::vector<Symbol>& symbols, auto*) {
+                    return std::make_unique<CondStmt>(
+                        Rule::Move<Expr>(symbols, 3),
+                        Rule::Move<BlockStmt>(symbols, 5),
+                        nullptr
+                    );
+                }
+            );
+        }
+    
+        // └─ condstmt elif (cond) { } -> condstmt
+        {
+            RuleAdd(
+                PATS{
+                    AT::CondStmt,
+                    TT::Elif,
+                    TT::LParen,
+                    AT::Expr,
+                    TT::RParen,
+                    AT::BlockStmt
+                },
+                [](std::vector<Symbol>& symbols, auto*) {
+                    auto stmt = Rule::Move<CondStmt>(symbols, 1);
+
+                    CondStmt* tail = stmt.get();
+                    while (tail->sub_) tail = tail->sub_.get();
+
+                    tail->sub_ = std::make_unique<CondStmt>(
+                        Rule::Move<Expr>(symbols, 4),
+                        Rule::Move<BlockStmt>(symbols, 6),
+                        nullptr
+                    );
+                    return stmt;
+                }
+            );
+        }
+
+        // └─ condstmt else { } -> condstmt
+        {
+            RuleAdd(
+                PATS{
+                    AT::CondStmt,
+                    TT::Else,
+                    AT::BlockStmt
+                },
+                [](std::vector<Symbol>& symbols, auto*) {
+                    auto stmt = Rule::Move<CondStmt>(symbols, 1);
+
+                    CondStmt* tail = stmt.get();
+                    while (tail->sub_) tail = tail->sub_.get();
+
+                    tail->sub_ = std::make_unique<CondStmt>(
+                        nullptr,
+                        Rule::Move<BlockStmt>(symbols, 3),
+                        nullptr
+                    );
+                    return stmt;
+                }
+            );
+        }
+    
         // ForStmt
 
         // └─ for ( x in rangeexpr ) {} -> forstmt

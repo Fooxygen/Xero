@@ -33,7 +33,7 @@ namespace rt {
             memcpy(data_, other.data_, length_ + 1);
         }
         ~String() {
-            delete[] data_;
+            if (data_) delete[] data_;
         }
 
         size_t length() const {
@@ -47,17 +47,16 @@ namespace rt {
             return std::string(data_, length_);
         }
         void Expand(size_t len) {
-            if (capacity_ <= 0) capacity_ = 1;
             if (len + 1 < capacity_) return;
 
-            size_t new_capacity = std::max((len + 1) * 2, capacity_ * 2);
-            auto new_data = new char[new_capacity];
-            memset(new_data, 0, sizeof(char) * new_capacity);
-            memcpy(new_data, data_, sizeof(char) * capacity_);
+            size_t capa   = std::max((size_t)((len + 1) * 1.5f), (size_t)(capacity_ * 1.5f));
+            auto   expand = new char[capa];
+            memset(expand, 0, sizeof(char) * capa);
+            memcpy(expand, data_, sizeof(char) * capacity_);
 
             delete[] data_;
-            data_ = new_data;
-            capacity_ = new_capacity;
+            data_ = expand;
+            capacity_ = capa;
         }
         void Write(const char* s) {
             auto len = std::strlen(s);
@@ -65,6 +64,7 @@ namespace rt {
             length_ = len;
             memcpy(data_, s, sizeof(char) * (len + 1));
         }
+        
         void Reverse() {
             if (length_ <= 1) return;
             for (size_t i = 0, j = length_ - 1; i < j; i++, j--) {

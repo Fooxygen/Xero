@@ -128,6 +128,8 @@ namespace lexer {
             case ')':   return TokenGen(Token::Type::RParen,    ")");
             case '{':   return TokenGen(Token::Type::LBrace,    "{");
             case '}':   return TokenGen(Token::Type::RBrace,    "}");
+            case '[':   return TokenGen(Token::Type::LBkt,      "[");
+            case ']':   return TokenGen(Token::Type::RBkt,      "]");
             case ',':   return TokenGen(Token::Type::Comma,     ",");
             case '+':   return TokenGen(Token::Type::Plus,      "+");
             case '-':   return TokenGen(Token::Type::Minus,     "-");

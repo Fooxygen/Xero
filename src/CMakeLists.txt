@@ -15,6 +15,7 @@ add_executable(xero
     runtime/xengine.cpp
     runtime/register.cpp
     runtime/table/type.cpp
+    runtime/obj/impl/array.cpp
 )
 
 target_include_directories(xero PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

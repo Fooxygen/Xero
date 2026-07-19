@@ -33,6 +33,7 @@ enum class AstType {
     NotExpr,            //  Not
     FnCallExpr,         //  Func Call
     MethodCallExpr,     //  Method Call
+    ArrayExpr,          //  Array
 
     // Stmt
     Stmt,               //  Base ------
@@ -43,7 +44,7 @@ enum class AstType {
     ForStmt,            //  For Loop
 
     // Common
-    ArgList,            // List of Args
+    Exprs,             // List of expr
 };
 
 static AstType BaseOfAstType(AstType type) {
@@ -63,6 +64,7 @@ static AstType BaseOfAstType(AstType type) {
         case NotExpr:
         case FnCallExpr:
         case MethodCallExpr:
+        case ArrayExpr:
             return Expr;
 
         case BlockStmt:
@@ -93,7 +95,7 @@ public:
         switch (type_) {
             case AstType::Program:          return "Program";
 
-            case AstType::ArgList:          return "ArgList";
+            case AstType::Exprs:            return "Exprs";
 
             case AstType::Const:            return "Const";
             case AstType::NumConst:         return "NumConst";
@@ -108,6 +110,7 @@ public:
             case AstType::NotExpr:          return "NotExpr";
             case AstType::FnCallExpr:       return "FnCallExpr";
             case AstType::MethodCallExpr:   return "MethodCallExpr";
+            case AstType::ArrayExpr:        return "ArrayExpr";
 
             case AstType::Stmt:             return "Stmt";
             case AstType::BlockStmt:        return "BlockStmt";
@@ -152,23 +155,17 @@ class Stmt              : public AstNode {
 };
 
 // Common
-class ArgList           : public AstNode {
-private:
-    std::vector<std::unique_ptr<Expr>> args_;
-
+class Exprs             : public AstNode {
 public:
-    ArgList(std::vector<std::unique_ptr<Expr>>& args) : args_(std::move(args)) {
-        type_ = AstType::ArgList;
-    }
-    
-    std::vector<std::unique_ptr<Expr>>& args() {
-        return args_;
+    std::vector<std::unique_ptr<Expr>> exprs_;
+
+    Exprs(std::vector<std::unique_ptr<Expr>>& exprs)
+    :   exprs_(std::move(exprs)) {
+        type_ = AstType::Exprs;
     }
 
     void PrintImpl(std::string prefix) override {
-        for (auto& arg : args_) {
-            arg->Print(prefix);
-        }
+        for (auto& e : exprs_) e->Print(prefix);
     }
 };
 
@@ -275,56 +272,61 @@ public:
     }
 };
 class FnCallExpr        : public Expr {
-private:
-    std::unique_ptr<IdExpr>  callee_  = nullptr;
-    std::unique_ptr<ArgList> arglist_ = nullptr;
-
 public:
+    std::unique_ptr<IdExpr> callee_ = nullptr;
+    std::unique_ptr<Exprs>  args_   = nullptr;
+
     FnCallExpr(
-        std::unique_ptr<IdExpr>  callee,
-        std::unique_ptr<ArgList> arglist
+        std::unique_ptr<IdExpr> callee,
+        std::unique_ptr<Exprs>  args
     )
     :   callee_(std::move(callee)),
-        arglist_(std::move(arglist))
+        args_(std::move(args))
     {
         type_ = AstType::FnCallExpr;
     }
 
-    IdExpr*  callee()  const { return callee_.get(); }
-    ArgList* arglist() const { return arglist_.get(); }
-
     void PrintImpl(std::string prefix) override {
         callee_->Print(prefix, "callee");
-        arglist_->Print(prefix, "arglist");
+        args_->Print(prefix, "args");
     }
 };
 class MethodCallExpr    : public Expr {
-private:
-    std::unique_ptr<Expr>    target_  = nullptr;
-    std::unique_ptr<IdExpr>  callee_  = nullptr;
-    std::unique_ptr<ArgList> arglist_ = nullptr;
-
 public:
+    std::unique_ptr<Expr>   target_ = nullptr;
+    std::unique_ptr<IdExpr> callee_ = nullptr;
+    std::unique_ptr<Exprs>  args_   = nullptr;
+
     MethodCallExpr(
-        std::unique_ptr<Expr>    target,
-        std::unique_ptr<IdExpr>  callee,
-        std::unique_ptr<ArgList> arglist
+        std::unique_ptr<Expr>   target,
+        std::unique_ptr<IdExpr> callee,
+        std::unique_ptr<Exprs>  args
     )
     :   target_(std::move(target)),
         callee_(std::move(callee)),
-        arglist_(std::move(arglist))
+        args_(std::move(args))
     {
         type_ = AstType::MethodCallExpr;
     }
 
-    Expr*    target()  const { return target_.get(); }
-    IdExpr*  callee()  const { return callee_.get(); }
-    ArgList* arglist() const { return arglist_.get(); }
-
     void PrintImpl(std::string prefix) override {
         target_->Print(prefix, "target");
         callee_->Print(prefix, "callee");
-        arglist_->Print(prefix, "arglist");
+        args_->Print(prefix, "args");
+    }
+};
+class ArrayExpr         : public Expr {
+public:
+    std::unique_ptr<Exprs> elements_;
+
+    ArrayExpr(std::unique_ptr<Exprs> elements)
+    :   elements_(std::move(elements))
+    {
+        type_ = AstType::ArrayExpr;
+    }
+
+    void PrintImpl(std::string prefix) override {
+        elements_->Print(prefix, "elements");
     }
 };
 
@@ -380,18 +382,13 @@ public:
 
 // Stmt
 class BlockStmt         : public Stmt {
-private:
+public:
     std::vector<std::unique_ptr<AstNode>> children_;
 
-public:
     BlockStmt(std::vector<std::unique_ptr<AstNode>>& children)
     :   children_(std::move(children))
     {
         type_ = AstType::BlockStmt;
-    }
-
-    std::vector<std::unique_ptr<AstNode>>& children() {
-        return children_;
     }
 
     void PrintImpl(std::string prefix) override {

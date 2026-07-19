@@ -9,6 +9,7 @@
 
 #include "runtime/table/type.hpp"
 #include "runtime/obj/impl/string.hpp"
+#include "runtime/obj/impl/array.hpp"
 
 namespace rt {
 
@@ -127,6 +128,12 @@ namespace rt {
             o.data_.ref_ = new RefData(new String(s));
             return o;
         }
+        static Obj Make_array() {
+            Obj o;
+            o.type_ = TypeTable::Get("array");
+            o.data_.ref_ = new RefData(new Array());
+            return o;
+        }
 
         const Type* type() const {
             return type_;
@@ -151,9 +158,14 @@ namespace rt {
             String*  str = (String*)(ref->data);
             return *str;
         }
-        String   Get_string()     const {
+        String   Get_string()       const {
             auto ref = Get_string_ref();
             return String(ref);
+        }
+        Array&   Get_array_ref( )   const {
+            RefData* ref = (RefData*)(data_.ref_);
+            Array*   str = (Array*)(ref->data);
+            return *str;
         }
     };
 }

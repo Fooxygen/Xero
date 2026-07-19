@@ -12,6 +12,8 @@
 
 namespace rt {
         
+    // Expr
+
     Obj Xengine::Exec(IdExpr& node) {
         return *env_.Get(node.value_);
     }
@@ -82,28 +84,42 @@ namespace rt {
     }
 
     Obj Xengine::Exec(FnCallExpr& node) {
-        auto& callee = *node.callee();
+        auto& callee = *node.callee_;
+        auto& args   = *node.args_;
 
-        std::vector<Obj> args;
-        for (auto& arg : node.arglist()->args()) {
-            args.emplace_back(Exec(*arg));
+        std::vector<Obj> objs;
+        for (auto& e : args.exprs_) {
+            objs.emplace_back(Exec(*e));
         }
 
-        return CallThrow(FnTable::Get(callee.value_), args);
+        return CallThrow(FnTable::Get(callee.value_), objs);
     }
 
     Obj Xengine::Exec(MethodCallExpr& node) {
-        auto  target = Exec(*node.target());
-        auto& callee = *node.callee();
+        auto  target = Exec(*node.target_);
+        auto& callee = *node.callee_;
+        auto& args   = *node.args_;
 
-        std::vector<Obj> args;
-        args.emplace_back(target);  // args[0] as target, args[1...n] as arguments
-        for (auto& arg : node.arglist()->args()) {
-            args.emplace_back(Exec(*arg));
+        std::vector<Obj> objs;
+        objs.emplace_back(target);  // args[0] as target, args[1...n] as arguments
+        for (auto& e : args.exprs_) {
+            objs.emplace_back(Exec(*e));
         }
 
-        return CallThrow(MethodTable::Get(target.type(), callee.value_), args);
+        return CallThrow(MethodTable::Get(target.type(), callee.value_), objs);
     }
+
+    Obj Xengine::Exec(ArrayExpr& node) {
+        auto  obj   = Obj::Make_array();
+        auto& array = obj.Get_array_ref();
+        for (auto& e : node.elements_->exprs_) {
+            Obj element = Exec(*e);
+            array.Insert(array.size(), new Obj(element));
+        }
+        return obj;
+    }
+
+    // Const
 
     Obj Xengine::Exec(NumConst& node) {
         const auto& numstr = node.value_;
@@ -159,11 +175,13 @@ namespace rt {
         return Obj::Make_string(node.value_);
     }
 
+    // Stmt
+
     Obj Xengine::Exec(BlockStmt& node, std::function<void()> OnScopeReady) {
         env_.ScopePush();
         if (OnScopeReady) OnScopeReady();
 
-        for (auto& child : node.children()) {
+        for (auto& child : node.children_) {
             Exec(*child);
         }
         
@@ -301,6 +319,8 @@ namespace rt {
 
         return Obj();
     }
+
+    // Common
 
     Obj Xengine::Exec(Program& node) {
         Exec((BlockStmt&)node);

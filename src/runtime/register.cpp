@@ -6,6 +6,8 @@
 #include "xengine.hpp"
 #include "table/fn.hpp"
 #include "table/method.hpp"
+#include "obj/impl/string.hpp"
+#include "obj/impl/array.hpp"
 
 namespace rt {
 
@@ -131,6 +133,12 @@ namespace rt {
                     return Obj::Make_bool(a.Get_string().ToCppString() != b.Get_string().ToCppString());
                 },        
             });
+
+            // array
+            TypeTable::Set(Type{
+                .name = "array", .size = 0, .isRef = true,
+                .destroy = [](void* data) { delete (Array*)data; }      
+            });
         }
 
         // Convert
@@ -194,6 +202,42 @@ namespace rt {
 
             MethodTable::Set(type, "len", [](ARGS args) {
                 return Obj::Make_i32(args[0].Get_string().length());
+            });
+        }
+
+        // array
+        {
+            auto type = TypeTable::Get("array");
+
+            MethodTable::Set(type, "insert", [](ARGS args) {
+                auto& array = args[0].Get_array_ref();
+                array.Insert(args[1].Get_i32(), new Obj(args[2]));
+                return Obj();
+            });
+            MethodTable::Set(type, "remove", [](ARGS args) {
+                auto& array = args[0].Get_array_ref();
+                array.Remove(args[1].Get_i32());
+                return Obj();
+            });
+            MethodTable::Set(type, "pushfront", [](ARGS args) {
+                auto& array = args[0].Get_array_ref();
+                array.Insert(0, new Obj(args[1]));
+                return Obj();
+            });
+            MethodTable::Set(type, "popfront", [](ARGS args) {
+                auto& array = args[0].Get_array_ref();
+                array.Remove(0);
+                return Obj();
+            });
+            MethodTable::Set(type, "pushback", [](ARGS args) {
+                auto& array = args[0].Get_array_ref();
+                array.Insert(array.size(), new Obj(args[1]));
+                return Obj();
+            });
+            MethodTable::Set(type, "popback", [](ARGS args) {
+                auto& array = args[0].Get_array_ref();
+                array.Remove(array.size() - 1);
+                return Obj();
             });
         }
     }

@@ -25,6 +25,8 @@ public:
         RParen,             //  )
         LBrace,             //  {
         RBrace,             //  }
+        LBkt,               //  [
+        RBkt,               //  ]
         Dot,                //  .
         DotDot,             //  ..
         DotDotEq,           //  ..=
@@ -102,6 +104,8 @@ public:
             case RParen:
             case LBrace:
             case RBrace:
+            case LBkt:
+            case RBkt:
             case Dot:
             case DotDot:
             case DotDotEq:
@@ -167,6 +171,8 @@ public:
             case Type::RParen:      return "RParen";
             case Type::LBrace:      return "LBrace";
             case Type::RBrace:      return "RBrace";
+            case Type::LBkt:        return "LBkt";
+            case Type::RBkt:        return "RBkt";
             case Type::Dot:         return "Dot";
             case Type::DotDot:      return "DotDot";
             case Type::DotDotEq:    return "DotDotEq";
