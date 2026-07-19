@@ -19,29 +19,38 @@ namespace rt {
     Obj Xengine::Exec(OperExpr& node) {
         auto lobj = Exec(*node.lexpr_);
         auto robj = Exec(*node.rexpr_);
+        auto type = TypeTable::Common({ lobj.type(), robj.type() });
 
-        auto pick = [&](const Type* t) -> Obj(*)(const Obj&, const Obj&) {
+        if (!type) {
+            throw LogErr(LogModule::Runtime, std::format(
+                "incompatible types '{}' and '{}'",
+                lobj.type()->name, robj.type()->name
+            ));
+        }
+
+        lobj = TypeTable::Convert(lobj, type);
+        robj = TypeTable::Convert(robj, type);
+        
+        auto method_pick = [&](const Type* t) -> Obj(*)(const Obj&, const Obj&) {
+            using enum Token::Type;
             switch (node.opertype_) {
-                case Token::Type::Plus:  return t->plus;
-                case Token::Type::Minus: return t->minus;
-                case Token::Type::Star:  return t->star;
-                case Token::Type::Slash: return t->slash;
-                case Token::Type::Gt:    return t->gt;
-                case Token::Type::Lt:    return t->lt;
-                case Token::Type::Ge:    return t->ge;
-                case Token::Type::Le:    return t->le;
-                case Token::Type::Eq:    return t->eq;
-                case Token::Type::Neq:   return t->neq;
-                case Token::Type::And:   return t->and_;
-                case Token::Type::Or:    return t->or_;
+                case Plus:  return t->plus;
+                case Minus: return t->minus;
+                case Star:  return t->star;
+                case Slash: return t->slash;
+                case Gt:    return t->gt;
+                case Lt:    return t->lt;
+                case Ge:    return t->ge;
+                case Le:    return t->le;
+                case Eq:    return t->eq;
+                case Neq:   return t->neq;
+                case And:   return t->and_;
+                case Or:    return t->or_;
                 default:                 return nullptr;
             }
         };
 
-        auto obj = CallTry(pick(lobj.type()), lobj, robj);
-        if (!obj.isNone()) return obj;
-
-        obj = CallTry(pick(robj.type()), robj, lobj);
+        auto obj = CallTry(method_pick(type), lobj, robj);
         if (!obj.isNone()) return obj;
 
         throw LogErr(LogModule::Runtime,
@@ -189,6 +198,8 @@ namespace rt {
 
     Obj Xengine::Exec(ForStmt& node) {
         if (node.data_->type_ == AstType::RangeExpr) {
+
+            // Boundary
             auto range   = (RangeExpr*)node.data_.get();
             bool hasStep = range->step_ ? true : false;
 
@@ -214,7 +225,6 @@ namespace rt {
                 itype = TypeTable::Common({ ltype, rtype });
             }
 
-            // Failed to produce type
             if (!itype) {
                 if (hasStep) {
                     throw LogErr(LogModule::Runtime,
@@ -233,15 +243,8 @@ namespace rt {
                     );
                 }
             }
-
-            // Illegal type
-            if (itype->name != "i32" &&
-                itype->name != "i64" &&
-                itype->name != "f32" &&
-                itype->name != "f64")
-            {
-                throw LogErr(LogModule::Runtime,
-                    std::format(
+            if (!itype->plus || !itype->ge) {
+                throw LogErr(LogModule::Runtime, std::format(
                         "invalid range iterator type '{}'",
                         itype->name
                     )

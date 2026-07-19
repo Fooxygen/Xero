@@ -71,6 +71,7 @@ namespace rt {
         static void Reset() {
             table_ = std::unordered_map<std::string, Type*>();
             converts_.clear();
+            common_cache_.clear();
         }
 
         static void ConvertSet(const Type* from, const Type* to, Obj(*fn)(const Obj&));
