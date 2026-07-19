@@ -61,7 +61,10 @@ namespace rt {
         auto obj = Exec(*node.expr_);
         auto neg = CallTry(obj.type()->neg, obj);
         if (neg.isNone()) {
-            throw LogErr(LogModule::Runtime, "unsupported unary negation");
+            throw LogErr(LogModule::Runtime, std::format(
+                "unsupported bool negation for '{}'",
+                obj.type()->name
+            ));
         }
         return neg;
     }
@@ -70,7 +73,10 @@ namespace rt {
         auto obj = Exec(*node.expr_);
         auto not_ = CallTry(obj.type()->not_, obj);
         if (not_.isNone()) {
-            throw LogErr(LogModule::Runtime, "unsupported bool negation");
+            throw LogErr(LogModule::Runtime, std::format(
+                "unsupported bool negation for '{}'",
+                obj.type()->name
+            ));
         }
         return not_;
     }
@@ -166,14 +172,36 @@ namespace rt {
     }
 
     Obj Xengine::Exec(DeclStmt& node) {
-        auto value = Exec(*node.value_);
-        //auto type = TypeTable::Get(node.id_->value_);
-        env_.Declare(node.id_->value_, value);
+        auto obj  = Exec(*node.value_);
+        auto type = TypeTable::Get(node.value_type_->value_);
+
+        // Try Convert Type
+        auto obj_convert = TypeTable::Convert(obj, type);
+        if (obj_convert.isNone()) {
+            throw LogErr(LogModule::Runtime, std::format(
+                "cannot assign type '{}' to type '{}'",
+                obj.type()->name, type->name
+            ));
+        }
+
+        env_.Declare(node.id_->value_, obj_convert);
         return Obj();
     }
 
     Obj Xengine::Exec(AssignStmt& node) {
-        env_.Assign(node.id_->value_, Exec(*node.value_));
+        auto obj  = Exec(*node.value_);
+        auto type = env_.Get(node.id_->value_)->type();
+
+        // Try Convert Type
+        auto obj_convert = TypeTable::Convert(obj, type);
+        if (obj_convert.isNone()) {
+            throw LogErr(LogModule::Runtime, std::format(
+                "cannot assign type '{}' to type '{}'",
+                obj.type()->name, type->name
+            ));
+        }
+
+        env_.Assign(node.id_->value_, obj_convert);
         return Obj();
     }
 
