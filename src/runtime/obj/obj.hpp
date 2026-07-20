@@ -88,6 +88,23 @@ namespace rt {
             }
         }
 
+        Obj Clone() const {
+            return type_->clone(*this);
+        }
+
+        const Type* type() const {
+            return type_;
+        }
+        bool isNone() const {
+            return type_ == TypeTable::Get("none");
+        }
+        bool is(std::string_view type_name) const {
+            return type_->name == type_name;
+        }
+        bool hasRef() const {
+            return type_->isRef && data_.ref_;
+        }
+
         static Obj Make_none() {
             Obj o;
             return o;
@@ -134,18 +151,11 @@ namespace rt {
             o.data_.ref_ = new RefData(new Array());
             return o;
         }
-
-        const Type* type() const {
-            return type_;
-        }
-        bool isNone() const {
-            return type_ == TypeTable::Get("none");
-        }
-        bool is(std::string_view type_name) const {
-            return type_->name == type_name;
-        }
-        bool hasRef() const {
-            return type_->isRef && data_.ref_;
+        static Obj Make_array(Array* a) {
+            Obj o;
+            o.type_ = TypeTable::Get("array");
+            o.data_.ref_ = new RefData(a);
+            return o;
         }
 
         bool     Get_bool()         const { return data_.bool_;  }
@@ -157,9 +167,6 @@ namespace rt {
             RefData* ref = (RefData*)(data_.ref_);
             String*  str = (String*)(ref->data);
             return *str;
-        }
-        String   Get_string()       const {
-            return Get_string_ref();
         }
         Array&   Get_array_ref( )   const {
             RefData* ref = (RefData*)(data_.ref_);

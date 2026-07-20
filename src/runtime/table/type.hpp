@@ -25,13 +25,11 @@ namespace rt {
 
         // Methods
 
-        static void        destroy_default(void*) {
-            throw LogErr(LogModule::Runtime, "method 'destroy()' not implemented for type");
-        }
-        static std::string to_string_default(const Obj&) {
-            throw LogErr(LogModule::Runtime, "method 'to_string()' not implemented for type");
-        }
+        static Obj         clone_default(const Obj&);
+        static void        destroy_default(void*);
+        static std::string to_string_default(const Obj&);
 
+        Obj         (*clone)(const Obj&)        = clone_default;
         void        (*destroy)(void*)           = destroy_default;
         std::string (*to_string)(const Obj&)    = to_string_default;
 

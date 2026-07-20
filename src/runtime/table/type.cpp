@@ -8,6 +8,21 @@
 
 namespace rt {
 
+    // Type Default Method
+
+    Obj Type::clone_default(const Obj&) {
+        throw LogErr(LogModule::Runtime, "method 'clone()' not implemented for type");
+    }
+
+    void Type::destroy_default(void*) {
+        throw LogErr(LogModule::Runtime, "method 'destroy()' not implemented for type");
+    }
+    std::string Type::to_string_default(const Obj&) {
+        throw LogErr(LogModule::Runtime, "method 'to_string()' not implemented for type");
+    }
+
+    // TypeTable
+
     void TypeTable::ConvertSet(const Type* from, const Type* to, Obj(*fn)(const Obj&)) {
         converts_[{ from, to }] = fn;
     }

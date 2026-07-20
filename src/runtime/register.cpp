@@ -22,7 +22,8 @@ namespace rt {
 
             // bool
             TypeTable::Set(Type{
-                .name = "bool", .size = 1,
+                .name  = "bool", .size = 1,
+                .clone = [](const Obj& o) { return Obj::Make_bool(o.Get_bool()); },
                 .to_string  = [](const Obj& o) {
                     return o.Get_bool() ? std::string("true") : std::string("false");
                 },
@@ -40,6 +41,7 @@ namespace rt {
             // i32
             TypeTable::Set(Type{
                 .name  = "i32", .size = 4,
+                .clone = [](const Obj& o) { return Obj::Make_i32(o.Get_i32()); },
                 .to_string  = [](const Obj& o) { return std::to_string(o.Get_i32()); },
                 .plus       = [](const Obj& a, const Obj& b) { return Obj::Make_i32(a.Get_i32() + b.Get_i32()); },
                 .minus      = [](const Obj& a, const Obj& b) { return Obj::Make_i32(a.Get_i32() - b.Get_i32()); },
@@ -61,6 +63,7 @@ namespace rt {
             // i64
             TypeTable::Set(Type{
                 .name  = "i64", .size = 8,
+                .clone = [](const Obj& o) { return Obj::Make_i64(o.Get_i64()); },
                 .to_string  = [](const Obj& o) { return std::to_string(o.Get_i64()); },
                 .plus       = [](const Obj& a, const Obj& b) { return Obj::Make_i64(a.Get_i64() + b.Get_i64()); },
                 .minus      = [](const Obj& a, const Obj& b) { return Obj::Make_i64(a.Get_i64() - b.Get_i64()); },
@@ -82,6 +85,7 @@ namespace rt {
             // f32
             TypeTable::Set(Type{
                 .name  = "f32", .size = 4,
+                .clone = [](const Obj& o) { return Obj::Make_f32(o.Get_f32()); },
                 .to_string  = [](const Obj& o) { return std::to_string(o.Get_f32()); },
                 .plus       = [](const Obj& a, const Obj& b) { return Obj::Make_f32(a.Get_f32() + b.Get_f32()); },
                 .minus      = [](const Obj& a, const Obj& b) { return Obj::Make_f32(a.Get_f32() - b.Get_f32()); },
@@ -99,6 +103,7 @@ namespace rt {
             // f64
             TypeTable::Set(Type{
                 .name = "f64", .size = 8,
+                .clone = [](const Obj& o) { return Obj::Make_f64(o.Get_f64()); },
                 .to_string  = [](const Obj& o) { return std::to_string(o.Get_f64()); },
                 .plus       = [](const Obj& a, const Obj& b) { return Obj::Make_f64(a.Get_f64() + b.Get_f64()); },
                 .minus      = [](const Obj& a, const Obj& b) { return Obj::Make_f64(a.Get_f64() - b.Get_f64()); },
@@ -115,29 +120,42 @@ namespace rt {
 
             // string
             TypeTable::Set(Type{
-                .name = "string", .size = 0, .isRef = true,
+                .name  = "string", .size = 0, .isRef = true,
+                .clone = [](const Obj& o) { return Obj::Make_string(o.Get_string_ref().ToCppString()); },
                 .destroy   = [](void* data) { delete (String*)data; },
-                .to_string = [](const Obj& o) { return o.Get_string().ToCppString(); },
+                .to_string = [](const Obj& o) { return o.Get_string_ref().ToCppString(); },
                 .plus      = [](const Obj& a, const Obj& b) {
-                    return Obj::Make_string((a.Get_string() + b.Get_string()).ToCppString());
+                    return Obj::Make_string((a.Get_string_ref() + b.Get_string_ref()).ToCppString());
                 },
                 .neg       = [](const Obj& o) {
-                    auto s = o.Get_string();
-                    s.Reverse();
-                    return Obj::Make_string(s.ToCppString());
+                    auto oc = o.Clone();
+                    oc.Get_string_ref().Reverse();
+                    return oc;
                 },
                 .eq        = [](const Obj& a, const Obj& b) {
-                    return Obj::Make_bool(a.Get_string().ToCppString() == b.Get_string().ToCppString());
+                    return Obj::Make_bool(a.Get_string_ref().ToCppString() == b.Get_string_ref().ToCppString());
                 },
                 .neq       = [](const Obj& a, const Obj& b) {
-                    return Obj::Make_bool(a.Get_string().ToCppString() != b.Get_string().ToCppString());
+                    return Obj::Make_bool(a.Get_string_ref().ToCppString() != b.Get_string_ref().ToCppString());
                 },        
             });
 
             // array
             TypeTable::Set(Type{
-                .name = "array", .size = 0, .isRef = true,
-                .destroy = [](void* data) { delete (Array*)data; }      
+                .name  = "array", .size = 0, .isRef = true,
+                .clone = [](const Obj& o) {
+                    auto& src = o.Get_array_ref();
+                    auto* dst = new Array();
+                    for (size_t i = 0; i < src.size(); i++)
+                        dst->Insert(i, new Obj(src.Get(i)->Clone()));
+                    return Obj::Make_array(dst);
+                },
+                .destroy = [](void* data) { delete (Array*)data; },
+                .neg     = [](const Obj& o) {
+                    auto oc = o.Clone();
+                    oc.Get_array_ref().Reverse();
+                    return oc;
+                },
             });
         }
 
@@ -201,7 +219,7 @@ namespace rt {
             auto type = TypeTable::Get("string");
 
             MethodTable::Set(type, "len", [](ARGS args) {
-                return Obj::Make_i32(args[0].Get_string().length());
+                return Obj::Make_i32(args[0].Get_string_ref().length());
             });
         }
 
