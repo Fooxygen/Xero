@@ -19,10 +19,10 @@ namespace rt {
         size_t capacity_ = 0;
 
     public:
-        Array() {
-            data_ = new Obj*[1];
-            data_[0] = nullptr;
-            capacity_ = 1;
+        Array(size_t size = 1) {
+            data_ = new Obj*[size];
+            memset(data_, 0, sizeof(Obj*) * size);
+            capacity_ = size;
         }
         ~Array();
 

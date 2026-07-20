@@ -145,10 +145,10 @@ namespace rt {
             o.data_.ref_ = new RefData(new String(s));
             return o;
         }
-        static Obj Make_array() {
+        static Obj Make_array(size_t size = 1) {
             Obj o;
             o.type_ = TypeTable::Get("array");
-            o.data_.ref_ = new RefData(new Array());
+            o.data_.ref_ = new RefData(new Array(size));
             return o;
         }
         static Obj Make_array(Array* a) {

@@ -110,8 +110,9 @@ namespace rt {
     }
 
     Obj Xengine::Exec(ArrayExpr& node) {
-        auto  obj   = Obj::Make_array();
-        auto& array = obj.Get_array_ref();
+        size_t size  = node.elements_->exprs_.size();
+        auto   obj   = Obj::Make_array(size);
+        auto&  array = obj.Get_array_ref();
         
         for (auto& e : node.elements_->exprs_) {
 
