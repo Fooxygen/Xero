@@ -36,6 +36,8 @@ namespace rt {
             if (data_[i]) delete data_[i];
         }
         if (data_) delete[] data_;
+
+        data_ = nullptr;
         size_ = 0;
         capacity_ = 0;
     }
@@ -82,6 +84,20 @@ namespace rt {
         return data_[idx];
     }
 
+    Array* Array::operator +(const Array& other) {
+        auto arr = new Array();
+        arr->Expand(size_ + other.size_);
+        
+        for (size_t i = 0; i < size_; i++) {
+            arr->Insert(arr->size_, new Obj(Get(i)->Clone()));
+        }
+        for (size_t i = 0; i < other.size_; i++) {
+            arr->Insert(arr->size_, new Obj(other.Get(i)->Clone()));
+        }
+
+        return arr;
+    }
+
     Array& Array::operator =(const Array& other) {
         if (this == &other) return *this;
 
@@ -95,22 +111,9 @@ namespace rt {
         return *this;
     }
 
-    Array Array::operator +(const Array& other) {
-        Array arr;
-        arr.Expand(size_ + other.size_);
-        
-        for (size_t i = 0; i < size_; i++) {
-            arr.Insert(arr.size(), new Obj(Get(i)->Clone()));
-        }
-        for (size_t i = 0; i < other.size_; i++) {
-            arr.Insert(arr.size(), new Obj(other.Get(i)->Clone()));
-        }
-
-        return arr;
-    }
-
     Array& Array::operator +=(const Array& other) {
-        *this = *this + other;
+        for (size_t i = 0; i < other.size_; i++)
+            Insert(size_, new Obj(other.Get(i)->Clone()));
         return *this;
     }
 }

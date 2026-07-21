@@ -1,6 +1,5 @@
 
 a: array = [1, 2, "Hello", "Xero"];
-a = a + a;
 
 for (x in a) {
     println(x);

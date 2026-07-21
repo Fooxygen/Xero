@@ -287,7 +287,7 @@ namespace rt {
     }
 
     Obj Xengine::Exec(StringConst& node) {
-        return Obj::Make_string(node.value_);
+        return Obj::Make_string(new String(node.value_));
     }
 
     // Stmt

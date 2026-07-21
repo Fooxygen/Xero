@@ -139,10 +139,10 @@ namespace rt {
             o.data_.f64_ = x;
             return o;
         }
-        static Obj Make_string(std::string s) {
+        static Obj Make_string(String* s) {
             Obj o;
             o.type_ = TypeTable::Get("string");
-            o.data_.ref_ = new RefData(new String(s));
+            o.data_.ref_ = new RefData(s);
             return o;
         }
         static Obj Make_array(size_t size = 1) {

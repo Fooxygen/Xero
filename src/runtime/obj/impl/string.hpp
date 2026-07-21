@@ -17,6 +17,32 @@ namespace rt {
         size_t length_   = 0;
         size_t capacity_ = 0;
 
+        void Clear() {
+            if (data_) delete[] data_;
+            data_ = nullptr;
+            length_ = 0;
+            capacity_ = 0;
+        }
+        
+        void Expand(size_t len) {
+            if (len + 1 < capacity_) return;
+
+            size_t capa   = std::max((size_t)((len + 1) * 1.5f), (size_t)(capacity_ * 1.5f));
+            auto   expand = new char[capa];
+            memset(expand, 0, sizeof(char) * capa);
+            memcpy(expand, data_, sizeof(char) * capacity_);
+
+            Clear();
+            data_ = expand;
+            capacity_ = capa;
+        }
+        void Write(const std::string& s) {
+            auto len = s.length();
+            Expand(len);
+            length_ = len;
+            memcpy(data_, s.data(), sizeof(char) * (len + 1));
+        }
+
     public:
         String() {
             data_ = new char[1];
@@ -43,28 +69,6 @@ namespace rt {
             return capacity_;
         }
 
-        void Clear() {
-            if (data_) delete[] data_;
-        }
-        void Expand(size_t len) {
-            if (len + 1 < capacity_) return;
-
-            size_t capa   = std::max((size_t)((len + 1) * 1.5f), (size_t)(capacity_ * 1.5f));
-            auto   expand = new char[capa];
-            memset(expand, 0, sizeof(char) * capa);
-            memcpy(expand, data_, sizeof(char) * capacity_);
-
-            Clear();
-            data_ = expand;
-            capacity_ = capa;
-        }
-        void Write(const std::string& s) {
-            auto len = s.length();
-            Expand(len);
-            length_ = len;
-            memcpy(data_, s.data(), sizeof(char) * (len + 1));
-        }
-
         std::string ToCppString() const {
             return std::string(data_, length_);
         }
@@ -77,6 +81,16 @@ namespace rt {
             }
         }
         
+        String* operator + (const String& other) const {
+            auto str = new String();
+            str->Expand(length_ + other.length_);
+            memcpy(str->data_, data_, length_);
+            memcpy(str->data_ + length_, other.data_, other.length_);
+
+            str->length_ = length_ + other.length_;
+            str->data_[str->length_] = '\0';
+            return str;
+        }
         String& operator = (const String& other) {
             if (this == &other) return *this;
 
@@ -88,17 +102,10 @@ namespace rt {
 
             return *this;
         }
-        String  operator + (const String& other) const {
-            String str;
-            str.Expand(length_ + other.length_);
-            memcpy(str.data_, data_, length_);
-            memcpy(str.data_ + length_, other.data_, other.length_);
-            str.length_ = length_ + other.length_;
-            str.data_[str.length_] = '\0';
-            return str;
-        }
         String& operator +=(const String& other) {
-            *this = *this + other;
+            Expand(length_ + other.length_);
+            memcpy(data_ + length_, other.data_, sizeof(char) * other.length_);
+            length_ += other.length_;
             return *this;
         }
     };

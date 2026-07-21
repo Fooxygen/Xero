@@ -121,11 +121,13 @@ namespace rt {
             // string
             TypeTable::Set(Type{
                 .name  = "string", .size = 0, .isRef = true,
-                .clone = [](const Obj& o) { return Obj::Make_string(o.Get_string_ref().ToCppString()); },
+                .clone = [](const Obj& o) {
+                    return Obj::Make_string(new String(o.Get_string_ref()));
+                },
                 .destroy   = [](void* data) { delete (String*)data; },
                 .to_string = [](const Obj& o) { return o.Get_string_ref().ToCppString(); },
                 .plus      = [](const Obj& a, const Obj& b) {
-                    return Obj::Make_string((a.Get_string_ref() + b.Get_string_ref()).ToCppString());
+                    return Obj::Make_string(a.Get_string_ref() + b.Get_string_ref());
                 },
                 .neg       = [](const Obj& o) {
                     auto oc = o.Clone();
@@ -144,11 +146,7 @@ namespace rt {
             TypeTable::Set(Type{
                 .name  = "array", .size = 0, .isRef = true,
                 .clone = [](const Obj& o) {
-                    auto& src = o.Get_array_ref();
-                    auto* dst = new Array();
-                    for (size_t i = 0; i < src.size(); i++)
-                        dst->Insert(i, new Obj(src.Get(i)->Clone()));
-                    return Obj::Make_array(dst);
+                    return Obj::Make_array(new Array(o.Get_array_ref()));
                 },
                 .destroy = [](void* data) { delete (Array*)data; },
                 .neg     = [](const Obj& o) {
@@ -205,9 +203,7 @@ namespace rt {
         // type
         {
             FnTable::Set("type", [](ARGS args) {
-                return Obj::Make_string(
-                    std::string(args[0].type()->name)
-                );
+                return Obj::Make_string(new String(std::string(args[0].type()->name)));
             });
         }
 
