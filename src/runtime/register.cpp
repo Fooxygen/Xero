@@ -156,6 +156,28 @@ namespace rt {
                     oc.Get_array_ref().Reverse();
                     return oc;
                 },
+                .at      = [](const Obj& target, const Obj& idx) {
+                    return *target.Get_array_ref().Get(idx.Get_i32());
+                },
+                .slice   = [](const Obj& target, const Type* itertype, bool isEqRightBoundary,
+                    const Obj& l, const Obj& r, const Obj& s)
+                {
+                    auto& src = target.Get_array_ref();
+                    auto  dst = new Array();
+                    
+                    for (Obj o = l; ; o = itertype->plus(o, s)) {
+                        if (!isEqRightBoundary) {
+                            if (itertype->ge(o, r).Get_bool()) break;
+                        }
+                        else {
+                            if (itertype->gt(o, r).Get_bool()) break;
+                        }
+
+                        dst->Insert(dst->size(), new Obj(*src.Get(o.Get_i32())));
+                    }
+
+                    return Obj::Make_array(dst);
+                },
             });
         }
 

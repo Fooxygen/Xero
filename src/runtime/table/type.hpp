@@ -33,7 +33,7 @@ namespace rt {
         void        (*destroy)(void*)           = destroy_default;
         std::string (*to_string)(const Obj&)    = to_string_default;
 
-        // ArithOper
+        // Arith Oper
 
         Obj (*plus)  (const Obj&, const Obj&)   = nullptr;
         Obj (*minus) (const Obj&, const Obj&)   = nullptr;
@@ -41,7 +41,7 @@ namespace rt {
         Obj (*slash) (const Obj&, const Obj&)   = nullptr;
         Obj (*neg)   (const Obj&)               = nullptr;
         
-        // RelationOper
+        // Relation Oper
 
         Obj (*gt)   (const Obj&, const Obj&)    = nullptr;
         Obj (*lt)   (const Obj&, const Obj&)    = nullptr;
@@ -50,11 +50,16 @@ namespace rt {
         Obj (*eq)   (const Obj&, const Obj&)    = nullptr;
         Obj (*neq)  (const Obj&, const Obj&)    = nullptr;
 
-        // LogicalOper
+        // Logical Oper
 
         Obj (*and_) (const Obj&, const Obj&)    = nullptr;
         Obj (*or_)  (const Obj&, const Obj&)    = nullptr;
         Obj (*not_) (const Obj&)                = nullptr;
+
+        // Container Oper
+
+        Obj (*at)(const Obj&, const Obj&) = nullptr;
+        Obj (*slice)(const Obj&, const Type*, bool, const Obj&, const Obj&, const Obj&) = nullptr;
     };
 
     class TypeTable {

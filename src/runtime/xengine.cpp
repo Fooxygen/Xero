@@ -59,6 +59,118 @@ namespace rt {
             std::format("unsupported operator '{}'", Token::TypeName(node.opertype_)));
     }
 
+    Obj Xengine::Exec(PickExpr& node) {
+        auto target = Exec(*node.target_);
+
+        // Range
+        if (node.pick_->type_ == AstType::RangeExpr) {
+            if (!target.type()->slice) {
+                throw LogErr(LogModule::Runtime, std::format(
+                    "unsupported 'slice' for '{}'", node.pick_->TypeName()
+                ));
+            }
+
+            auto [itertype, rangetype, l, r, s] = Exec((RangeExpr&)*node.pick_);
+
+            if (itertype != TypeTable::Get("i32") &&
+                itertype != TypeTable::Get("i64"))
+            {
+                throw LogErr(LogModule::Runtime, std::format(
+                    "incompatible iter type '{}' for '[]'", itertype->name
+                ));
+            }
+            
+            return target.type()->slice(
+                target, itertype, rangetype == Token::Type::DotDotEq, l, r, s
+            );
+        }
+        
+        // Index
+        else {
+            if (!target.type()->at) {
+                throw LogErr(LogModule::Runtime, std::format(
+                    "unsupported 'at' for '{}'", node.pick_->TypeName()
+                ));
+            }
+
+            auto idx = Exec(*node.pick_);
+
+            if (idx.type() != TypeTable::Get("i32") &&
+                idx.type() != TypeTable::Get("i64"))
+            {
+                throw LogErr(LogModule::Runtime, std::format(
+                    "incompatible iter type '{}' for '[]'", idx.type()->name
+                ));
+            }
+
+            return target.type()->at(target, idx);
+        }
+    }
+
+    std::tuple<const Type*, Token::Type, Obj, Obj, Obj>
+        Xengine::Exec(RangeExpr& node)
+    {
+        
+        // Boundary
+        bool hasStep = node.step_ ? true : false;
+
+        auto lobj  = Exec(*node.lexpr_);
+        auto robj  = Exec(*node.rexpr_);
+        auto ltype = lobj.type();
+        auto rtype = robj.type();
+
+        // Step
+        Obj sobj = Obj();
+        const Type* stype = nullptr;
+        if (hasStep) {
+            sobj  = Exec(*node.step_);
+            stype = sobj.type();
+        }
+
+        // Iterator
+        const Type* itertype = nullptr;
+        if (hasStep) {
+            itertype = TypeTable::Common({ ltype, rtype, stype });
+        }
+        else {
+            itertype = TypeTable::Common({ ltype, rtype });
+        }
+
+        if (!itertype) {
+            if (hasStep) {
+                throw LogErr(LogModule::Runtime,
+                    std::format(
+                        "range failed to produce a valid iterator with '{}', '{}' and '{}'",
+                        ltype->name, rtype->name, stype->name
+                    )
+                );
+            }
+            else {
+                throw LogErr(LogModule::Runtime,
+                    std::format(
+                        "range failed to produce a valid iterator with '{}' and '{}'",
+                        ltype->name, rtype->name
+                    )
+                );
+            }
+        }
+        if (!itertype->plus || !itertype->ge) {
+            throw LogErr(LogModule::Runtime, std::format(
+                    "invalid range iterator type '{}'",
+                    itertype->name
+                )
+            );
+        }
+
+        return std::make_tuple(
+            itertype,
+            node.rangetype_,
+            TypeTable::Convert(lobj, itertype),
+            TypeTable::Convert(robj, itertype),
+            hasStep ? sobj : Obj::Make_i32(1)
+        );
+    }
+    
     Obj Xengine::Exec(NegExpr& node) {
         auto obj = Exec(*node.expr_);
         auto neg = CallTry(obj.type()->neg, obj);
@@ -240,10 +352,8 @@ namespace rt {
             else throw LogErr(LogModule::Runtime, "condition must be bool");
         }
 
-        if (isPass && node.block_)
-            Exec(*node.block_);
-        else if (node.sub_)
-            Exec(*node.sub_);
+        if (isPass && node.block_) Exec(*node.block_);
+        else if (node.sub_)        Exec(*node.sub_);
         
         return Obj();
     }
@@ -251,75 +361,19 @@ namespace rt {
     Obj Xengine::Exec(ForStmt& node) {
         bool isCatch = false;
 
-        // Ungenerated Obj
-
         // Range
         if (node.data_->type_ == AstType::RangeExpr) {
 
-            // Boundary
-            auto range   = (RangeExpr*)node.data_.get();
-            bool hasStep = range->step_ ? true : false;
-
-            auto lobj  = Exec(*range->lexpr_);
-            auto robj  = Exec(*range->rexpr_);
-            auto ltype = lobj.type();
-            auto rtype = robj.type();
-
-            // Step
-            Obj sobj = Obj();
-            const Type* stype = nullptr;
-            if (hasStep) {
-                sobj  = Exec(*range->step_);
-                stype = sobj.type();
-            }
-
-            // Iterator
-            const Type* itype = nullptr;
-            if (hasStep) {
-                itype = TypeTable::Common({ ltype, rtype, stype });
-            }
-            else {
-                itype = TypeTable::Common({ ltype, rtype });
-            }
-
-            if (!itype) {
-                if (hasStep) {
-                    throw LogErr(LogModule::Runtime,
-                        std::format(
-                            "range failed to produce a valid iterator with '{}', '{}' and '{}'",
-                            ltype->name, rtype->name, stype->name
-                        )
-                    );
-                }
-                else {
-                    throw LogErr(LogModule::Runtime,
-                        std::format(
-                            "range failed to produce a valid iterator with '{}' and '{}'",
-                            ltype->name, rtype->name
-                        )
-                    );
-                }
-            }
-            if (!itype->plus || !itype->ge) {
-                throw LogErr(LogModule::Runtime, std::format(
-                        "invalid range iterator type '{}'",
-                        itype->name
-                    )
-                );
-            }
-
-            // Convert Type
-            lobj = TypeTable::Convert(lobj, itype);
-            robj = TypeTable::Convert(robj, itype);
-            Obj step = hasStep ? sobj : Obj::Make_i32(1);
+            auto [itertype, rangetype, l, r, s] = Exec((RangeExpr&)*node.data_);
+            bool isEqRightBoundary = rangetype == Token::Type::DotDotEq;
 
             // Execute
-            for (Obj o = lobj; ; o = itype->plus(o, step)) {
-                if (range->rangetype_ == Token::Type::DotDot) {
-                    if (itype->ge(o, robj).Get_bool()) break;
+            for (Obj o = l; ; o = itertype->plus(o, s)) {
+                if (!isEqRightBoundary) {
+                    if (itertype->ge(o, r).Get_bool()) break;
                 }
                 else {
-                    if (itype->gt(o, robj).Get_bool()) break;
+                    if (itertype->gt(o, r).Get_bool()) break;
                 }
 
                 Exec(*node.block_, [&]() {

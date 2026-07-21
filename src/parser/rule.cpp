@@ -13,9 +13,7 @@ namespace parser {
         using PATS    = std::initializer_list<SymbolPattern>;
         using ASTNODE = std::unique_ptr<AstNode>;
 
-        // Tools
-
-        // Is boundary symbol of Exprs?
+        // Delay Reduction
         static auto isExprsBoundary = [](const Token* next) {
             if (!next) return true;                                 // EOF
             return  next->type() == Token::Type::Comma ||           // ,
@@ -28,7 +26,7 @@ namespace parser {
         
         // Declare and Assign
         
-        // └─ i: int = 7;
+        // └─ id: expr = expr; -> declarestmt
         {
             RuleAdd(
                 PATS{
@@ -48,7 +46,7 @@ namespace parser {
                 }
             );
         }
-        // └─ i = 3;
+        // └─ id = expr; -> assignstmt
         {
             RuleAdd(
                 PATS{
@@ -86,7 +84,7 @@ namespace parser {
                 }
             );
         }
-        // └─ exprs , expr -> exprs
+        // └─ exprs, expr -> exprs
         {
             RuleAdd(
                 PATS{
@@ -133,7 +131,6 @@ namespace parser {
             );
         }
         
-
         // └─ target.expr(expr) -> methodcallexpr
         {
             RuleAdd(
@@ -239,6 +236,26 @@ namespace parser {
                             Rule::Move<Exprs>(symbols, 3)
                         );
                     }
+                }
+            );
+        }
+
+        // Pick
+
+        // └─ expr[expr] -> pickexpr
+        {
+            RuleAdd(
+                PATS{
+                    AT::Expr,
+                    TT::LBkt,
+                    AT::Expr,
+                    TT::RBkt
+                },
+                [](std::vector<Symbol>& symbols, auto*) {
+                    return std::make_unique<PickExpr>(
+                        Rule::Move<Expr>(symbols, 1),
+                        Rule::Move<Expr>(symbols, 3)
+                    );
                 }
             );
         }
@@ -437,7 +454,17 @@ namespace parser {
                     TT::DotDot,
                     AT::Expr,
                 },
-                [](std::vector<Symbol>& symbols, auto*) {
+                [](std::vector<Symbol>& symbols, const Token* token_next) -> ASTNODE {
+
+                    // Delay Reduction
+                    if (token_next && (
+                        token_next->type() == TT::DotDot ||
+                        token_next->type() == TT::DotDotEq ||
+                        token_next->type() == TT::LBkt ||
+                        token_next->type() == TT::LParen ||
+                        token_next->type() == TT::Dot
+                    )) return nullptr;
+                    
                     return std::make_unique<RangeExpr>(
                         TT::DotDot,
                         Rule::Move<Expr>(symbols, 1),
@@ -457,7 +484,17 @@ namespace parser {
                     TT::DotDotEq,
                     AT::Expr,
                 },
-                [](std::vector<Symbol>& symbols, auto*) {
+                [](std::vector<Symbol>& symbols, const Token* token_next) -> ASTNODE {
+
+                    // Delay Reduction
+                    if (token_next && (
+                        token_next->type() == TT::DotDot ||
+                        token_next->type() == TT::DotDotEq ||
+                        token_next->type() == TT::LBkt ||
+                        token_next->type() == TT::LParen ||
+                        token_next->type() == TT::Dot
+                    )) return nullptr;
+
                     return std::make_unique<RangeExpr>(
                         TT::DotDotEq,
                         Rule::Move<Expr>(symbols, 1),
@@ -477,9 +514,14 @@ namespace parser {
                     AT::Expr,
                 },
                 [](std::vector<Symbol>& symbols, const Token* token_next) -> ASTNODE {
+
+                    // Delay Reduction
                     if (token_next && (
                         token_next->type() == TT::DotDot ||
-                        token_next->type() == TT::DotDotEq
+                        token_next->type() == TT::DotDotEq ||
+                        token_next->type() == TT::LBkt ||
+                        token_next->type() == TT::LParen ||
+                        token_next->type() == TT::Dot
                     )) return nullptr;
 
                     return std::make_unique<RangeExpr>(
@@ -499,7 +541,17 @@ namespace parser {
                     TT::DotDotEq,
                     AT::Expr,
                 },
-                [](std::vector<Symbol>& symbols, auto*) {
+                [](std::vector<Symbol>& symbols, const Token* token_next) -> ASTNODE {
+
+                    // Delay Reduction
+                    if (token_next && (
+                        token_next->type() == TT::DotDot ||
+                        token_next->type() == TT::DotDotEq ||
+                        token_next->type() == TT::LBkt ||
+                        token_next->type() == TT::LParen ||
+                        token_next->type() == TT::Dot
+                    )) return nullptr;
+
                     return std::make_unique<RangeExpr>(
                         TT::DotDotEq,
                         Rule::Move<Expr>(symbols, 1),

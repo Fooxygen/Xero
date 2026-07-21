@@ -28,6 +28,7 @@ enum class AstType {
     Expr,               //  Base ------
     IdExpr,             //  Identity
     OperExpr,           //  Operation
+    PickExpr,           //  Pick from Container
     RangeExpr,          //  Range
     NegExpr,            //  Negative
     NotExpr,            //  Not
@@ -59,6 +60,7 @@ static AstType BaseOfAstType(AstType type) {
 
         case IdExpr:
         case OperExpr:
+        case PickExpr:
         case RangeExpr:
         case NegExpr:
         case NotExpr:
@@ -105,6 +107,7 @@ public:
             case AstType::Expr:             return "Expr";
             case AstType::IdExpr:           return "IdExpr";
             case AstType::OperExpr:         return "OperExpr";
+            case AstType::PickExpr:         return "PickExpr";
             case AstType::RangeExpr:        return "RangeExpr";
             case AstType::NegExpr:          return "NegExpr";
             case AstType::NotExpr:          return "NotExpr";
@@ -209,6 +212,26 @@ public:
 
         lexpr_->Print(prefix, "lexpr");
         rexpr_->Print(prefix, "rexpr");
+    }
+};
+class PickExpr          : public Expr {
+public:
+    std::unique_ptr<Expr> target_ = nullptr;
+    std::unique_ptr<Expr> pick_   = nullptr;
+
+    PickExpr(
+        std::unique_ptr<Expr> target,
+        std::unique_ptr<Expr> pick
+    )
+    :   target_(std::move(target)),
+        pick_(std::move(pick))
+    {
+        type_ = AstType::PickExpr;
+    }
+
+    void PrintImpl(std::string prefix) override {
+        target_->Print(prefix, "target");
+        pick_->Print(prefix, "pick");
     }
 };
 class RangeExpr         : public Expr {
