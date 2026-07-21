@@ -8,14 +8,17 @@
 
 namespace rt {
 
-    Array::~Array() {
-        for (size_t i = 0; i < size_; i++) {
-            if (data_[i]) delete data_[i];
+    Array::Array(const Array& other) {
+        data_ = new Obj*[other.capacity_];
+        memset(data_, 0, sizeof(Obj*) * other.capacity_);
+        capacity_ = other.capacity_;
+
+        for (size_t i = 0; i < other.size_; i++) {
+            Insert(i, new Obj(other.Get(i)->Clone()));
         }
-        if (data_) delete[] data_;
     }
 
-    void Array::IndexCheck(size_t idx, bool isBoundaryEq) {
+    void Array::IndexCheck(size_t idx, bool isBoundaryEq) const {
         if (!isBoundaryEq) {
             if (idx >= size_) {
                 throw LogErr(LogModule::Runtime, "array index out of bounds");
@@ -26,6 +29,15 @@ namespace rt {
                 throw LogErr(LogModule::Runtime, "array index out of bounds");
             }
         }
+    }
+
+    void Array::Clear() {
+        for (size_t i = 0; i < size_; i++) {
+            if (data_[i]) delete data_[i];
+        }
+        if (data_) delete[] data_;
+        size_ = 0;
+        capacity_ = 0;
     }
 
     void Array::Expand(size_t size) {
@@ -65,8 +77,40 @@ namespace rt {
         size_--;
     }
 
-    Obj* Array::Get(size_t idx) {
+    Obj* Array::Get(size_t idx) const {
         IndexCheck(idx);
         return data_[idx];
+    }
+
+    Array& Array::operator =(const Array& other) {
+        if (this == &other) return *this;
+
+        Clear();
+        data_ = new Obj*[other.capacity_];
+
+        for (size_t i = 0; i < other.size_; i++) {
+            Insert(i, new Obj(other.Get(i)->Clone()));
+        }
+
+        return *this;
+    }
+
+    Array Array::operator +(const Array& other) {
+        Array arr;
+        arr.Expand(size_ + other.size_);
+        
+        for (size_t i = 0; i < size_; i++) {
+            arr.Insert(arr.size(), new Obj(Get(i)->Clone()));
+        }
+        for (size_t i = 0; i < other.size_; i++) {
+            arr.Insert(arr.size(), new Obj(other.Get(i)->Clone()));
+        }
+
+        return arr;
+    }
+
+    Array& Array::operator +=(const Array& other) {
+        *this = *this + other;
+        return *this;
     }
 }

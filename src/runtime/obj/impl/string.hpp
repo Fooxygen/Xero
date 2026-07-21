@@ -33,7 +33,7 @@ namespace rt {
             memcpy(data_, other.data_, length_ + 1);
         }
         ~String() {
-            if (data_) delete[] data_;
+            Clear();
         }
 
         size_t length() const {
@@ -42,7 +42,10 @@ namespace rt {
         size_t capacity() const {
             return capacity_;
         }
-        
+
+        void Clear() {
+            if (data_) delete[] data_;
+        }
         void Expand(size_t len) {
             if (len + 1 < capacity_) return;
 
@@ -51,7 +54,7 @@ namespace rt {
             memset(expand, 0, sizeof(char) * capa);
             memcpy(expand, data_, sizeof(char) * capacity_);
 
-            delete[] data_;
+            Clear();
             data_ = expand;
             capacity_ = capa;
         }
@@ -77,7 +80,7 @@ namespace rt {
         String& operator = (const String& other) {
             if (this == &other) return *this;
 
-            delete[] data_;
+            Clear();
             data_ = new char[other.capacity_];
             length_ = other.length_;
             capacity_ = other.capacity_;
@@ -86,13 +89,13 @@ namespace rt {
             return *this;
         }
         String  operator + (const String& other) const {
-            String res;
-            res.Expand(length_ + other.length_);
-            memcpy(res.data_, data_, length_);
-            memcpy(res.data_ + length_, other.data_, other.length_);
-            res.length_ = length_ + other.length_;
-            res.data_[res.length_] = '\0';
-            return res;
+            String str;
+            str.Expand(length_ + other.length_);
+            memcpy(str.data_, data_, length_);
+            memcpy(str.data_ + length_, other.data_, other.length_);
+            str.length_ = length_ + other.length_;
+            str.data_[str.length_] = '\0';
+            return str;
         }
         String& operator +=(const String& other) {
             *this = *this + other;
