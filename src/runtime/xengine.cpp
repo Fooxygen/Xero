@@ -55,8 +55,12 @@ namespace rt {
         auto obj = CallTry(method_pick(type), lobj, robj);
         if (!obj.isNone()) return obj;
 
-        throw LogErr(LogModule::Runtime,
-            std::format("unsupported operator '{}'", Token::TypeName(node.opertype_)));
+        throw LogErr(LogModule::Runtime, std::format(
+            "unsupported operator '{}' between '{}' and '{}'",
+            Token::TypeName(node.opertype_),
+            lobj.type()->name,
+            robj.type()->name
+        ));
     }
 
     Obj Xengine::Exec(PickExpr& node) {
@@ -66,7 +70,7 @@ namespace rt {
         if (node.pick_->type_ == AstType::RangeExpr) {
             if (!target.type()->slice) {
                 throw LogErr(LogModule::Runtime, std::format(
-                    "unsupported 'slice' for '{}'", node.pick_->TypeName()
+                    "unsupported 'slice' in operator '[]' for '{}'", node.pick_->TypeName()
                 ));
             }
 
@@ -76,7 +80,7 @@ namespace rt {
                 itertype != TypeTable::Get("i64"))
             {
                 throw LogErr(LogModule::Runtime, std::format(
-                    "incompatible iter type '{}' for '[]'", itertype->name
+                    "incompatible type '{}' as iterator type for '[]'", itertype->name
                 ));
             }
             
@@ -89,7 +93,7 @@ namespace rt {
         else {
             if (!target.type()->at) {
                 throw LogErr(LogModule::Runtime, std::format(
-                    "unsupported 'at' for '{}'", node.pick_->TypeName()
+                    "unsupported 'at' in operator '[]' for '{}'", node.pick_->TypeName()
                 ));
             }
 
@@ -99,7 +103,7 @@ namespace rt {
                 idx.type() != TypeTable::Get("i64"))
             {
                 throw LogErr(LogModule::Runtime, std::format(
-                    "incompatible iter type '{}' for '[]'", idx.type()->name
+                    "incompatible type '{}' as iterator type for '[]'", idx.type()->name
                 ));
             }
 
@@ -140,7 +144,7 @@ namespace rt {
             if (hasStep) {
                 throw LogErr(LogModule::Runtime,
                     std::format(
-                        "range failed to produce a valid iterator with '{}', '{}' and '{}'",
+                        "failed to generate valid range iterator with '{}', '{}' and '{}'",
                         ltype->name, rtype->name, stype->name
                     )
                 );
@@ -148,18 +152,11 @@ namespace rt {
             else {
                 throw LogErr(LogModule::Runtime,
                     std::format(
-                        "range failed to produce a valid iterator with '{}' and '{}'",
+                        "failed to generate valid range iterator with '{}' and '{}'",
                         ltype->name, rtype->name
                     )
                 );
             }
-        }
-        if (!itertype->plus || !itertype->ge) {
-            throw LogErr(LogModule::Runtime, std::format(
-                    "invalid range iterator type '{}'",
-                    itertype->name
-                )
-            );
         }
 
         return std::make_tuple(
@@ -176,7 +173,7 @@ namespace rt {
         auto neg = CallTry(obj.type()->neg, obj);
         if (neg.isNone()) {
             throw LogErr(LogModule::Runtime, std::format(
-                "unsupported bool negation for '{}'",
+                "unsupported '-' for '{}'",
                 obj.type()->name
             ));
         }
@@ -188,7 +185,7 @@ namespace rt {
         auto not_ = CallTry(obj.type()->not_, obj);
         if (not_.isNone()) {
             throw LogErr(LogModule::Runtime, std::format(
-                "unsupported bool negation for '{}'",
+                "unsupported '!' for '{}'",
                 obj.type()->name
             ));
         }
@@ -299,9 +296,7 @@ namespace rt {
         env_.ScopePush();
         if (OnScopeReady) OnScopeReady();
 
-        for (auto& child : node.children_) {
-            Exec(*child);
-        }
+        for (auto& child : node.children_) Exec(*child);
         
         env_.ScopePop();
         return Obj();

@@ -94,33 +94,34 @@ public:
     AstType type_ = AstType::Undefined;
 
     const std::string TypeName() const {
+        using enum AstType;
         switch (type_) {
-            case AstType::Program:          return "Program";
+            case Program:          return "Program";
 
-            case AstType::Exprs:            return "Exprs";
+            case Exprs:            return "Exprs";
 
-            case AstType::Const:            return "Const";
-            case AstType::NumConst:         return "NumConst";
-            case AstType::BoolConst:        return "BoolConst";
-            case AstType::StringConst:      return "StringConst";
+            case Const:            return "Const";
+            case NumConst:         return "NumConst";
+            case BoolConst:        return "BoolConst";
+            case StringConst:      return "StringConst";
 
-            case AstType::Expr:             return "Expr";
-            case AstType::IdExpr:           return "IdExpr";
-            case AstType::OperExpr:         return "OperExpr";
-            case AstType::PickExpr:         return "PickExpr";
-            case AstType::RangeExpr:        return "RangeExpr";
-            case AstType::NegExpr:          return "NegExpr";
-            case AstType::NotExpr:          return "NotExpr";
-            case AstType::FnCallExpr:       return "FnCallExpr";
-            case AstType::MethodCallExpr:   return "MethodCallExpr";
-            case AstType::ArrayExpr:        return "ArrayExpr";
+            case Expr:             return "Expr";
+            case IdExpr:           return "IdExpr";
+            case OperExpr:         return "OperExpr";
+            case PickExpr:         return "PickExpr";
+            case RangeExpr:        return "RangeExpr";
+            case NegExpr:          return "NegExpr";
+            case NotExpr:          return "NotExpr";
+            case FnCallExpr:       return "FnCallExpr";
+            case MethodCallExpr:   return "MethodCallExpr";
+            case ArrayExpr:        return "ArrayExpr";
 
-            case AstType::Stmt:             return "Stmt";
-            case AstType::BlockStmt:        return "BlockStmt";
-            case AstType::DeclStmt:         return "DeclStmt";
-            case AstType::AssignStmt:       return "AssignStmt";
-            case AstType::CondStmt:         return "CondStmt";
-            case AstType::ForStmt:          return "ForStmt";
+            case Stmt:             return "Stmt";
+            case BlockStmt:        return "BlockStmt";
+            case DeclStmt:         return "DeclStmt";
+            case AssignStmt:       return "AssignStmt";
+            case CondStmt:         return "CondStmt";
+            case ForStmt:          return "ForStmt";
 
             default: 
                 LogWarn(LogModule::Parser, "undefined print name for AstNode");

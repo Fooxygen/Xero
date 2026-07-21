@@ -163,49 +163,50 @@ public:
     }
 
     static std::string TypeName(Type type) {
+        using enum Type;
         switch (type) {
-            case Type::Colon:       return "Colon";
-            case Type::Assign:      return "Assign";
-            case Type::Semicolon:   return "Semicolon";
-            case Type::LParen:      return "LParen";
-            case Type::RParen:      return "RParen";
-            case Type::LBrace:      return "LBrace";
-            case Type::RBrace:      return "RBrace";
-            case Type::LBkt:        return "LBkt";
-            case Type::RBkt:        return "RBkt";
-            case Type::Dot:         return "Dot";
-            case Type::DotDot:      return "DotDot";
-            case Type::DotDotEq:    return "DotDotEq";
-            case Type::Comma:       return "Comma";
-            case Type::Quote:       return "Quote";
+            case Colon:       return "Colon";
+            case Assign:      return "Assign";
+            case Semicolon:   return "Semicolon";
+            case LParen:      return "LParen";
+            case RParen:      return "RParen";
+            case LBrace:      return "LBrace";
+            case RBrace:      return "RBrace";
+            case LBkt:        return "LBkt";
+            case RBkt:        return "RBkt";
+            case Dot:         return "Dot";
+            case DotDot:      return "DotDot";
+            case DotDotEq:    return "DotDotEq";
+            case Comma:       return "Comma";
+            case Quote:       return "Quote";
 
-            case Type::Id:          return "Id";
-            case Type::Number:      return "Number";
-            case Type::String:      return "String";
+            case Id:          return "Id";
+            case Number:      return "Number";
+            case String:      return "String";
 
-            case Type::PlusOrMinus: return "PlusOrMinus";
-            case Type::Plus:        return "Plus";
-            case Type::Minus:       return "Minus";
-            case Type::StarOrSlash: return "StarOrSlash";
-            case Type::Star:        return "Star";
-            case Type::Slash:       return "Slash";
+            case PlusOrMinus: return "PlusOrMinus";
+            case Plus:        return "Plus";
+            case Minus:       return "Minus";
+            case StarOrSlash: return "StarOrSlash";
+            case Star:        return "Star";
+            case Slash:       return "Slash";
 
-            case Type::Gt:          return "Gt";
-            case Type::Ge:          return "Ge";
-            case Type::Lt:          return "Lt";
-            case Type::Le:          return "Le";
-            case Type::Eq:          return "Eq";
-            case Type::Neq:         return "Neq";
+            case Gt:          return "Gt";
+            case Ge:          return "Ge";
+            case Lt:          return "Lt";
+            case Le:          return "Le";
+            case Eq:          return "Eq";
+            case Neq:         return "Neq";
 
-            case Type::Not:         return "Not";
-            case Type::And:         return "And";
-            case Type::Or:          return "Or";
+            case Not:         return "Not";
+            case And:         return "And";
+            case Or:          return "Or";
 
-            case Type::If:          return "If";
-            case Type::Elif:        return "Elif";
-            case Type::Else:        return "Else";
-            case Type::For:         return "For";
-            case Type::In:          return "In";
+            case If:          return "If";
+            case Elif:        return "Elif";
+            case Else:        return "Else";
+            case For:         return "For";
+            case In:          return "In";
 
             default: 
                 LogWarn(LogModule::Lexer, "undefined print name for TokenType").Print();
