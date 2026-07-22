@@ -13,7 +13,7 @@ namespace rt {
 
     void Xengine::TypeRegister() {
 
-        // Basic
+        // Basic, Built-in (Oper and Method)
         {
             // none
             TypeTable::Set(Type{
@@ -22,10 +22,18 @@ namespace rt {
 
             // bool
             TypeTable::Set(Type{
-                .name  = "bool", .size = 1,
-                .clone = [](const Obj& o) { return Obj::Make_bool(o.Get_bool()); },
+                .name       = "bool", .size = 1,
+                .clone      = [](const Obj& o) { return Obj::Make_bool(o.Get_bool()); },
                 .to_string  = [](const Obj& o) {
                     return o.Get_bool() ? std::string("true") : std::string("false");
+                },
+                .assign     = [](const std::vector<Obj*>& targets, const Obj& value) {
+                    if (targets.size() != 1) {
+                        throw LogErr(LogModule::Runtime, std::format(
+                                "assignment count mismatch for {} to 'bool'", value.type()->name
+                        ));
+                    }
+                    *targets[0] = value;
                 },
                 .gt         = [](const Obj& l, const Obj& r) { return Obj::Make_bool(l.Get_bool() >  r.Get_bool()); },
                 .lt         = [](const Obj& l, const Obj& r) { return Obj::Make_bool(l.Get_bool() <  r.Get_bool()); },
@@ -40,9 +48,17 @@ namespace rt {
 
             // i32
             TypeTable::Set(Type{
-                .name  = "i32", .size = 4,
-                .clone = [](const Obj& o) { return Obj::Make_i32(o.Get_i32()); },
+                .name       = "i32", .size = 4,
+                .clone      = [](const Obj& o) { return Obj::Make_i32(o.Get_i32()); },
                 .to_string  = [](const Obj& o) { return std::to_string(o.Get_i32()); },
+                .assign     = [](const std::vector<Obj*>& targets, const Obj& value) {
+                    if (targets.size() != 1) {
+                        throw LogErr(LogModule::Runtime, std::format(
+                                "assignment count mismatch for {} to 'i32'", value.type()->name
+                        ));
+                    }
+                    *targets[0] = value;
+                },
                 .plus       = [](const Obj& a, const Obj& b) { return Obj::Make_i32(a.Get_i32() + b.Get_i32()); },
                 .minus      = [](const Obj& a, const Obj& b) { return Obj::Make_i32(a.Get_i32() - b.Get_i32()); },
                 .star       = [](const Obj& a, const Obj& b) { return Obj::Make_i32(a.Get_i32() * b.Get_i32()); },
@@ -62,9 +78,17 @@ namespace rt {
 
             // i64
             TypeTable::Set(Type{
-                .name  = "i64", .size = 8,
-                .clone = [](const Obj& o) { return Obj::Make_i64(o.Get_i64()); },
+                .name       = "i64", .size = 8,
+                .clone      = [](const Obj& o) { return Obj::Make_i64(o.Get_i64()); },
                 .to_string  = [](const Obj& o) { return std::to_string(o.Get_i64()); },
+                .assign     = [](const std::vector<Obj*>& targets, const Obj& value) {
+                    if (targets.size() != 1) {
+                        throw LogErr(LogModule::Runtime, std::format(
+                                "assignment count mismatch for {} to 'i64'", value.type()->name
+                        ));
+                    }
+                    *targets[0] = value;
+                },
                 .plus       = [](const Obj& a, const Obj& b) { return Obj::Make_i64(a.Get_i64() + b.Get_i64()); },
                 .minus      = [](const Obj& a, const Obj& b) { return Obj::Make_i64(a.Get_i64() - b.Get_i64()); },
                 .star       = [](const Obj& a, const Obj& b) { return Obj::Make_i64(a.Get_i64() * b.Get_i64()); },
@@ -84,9 +108,17 @@ namespace rt {
 
             // f32
             TypeTable::Set(Type{
-                .name  = "f32", .size = 4,
-                .clone = [](const Obj& o) { return Obj::Make_f32(o.Get_f32()); },
+                .name       = "f32", .size = 4,
+                .clone      = [](const Obj& o) { return Obj::Make_f32(o.Get_f32()); },
                 .to_string  = [](const Obj& o) { return std::to_string(o.Get_f32()); },
+                .assign     = [](const std::vector<Obj*>& targets, const Obj& value) {
+                    if (targets.size() != 1) {
+                        throw LogErr(LogModule::Runtime, std::format(
+                                "assignment count mismatch for {} to 'f32'", value.type()->name
+                        ));
+                    }
+                    *targets[0] = value;
+                },
                 .plus       = [](const Obj& a, const Obj& b) { return Obj::Make_f32(a.Get_f32() + b.Get_f32()); },
                 .minus      = [](const Obj& a, const Obj& b) { return Obj::Make_f32(a.Get_f32() - b.Get_f32()); },
                 .star       = [](const Obj& a, const Obj& b) { return Obj::Make_f32(a.Get_f32() * b.Get_f32()); },
@@ -102,9 +134,17 @@ namespace rt {
 
             // f64
             TypeTable::Set(Type{
-                .name = "f64", .size = 8,
-                .clone = [](const Obj& o) { return Obj::Make_f64(o.Get_f64()); },
+                .name       = "f64", .size = 8,
+                .clone      = [](const Obj& o) { return Obj::Make_f64(o.Get_f64()); },
                 .to_string  = [](const Obj& o) { return std::to_string(o.Get_f64()); },
+                .assign     = [](const std::vector<Obj*>& targets, const Obj& value) {
+                    if (targets.size() != 1) {
+                        throw LogErr(LogModule::Runtime, std::format(
+                                "assignment count mismatch for {} to 'f64'", value.type()->name
+                        ));
+                    }
+                    *targets[0] = value;
+                },
                 .plus       = [](const Obj& a, const Obj& b) { return Obj::Make_f64(a.Get_f64() + b.Get_f64()); },
                 .minus      = [](const Obj& a, const Obj& b) { return Obj::Make_f64(a.Get_f64() - b.Get_f64()); },
                 .star       = [](const Obj& a, const Obj& b) { return Obj::Make_f64(a.Get_f64() * b.Get_f64()); },
@@ -120,44 +160,81 @@ namespace rt {
 
             // string
             TypeTable::Set(Type{
-                .name  = "string", .size = 0, .isRef = true,
-                .clone = [](const Obj& o) {
+                .name       = "string", .size = 0, .isRef = true,
+                .clone      = [](const Obj& o) {
                     return Obj::Make_string(new String(o.Get_string_ref()));
                 },
-                .destroy   = [](void* data) { delete (String*)data; },
-                .to_string = [](const Obj& o) { return o.Get_string_ref().ToCppString(); },
-                .plus      = [](const Obj& a, const Obj& b) {
+                .destroy    = [](void* data) { delete (String*)data; },
+                .to_string  = [](const Obj& o) { return o.Get_string_ref().ToCppString(); },
+                .assign     = [](const std::vector<Obj*>& targets, const Obj& value) {
+                    if (targets.size() != 1) {
+                        throw LogErr(LogModule::Runtime, std::format(
+                                "assignment count mismatch for {} to 'string'", value.type()->name
+                        ));
+                    }
+                    *targets[0] = value;
+                },
+                .plus       = [](const Obj& a, const Obj& b) {
                     return Obj::Make_string(a.Get_string_ref() + b.Get_string_ref());
                 },
-                .neg       = [](const Obj& o) {
+                .neg        = [](const Obj& o) {
                     auto oc = o.Clone();
                     oc.Get_string_ref().Reverse();
                     return oc;
                 },
-                .eq        = [](const Obj& a, const Obj& b) {
+                .eq         = [](const Obj& a, const Obj& b) {
                     return Obj::Make_bool(a.Get_string_ref().ToCppString() == b.Get_string_ref().ToCppString());
                 },
-                .neq       = [](const Obj& a, const Obj& b) {
+                .neq        = [](const Obj& a, const Obj& b) {
                     return Obj::Make_bool(a.Get_string_ref().ToCppString() != b.Get_string_ref().ToCppString());
                 },        
             });
 
             // array
             TypeTable::Set(Type{
-                .name  = "array", .size = 0, .isRef = true,
-                .clone = [](const Obj& o) {
+                .name           = "array", .size = 0, .isRef = true,
+                .clone          = [](const Obj& o) {
                     return Obj::Make_array(new Array(o.Get_array_ref()));
                 },
-                .destroy = [](void* data) { delete (Array*)data; },
-                .neg     = [](const Obj& o) {
+                .destroy        = [](void* data) { delete (Array*)data; },
+                .assign         = [](const std::vector<Obj*>& targets, const Obj& value) {
+
+                    // = [x, y, z]
+                    if (value.type() == TypeTable::Get("array")) {
+                        if (value.Get_array_ref().size() != targets.size()) {
+                            throw LogErr(LogModule::Runtime, std::format(
+                                "assignment count mismatch for {} to 'slice of array'",
+                                value.type()->name
+                            ));
+                        }
+
+                        auto array = value.Get_array_ref();
+                        for (size_t i = 0; i < targets.size(); i++) {
+                            *targets[i] = *array.Get(i);
+                        }
+                    }
+
+                    // = x
+                    else {
+                        // Support batch assignment: [1, 2, ...] = 0 -> [0, 0, ...]
+                        for (auto& o : targets) {
+                            *o = value;
+                        }
+                    }
+                },
+                .neg            = [](const Obj& o) {
                     auto oc = o.Clone();
                     oc.Get_array_ref().Reverse();
                     return oc;
                 },
-                .at      = [](const Obj& target, const Obj& idx) {
+                .at_clone       = [](const Obj& target, const Obj& idx) {
                     return *target.Get_array_ref().Get(idx.Get_i32());
                 },
-                .slice   = [](const Obj& target, const Type* itertype, bool isEqRightBoundary,
+                .at_ref         = [](const Obj& target, const Obj& idx) {
+                    return target.Get_array_ref().Get(idx.Get_i32());
+                },
+                .slice_clone    = [](
+                    const Obj& target, const Type* itertype, bool isEqRightBoundary,
                     const Obj& l, const Obj& r, const Obj& s)
                 {
                     auto& src = target.Get_array_ref();
@@ -175,6 +252,26 @@ namespace rt {
                     }
 
                     return Obj::Make_array(dst);
+                },
+                .slice_ref      = [](
+                    const Obj& target, const Type* itertype, bool isEqRightBoundary,
+                    const Obj& l, const Obj& r, const Obj& s)
+                {
+                    auto& src = target.Get_array_ref();
+                    std::vector<Obj*> objs;
+                    
+                    for (Obj o = l; ; o = itertype->plus(o, s)) {
+                        if (!isEqRightBoundary) {
+                            if (itertype->ge(o, r).Get_bool()) break;
+                        }
+                        else {
+                            if (itertype->gt(o, r).Get_bool()) break;
+                        }
+
+                        objs.emplace_back(src.Get(o.Get_i32()));
+                    }
+
+                    return objs;
                 },
             });
         }

@@ -1,6 +1,5 @@
 
-a: array = [1, 2, "Hello", "Xero"];
+a: array = [10, 20, 30, 40, 50];
 
-for (x in a) {
-    println(x);
-}
+a[0..=4][2..=3] = [99, 88];
+for (x in a) { println(x); }

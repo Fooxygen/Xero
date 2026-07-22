@@ -15,6 +15,30 @@
 namespace rt {
 
     class Xengine {
+    public:
+        class OriginResult {
+        private:
+            std::vector<Obj*> objs_ = {};
+            const Type*       type_ = nullptr;
+
+        public:
+            OriginResult() {}
+            OriginResult(const std::vector<Obj*>& objs, const Type* type = nullptr) {
+                if (objs.empty()) return;
+                objs_ = objs;
+                
+                if (!type) type_ = objs[0]->type();
+                else       type_ = type;
+            }
+
+            std::vector<Obj*> objs() {
+                return objs_;
+            }
+            const Type*       type() {
+                return type_;
+            }
+        };
+
     private:
         Env env_;
 
@@ -31,8 +55,8 @@ namespace rt {
         void FnRegister();
         void MethodRegister();
 
-        // Exec Entry
-        // When only the ast itself is needed
+        // Exec
+        // Calculate the final obj
         Obj Exec(AstNode& node) {
             switch (node.type_) {
                 case AstType::IdExpr:           return Exec((IdExpr&)node);
@@ -81,6 +105,20 @@ namespace rt {
         Obj Exec(ForStmt& node);
 
         Obj Exec(Program& node);
+
+        // Origin Entry
+        // Obtain the original data representing astnode
+        OriginResult Origin(AstNode& node) {
+            switch (node.type_) {
+                case AstType::IdExpr:   return Origin((IdExpr&)node);
+                case AstType::PickExpr: return Origin((PickExpr&)node);
+
+                default: return {};
+            }
+        }
+
+        OriginResult Origin(IdExpr& node);
+        OriginResult Origin(PickExpr& node);
 
     public:
         // Call Wrapper

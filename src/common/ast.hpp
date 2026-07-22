@@ -447,21 +447,21 @@ public:
 };
 class AssignStmt        : public Stmt {
 public:
-    std::unique_ptr<IdExpr> id_    = nullptr;
-    std::unique_ptr<Expr>   value_ = nullptr;
+    std::unique_ptr<Expr> target_ = nullptr;
+    std::unique_ptr<Expr> value_  = nullptr;
 
     AssignStmt(
-        std::unique_ptr<IdExpr> id,
-        std::unique_ptr<Expr>   value
+        std::unique_ptr<Expr> target,
+        std::unique_ptr<Expr> value
     )
-    :   id_(std::move(id)),
+    :   target_(std::move(target)),
         value_(std::move(value))
     {
         type_ = AstType::AssignStmt;
     }
 
     void PrintImpl(std::string prefix) override {
-        id_->Print(prefix, "id");
+        target_->Print(prefix, "target");
         value_->Print(prefix, "value");
     }
 };

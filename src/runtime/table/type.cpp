@@ -10,15 +10,17 @@ namespace rt {
 
     // Type Default Method
 
-    Obj Type::clone_default(const Obj&) {
+    Obj         Type::methdef_clone(const Obj&) {
         throw LogErr(LogModule::Runtime, "method 'clone()' not implemented for type");
     }
-
-    void Type::destroy_default(void*) {
+    void        Type::methdef_destroy(void*) {
         throw LogErr(LogModule::Runtime, "method 'destroy()' not implemented for type");
     }
-    std::string Type::to_string_default(const Obj&) {
+    std::string Type::methdef_to_string(const Obj&) {
         throw LogErr(LogModule::Runtime, "method 'to_string()' not implemented for type");
+    }
+    void        Type::methdef_assign(const std::vector<Obj*>&, const Obj&) {
+        throw LogErr(LogModule::Runtime, "method 'assign()' not implemented for type");
     }
 
     // TypeTable

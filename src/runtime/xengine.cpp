@@ -11,8 +11,10 @@
 #include "table/method.hpp"
 
 namespace rt {
-        
-    // Expr
+    
+    // Exec
+
+    // └─ Expr
 
     Obj Xengine::Exec(IdExpr& node) {
         return *env_.Get(node.value_);
@@ -66,9 +68,9 @@ namespace rt {
     Obj Xengine::Exec(PickExpr& node) {
         auto target = Exec(*node.target_);
 
-        // Range
+        // Slice by range
         if (node.pick_->type_ == AstType::RangeExpr) {
-            if (!target.type()->slice) {
+            if (!target.type()->slice_clone) {
                 throw LogErr(LogModule::Runtime, std::format(
                     "unsupported 'slice' in operator '[]' for '{}'", node.pick_->TypeName()
                 ));
@@ -84,14 +86,14 @@ namespace rt {
                 ));
             }
             
-            return target.type()->slice(
+            return target.type()->slice_clone(
                 target, itertype, rangetype == Token::Type::DotDotEq, l, r, s
             );
         }
         
-        // Index
+        // At by index
         else {
-            if (!target.type()->at) {
+            if (!target.type()->at_clone) {
                 throw LogErr(LogModule::Runtime, std::format(
                     "unsupported 'at' in operator '[]' for '{}'", node.pick_->TypeName()
                 ));
@@ -107,7 +109,7 @@ namespace rt {
                 ));
             }
 
-            return target.type()->at(target, idx);
+            return target.type()->at_clone(target, idx);
         }
     }
 
@@ -234,7 +236,7 @@ namespace rt {
         return obj;
     }
 
-    // Const
+    // └─ Const
 
     Obj Xengine::Exec(NumConst& node) {
         const auto& numstr = node.value_;
@@ -290,7 +292,7 @@ namespace rt {
         return Obj::Make_string(new String(node.value_));
     }
 
-    // Stmt
+    // └─ Stmt
 
     Obj Xengine::Exec(BlockStmt& node, std::function<void()> OnScopeReady) {
         env_.ScopePush();
@@ -320,19 +322,10 @@ namespace rt {
     }
 
     Obj Xengine::Exec(AssignStmt& node) {
-        auto obj  = Exec(*node.value_);
-        auto type = env_.Get(node.id_->value_)->type();
+        auto target_org = Origin(*node.target_);
+        auto value      = Exec(*node.value_);
 
-        // Try Convert Type
-        auto obj_convert = TypeTable::Convert(obj, type);
-        if (obj_convert.isNone()) {
-            throw LogErr(LogModule::Runtime, std::format(
-                "cannot assign type '{}' to type '{}'",
-                obj.type()->name, type->name
-            ));
-        }
-
-        env_.Assign(node.id_->value_, obj_convert);
+        target_org.type()->assign(target_org.objs(), value);
         return Obj();
     }
 
@@ -403,10 +396,92 @@ namespace rt {
         return Obj();
     }
 
-    // Common
+    // └─ Common
 
     Obj Xengine::Exec(Program& node) {
         Exec((BlockStmt&)node);
         return Obj();
+    }
+
+    // Origin
+
+    // └─ Expr
+
+    Xengine::OriginResult Xengine::Origin(IdExpr& node) {
+        auto obj = env_.Get(node.value_);
+        return Xengine::OriginResult({ obj });
+    }
+
+    Xengine::OriginResult Xengine::Origin(PickExpr& node) {
+        auto target_org = Origin(*node.target_);
+
+        // Slice by range
+        if (node.pick_->type_ == AstType::RangeExpr) {
+            auto [itertype, rangetype, l, r, s] = Exec((RangeExpr&)*node.pick_);
+
+            if (itertype != TypeTable::Get("i32") &&
+                itertype != TypeTable::Get("i64"))
+            {
+                throw LogErr(LogModule::Runtime, std::format(
+                    "incompatible type '{}' as iterator type for '[]'", itertype->name
+                ));
+            }
+            
+            // Get Objs
+            if (target_org.objs().size() > 1) {
+                auto objs = target_org.objs();
+                bool isEqRightBoundary = rangetype == Token::Type::DotDotEq;
+
+                std::vector<Obj*> result;
+                for (Obj o = l; ; o = itertype->plus(o, s)) {
+                    if (!isEqRightBoundary && itertype->ge(o, r).Get_bool()) break;
+                    if ( isEqRightBoundary && itertype->gt(o, r).Get_bool()) break;
+                    result.push_back(objs[o.Get_i32()]);
+                }
+                return Xengine::OriginResult(result, target_org.type());
+            }
+
+            // Get Container
+            auto container = target_org.objs()[0];
+            if (!container->type()->slice_ref) {
+                throw LogErr(LogModule::Runtime, std::format(
+                    "unsupported 'slice' in operator '[]' for '{}'", node.pick_->TypeName()
+                ));
+            }
+            return Xengine::OriginResult(
+                container->type()->slice_ref(
+                    *container, itertype, rangetype == Token::Type::DotDotEq, l, r, s
+                ),
+                container->type()
+            );
+        }
+        
+        // At by index
+        else {
+            auto idx = Exec(*node.pick_);
+
+            if (idx.type() != TypeTable::Get("i32") &&
+                idx.type() != TypeTable::Get("i64"))
+            {
+                throw LogErr(LogModule::Runtime, std::format(
+                    "incompatible type '{}' as iterator type for '[]'", idx.type()->name
+                ));
+            }
+
+            // Get Objs
+            if (target_org.objs().size() > 1) {
+                auto objs = target_org.objs();
+                return Xengine::OriginResult({ objs[idx.Get_i32()] }, target_org.type());
+            }
+
+            // Get Container
+            auto container = target_org.objs()[0];
+            if (!container->type()->at_ref) {
+                throw LogErr(LogModule::Runtime, std::format(
+                    "unsupported 'at' in operator '[]' for '{}'", node.pick_->TypeName()
+                ));
+            }
+            return Xengine::OriginResult({ container->type()->at_ref(*container, idx) });
+        }
     }
 }

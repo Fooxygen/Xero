@@ -46,18 +46,18 @@ namespace parser {
                 }
             );
         }
-        // └─ id = expr; -> assignstmt
+        // └─ expr = expr; -> assignstmt
         {
             RuleAdd(
                 PATS{
-                    AT::IdExpr,
+                    AT::Expr,
                     TT::Assign,
                     AT::Expr,
                     TT::Semicolon
                 },
                 [](std::vector<Symbol>& symbols, auto*) {
                     return std::make_unique<AssignStmt>(
-                        Rule::Move<IdExpr>(symbols, 1),
+                        Rule::Move<Expr>(symbols, 1),
                         Rule::Move<Expr>(symbols, 3)
                     );
                 }

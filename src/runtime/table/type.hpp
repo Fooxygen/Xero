@@ -23,43 +23,53 @@ namespace rt {
         bool                  isRef = false;    // Reference Type
         std::set<const Type*> converts = {};    // List of convertible types
 
-        // Methods
+        // Built-in Method
 
-        static Obj         clone_default(const Obj&);
-        static void        destroy_default(void*);
-        static std::string to_string_default(const Obj&);
+        static Obj         methdef_clone(const Obj&);
+        static void        methdef_destroy(void*);
+        static std::string methdef_to_string(const Obj&);
+        static void        methdef_assign(const std::vector<Obj*>&, const Obj&);
 
-        Obj         (*clone)(const Obj&)        = clone_default;
-        void        (*destroy)(void*)           = destroy_default;
-        std::string (*to_string)(const Obj&)    = to_string_default;
+        Obj         (*clone)(const Obj&)        = methdef_clone;
+        void        (*destroy)(void*)           = methdef_destroy;
+        std::string (*to_string)(const Obj&)    = methdef_to_string;
+        void        (*assign)(const std::vector<Obj*>&, const Obj&) = methdef_assign;
 
         // Arith Oper
 
-        Obj (*plus)  (const Obj&, const Obj&)   = nullptr;
-        Obj (*minus) (const Obj&, const Obj&)   = nullptr;
-        Obj (*star)  (const Obj&, const Obj&)   = nullptr;
-        Obj (*slash) (const Obj&, const Obj&)   = nullptr;
-        Obj (*neg)   (const Obj&)               = nullptr;
+        Obj (*plus)  (const Obj&, const Obj&)   = nullptr;      // +
+        Obj (*minus) (const Obj&, const Obj&)   = nullptr;      // -
+        Obj (*star)  (const Obj&, const Obj&)   = nullptr;      // *
+        Obj (*slash) (const Obj&, const Obj&)   = nullptr;      // /
+        Obj (*neg)   (const Obj&)               = nullptr;      // -
         
         // Relation Oper
 
-        Obj (*gt)   (const Obj&, const Obj&)    = nullptr;
-        Obj (*lt)   (const Obj&, const Obj&)    = nullptr;
-        Obj (*ge)   (const Obj&, const Obj&)    = nullptr;
-        Obj (*le)   (const Obj&, const Obj&)    = nullptr;
-        Obj (*eq)   (const Obj&, const Obj&)    = nullptr;
-        Obj (*neq)  (const Obj&, const Obj&)    = nullptr;
+        Obj (*gt)   (const Obj&, const Obj&)    = nullptr;      // >
+        Obj (*lt)   (const Obj&, const Obj&)    = nullptr;      // <
+        Obj (*ge)   (const Obj&, const Obj&)    = nullptr;      // >=
+        Obj (*le)   (const Obj&, const Obj&)    = nullptr;      // <=
+        Obj (*eq)   (const Obj&, const Obj&)    = nullptr;      // ==
+        Obj (*neq)  (const Obj&, const Obj&)    = nullptr;      // !=
 
         // Logical Oper
 
-        Obj (*and_) (const Obj&, const Obj&)    = nullptr;
-        Obj (*or_)  (const Obj&, const Obj&)    = nullptr;
-        Obj (*not_) (const Obj&)                = nullptr;
+        Obj (*and_) (const Obj&, const Obj&)    = nullptr;      // &&
+        Obj (*or_)  (const Obj&, const Obj&)    = nullptr;      // ||
+        Obj (*not_) (const Obj&)                = nullptr;      // !
 
         // Container Oper
 
-        Obj (*at)(const Obj&, const Obj&) = nullptr;
-        Obj (*slice)(const Obj&, const Type*, bool, const Obj&, const Obj&, const Obj&) = nullptr;
+        Obj (*at_clone)(const Obj&, const Obj&) = nullptr;      // [x], return single cloned obj
+        Obj*(*at_ref)(const Obj&, const Obj&)   = nullptr;      // [x], return single referenced obj
+        Obj (*slice_clone)(
+            const Obj&, const Type*, bool,
+            const Obj&, const Obj&, const Obj&
+        )                                       = nullptr;      // [x..y], return list of cloned objs
+        std::vector<Obj*> (*slice_ref)(
+            const Obj&, const Type*, bool,
+            const Obj&, const Obj&, const Obj&
+        )                                       = nullptr;      // [x..y], return list of referenced obj
     };
 
     class TypeTable {
