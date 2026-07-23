@@ -19,7 +19,7 @@ namespace rt {
     std::string Type::methdef_to_string(const Obj&) {
         throw LogErr(LogModule::Runtime, "method 'to_string()' not implemented for type");
     }
-    void        Type::methdef_assign(const std::vector<Obj*>&, const Obj&) {
+    void        Type::methdef_assign(Obj*, const Obj&) {
         throw LogErr(LogModule::Runtime, "method 'assign()' not implemented for type");
     }
 

@@ -28,12 +28,12 @@ namespace rt {
         static Obj         methdef_clone(const Obj&);
         static void        methdef_destroy(void*);
         static std::string methdef_to_string(const Obj&);
-        static void        methdef_assign(const std::vector<Obj*>&, const Obj&);
+        static void        methdef_assign(Obj*, const Obj&);
 
         Obj         (*clone)(const Obj&)        = methdef_clone;
         void        (*destroy)(void*)           = methdef_destroy;
         std::string (*to_string)(const Obj&)    = methdef_to_string;
-        void        (*assign)(const std::vector<Obj*>&, const Obj&) = methdef_assign;
+        void        (*assign)(Obj*, const Obj&) = methdef_assign;
 
         // Arith Oper
 
@@ -60,13 +60,13 @@ namespace rt {
 
         // Container Oper
 
-        Obj (*at_clone)(const Obj&, const Obj&) = nullptr;      // [x], return single cloned obj
-        Obj*(*at_ref)(const Obj&, const Obj&)   = nullptr;      // [x], return single referenced obj
-        Obj (*slice_clone)(
+        Obj  (*at_clone)(const Obj&, const Obj&) = nullptr;     // [x], return single cloned obj
+        Obj* (*at_ref)(const Obj&, const Obj&)   = nullptr;     // [x], return single referenced obj
+        Obj  (*slice_clone)(
             const Obj&, const Type*, bool,
             const Obj&, const Obj&, const Obj&
         )                                       = nullptr;      // [x..y], return list of cloned objs
-        std::vector<Obj*> (*slice_ref)(
+        Obj* (*slice_ref)(
             const Obj&, const Type*, bool,
             const Obj&, const Obj&, const Obj&
         )                                       = nullptr;      // [x..y], return list of referenced obj
