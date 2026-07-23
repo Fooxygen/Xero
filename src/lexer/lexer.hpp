@@ -66,6 +66,7 @@ namespace lexer {
         }
         Token TokenScanWord();
         Token TokenScanNumber();
+        Token TokenScanChar();
         Token TokenScanString();
         Token TokenScanSingleComment();
         Token TokenScanMultiComment();

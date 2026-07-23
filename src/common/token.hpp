@@ -32,12 +32,14 @@ public:
         DotDotEq,           //  ..=
         Comma,              //  ,
         Quote,              //  "
+        QuoteSingle,        //  '
 
         // Semantic
         // └─ Literal
         Semantic,           //  Base
         Id,                 //  Identity
         Number,             //  Continuous Integer
+        Char,               //  Char
         String,             //  String
 
         // └─ Arith Operator
@@ -111,10 +113,12 @@ public:
             case DotDotEq:
             case Comma:
             case Quote:
+            case QuoteSingle:
                 return Unsemantic;
 
             case Id:
             case Number:
+            case Char:
             case String:
                 return Semantic;
 
@@ -165,48 +169,50 @@ public:
     static std::string TypeName(Type type) {
         using enum Type;
         switch (type) {
-            case Colon:       return "Colon";
-            case Assign:      return "Assign";
-            case Semicolon:   return "Semicolon";
-            case LParen:      return "LParen";
-            case RParen:      return "RParen";
-            case LBrace:      return "LBrace";
-            case RBrace:      return "RBrace";
-            case LBkt:        return "LBkt";
-            case RBkt:        return "RBkt";
-            case Dot:         return "Dot";
-            case DotDot:      return "DotDot";
-            case DotDotEq:    return "DotDotEq";
-            case Comma:       return "Comma";
-            case Quote:       return "Quote";
+            case Colon:         return "Colon";
+            case Assign:        return "Assign";
+            case Semicolon:     return "Semicolon";
+            case LParen:        return "LParen";
+            case RParen:        return "RParen";
+            case LBrace:        return "LBrace";
+            case RBrace:        return "RBrace";
+            case LBkt:          return "LBkt";
+            case RBkt:          return "RBkt";
+            case Dot:           return "Dot";
+            case DotDot:        return "DotDot";
+            case DotDotEq:      return "DotDotEq";
+            case Comma:         return "Comma";
+            case Quote:         return "Quote";
+            case QuoteSingle:   return "QuoteSingle";
 
-            case Id:          return "Id";
-            case Number:      return "Number";
-            case String:      return "String";
+            case Id:            return "Id";
+            case Number:        return "Number";
+            case Char:          return "Char";
+            case String:        return "String";
 
-            case PlusOrMinus: return "PlusOrMinus";
-            case Plus:        return "Plus";
-            case Minus:       return "Minus";
-            case StarOrSlash: return "StarOrSlash";
-            case Star:        return "Star";
-            case Slash:       return "Slash";
+            case PlusOrMinus:   return "PlusOrMinus";
+            case Plus:          return "Plus";
+            case Minus:         return "Minus";
+            case StarOrSlash:   return "StarOrSlash";
+            case Star:          return "Star";
+            case Slash:         return "Slash";
 
-            case Gt:          return "Gt";
-            case Ge:          return "Ge";
-            case Lt:          return "Lt";
-            case Le:          return "Le";
-            case Eq:          return "Eq";
-            case Neq:         return "Neq";
+            case Gt:            return "Gt";
+            case Ge:            return "Ge";
+            case Lt:            return "Lt";
+            case Le:            return "Le";
+            case Eq:            return "Eq";
+            case Neq:           return "Neq";
 
-            case Not:         return "Not";
-            case And:         return "And";
-            case Or:          return "Or";
+            case Not:           return "Not";
+            case And:           return "And";
+            case Or:            return "Or";
 
-            case If:          return "If";
-            case Elif:        return "Elif";
-            case Else:        return "Else";
-            case For:         return "For";
-            case In:          return "In";
+            case If:            return "If";
+            case Elif:          return "Elif";
+            case Else:          return "Else";
+            case For:           return "For";
+            case In:            return "In";
 
             default: 
                 LogWarn(LogModule::Lexer, "undefined print name for TokenType").Print();
@@ -218,7 +224,6 @@ public:
     }
     
     std::string MetaPrint() const {
-        return std::format("[{}:{}] {}('{}')", line_, col_,
-            TypeName(type_), lexeme_);
+        return std::format("[{}:{}] {}({})", line_, col_, TypeName(type_), lexeme_);
     }
 };

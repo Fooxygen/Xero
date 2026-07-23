@@ -26,6 +26,13 @@ namespace rt {
     // TypeTable
 
     void TypeTable::ConvertSet(const Type* from, const Type* to, Obj(*fn)(const Obj&)) {
+        if (from == to) {
+            LogWarn(LogModule::Runtime, std::format(
+                "cannot convert type '{}' to itself",
+                from->name
+            )).Print();
+            return;
+        }
         converts_[{ from, to }] = fn;
     }
 

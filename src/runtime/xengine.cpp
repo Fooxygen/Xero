@@ -38,19 +38,19 @@ namespace rt {
         auto method_pick = [&](const Type* t) -> Obj(*)(const Obj&, const Obj&) {
             using enum Token::Type;
             switch (node.opertype_) {
-                case Plus:  return t->plus;
-                case Minus: return t->minus;
-                case Star:  return t->star;
-                case Slash: return t->slash;
-                case Gt:    return t->gt;
-                case Lt:    return t->lt;
-                case Ge:    return t->ge;
-                case Le:    return t->le;
-                case Eq:    return t->eq;
-                case Neq:   return t->neq;
+                case Plus:  return t->plus_;
+                case Minus: return t->minus_;
+                case Star:  return t->star_;
+                case Slash: return t->slash_;
+                case Gt:    return t->gt_;
+                case Lt:    return t->lt_;
+                case Ge:    return t->ge_;
+                case Le:    return t->le_;
+                case Eq:    return t->eq_;
+                case Neq:   return t->neq_;
                 case And:   return t->and_;
                 case Or:    return t->or_;
-                default:                 return nullptr;
+                default:    return nullptr;
             }
         };
 
@@ -70,7 +70,7 @@ namespace rt {
 
         // Slice by range
         if (node.pick_->type_ == AstType::RangeExpr) {
-            if (!target.type()->slice_clone) {
+            if (!target.type()->slice_clone_) {
                 throw LogErr(LogModule::Runtime, std::format(
                     "unsupported 'slice' in operator '[]' for '{}'", target.type()->name
                 ));
@@ -86,14 +86,14 @@ namespace rt {
                 ));
             }
             
-            return target.type()->slice_clone(
+            return target.type()->slice_clone_(
                 target, itertype, rangetype == Token::Type::DotDotEq, l, r, s
             );
         }
         
         // At by index
         else {
-            if (!target.type()->at_clone) {
+            if (!target.type()->at_clone_) {
                 throw LogErr(LogModule::Runtime, std::format(
                     "unsupported 'at' in operator '[]' for '{}'", node.pick_->TypeName()
                 ));
@@ -109,7 +109,7 @@ namespace rt {
                 ));
             }
 
-            return target.type()->at_clone(target, idx);
+            return target.type()->at_clone_(target, idx);
         }
     }
 
@@ -172,7 +172,7 @@ namespace rt {
     
     Obj Xengine::Exec(NegExpr& node) {
         auto obj = Exec(*node.expr_);
-        auto neg = CallTry(obj.type()->neg, obj);
+        auto neg = CallTry(obj.type()->neg_, obj);
         if (neg.isNone()) {
             throw LogErr(LogModule::Runtime, std::format(
                 "unsupported '-' for '{}'",
@@ -288,6 +288,10 @@ namespace rt {
         return Obj::Make_bool(node.value_);
     }
 
+    Obj Xengine::Exec(CharConst& node) {
+        return Obj::Make_char(node.value_[0]);
+    }
+
     Obj Xengine::Exec(StringConst& node) {
         return Obj::Make_string(new String(node.value_));
     }
@@ -325,7 +329,7 @@ namespace rt {
         auto target = Origin(*node.target_);
         auto value  = Exec(*node.value_);
 
-        target->type()->assign(target, value);
+        target->type()->assign_(target, value);
         return Obj();
     }
 
@@ -356,12 +360,12 @@ namespace rt {
             bool isEqRightBoundary = rangetype == Token::Type::DotDotEq;
 
             // Execute
-            for (Obj o = l; ; o = itertype->plus(o, s)) {
+            for (Obj o = l; ; o = itertype->plus_(o, s)) {
                 if (!isEqRightBoundary) {
-                    if (itertype->ge(o, r).Get_bool()) break;
+                    if (itertype->ge_(o, r).Get_bool()) break;
                 }
                 else {
-                    if (itertype->gt(o, r).Get_bool()) break;
+                    if (itertype->gt_(o, r).Get_bool()) break;
                 }
 
                 Exec(*node.block_, [&]() {
@@ -426,13 +430,13 @@ namespace rt {
                 ));
             }
             
-            if (!target->type()->slice_ref) {
+            if (!target->type()->slice_ref_) {
                 throw LogErr(LogModule::Runtime, std::format(
                     "unsupported 'slice' in operator '[]' for '{}'", target->type()->name
                 ));
             }
-            return target->type()->slice_ref(
-                    *target, itertype, rangetype == Token::Type::DotDotEq, l, r, s
+            return target->type()->slice_ref_(
+                *target, itertype, rangetype == Token::Type::DotDotEq, l, r, s
             );
         }
         
@@ -448,13 +452,13 @@ namespace rt {
                 ));
             }
 
-            if (!target->type()->at_ref) {
+            if (!target->type()->at_ref_) {
                 throw LogErr(LogModule::Runtime, std::format(
                     "unsupported 'at' in operator '[]' for '{}'", node.pick_->TypeName()
                 ));
             }
             
-            return target->type()->at_ref(*target, idx);
+            return target->type()->at_ref_(*target, idx);
         }
     }
 }

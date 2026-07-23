@@ -41,6 +41,7 @@ namespace lexer {
         if (isAlpha(c))  return TokenScanWord();            // a...
         if (isNumber(c)) return TokenScanNumber();          // 1...
         if (c == '"')    return TokenScanString();          // "..."
+        if (c == '\'')   return TokenScanChar();            // '.'
         
         // Fixed Length
         CharNext();
@@ -182,6 +183,47 @@ namespace lexer {
         );
     }
 
+    Token Lexer::TokenScanChar() {
+        std::string lexeme = "";
+        CharNext();
+
+        while (!isScanEnd()) {
+            char c = code_[pos_];
+
+            if (c == '\'') {
+                CharNext();
+                return TokenGen(Token::Type::Char, lexeme);
+            }
+
+            if (c == '\n')
+                throw LogErr(LogModule::Lexer, "unclosed single quotes of char");
+
+            if (c == '\\') {
+                CharNext();
+                
+                if (isScanEnd())
+                    throw LogErr(LogModule::Lexer, "unclosed single quotes of char");
+
+                switch (code_[pos_]) {
+                    case 'n':  lexeme += '\n'; break;
+                    case 't':  lexeme += '\t'; break;
+                    case 'r':  lexeme += '\r'; break;
+                    case '\'': lexeme += '\'';  break;
+                    case '\\': lexeme += '\\'; break;
+                    default:
+                        throw LogErr(LogModule::Lexer, std::format("unknown escape '{}'", code_[pos_]));
+                }
+                CharNext();
+                continue;
+            }
+
+            lexeme += c;
+            CharNext();
+        }     
+        
+        throw LogErr(LogModule::Lexer, "unclosed single quotes of char");
+    }
+
     Token Lexer::TokenScanString() {
         std::string lexeme = "";
         CharNext();
@@ -195,13 +237,13 @@ namespace lexer {
             }
 
             if (c == '\n')
-                throw LogErr(LogModule::Lexer, "unclosed string");
+                throw LogErr(LogModule::Lexer, "unclosed double quotes of string");
 
             if (c == '\\') {
                 CharNext();
                 
                 if (isScanEnd())
-                    throw LogErr(LogModule::Lexer, "unclosed string");
+                    throw LogErr(LogModule::Lexer, "unclosed double quotes of string");
 
                 switch (code_[pos_]) {
                     case 'n':  lexeme += '\n'; break;
@@ -209,7 +251,8 @@ namespace lexer {
                     case 'r':  lexeme += '\r'; break;
                     case '"':  lexeme += '"';  break;
                     case '\\': lexeme += '\\'; break;
-                    default:   throw LogErr(LogModule::Lexer, std::format("unknown escape '{}'", code_[pos_]));
+                    default:
+                        throw LogErr(LogModule::Lexer, std::format("unknown escape '{}'", code_[pos_]));
                 }
                 CharNext();
                 continue;
@@ -219,7 +262,7 @@ namespace lexer {
             CharNext();
         }
 
-        throw LogErr(LogModule::Lexer, "unclosed string");
+        throw LogErr(LogModule::Lexer, "unclosed double quotes of string");
     }
 
     Token Lexer::TokenScanSingleComment() {

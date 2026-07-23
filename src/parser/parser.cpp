@@ -88,6 +88,10 @@ namespace parser {
                 sym = Symbol(std::make_unique<NumConst>(token.lexeme()));
                 break;
             }
+            case TT::Char: {
+                sym = Symbol(std::make_unique<CharConst>(token.lexeme()));
+                break;
+            }
             case TT::String: {
                 sym = Symbol(std::make_unique<StringConst>(token.lexeme()));
                 break;

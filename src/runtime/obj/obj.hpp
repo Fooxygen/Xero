@@ -35,6 +35,7 @@ namespace rt {
             int64_t     i64_;
             float       f32_;
             double      f64_;
+            char32_t    char_;
         } data_;
         const Type* type_;
 
@@ -61,7 +62,7 @@ namespace rt {
 
                 // No obj uses
                 if (--refdata->cnt == 0) {
-                    type_->destroy(refdata->data);
+                    type_->destroy_(refdata->data);
                     delete refdata;
                 }
             }
@@ -82,14 +83,14 @@ namespace rt {
 
                 // No obj uses
                 if (--refdata->cnt == 0) {
-                    type_->destroy(refdata->data);
+                    type_->destroy_(refdata->data);
                     delete refdata;
                 }
             }
         }
 
         Obj Clone() const {
-            return type_->clone(*this);
+            return type_->clone_(*this);
         }
 
         const Type* type() const {
@@ -139,6 +140,12 @@ namespace rt {
             o.data_.f64_ = x;
             return o;
         }
+        static Obj Make_char(char32_t c) {
+            Obj o;
+            o.type_ = TypeTable::Get("char");
+            o.data_.char_ = c;
+            return o;
+        }
         static Obj Make_string(String* s) {
             Obj o;
             o.type_ = TypeTable::Get("string");
@@ -163,6 +170,7 @@ namespace rt {
         int64_t  Get_i64()          const { return data_.i64_;   }
         float    Get_f32()          const { return data_.f32_;   }
         double   Get_f64()          const { return data_.f64_;   }
+        char32_t Get_char()         const { return data_.char_;   }
         String&  Get_string_ref()   const {
             RefData* ref = (RefData*)(data_.ref_);
             String*  str = (String*)(ref->data);

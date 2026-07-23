@@ -22,6 +22,7 @@ enum class AstType {
     Const,              //  Base ------
     NumConst,           //  Number Type
     BoolConst,          //  Boolean Type
+    CharConst,          //  Char Type
     StringConst,        //  String Type
 
     // Expr
@@ -53,6 +54,7 @@ static AstType BaseOfAstType(AstType type) {
     switch (type) {
         case NumConst:
         case BoolConst:
+        case CharConst:
         case StringConst:
             return Const;
         case Const:
@@ -103,6 +105,7 @@ public:
             case Const:            return "Const";
             case NumConst:         return "NumConst";
             case BoolConst:        return "BoolConst";
+            case CharConst:        return "CharConst";
             case StringConst:      return "StringConst";
 
             case Expr:             return "Expr";
@@ -388,6 +391,21 @@ public:
             std::cout << COLOR_RED << "false" << COLOR_DEFAULT << std::endl;
     }
 };
+class CharConst         : public Const {
+public:
+    std::string value_ = "";
+
+    CharConst(const std::string& value)
+    :   value_(value)
+    {
+        type_ = AstType::CharConst;
+    }
+
+    void PrintImpl(std::string prefix) override {
+        PrintLabel("value", prefix);
+        std::cout << COLOR_GREEN << "'" << value_ << "'" << COLOR_DEFAULT << std::endl;
+    }
+};
 class StringConst       : public Const {
 public:
     std::string value_ = "";
@@ -400,7 +418,7 @@ public:
 
     void PrintImpl(std::string prefix) override {
         PrintLabel("value", prefix);
-        std::cout << COLOR_GREEN << "'" << value_ << "'" << COLOR_DEFAULT << std::endl;
+        std::cout << COLOR_GREEN << "\"" << value_ << "\"" << COLOR_DEFAULT << std::endl;
     }
 };
 

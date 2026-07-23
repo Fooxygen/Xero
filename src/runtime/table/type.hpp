@@ -30,27 +30,27 @@ namespace rt {
         static std::string methdef_to_string(const Obj&);
         static void        methdef_assign(Obj*, const Obj&);
 
-        Obj         (*clone)(const Obj&)        = methdef_clone;
-        void        (*destroy)(void*)           = methdef_destroy;
-        std::string (*to_string)(const Obj&)    = methdef_to_string;
-        void        (*assign)(Obj*, const Obj&) = methdef_assign;
+        Obj         (*clone_)(const Obj&)        = methdef_clone;
+        void        (*destroy_)(void*)           = methdef_destroy;
+        std::string (*to_string_)(const Obj&)    = methdef_to_string;
+        void        (*assign_)(Obj*, const Obj&) = methdef_assign;
 
         // Arith Oper
 
-        Obj (*plus)  (const Obj&, const Obj&)   = nullptr;      // +
-        Obj (*minus) (const Obj&, const Obj&)   = nullptr;      // -
-        Obj (*star)  (const Obj&, const Obj&)   = nullptr;      // *
-        Obj (*slash) (const Obj&, const Obj&)   = nullptr;      // /
-        Obj (*neg)   (const Obj&)               = nullptr;      // -
+        Obj (*plus_)  (const Obj&, const Obj&)   = nullptr;     // +
+        Obj (*minus_) (const Obj&, const Obj&)   = nullptr;     // -
+        Obj (*star_)  (const Obj&, const Obj&)   = nullptr;     // *
+        Obj (*slash_) (const Obj&, const Obj&)   = nullptr;     // /
+        Obj (*neg_)   (const Obj&)               = nullptr;     // -
         
         // Relation Oper
 
-        Obj (*gt)   (const Obj&, const Obj&)    = nullptr;      // >
-        Obj (*lt)   (const Obj&, const Obj&)    = nullptr;      // <
-        Obj (*ge)   (const Obj&, const Obj&)    = nullptr;      // >=
-        Obj (*le)   (const Obj&, const Obj&)    = nullptr;      // <=
-        Obj (*eq)   (const Obj&, const Obj&)    = nullptr;      // ==
-        Obj (*neq)  (const Obj&, const Obj&)    = nullptr;      // !=
+        Obj (*gt_)   (const Obj&, const Obj&)    = nullptr;     // >
+        Obj (*lt_)   (const Obj&, const Obj&)    = nullptr;     // <
+        Obj (*ge_)   (const Obj&, const Obj&)    = nullptr;     // >=
+        Obj (*le_)   (const Obj&, const Obj&)    = nullptr;     // <=
+        Obj (*eq_)   (const Obj&, const Obj&)    = nullptr;     // ==
+        Obj (*neq_)  (const Obj&, const Obj&)    = nullptr;     // !=
 
         // Logical Oper
 
@@ -60,16 +60,16 @@ namespace rt {
 
         // Container Oper
 
-        Obj  (*at_clone)(const Obj&, const Obj&) = nullptr;     // [x], return single cloned obj
-        Obj* (*at_ref)(const Obj&, const Obj&)   = nullptr;     // [x], return single referenced obj
-        Obj  (*slice_clone)(
+        Obj  (*at_clone_)(const Obj&, const Obj&) = nullptr;    // [x], return single cloned obj
+        Obj* (*at_ref_)(const Obj&, const Obj&)   = nullptr;    // [x], return single referenced obj
+        Obj  (*slice_clone_)(
             const Obj&, const Type*, bool,
             const Obj&, const Obj&, const Obj&
-        )                                       = nullptr;      // [x..y], return list of cloned objs
-        Obj* (*slice_ref)(
+        )                                       = nullptr;     // [x..y], return list of cloned objs
+        Obj* (*slice_ref_)(
             const Obj&, const Type*, bool,
             const Obj&, const Obj&, const Obj&
-        )                                       = nullptr;      // [x..y], return list of referenced obj
+        )                                       = nullptr;     // [x..y], return list of referenced obj
     };
 
     class TypeTable {
