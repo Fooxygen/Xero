@@ -174,22 +174,6 @@ namespace rt {
                 .neq_       = [](const Obj& a, const Obj& b) {
                     return Obj::Make_bool(a.Get_string_ref().ToCppString() != b.Get_string_ref().ToCppString());
                 },        
-                .at_clone_  = [](const Obj& target, const Obj& idx) {
-                    return Obj::Make_char(target.Get_string_ref().Get(idx.Get_i32()));
-                },
-                .slice_clone_ = [](
-                    const Obj& target, const Type* itertype, bool isRBoundary,
-                    const Obj& l, const Obj& r, const Obj& s)
-                {
-                    auto& str = target.Get_string_ref();
-                    std::string result;
-                    for (Obj o = l; ; o = itertype->plus_(o, s)) {
-                        if (!isRBoundary && itertype->ge_(o, r).Get_bool()) break;
-                        if ( isRBoundary && itertype->gt_(o, r).Get_bool()) break;
-                        result += str.Get(o.Get_i32());
-                    }
-                    return Obj::Make_string(new String(result));
-                },
             });
 
             // array
@@ -231,53 +215,37 @@ namespace rt {
                     oc.Get_array_ref().Reverse();
                     return oc;
                 },
-                .at_clone_      = [](const Obj& target, const Obj& idx) {
-                    return *target.Get_array_ref().Get(idx.Get_i32());
-                },
-                .at_ref_        = [](const Obj& target, const Obj& idx) {
-                    return target.Get_array_ref().Get(idx.Get_i32());
-                },
-                .slice_clone_   = [](
-                    const Obj& target, const Type* itertype, bool isEqRightBoundary,
-                    const Obj& l, const Obj& r, const Obj& s)
-                {
-                    auto& src = target.Get_array_ref();
-                    auto  dst = new Array();
-                    
-                    for (Obj o = l; ; o = itertype->plus_(o, s)) {
-                        if (!isEqRightBoundary) {
-                            if (itertype->ge_(o, r).Get_bool()) break;
-                        }
-                        else {
-                            if (itertype->gt_(o, r).Get_bool()) break;
-                        }
+            });
 
-                        dst->Insert(dst->size(), new Obj(*src.Get(o.Get_i32())));
+             // range
+            TypeTable::Set(Type{
+                .name       = "range", .size = 0, .isRef = true,
+                .clone_     = [](const Obj& o) {
+                    return Obj::Make_range(new Range(o.Get_range_ref()));
+                },
+                .destroy_   = [](void* data) { delete (Range*)data; },
+                .to_string_ = [](const Obj& o) {
+                    auto& range = o.Get_range_ref();
+                    char  boundary = range.hasRBoundary() ? ']' : ')';
+
+                    if (range.step()) {
+                        return std::format(
+                            "[{} : {} : {}{}",
+                            range.left()->type()->to_string_(*range.left()),
+                            range.step()->type()->to_string_(*range.step()),
+                            range.right()->type()->to_string_(*range.right()),
+                            boundary
+                        );
                     }
-
-                    return Obj::Make_array(dst);
-                },
-                .slice_ref_     = [](
-                    const Obj& target, const Type* itertype, bool isEqRightBoundary,
-                    const Obj& l, const Obj& r, const Obj& s)
-                {
-                    auto& src = target.Get_array_ref();
-                    auto  dst = new Obj(Obj::Make_array());
-                    auto& arr = dst->Get_array_ref();
-
-                    for (Obj o = l; ; o = itertype->plus_(o, s)) {
-                        if (!isEqRightBoundary) {
-                            if (itertype->ge_(o, r).Get_bool()) break;
-                        }
-                        else {
-                            if (itertype->gt_(o, r).Get_bool()) break;
-                        }
-
-                        arr.Insert(arr.size(), src.Get(o.Get_i32()));
+                    else {
+                        return std::format(
+                            "[{} : {}{}",
+                            range.left()->type()->to_string_(*range.left()),
+                            range.right()->type()->to_string_(*range.right()),
+                            boundary
+                        );
                     }
-
-                    return dst;
-                },
+                }
             });
         }
 

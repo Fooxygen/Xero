@@ -10,6 +10,7 @@
 #include "runtime/table/type.hpp"
 #include "runtime/obj/impl/string.hpp"
 #include "runtime/obj/impl/array.hpp"
+#include "runtime/obj/impl/range.hpp"
 
 namespace rt {
 
@@ -164,6 +165,12 @@ namespace rt {
             o.data_.ref_ = new RefData(a);
             return o;
         }
+        static Obj Make_range(Range* r) {
+            Obj o;
+            o.type_ = TypeTable::Get("range");
+            o.data_.ref_ = new RefData(r);
+            return o;
+        }
 
         bool     Get_bool()         const { return data_.bool_;  }
         int32_t  Get_i32()          const { return data_.i32_;   }
@@ -180,6 +187,11 @@ namespace rt {
             RefData* ref = (RefData*)(data_.ref_);
             Array*   str = (Array*)(ref->data);
             return *str;
+        }
+        Range&   Get_range_ref( )   const {
+            RefData* ref   = (RefData*)(data_.ref_);
+            Range*   range = (Range*)(ref->data);
+            return *range;
         }
     };
 }

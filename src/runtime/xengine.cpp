@@ -68,54 +68,10 @@ namespace rt {
     Obj Xengine::Exec(PickExpr& node) {
         auto target = Exec(*node.target_);
 
-        // Slice by range
-        if (node.pick_->type_ == AstType::RangeExpr) {
-            if (!target.type()->slice_clone_) {
-                throw LogErr(LogModule::Runtime, std::format(
-                    "unsupported 'slice' in operator '[]' for '{}'", target.type()->name
-                ));
-            }
-
-            auto [itertype, hasRBoundary, l, r, s] = Exec((RangeExpr&)*node.pick_);
-
-            if (itertype != TypeTable::Get("i32") &&
-                itertype != TypeTable::Get("i64"))
-            {
-                throw LogErr(LogModule::Runtime, std::format(
-                    "incompatible type '{}' as iterator type for '[]'", itertype->name
-                ));
-            }
-            
-            return target.type()->slice_clone_(
-                target, itertype, hasRBoundary, l, r, s
-            );
-        }
-        
-        // At by index
-        else {
-            if (!target.type()->at_clone_) {
-                throw LogErr(LogModule::Runtime, std::format(
-                    "unsupported 'at' in operator '[]' for '{}'", node.pick_->TypeName()
-                ));
-            }
-
-            auto idx = Exec(*node.pick_);
-
-            if (idx.type() != TypeTable::Get("i32") &&
-                idx.type() != TypeTable::Get("i64"))
-            {
-                throw LogErr(LogModule::Runtime, std::format(
-                    "incompatible type '{}' as iterator type for '[]'", idx.type()->name
-                ));
-            }
-
-            return target.type()->at_clone_(target, idx);
-        }
+        return Obj();
     }
 
-    std::tuple<const Type*, bool, Obj, Obj, Obj>
-        Xengine::Exec(RangeExpr& node)
-    {
+    Obj Xengine::Exec(RangeExpr& node) {
         
         // Boundary
         bool hasStep = node.step_ ? true : false;
@@ -161,13 +117,13 @@ namespace rt {
             }
         }
 
-        return std::make_tuple(
-            itertype,
-            node.rangetype_ == Token::Type::DotDotEq,
+        return Obj::Make_range(new Range(
             TypeTable::Convert(lobj, itertype),
             TypeTable::Convert(robj, itertype),
-            hasStep ? sobj : Obj::Make_i32(1)
-        );
+            hasStep ? sobj : Obj::Make_i32(1),
+            node.hasRBoundary_,
+            itertype
+        ));
     }
     
     Obj Xengine::Exec(NegExpr& node) {
@@ -355,16 +311,16 @@ namespace rt {
 
         // Range
         if (node.data_->type_ == AstType::RangeExpr) {
-
-            auto [itertype, hasRBoundary, l, r, s] = Exec((RangeExpr&)*node.data_);
+            auto  rangeobj = Exec((RangeExpr&)*node.data_);
+            auto& range = rangeobj.Get_range_ref();
 
             // Execute
-            for (Obj o = l; ; o = itertype->plus_(o, s)) {
-                if (!hasRBoundary) {
-                    if (itertype->ge_(o, r).Get_bool()) break;
+            for (Obj o = *range.left(); ; o = range.itertype()->plus_(o, *range.step())) {
+                if (!range.hasRBoundary()) {
+                    if (range.itertype()->ge_(o, *range.right()).Get_bool()) break;
                 }
                 else {
-                    if (itertype->gt_(o, r).Get_bool()) break;
+                    if (range.itertype()->gt_(o, *range.right()).Get_bool()) break;
                 }
 
                 Exec(*node.block_, [&]() {
@@ -412,52 +368,5 @@ namespace rt {
 
     Obj* Xengine::Origin(IdExpr& node) {
         return env_.Get(node.value_);
-    }
-
-    Obj* Xengine::Origin(PickExpr& node) {
-        auto target = Origin(*node.target_);
-
-        // Slice by range
-        if (node.pick_->type_ == AstType::RangeExpr) {
-
-            auto [itertype, hasRBoundary, l, r, s] = Exec((RangeExpr&)*node.pick_);
-            if (itertype != TypeTable::Get("i32") &&
-                itertype != TypeTable::Get("i64"))
-            {
-                throw LogErr(LogModule::Runtime, std::format(
-                    "incompatible type '{}' as iterator type for '[]'", itertype->name
-                ));
-            }
-            
-            if (!target->type()->slice_ref_) {
-                throw LogErr(LogModule::Runtime, std::format(
-                    "unsupported 'slice' in operator '[]' for '{}'", target->type()->name
-                ));
-            }
-            return target->type()->slice_ref_(
-                *target, itertype, hasRBoundary, l, r, s
-            );
-        }
-        
-        // At by index
-        else {
-
-            auto idx = Exec(*node.pick_);
-            if (idx.type() != TypeTable::Get("i32") &&
-                idx.type() != TypeTable::Get("i64"))
-            {
-                throw LogErr(LogModule::Runtime, std::format(
-                    "incompatible type '{}' as iterator type for '[]'", idx.type()->name
-                ));
-            }
-
-            if (!target->type()->at_ref_) {
-                throw LogErr(LogModule::Runtime, std::format(
-                    "unsupported 'at' in operator '[]' for '{}'", node.pick_->TypeName()
-                ));
-            }
-            
-            return target->type()->at_ref_(*target, idx);
-        }
     }
 }

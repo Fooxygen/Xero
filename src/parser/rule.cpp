@@ -466,10 +466,10 @@ namespace parser {
                     )) return nullptr;
                     
                     return std::make_unique<RangeExpr>(
-                        TT::DotDot,
                         Rule::Move<Expr>(symbols, 1),
                         Rule::Move<Expr>(symbols, 5),
-                        Rule::Move<Expr>(symbols, 3)
+                        Rule::Move<Expr>(symbols, 3),
+                        false
                     );
                 }
             );
@@ -496,10 +496,10 @@ namespace parser {
                     )) return nullptr;
 
                     return std::make_unique<RangeExpr>(
-                        TT::DotDotEq,
                         Rule::Move<Expr>(symbols, 1),
                         Rule::Move<Expr>(symbols, 5),
-                        Rule::Move<Expr>(symbols, 3)
+                        Rule::Move<Expr>(symbols, 3),
+                        true
                     );
                 }
             );
@@ -525,10 +525,10 @@ namespace parser {
                     )) return nullptr;
 
                     return std::make_unique<RangeExpr>(
-                        TT::DotDot,
                         Rule::Move<Expr>(symbols, 1),
                         Rule::Move<Expr>(symbols, 3),
-                        nullptr
+                        nullptr,
+                        false
                     );
                 }
             );
@@ -553,10 +553,10 @@ namespace parser {
                     )) return nullptr;
 
                     return std::make_unique<RangeExpr>(
-                        TT::DotDotEq,
                         Rule::Move<Expr>(symbols, 1),
                         Rule::Move<Expr>(symbols, 3),
-                        nullptr
+                        nullptr,
+                        true
                     );
                 }
             );

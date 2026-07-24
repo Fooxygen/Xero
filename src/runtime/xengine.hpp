@@ -38,11 +38,12 @@ namespace rt {
                 case AstType::IdExpr:           return Exec((IdExpr&)node);
                 case AstType::OperExpr:         return Exec((OperExpr&)node);
                 case AstType::PickExpr:         return Exec((PickExpr&)node);
+                case AstType::RangeExpr:        return Exec((RangeExpr&)node);
+                case AstType::ArrayExpr:        return Exec((ArrayExpr&)node);
                 case AstType::NegExpr:          return Exec((NegExpr&)node);
                 case AstType::NotExpr:          return Exec((NotExpr&)node);
                 case AstType::FnCallExpr:       return Exec((FnCallExpr&)node);
                 case AstType::MethodCallExpr:   return Exec((MethodCallExpr&)node);
-                case AstType::ArrayExpr:        return Exec((ArrayExpr&)node);
 
                 case AstType::NumConst:         return Exec((NumConst&)node);
                 case AstType::BoolConst:        return Exec((BoolConst&)node);
@@ -63,13 +64,12 @@ namespace rt {
         Obj Exec(IdExpr& node);
         Obj Exec(OperExpr& node);
         Obj Exec(PickExpr& node);
-        std::tuple<const Type*, bool, Obj, Obj, Obj>
-            Exec(RangeExpr& node);
+        Obj Exec(RangeExpr& node);
+        Obj Exec(ArrayExpr& node);
         Obj Exec(NegExpr& node);
         Obj Exec(NotExpr& node);
         Obj Exec(FnCallExpr& node);
         Obj Exec(MethodCallExpr& node);
-        Obj Exec(ArrayExpr& node);
 
         Obj Exec(NumConst& node);
         Obj Exec(BoolConst& node);
@@ -89,14 +89,12 @@ namespace rt {
         Obj* Origin(AstNode& node) {
             switch (node.type_) {
                 case AstType::IdExpr:   return Origin((IdExpr&)node);
-                case AstType::PickExpr: return Origin((PickExpr&)node);
 
                 default: return {};
             }
         }
 
         Obj* Origin(IdExpr& node);
-        Obj* Origin(PickExpr& node);
 
     public:
         // Call Wrapper

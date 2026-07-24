@@ -59,17 +59,6 @@ namespace rt {
         Obj (*not_) (const Obj&)                = nullptr;      // !
 
         // Container Oper
-
-        Obj  (*at_clone_)(const Obj&, const Obj&) = nullptr;    // [x], return single cloned obj
-        Obj* (*at_ref_)(const Obj&, const Obj&)   = nullptr;    // [x], return single referenced obj
-        Obj  (*slice_clone_)(
-            const Obj&, const Type*, bool,
-            const Obj&, const Obj&, const Obj&
-        )                                       = nullptr;     // [x..y], return list of cloned objs
-        Obj* (*slice_ref_)(
-            const Obj&, const Type*, bool,
-            const Obj&, const Obj&, const Obj&
-        )                                       = nullptr;     // [x..y], return list of referenced obj
     };
 
     class TypeTable {

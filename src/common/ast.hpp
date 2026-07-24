@@ -240,21 +240,21 @@ public:
 };
 class RangeExpr         : public Expr {
 public:
-    Token::Type rangetype_ = Token::Type::Undefined;
     std::unique_ptr<Expr> lexpr_ = nullptr;
     std::unique_ptr<Expr> rexpr_ = nullptr;
     std::unique_ptr<Expr> step_  = nullptr;
+    bool hasRBoundary_           = false;
 
     RangeExpr(
-        Token::Type rangetype,
         std::unique_ptr<Expr> lexpr,
         std::unique_ptr<Expr> rexpr,
-        std::unique_ptr<Expr> step
+        std::unique_ptr<Expr> step,
+        bool hasRBoundary
     )
-    :   rangetype_(rangetype),
-        lexpr_(std::move(lexpr)),  
+    :   lexpr_(std::move(lexpr)),  
         rexpr_(std::move(rexpr)),
-        step_(std::move(step))
+        step_(std::move(step)),
+        hasRBoundary_(hasRBoundary)
     {
         type_ = AstType::RangeExpr;
     }
@@ -262,12 +262,27 @@ public:
     void PrintImpl(std::string prefix) override {
         PrintLabel("type", prefix);
         std::cout << COLOR_MAGENTA;
-        Token::TypePrint(rangetype_);
+        if (hasRBoundary_) Token::TypePrint(Token::Type::DotDotEq);
+        else               Token::TypePrint(Token::Type::DotDot);
         std::cout << COLOR_DEFAULT << std::endl;
 
         lexpr_->Print(prefix, "lexpr");
         rexpr_->Print(prefix, "rexpr");
         if (step_) step_->Print(prefix, "step");
+    }
+};
+class ArrayExpr         : public Expr {
+public:
+    std::unique_ptr<Exprs> elements_;
+
+    ArrayExpr(std::unique_ptr<Exprs> elements)
+    :   elements_(std::move(elements))
+    {
+        type_ = AstType::ArrayExpr;
+    }
+
+    void PrintImpl(std::string prefix) override {
+        elements_->Print(prefix, "elements");
     }
 };
 class NegExpr           : public Expr {
@@ -340,20 +355,6 @@ public:
         target_->Print(prefix, "target");
         callee_->Print(prefix, "callee");
         args_->Print(prefix, "args");
-    }
-};
-class ArrayExpr         : public Expr {
-public:
-    std::unique_ptr<Exprs> elements_;
-
-    ArrayExpr(std::unique_ptr<Exprs> elements)
-    :   elements_(std::move(elements))
-    {
-        type_ = AstType::ArrayExpr;
-    }
-
-    void PrintImpl(std::string prefix) override {
-        elements_->Print(prefix, "elements");
     }
 };
 
