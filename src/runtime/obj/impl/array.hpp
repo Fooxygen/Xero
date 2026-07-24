@@ -9,6 +9,8 @@
 #include <cstdint>
 #include <cstring>
 
+#include "log.hpp"
+
 namespace rt {
     class Obj;
     
@@ -20,16 +22,23 @@ namespace rt {
 
         void Clear();
 
-        // isBoundaryEq: Allowed to modify at the [max + 1] idx
-        void IndexCheck(size_t idx, bool isBoundaryEq = false) const;
+        // hasRBoundary: Allowed to modify at the [max + 1] idx
+        void IndexCheck(size_t idx, bool hasRBoundary = false) const {
+            if (!hasRBoundary) {
+                if (idx >= size_) {
+                    throw LogErr(LogModule::Runtime, "array index out of bounds");
+                }
+            }
+            else {
+                if (idx >= size_ + 1) {
+                    throw LogErr(LogModule::Runtime, "array index out of bounds");
+                }
+            }
+        }
         void Expand(size_t size);
 
     public:
-        Array(size_t size = 1) {
-            data_ = new Obj*[size];
-            memset(data_, 0, sizeof(Obj*) * size);
-            capacity_ = size;
-        }
+        Array(size_t size = 1);
         Array(const Array& other);
         ~Array() {
             Clear();

@@ -8,6 +8,12 @@
 
 namespace rt {
 
+    Array::Array(size_t size) {
+        data_ = new Obj*[size];
+        memset(data_, 0, sizeof(Obj*) * size);
+        capacity_ = size;
+    }
+
     Array::Array(const Array& other) {
         data_ = new Obj*[other.capacity_];
         memset(data_, 0, sizeof(Obj*) * other.capacity_);
@@ -15,19 +21,6 @@ namespace rt {
 
         for (size_t i = 0; i < other.size_; i++) {
             Insert(i, new Obj(other.Get(i)->Clone()));
-        }
-    }
-
-    void Array::IndexCheck(size_t idx, bool isBoundaryEq) const {
-        if (!isBoundaryEq) {
-            if (idx >= size_) {
-                throw LogErr(LogModule::Runtime, "array index out of bounds");
-            }
-        }
-        else {
-            if (idx >= size_ + 1) {
-                throw LogErr(LogModule::Runtime, "array index out of bounds");
-            }
         }
     }
 

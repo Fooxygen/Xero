@@ -5,6 +5,7 @@
         { "include": "#comments" },
         { "include": "#numbers" },
         { "include": "#booleans" },
+        { "include": "#chars" },
         { "include": "#strings" },
         { "include": "#operators" },
         { "include": "#punctuation" },
@@ -35,6 +36,17 @@
         "booleans": {
             "name": "constant.language.boolean.xero",
             "match": "\\b(true|false)\\b"
+        },
+        "chars": {
+            "name": "string.quoted.single.xero",
+            "begin": "'",
+            "end": "'",
+            "patterns": [
+                {
+                    "name": "constant.character.escape.xero",
+                    "match": "\\\\."
+                }
+            ]
         },
         "strings": {
             "name": "string.quoted.double.xero",

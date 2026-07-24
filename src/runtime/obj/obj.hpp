@@ -35,7 +35,7 @@ namespace rt {
             int64_t     i64_;
             float       f32_;
             double      f64_;
-            char32_t    char_;
+            char        char_;
         } data_;
         const Type* type_;
 
@@ -140,7 +140,7 @@ namespace rt {
             o.data_.f64_ = x;
             return o;
         }
-        static Obj Make_char(char32_t c) {
+        static Obj Make_char(char c) {
             Obj o;
             o.type_ = TypeTable::Get("char");
             o.data_.char_ = c;
@@ -170,7 +170,7 @@ namespace rt {
         int64_t  Get_i64()          const { return data_.i64_;   }
         float    Get_f32()          const { return data_.f32_;   }
         double   Get_f64()          const { return data_.f64_;   }
-        char32_t Get_char()         const { return data_.char_;   }
+        char     Get_char()         const { return data_.char_;   }
         String&  Get_string_ref()   const {
             RefData* ref = (RefData*)(data_.ref_);
             String*  str = (String*)(ref->data);

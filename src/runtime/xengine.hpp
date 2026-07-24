@@ -63,7 +63,7 @@ namespace rt {
         Obj Exec(IdExpr& node);
         Obj Exec(OperExpr& node);
         Obj Exec(PickExpr& node);
-        std::tuple<const Type*, Token::Type, Obj, Obj, Obj>
+        std::tuple<const Type*, bool, Obj, Obj, Obj>
             Exec(RangeExpr& node);
         Obj Exec(NegExpr& node);
         Obj Exec(NotExpr& node);

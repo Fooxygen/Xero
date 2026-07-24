@@ -9,55 +9,39 @@
 #include <cstring>
 #include <string>
 
+#include "log.hpp"
+
 namespace rt {
-    
+    class Obj;
+
     class String {
     private:
         char*  data_     = nullptr;
         size_t length_   = 0;
         size_t capacity_ = 0;
 
-        void Clear() {
-            if (data_) delete[] data_;
-            data_ = nullptr;
-            length_ = 0;
-            capacity_ = 0;
-        }
+        void Clear();
         
-        void Expand(size_t len) {
-            if (len + 1 < capacity_) return;
-
-            size_t capa   = std::max((size_t)((len + 1) * 1.5f), (size_t)(capacity_ * 1.5f));
-            auto   expand = new char[capa];
-            memset(expand, 0, sizeof(char) * capa);
-            memcpy(expand, data_, sizeof(char) * capacity_);
-
-            Clear();
-            data_ = expand;
-            capacity_ = capa;
+        // isBoundaryEq: Allowed to modify at the [max + 1] idx
+        void IndexCheck(size_t idx, bool isBoundaryEq = false) const {
+            if (!isBoundaryEq) {
+                if (idx >= length_) {
+                    throw LogErr(LogModule::Runtime, "string index out of bounds");
+                }
+            }
+            else {
+                if (idx >= length_ + 1) {
+                    throw LogErr(LogModule::Runtime, "string index out of bounds");
+                }
+            }
         }
-        void Write(const std::string& s) {
-            auto len = s.length();
-            Expand(len);
-            length_ = len;
-            memcpy(data_, s.data(), sizeof(char) * (len + 1));
-        }
+        void Expand(size_t len);
+        void Write(const std::string& s);
 
     public:
-        String() {
-            data_ = new char[1];
-            data_[0] = '\0';
-            capacity_ = 1;
-        }
-        String(const std::string& s) : String() {
-            Write(s);
-        }
-        String(const String& other) {
-            data_ = new char[other.capacity_];
-            length_ = other.length_;
-            capacity_ = other.capacity_;
-            memcpy(data_, other.data_, length_ + 1);
-        }
+        String();
+        String(const std::string& s);
+        String(const String& other);
         ~String() {
             Clear();
         }
@@ -72,41 +56,12 @@ namespace rt {
         std::string ToCppString() const {
             return std::string(data_, length_);
         }
-        void Reverse() {
-            if (length_ <= 1) return;
-            for (size_t i = 0, j = length_ - 1; i < j; i++, j--) {
-                char t = data_[i];
-                data_[i] = data_[j];
-                data_[j] = t;
-            }
-        }
+        char Get(int32_t idx);
+        void Reverse();
+        void ReplaceChar(int32_t idx, char c);
         
-        String* operator + (const String& other) const {
-            auto str = new String();
-            str->Expand(length_ + other.length_);
-            memcpy(str->data_, data_, length_);
-            memcpy(str->data_ + length_, other.data_, other.length_);
-
-            str->length_ = length_ + other.length_;
-            str->data_[str->length_] = '\0';
-            return str;
-        }
-        String& operator = (const String& other) {
-            if (this == &other) return *this;
-
-            Clear();
-            data_ = new char[other.capacity_];
-            length_ = other.length_;
-            capacity_ = other.capacity_;
-            memcpy(data_, other.data_, length_ + 1);
-
-            return *this;
-        }
-        String& operator +=(const String& other) {
-            Expand(length_ + other.length_);
-            memcpy(data_ + length_, other.data_, sizeof(char) * other.length_);
-            length_ += other.length_;
-            return *this;
-        }
+        String* operator + (const String& other) const;
+        String& operator = (const String& other);
+        String& operator +=(const String& other);
     };
 }

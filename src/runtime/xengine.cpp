@@ -76,7 +76,7 @@ namespace rt {
                 ));
             }
 
-            auto [itertype, rangetype, l, r, s] = Exec((RangeExpr&)*node.pick_);
+            auto [itertype, hasRBoundary, l, r, s] = Exec((RangeExpr&)*node.pick_);
 
             if (itertype != TypeTable::Get("i32") &&
                 itertype != TypeTable::Get("i64"))
@@ -87,7 +87,7 @@ namespace rt {
             }
             
             return target.type()->slice_clone_(
-                target, itertype, rangetype == Token::Type::DotDotEq, l, r, s
+                target, itertype, hasRBoundary, l, r, s
             );
         }
         
@@ -113,7 +113,7 @@ namespace rt {
         }
     }
 
-    std::tuple<const Type*, Token::Type, Obj, Obj, Obj>
+    std::tuple<const Type*, bool, Obj, Obj, Obj>
         Xengine::Exec(RangeExpr& node)
     {
         
@@ -163,7 +163,7 @@ namespace rt {
 
         return std::make_tuple(
             itertype,
-            node.rangetype_,
+            node.rangetype_ == Token::Type::DotDotEq,
             TypeTable::Convert(lobj, itertype),
             TypeTable::Convert(robj, itertype),
             hasStep ? sobj : Obj::Make_i32(1)
@@ -356,12 +356,11 @@ namespace rt {
         // Range
         if (node.data_->type_ == AstType::RangeExpr) {
 
-            auto [itertype, rangetype, l, r, s] = Exec((RangeExpr&)*node.data_);
-            bool isEqRightBoundary = rangetype == Token::Type::DotDotEq;
+            auto [itertype, hasRBoundary, l, r, s] = Exec((RangeExpr&)*node.data_);
 
             // Execute
             for (Obj o = l; ; o = itertype->plus_(o, s)) {
-                if (!isEqRightBoundary) {
+                if (!hasRBoundary) {
                     if (itertype->ge_(o, r).Get_bool()) break;
                 }
                 else {
@@ -421,7 +420,7 @@ namespace rt {
         // Slice by range
         if (node.pick_->type_ == AstType::RangeExpr) {
 
-            auto [itertype, rangetype, l, r, s] = Exec((RangeExpr&)*node.pick_);
+            auto [itertype, hasRBoundary, l, r, s] = Exec((RangeExpr&)*node.pick_);
             if (itertype != TypeTable::Get("i32") &&
                 itertype != TypeTable::Get("i64"))
             {
@@ -436,7 +435,7 @@ namespace rt {
                 ));
             }
             return target->type()->slice_ref_(
-                *target, itertype, rangetype == Token::Type::DotDotEq, l, r, s
+                *target, itertype, hasRBoundary, l, r, s
             );
         }
         

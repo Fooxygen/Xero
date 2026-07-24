@@ -137,7 +137,7 @@ namespace rt {
             TypeTable::Set(Type{
                 .name       = "char", .size = 4,
                 .clone_     = [](const Obj& o) { return Obj::Make_char(o.Get_char()); },
-                .to_string_ = [](const Obj& o) { return std::string(1, (char)o.Get_char()); },
+                .to_string_ = [](const Obj& o) { return std::string(1, o.Get_char()); },
                 .assign_    = [](Obj* target, const Obj& value) {
                     *target = value;
                 },
@@ -174,6 +174,22 @@ namespace rt {
                 .neq_       = [](const Obj& a, const Obj& b) {
                     return Obj::Make_bool(a.Get_string_ref().ToCppString() != b.Get_string_ref().ToCppString());
                 },        
+                .at_clone_  = [](const Obj& target, const Obj& idx) {
+                    return Obj::Make_char(target.Get_string_ref().Get(idx.Get_i32()));
+                },
+                .slice_clone_ = [](
+                    const Obj& target, const Type* itertype, bool isRBoundary,
+                    const Obj& l, const Obj& r, const Obj& s)
+                {
+                    auto& str = target.Get_string_ref();
+                    std::string result;
+                    for (Obj o = l; ; o = itertype->plus_(o, s)) {
+                        if (!isRBoundary && itertype->ge_(o, r).Get_bool()) break;
+                        if ( isRBoundary && itertype->gt_(o, r).Get_bool()) break;
+                        result += str.Get(o.Get_i32());
+                    }
+                    return Obj::Make_string(new String(result));
+                },
             });
 
             // array
