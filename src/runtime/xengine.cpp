@@ -67,8 +67,30 @@ namespace rt {
 
     Obj Xengine::Exec(PickExpr& node) {
         auto target = Exec(*node.target_);
+        Obj  pick;
 
-        return Obj();
+        // Range
+        if (node.pick_->type_ == AstType::RangeExpr) {
+            pick = Exec((RangeExpr&)*node.pick_);
+        }
+        
+        // Index
+        // Special form of Range
+        else {
+            auto idx = Exec(*node.pick_);
+            auto one = TypeTable::Convert(Obj::Make_i32(1), idx.type());
+
+            pick = Obj::Make_range(new Range(
+                idx, idx, one, true, idx.type()
+            ));
+        }
+
+        if (!target.type()->pick_clone_)
+            throw LogErr(LogModule::Runtime, std::format(
+                "unsupported '[]' for '{}'", target.type()->name
+            ));
+
+        return target.type()->pick_clone_(target, pick);
     }
 
     Obj Xengine::Exec(RangeExpr& node) {
@@ -297,7 +319,12 @@ namespace rt {
             if (cond.type() == TypeTable::Get("bool")) {
                 isPass = cond.Get_bool();
             }
-            else throw LogErr(LogModule::Runtime, "condition must be bool");
+            else {
+                throw LogErr(LogModule::Runtime, std::format(
+                    "condition must be bool, not {}",
+                    cond.type()->name
+                ));
+            }
         }
 
         if (isPass && node.block_) Exec(*node.block_);
