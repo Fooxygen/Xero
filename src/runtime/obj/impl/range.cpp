@@ -15,15 +15,15 @@ namespace rt {
         l_ = nullptr;
         r_ = nullptr;
         s_ = nullptr;
-        hasRBoundary_ = false;
+        isClosed_ = false;
         itertype_ = nullptr;
     }
 
-    Range::Range(const Obj& l, const Obj& r, const Obj& s, bool hasRBoundary, const Type* itertype) {
+    Range::Range(const Obj& l, const Obj& r, const Obj& s, bool isClosed, const Type* itertype) {
         l_ = new Obj(l);
         r_ = new Obj(r);
         s_ = new Obj(s);
-        hasRBoundary_ = hasRBoundary;
+        isClosed_ = isClosed;
         itertype_ = itertype;
     }
 
@@ -31,15 +31,24 @@ namespace rt {
         l_ = new Obj(*other.l_);
         r_ = new Obj(*other.r_);
         s_ = new Obj(*other.s_);
-        hasRBoundary_ = other.hasRBoundary_;
+        isClosed_ = other.isClosed_;
         itertype_ = other.itertype_;
     }
 
     bool Range::isSingle() const {
         Obj next = itertype_->plus_(*l_, *s_);
 
-        if (hasRBoundary_)  return itertype_->gt_(next, *r_).Get_bool();
-        else                return itertype_->ge_(next, *r_).Get_bool();
+        if (isClosed_)  return itertype_->gt_(next, *r_).Get_bool();
+        else            return itertype_->ge_(next, *r_).Get_bool();
+    }
+
+    Range Range::ToClosed() {
+        if (isClosed_) return *this;
+
+        auto r = itertype_->minus_(*r_, Obj::Make_i32(1));
+        return Range(
+            *l_, r, *s_, true, itertype_
+        );
     }
 
     Range& Range::operator =(const Range& other) {
@@ -49,7 +58,7 @@ namespace rt {
         l_ = new Obj(*other.l_);
         r_ = new Obj(*other.r_);
         s_ = new Obj(*other.s_);
-        hasRBoundary_ = other.hasRBoundary_;
+        isClosed_ = other.isClosed_;
         itertype_ = other.itertype_;
 
         return *this;

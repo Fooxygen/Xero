@@ -1,11 +1,11 @@
 
-a: array  = [10, 20, 30, 40, 50];
 s: string = "Hello Xero";
+t: string = s;
 
-println(a.len());
-a = a + [30, 40];
-println(a.len());
+println(s);
+println(t);
 
-println(s.len());
-s = s + "Wow";
-println(s.len());
+s[1..=4][0..=2] = "ABCDEFG";
+s[12] = 'R';
+println(s);
+println(t);

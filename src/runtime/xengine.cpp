@@ -143,7 +143,7 @@ namespace rt {
             TypeTable::Convert(lobj, itertype),
             TypeTable::Convert(robj, itertype),
             hasStep ? sobj : Obj::Make_i32(1),
-            node.hasRBoundary_,
+            node.isClosed_,
             itertype
         ));
     }
@@ -299,7 +299,8 @@ namespace rt {
             ));
         }
 
-        env_.Declare(node.id_->value_, obj_convert);
+        // Assign Obj Clone
+        env_.Declare(node.id_->value_, obj_convert.Clone());
         return Obj();
     }
 
@@ -307,7 +308,7 @@ namespace rt {
         auto target = Origin(*node.target_);
         auto value  = Exec(*node.value_);
 
-        target->type()->assign_(target, value);
+        target->type()->assign_(target, value.Clone());
         return Obj();
     }
 
@@ -343,7 +344,7 @@ namespace rt {
 
             // Execute
             for (Obj o = *range.left(); ; o = range.itertype()->plus_(o, *range.step())) {
-                if (!range.hasRBoundary()) {
+                if (!range.isClosed()) {
                     if (range.itertype()->ge_(o, *range.right()).Get_bool()) break;
                 }
                 else {

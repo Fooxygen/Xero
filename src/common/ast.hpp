@@ -243,18 +243,18 @@ public:
     std::unique_ptr<Expr> lexpr_ = nullptr;
     std::unique_ptr<Expr> rexpr_ = nullptr;
     std::unique_ptr<Expr> step_  = nullptr;
-    bool hasRBoundary_           = false;
+    bool isClosed_ = false;
 
     RangeExpr(
         std::unique_ptr<Expr> lexpr,
         std::unique_ptr<Expr> rexpr,
         std::unique_ptr<Expr> step,
-        bool hasRBoundary
+        bool isClosed
     )
     :   lexpr_(std::move(lexpr)),  
         rexpr_(std::move(rexpr)),
         step_(std::move(step)),
-        hasRBoundary_(hasRBoundary)
+        isClosed_(isClosed)
     {
         type_ = AstType::RangeExpr;
     }
@@ -262,8 +262,8 @@ public:
     void PrintImpl(std::string prefix) override {
         PrintLabel("type", prefix);
         std::cout << COLOR_MAGENTA;
-        if (hasRBoundary_) Token::TypePrint(Token::Type::DotDotEq);
-        else               Token::TypePrint(Token::Type::DotDot);
+        if (isClosed_)  Token::TypePrint(Token::Type::DotDotEq);
+        else            Token::TypePrint(Token::Type::DotDot);
         std::cout << COLOR_DEFAULT << std::endl;
 
         lexpr_->Print(prefix, "lexpr");

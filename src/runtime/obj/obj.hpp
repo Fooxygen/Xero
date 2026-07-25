@@ -9,6 +9,7 @@
 
 #include "runtime/table/type.hpp"
 #include "runtime/obj/impl/string.hpp"
+#include "runtime/obj/impl/stringview.hpp"
 #include "runtime/obj/impl/array.hpp"
 #include "runtime/obj/impl/range.hpp"
 
@@ -97,6 +98,7 @@ namespace rt {
         const Type* type() const {
             return type_;
         }
+        
         bool isNone() const {
             return type_ == TypeTable::Get("none");
         }
@@ -153,6 +155,12 @@ namespace rt {
             o.data_.ref_ = new RefData(s);
             return o;
         }
+        static Obj Make_stringview(StringView* sv) {
+            Obj o;
+            o.type_ = TypeTable::Get("stringview");
+            o.data_.ref_ = new RefData(sv);
+            return o;
+        }
         static Obj Make_array(size_t size = 1) {
             Obj o;
             o.type_ = TypeTable::Get("array");
@@ -172,23 +180,28 @@ namespace rt {
             return o;
         }
 
-        bool     Get_bool()         const { return data_.bool_;  }
-        int32_t  Get_i32()          const { return data_.i32_;   }
-        int64_t  Get_i64()          const { return data_.i64_;   }
-        float    Get_f32()          const { return data_.f32_;   }
-        double   Get_f64()          const { return data_.f64_;   }
-        char     Get_char()         const { return data_.char_;   }
-        String&  Get_string_ref()   const {
+        bool        Get_bool()              const { return data_.bool_;  }
+        int32_t     Get_i32()               const { return data_.i32_;   }
+        int64_t     Get_i64()               const { return data_.i64_;   }
+        float       Get_f32()               const { return data_.f32_;   }
+        double      Get_f64()               const { return data_.f64_;   }
+        char        Get_char()              const { return data_.char_;   }
+        String&     Get_string_ref()        const {
             RefData* ref = (RefData*)(data_.ref_);
             String*  str = (String*)(ref->data);
             return *str;
         }
-        Array&   Get_array_ref( )   const {
+        StringView& Get_stringview_ref()    const {
+            RefData* ref = (RefData*)(data_.ref_);
+            StringView* sv = (StringView*)(ref->data);
+            return *sv;
+        }
+        Array&      Get_array_ref( )        const {
             RefData* ref = (RefData*)(data_.ref_);
             Array*   str = (Array*)(ref->data);
             return *str;
         }
-        Range&   Get_range_ref( )   const {
+        Range&      Get_range_ref( )        const {
             RefData* ref   = (RefData*)(data_.ref_);
             Range*   range = (Range*)(ref->data);
             return *range;

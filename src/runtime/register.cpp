@@ -7,6 +7,7 @@
 #include "table/fn.hpp"
 #include "table/method.hpp"
 #include "obj/impl/string.hpp"
+#include "obj/impl/stringview.hpp"
 #include "obj/impl/array.hpp"
 
 namespace rt {
@@ -158,19 +159,7 @@ namespace rt {
                 .destroy_       = [](void* data) { delete (String*)data; },
                 .to_string_     = [](const Obj& o) { return o.Get_string_ref().ToCppString(); },
                 .assign_        = [](Obj* target, const Obj& value) {
-                    auto& src = value.Get_string_ref();
-                    auto& dst = target->Get_string_ref();
-
-                    if (src.size() != dst.size()) {
-                        throw LogErr(LogModule::Runtime, std::format(
-                            "assignment count mismatch for {} to 'slice of string'",
-                            value.type()->name
-                        ));
-                    }
-
-                    for (size_t i = 0; i < dst.size(); i++) {
-                        *dst.Get(i) = *src.Get(i);
-                    }
+                    *target = value;
                 },
                 .plus_          = [](const Obj& a, const Obj& b) {
                     return Obj::Make_string(a.Get_string_ref() + b.Get_string_ref());
@@ -212,10 +201,10 @@ namespace rt {
                     else {
                         std::string result = "";
                         for (Obj o = *range.left(); ; o = range.itertype()->plus_(o, *range.step())) {
-                            if (!range.hasRBoundary() &&
-                                range.itertype()->ge_(o, *range.right()).Get_bool()) break;
-                            if ( range.hasRBoundary() &&
-                                range.itertype()->gt_(o, *range.right()).Get_bool()) break;
+                            if (!range.isClosed() &&
+                                 range.itertype()->ge_(o, *range.right()).Get_bool()) break;
+                            if ( range.isClosed() &&
+                                 range.itertype()->gt_(o, *range.right()).Get_bool()) break;
                             result += src.Get(o.Get_i32())->Get_char();
                         }
 
@@ -230,7 +219,7 @@ namespace rt {
                         ));
                     }
         
-                    auto& src   = target.Get_array_ref();
+                    auto& src   = target.Get_string_ref();
                     auto& range = pick.Get_range_ref();
 
                     if (range.itertype() != TypeTable::Get("i32") &&
@@ -242,23 +231,120 @@ namespace rt {
                         ));
                     }
 
-                    if (range.isSingle()) {
-                        return src.Get(range.left()->Get_i32());
+                    if (range.step()->Get_i32() != 1) {
+                        throw LogErr(LogModule::Runtime, "assignment with step in '[]' not allowed");
                     }
+
+                    auto* sv = new StringView(
+                        &const_cast<Obj&>(target).Get_string_ref(), new Range(range)
+                    );
+                    return new Obj(Obj::Make_stringview(sv));
+                }
+            });
+
+            // stringview
+            TypeTable::Set(Type{
+                .name       = "stringview", .size = 0, .isRef = true,
+                .destroy_   = [](void* data) { delete (StringView*)data; },
+                .assign_    = [](Obj* target, const Obj& value) {
+                    auto& sv    = target->Get_stringview_ref();
+                    auto& dst   = *sv.str();
+                    auto& range = *sv.range();
+
+                    // Index
+                    if (range.isSingle()) {
+                        *dst.Get(range.left()->Get_i32()) = Obj::Make_char(value.Get_char());
+                        
+                        return;
+                    }
+
+                    // Range
                     else {
-                        auto  str = new String();
-                        auto* dst = new Obj(Obj::Make_string(str));
+                        auto& src = value.Get_string_ref();
+
+                        std::vector<int32_t> indices = {};
                         for (Obj o = *range.left(); ; o = range.itertype()->plus_(o, *range.step())) {
-                            if (!range.hasRBoundary() &&
-                                range.itertype()->ge_(o, *range.right()).Get_bool()) break;
-                            if ( range.hasRBoundary() &&
-                                range.itertype()->gt_(o, *range.right()).Get_bool()) break;
-                            str->Insert(str->size(), src.Get(o.Get_i32()));
+                            if (!range.isClosed() &&
+                                 range.itertype()->ge_(o, *range.right()).Get_bool()) break;
+                            if ( range.isClosed() &&
+                                 range.itertype()->gt_(o, *range.right()).Get_bool()) break;
+                            indices.emplace_back(o.Get_i32());
                         }
 
-                        return dst;
+                        size_t size_range  = indices.size();
+                        size_t size_value  = src.size();
+                        size_t size_common = std::min(size_range, size_value);
+
+                        // Replace Common
+                        for (size_t i = 0; i < size_common; i++) {
+                            *dst.Get(indices[i]) = *src.Get(i);
+                        }
+
+                        // Remove redundant chars
+                        for (size_t i = size_range - 1; i >= size_value; i--) {
+                            dst.Remove(indices[i]);
+                        }
+
+                        // Add missing chars
+                        for (size_t i = size_range; i < size_value; i++) {
+                            dst.Insert(indices.back() + 1 + (i - size_range), new Obj(*src.Get(i)));
+                        }
                     }
-                }
+                },
+                .pick_ref_  = [](const Obj& target, const Obj& pick) -> Obj* {
+                    if (pick.type() != TypeTable::Get("range")) {
+                        throw LogErr(LogModule::Runtime, std::format(
+                            "pick must be range, not {}",
+                            pick.type()->name
+                        ));
+                    }
+
+                    auto& sv = target.Get_stringview_ref();
+                    auto& range_org = *sv.range();
+                    auto& range_nes = pick.Get_range_ref();
+
+                    if (range_nes.itertype() != TypeTable::Get("i32") &&
+                        range_nes.itertype() != TypeTable::Get("i64"))
+                    {
+                        throw LogErr(LogModule::Runtime, std::format(
+                            "iterator type of range must be i32 or i64, not {}",
+                            range_nes.itertype()->name
+                        ));
+                    }
+
+                    if (range_nes.step()->Get_i32() != 1) {
+                        throw LogErr(LogModule::Runtime, "assignment with step in '[]' not allowed");
+                    }
+
+                    // Range Update
+
+                    auto org_closed = range_org.ToClosed();
+                    auto nes_closed = range_nes.ToClosed();
+                    
+                    auto lorg = *org_closed.left();
+                    auto rorg = *org_closed.right();
+                    auto lnes = TypeTable::Convert(*nes_closed.left(), nes_closed.itertype());
+                    auto rnes = TypeTable::Convert(*nes_closed.right(), nes_closed.itertype());
+
+                    auto lmeg = nes_closed.itertype()->plus_(
+                        lorg, lnes
+                    );
+                    auto len  = nes_closed.itertype()->minus_(
+                        rnes, lnes
+                    );
+                    auto rmeg = nes_closed.itertype()->plus_(
+                        lmeg, len
+                    );
+                    rmeg =  nes_closed.itertype()->le_(rmeg, rorg).Get_bool()
+                            ? rmeg : rorg;
+
+                    auto range_merge = new Range(
+                        lmeg, rmeg, Obj::Make_i32(1), true, nes_closed.itertype()
+                    );
+
+                    auto* sv_new = new StringView(sv.str(), range_merge);
+                    return new Obj(Obj::Make_stringview(sv_new));
+                },
             });
 
             // array
@@ -329,9 +415,9 @@ namespace rt {
                     else {
                         auto* dst  = new Array();
                         for (Obj o = *range.left(); ; o = range.itertype()->plus_(o, *range.step())) {
-                            if (!range.hasRBoundary() &&
+                            if (!range.isClosed() &&
                                 range.itertype()->ge_(o, *range.right()).Get_bool()) break;
-                            if ( range.hasRBoundary() &&
+                            if ( range.isClosed() &&
                                 range.itertype()->gt_(o, *range.right()).Get_bool()) break;
                             dst->Insert(dst->size(), new Obj(*src.Get(o.Get_i32())));
                         }
@@ -366,9 +452,9 @@ namespace rt {
                         auto  arr = new Array();
                         auto* dst = new Obj(Obj::Make_array(arr));
                         for (Obj o = *range.left(); ; o = range.itertype()->plus_(o, *range.step())) {
-                            if (!range.hasRBoundary() &&
+                            if (!range.isClosed() &&
                                 range.itertype()->ge_(o, *range.right()).Get_bool()) break;
-                            if ( range.hasRBoundary() &&
+                            if ( range.isClosed() &&
                                 range.itertype()->gt_(o, *range.right()).Get_bool()) break;
                             arr->Insert(arr->size(), src.Get(o.Get_i32()));
                         }
@@ -387,7 +473,7 @@ namespace rt {
                 .destroy_   = [](void* data) { delete (Range*)data; },
                 .to_string_ = [](const Obj& o) {
                     auto& range = o.Get_range_ref();
-                    char  boundary = range.hasRBoundary() ? ']' : ')';
+                    char  boundary = range.isClosed() ? ']' : ')';
 
                     if (range.step()) {
                         return std::format(
