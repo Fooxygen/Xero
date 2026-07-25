@@ -151,13 +151,13 @@ namespace rt {
 
             // string
             TypeTable::Set(Type{
-                .name       = "string", .size = 0, .isRef = true,
-                .clone_     = [](const Obj& o) {
+                .name           = "string", .size = 0, .isRef = true,
+                .clone_         = [](const Obj& o) {
                     return Obj::Make_string(new String(o.Get_string_ref()));
                 },
-                .destroy_   = [](void* data) { delete (String*)data; },
-                .to_string_ = [](const Obj& o) { return o.Get_string_ref().ToCppString(); },
-                .assign_    = [](Obj* target, const Obj& value) {
+                .destroy_       = [](void* data) { delete (String*)data; },
+                .to_string_     = [](const Obj& o) { return o.Get_string_ref().ToCppString(); },
+                .assign_        = [](Obj* target, const Obj& value) {
                     auto& src = value.Get_string_ref();
                     auto& dst = target->Get_string_ref();
 
@@ -172,21 +172,21 @@ namespace rt {
                         *dst.Get(i) = *src.Get(i);
                     }
                 },
-                .plus_      = [](const Obj& a, const Obj& b) {
+                .plus_          = [](const Obj& a, const Obj& b) {
                     return Obj::Make_string(a.Get_string_ref() + b.Get_string_ref());
                 },
-                .neg_       = [](const Obj& o) {
+                .neg_           = [](const Obj& o) {
                     auto oc = o.Clone();
                     oc.Get_string_ref().Reverse();
                     return oc;
                 },
-                .eq_        = [](const Obj& a, const Obj& b) {
+                .eq_            = [](const Obj& a, const Obj& b) {
                     return Obj::Make_bool(a.Get_string_ref().ToCppString() == b.Get_string_ref().ToCppString());
                 },
-                .neq_       = [](const Obj& a, const Obj& b) {
+                .neq_           = [](const Obj& a, const Obj& b) {
                     return Obj::Make_bool(a.Get_string_ref().ToCppString() != b.Get_string_ref().ToCppString());
                 },        
-                .pick_clone_ = [](const Obj& target, const Obj& pick) {
+                .pick_clone_    = [](const Obj& target, const Obj& pick) {
                     if (pick.type() != TypeTable::Get("range")) {
                         throw LogErr(LogModule::Runtime, std::format(
                             "pick must be range, not {}",
@@ -294,6 +294,9 @@ namespace rt {
                             *dst.Get(i) = value;
                         }
                     }
+                },
+                .plus_          = [](const Obj& a, const Obj& b) {
+                    return Obj::Make_array(a.Get_array_ref() + b.Get_array_ref());
                 },
                 .neg_           = [](const Obj& o) {
                     auto oc = o.Clone();
@@ -473,12 +476,25 @@ namespace rt {
             MethodTable::Set(type, "len", [](ARGS args) {
                 return Obj::Make_i32(args[0].Get_string_ref().size());
             });
+
+            MethodTable::Set(type, "clear", [](ARGS args) {
+                args[0].Get_string_ref().Clear();
+                return Obj();
+            });
         }
 
         // array
         {
             auto type = TypeTable::Get("array");
 
+            MethodTable::Set(type, "len", [](ARGS args) {
+                return Obj::Make_i32(args[0].Get_array_ref().size());
+            });
+
+            MethodTable::Set(type, "clear", [](ARGS args) {
+                args[0].Get_array_ref().Clear();
+                return Obj();
+            });
             MethodTable::Set(type, "insert", [](ARGS args) {
                 auto& array = args[0].Get_array_ref();
                 array.Insert(args[1].Get_i32(), new Obj(args[2]));

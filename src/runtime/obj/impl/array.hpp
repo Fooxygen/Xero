@@ -20,8 +20,6 @@ namespace rt {
         size_t size_     = 0;
         size_t capacity_ = 0;
 
-        void Clear();
-
         // hasRBoundary: Allowed to modify at the [max + 1] idx
         void IndexCheck(size_t idx, bool hasRBoundary = false) const {
             if (!hasRBoundary) {
@@ -51,6 +49,7 @@ namespace rt {
             return capacity_;
         }
         
+        void Clear();
         Obj* Get(size_t idx) const;
         void Reverse();
         void Insert(size_t idx, Obj* obj);

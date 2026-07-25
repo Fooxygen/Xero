@@ -24,17 +24,6 @@ namespace rt {
         }
     }
 
-    void Array::Clear() {
-        for (size_t i = 0; i < size_; i++) {
-            if (data_[i]) delete data_[i];
-        }
-        if (data_) delete[] data_;
-
-        data_ = nullptr;
-        size_ = 0;
-        capacity_ = 0;
-    }
-
     void Array::Expand(size_t size) {
         if (size + 1 < capacity_) return;
 
@@ -46,6 +35,18 @@ namespace rt {
         delete[] data_;
         data_ = expand;
         capacity_ = capa;
+    }
+
+    void Array::Clear() {
+        for (size_t i = 0; i < size_; i++) {
+            if (data_[i]) delete data_[i];
+        }
+        if (data_) delete[] data_;
+
+        data_ = new Obj*[1];
+        data_[0] = nullptr;
+        size_ = 0;
+        capacity_ = 1;
     }
 
     void Array::Reverse() {

@@ -2,6 +2,10 @@
 a: array  = [10, 20, 30, 40, 50];
 s: string = "Hello Xero";
 
-s[6..10] = "Word";
+println(a.len());
+a = a + [30, 40];
+println(a.len());
 
-println(s);
+println(s.len());
+s = s + "Wow";
+println(s.len());
