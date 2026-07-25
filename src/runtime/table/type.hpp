@@ -61,6 +61,7 @@ namespace rt {
         // Container Oper
 
         Obj (*pick_clone_)(const Obj&, const Obj&) = nullptr;   // []
+        Obj*(*pick_ref_)  (const Obj&, const Obj&) = nullptr;   // []
     };
 
     class TypeTable {

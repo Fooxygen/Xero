@@ -36,6 +36,8 @@ namespace rt {
         bool  hasRBoundary()   const { return hasRBoundary_; }
         const Type* itertype() const { return itertype_; }
 
+        bool isSingle() const;
+
         Range& operator =(const Range& other);
     };
 }

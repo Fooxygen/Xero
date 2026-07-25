@@ -89,12 +89,14 @@ namespace rt {
         Obj* Origin(AstNode& node) {
             switch (node.type_) {
                 case AstType::IdExpr:   return Origin((IdExpr&)node);
+                case AstType::PickExpr: return Origin((PickExpr&)node);
 
                 default: return {};
             }
         }
 
         Obj* Origin(IdExpr& node);
+        Obj* Origin(PickExpr& node);
 
     public:
         // Call Wrapper

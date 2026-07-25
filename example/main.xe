@@ -2,7 +2,14 @@
 a: array  = [10, 20, 30, 40, 50];
 s: string = "Hello Xero";
 
-for (x in a[1..2..=4]) {
-    println(x);
-}
-println(s[1..2..=9]);
+a[0] = 60;
+a[1..=3] = [-20, -30, -40];
+
+s[5] = 'N';
+s[6..10] = "World";
+
+println(a[0]);
+println(a[1]);
+println(a[2]);
+println(a[3]);
+println(s);

@@ -182,7 +182,7 @@ namespace rt {
                         ));
                     }
                     
-                    auto& str   = target.Get_string_ref();
+                    auto& src   = target.Get_string_ref();
                     auto& range = pick.Get_range_ref();
 
                     if (range.itertype() != TypeTable::Get("i32") &&
@@ -194,17 +194,59 @@ namespace rt {
                         ));
                     }
 
-                    std::string result = "";
-                    for (Obj o = *range.left(); ; o = range.itertype()->plus_(o, *range.step())) {
-                        if (!range.hasRBoundary() &&
-                             range.itertype()->ge_(o, *range.right()).Get_bool()) break;
-                        if ( range.hasRBoundary() &&
-                             range.itertype()->gt_(o, *range.right()).Get_bool()) break;
-                        result += str.Get(o.Get_i32());
+                    if (range.isSingle()) {
+                        return *src.Get(range.left()->Get_i32());
+                    }
+                    else {
+                        std::string result = "";
+                        for (Obj o = *range.left(); ; o = range.itertype()->plus_(o, *range.step())) {
+                            if (!range.hasRBoundary() &&
+                                range.itertype()->ge_(o, *range.right()).Get_bool()) break;
+                            if ( range.hasRBoundary() &&
+                                range.itertype()->gt_(o, *range.right()).Get_bool()) break;
+                            result += src.Get(o.Get_i32())->Get_char();
+                        }
+
+                        return Obj::Make_string(new String(result));
+                    }
+                },
+                .pick_ref_      = [](const Obj& target, const Obj& pick) {
+                    if (pick.type() != TypeTable::Get("range")) {
+                        throw LogErr(LogModule::Runtime, std::format(
+                            "pick must be range, not {}",
+                            pick.type()->name
+                        ));
+                    }
+        
+                    auto& src   = target.Get_array_ref();
+                    auto& range = pick.Get_range_ref();
+
+                    if (range.itertype() != TypeTable::Get("i32") &&
+                        range.itertype() != TypeTable::Get("i64"))
+                    {
+                        throw LogErr(LogModule::Runtime, std::format(
+                            "iterator type of range must be i32 or i64, not {}",
+                            range.itertype()->name
+                        ));
                     }
 
-                    return Obj::Make_string(new String(result));
-                },
+                    if (range.isSingle()) {
+                        return src.Get(range.left()->Get_i32());
+                    }
+                    else {
+                        auto  str = new String();
+                        auto* dst = new Obj(Obj::Make_string(str));
+                        for (Obj o = *range.left(); ; o = range.itertype()->plus_(o, *range.step())) {
+                            if (!range.hasRBoundary() &&
+                                range.itertype()->ge_(o, *range.right()).Get_bool()) break;
+                            if ( range.hasRBoundary() &&
+                                range.itertype()->gt_(o, *range.right()).Get_bool()) break;
+                            str->Insert(str->size(), src.Get(o.Get_i32()));
+                        }
+
+                        return dst;
+                    }
+                }
             });
 
             // array
@@ -266,17 +308,59 @@ namespace rt {
                         ));
                     }
 
-                    auto* dst   = new Array();
-                    for (Obj o = *range.left(); ; o = range.itertype()->plus_(o, *range.step())) {
-                        if (!range.hasRBoundary() &&
-                             range.itertype()->ge_(o, *range.right()).Get_bool()) break;
-                        if ( range.hasRBoundary() &&
-                             range.itertype()->gt_(o, *range.right()).Get_bool()) break;
-                        dst->Insert(dst->size(), new Obj(*src.Get(o.Get_i32())));
+                    if (range.isSingle()) {
+                        return *src.Get(range.left()->Get_i32());
+                    }
+                    else {
+                        auto* dst  = new Array();
+                        for (Obj o = *range.left(); ; o = range.itertype()->plus_(o, *range.step())) {
+                            if (!range.hasRBoundary() &&
+                                range.itertype()->ge_(o, *range.right()).Get_bool()) break;
+                            if ( range.hasRBoundary() &&
+                                range.itertype()->gt_(o, *range.right()).Get_bool()) break;
+                            dst->Insert(dst->size(), new Obj(*src.Get(o.Get_i32())));
+                        }
+
+                        return Obj::Make_array(dst);
+                    }
+                },
+                .pick_ref_      = [](const Obj& target, const Obj& pick) {
+                    if (pick.type() != TypeTable::Get("range")) {
+                        throw LogErr(LogModule::Runtime, std::format(
+                            "pick must be range, not {}",
+                            pick.type()->name
+                        ));
+                    }
+        
+                    auto& src   = target.Get_array_ref();
+                    auto& range = pick.Get_range_ref();
+
+                    if (range.itertype() != TypeTable::Get("i32") &&
+                        range.itertype() != TypeTable::Get("i64"))
+                    {
+                        throw LogErr(LogModule::Runtime, std::format(
+                            "iterator type of range must be i32 or i64, not {}",
+                            range.itertype()->name
+                        ));
                     }
 
-                    return Obj::Make_array(dst);
-                },
+                    if (range.isSingle()) {
+                        return src.Get(range.left()->Get_i32());
+                    }
+                    else {
+                        auto  arr = new Array();
+                        auto* dst = new Obj(Obj::Make_array(arr));
+                        for (Obj o = *range.left(); ; o = range.itertype()->plus_(o, *range.step())) {
+                            if (!range.hasRBoundary() &&
+                                range.itertype()->ge_(o, *range.right()).Get_bool()) break;
+                            if ( range.hasRBoundary() &&
+                                range.itertype()->gt_(o, *range.right()).Get_bool()) break;
+                            arr->Insert(arr->size(), src.Get(o.Get_i32()));
+                        }
+
+                        return dst;
+                    }
+                }
             });
 
              // range
@@ -375,7 +459,7 @@ namespace rt {
             auto type = TypeTable::Get("string");
 
             MethodTable::Set(type, "len", [](ARGS args) {
-                return Obj::Make_i32(args[0].Get_string_ref().length());
+                return Obj::Make_i32(args[0].Get_string_ref().size());
             });
         }
 

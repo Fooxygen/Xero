@@ -396,4 +396,22 @@ namespace rt {
     Obj* Xengine::Origin(IdExpr& node) {
         return env_.Get(node.value_);
     }
+
+    Obj* Xengine::Origin(PickExpr& node) {
+        auto target = Origin(*node.target_);
+        Obj pick;
+
+        // Range
+        if (node.pick_->type_ == AstType::RangeExpr)
+            pick = Exec((RangeExpr&)*node.pick_);
+
+        // Index
+        else {
+            auto idx = Exec(*node.pick_);
+            auto one = TypeTable::Convert(Obj::Make_i32(1), idx.type());
+            pick = Obj::Make_range(new Range(idx, idx, one, true, idx.type()));
+        }
+
+        return target->type()->pick_ref_(*target, pick);
+    }
 }

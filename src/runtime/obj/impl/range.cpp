@@ -35,6 +35,13 @@ namespace rt {
         itertype_ = other.itertype_;
     }
 
+    bool Range::isSingle() const {
+        Obj next = itertype_->plus_(*l_, *s_);
+
+        if (hasRBoundary_)  return itertype_->gt_(next, *r_).Get_bool();
+        else                return itertype_->ge_(next, *r_).Get_bool();
+    }
+
     Range& Range::operator =(const Range& other) {
         if (this == &other) return *this;
 
