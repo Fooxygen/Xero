@@ -95,43 +95,10 @@ class AstNode {
 public:
     AstType type_ = AstType::Undefined;
 
-    const std::string TypeName() const {
-        using enum AstType;
-        switch (type_) {
-            case Program:          return "Program";
-
-            case Exprs:            return "Exprs";
-
-            case Const:            return "Const";
-            case NumConst:         return "NumConst";
-            case BoolConst:        return "BoolConst";
-            case CharConst:        return "CharConst";
-            case StringConst:      return "StringConst";
-
-            case Expr:             return "Expr";
-            case IdExpr:           return "IdExpr";
-            case OperExpr:         return "OperExpr";
-            case PickExpr:         return "PickExpr";
-            case RangeExpr:        return "RangeExpr";
-            case NegExpr:          return "NegExpr";
-            case NotExpr:          return "NotExpr";
-            case FnCallExpr:       return "FnCallExpr";
-            case MethodCallExpr:   return "MethodCallExpr";
-            case ArrayExpr:        return "ArrayExpr";
-
-            case Stmt:             return "Stmt";
-            case BlockStmt:        return "BlockStmt";
-            case DeclStmt:         return "DeclStmt";
-            case AssignStmt:       return "AssignStmt";
-            case CondStmt:         return "CondStmt";
-            case ForStmt:          return "ForStmt";
-
-            default: 
-                LogWarn(LogModule::Parser, "undefined print name for AstNode");
-                return "Undefined";
-        }
+    virtual const std::string TypeName() const {
+        return "Undefined";
     }
-    const void        TypePrint() const {
+    const void TypePrint() const {
         std::cout << TypeName();
     }
 
@@ -171,6 +138,10 @@ public:
         type_ = AstType::Exprs;
     }
 
+    const std::string TypeName() const {
+        return "Exprs";
+    }
+
     void PrintImpl(std::string prefix) override {
         for (auto& e : exprs_) e->Print(prefix);
     }
@@ -183,6 +154,10 @@ public:
 
     IdExpr(const std::string& value) : value_(value) {
         type_ = AstType::IdExpr;
+    }
+
+    const std::string TypeName() const {
+        return "IdExpr";
     }
 
     void PrintImpl(std::string prefix) override {
@@ -208,6 +183,10 @@ public:
         type_ = AstType::OperExpr;
     }
 
+    const std::string TypeName() const {
+        return "OperExpr";
+    }
+    
     void PrintImpl(std::string prefix) override {
         PrintLabel("type", prefix);
         std::cout << COLOR_MAGENTA;
@@ -231,6 +210,10 @@ public:
         pick_(std::move(pick))
     {
         type_ = AstType::PickExpr;
+    }
+
+    const std::string TypeName() const {
+        return "PickExpr";
     }
 
     void PrintImpl(std::string prefix) override {
@@ -259,6 +242,10 @@ public:
         type_ = AstType::RangeExpr;
     }
 
+    const std::string TypeName() const {
+        return "RangeExpr";
+    }
+
     void PrintImpl(std::string prefix) override {
         PrintLabel("type", prefix);
         std::cout << COLOR_MAGENTA;
@@ -281,6 +268,10 @@ public:
         type_ = AstType::ArrayExpr;
     }
 
+    const std::string TypeName() const {
+        return "ArrayExpr";
+    }
+
     void PrintImpl(std::string prefix) override {
         elements_->Print(prefix, "elements");
     }
@@ -295,6 +286,10 @@ public:
         type_ = AstType::NegExpr;
     }
 
+    const std::string TypeName() const {
+        return "NegExpr";
+    }
+
     void PrintImpl(std::string prefix) override {
         expr_->Print(prefix, "expr");
     }
@@ -307,6 +302,10 @@ public:
     :   expr_(std::move(expr))
     {
         type_ = AstType::NotExpr;
+    }
+
+    const std::string TypeName() const {
+        return "NotExpr";
     }
 
     void PrintImpl(std::string prefix) override {
@@ -326,6 +325,10 @@ public:
         args_(std::move(args))
     {
         type_ = AstType::FnCallExpr;
+    }
+
+    const std::string TypeName() const {
+        return "FnCallExpr";
     }
 
     void PrintImpl(std::string prefix) override {
@@ -351,6 +354,10 @@ public:
         type_ = AstType::MethodCallExpr;
     }
 
+    const std::string TypeName() const {
+        return "MethodCallExpr";
+    }
+
     void PrintImpl(std::string prefix) override {
         target_->Print(prefix, "target");
         callee_->Print(prefix, "callee");
@@ -369,6 +376,10 @@ public:
         type_ = AstType::NumConst;
     }
 
+    const std::string TypeName() const {
+        return "NumConst";
+    }
+
     void PrintImpl(std::string prefix) override {
         PrintLabel("value", prefix);
         std::cout << COLOR_ORANGE << value_ << COLOR_DEFAULT << std::endl;
@@ -384,6 +395,10 @@ public:
         type_ = AstType::BoolConst;
     }
     
+    const std::string TypeName() const {
+        return "BoolConst";
+    }
+
     void PrintImpl(std::string prefix) override {
         PrintLabel("value", prefix);
         if (value_)
@@ -402,6 +417,10 @@ public:
         type_ = AstType::CharConst;
     }
 
+    const std::string TypeName() const {
+        return "CharConst";
+    }
+
     void PrintImpl(std::string prefix) override {
         PrintLabel("value", prefix);
         std::cout << COLOR_GREEN << "'" << value_ << "'" << COLOR_DEFAULT << std::endl;
@@ -415,6 +434,10 @@ public:
     :   value_(value)
     {
         type_ = AstType::StringConst;
+    }
+
+    const std::string TypeName() const {
+        return "StringConst";
     }
 
     void PrintImpl(std::string prefix) override {
@@ -432,6 +455,10 @@ public:
     :   children_(std::move(children))
     {
         type_ = AstType::BlockStmt;
+    }
+
+    const std::string TypeName() const {
+        return "BlockStmt";
     }
 
     void PrintImpl(std::string prefix) override {
@@ -458,6 +485,10 @@ public:
         type_ = AstType::DeclStmt;
     }
 
+    const std::string TypeName() const {
+        return "DeclStmt";
+    }
+
     void PrintImpl(std::string prefix) override {
         id_->Print(prefix, "id");
         value_->Print(prefix, "value");
@@ -477,6 +508,10 @@ public:
         value_(std::move(value))
     {
         type_ = AstType::AssignStmt;
+    }
+
+    const std::string TypeName() const {
+        return "AssignStmt";
     }
 
     void PrintImpl(std::string prefix) override {
@@ -500,6 +535,10 @@ public:
         sub_(std::move(sub))
     {
         type_ = AstType::CondStmt;
+    }
+
+    const std::string TypeName() const {
+        return "CondStmt";
     }
 
     void PrintImpl(std::string prefix) override {
@@ -526,6 +565,10 @@ public:
         type_ = AstType::ForStmt;
     }
 
+    const std::string TypeName() const {
+        return "ForStmt";
+    }
+
     void PrintImpl(std::string prefix) override {
         iter_->Print(prefix, "iter");
         data_->Print(prefix, "data");
@@ -540,5 +583,9 @@ public:
     :   BlockStmt(children)
     {
         type_ = AstType::Program;
+    }
+
+    const std::string TypeName() const {
+        return "Program";
     }
 };
