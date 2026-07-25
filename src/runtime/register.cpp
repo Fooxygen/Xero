@@ -158,7 +158,19 @@ namespace rt {
                 .destroy_   = [](void* data) { delete (String*)data; },
                 .to_string_ = [](const Obj& o) { return o.Get_string_ref().ToCppString(); },
                 .assign_    = [](Obj* target, const Obj& value) {
-                    *target = value.Clone();
+                    auto& src = value.Get_string_ref();
+                    auto& dst = target->Get_string_ref();
+
+                    if (src.size() != dst.size()) {
+                        throw LogErr(LogModule::Runtime, std::format(
+                            "assignment count mismatch for {} to 'slice of string'",
+                            value.type()->name
+                        ));
+                    }
+
+                    for (size_t i = 0; i < dst.size(); i++) {
+                        *dst.Get(i) = *src.Get(i);
+                    }
                 },
                 .plus_      = [](const Obj& a, const Obj& b) {
                     return Obj::Make_string(a.Get_string_ref() + b.Get_string_ref());
