@@ -1,11 +1,10 @@
 
+for (x in 1..=10) {
+    println(x);
+}
+
 s: string = "Hello Xero";
-t: string = s;
+t: string = s[1..=4];
 
-println(s);
-println(t);
-
-s[1..=4][0..=2] = "ABCDEFG";
-s[12] = 'R';
 println(s);
 println(t);

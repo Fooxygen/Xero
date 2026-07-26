@@ -12,9 +12,7 @@
 
 namespace rt {
     
-    // Exec
-
-    // └─ Expr
+    // Expr
 
     Obj Xengine::Exec(IdExpr& node) {
         return *env_.Get(node.value_);
@@ -67,30 +65,20 @@ namespace rt {
 
     Obj Xengine::Exec(PickExpr& node) {
         auto target = Exec(*node.target_);
-        Obj  pick;
+        Obj pick;
 
         // Range
-        if (node.pick_->type_ == AstType::RangeExpr) {
+        if (node.pick_->type_ == AstType::RangeExpr)
             pick = Exec((RangeExpr&)*node.pick_);
-        }
-        
+
         // Index
-        // Special form of Range
         else {
             auto idx = Exec(*node.pick_);
             auto one = TypeTable::Convert(Obj::Make_i32(1), idx.type());
-
-            pick = Obj::Make_range(new Range(
-                idx, idx, one, true, idx.type()
-            ));
+            pick = Obj::Make_range(new Range(idx, idx, one, true, idx.type()));
         }
 
-        if (!target.type()->pick_clone_)
-            throw LogErr(LogModule::Runtime, std::format(
-                "unsupported '[]' for '{}'", target.type()->name
-            ));
-
-        return target.type()->pick_clone_(target, pick);
+        return target.type()->pick_(target, pick);
     }
 
     Obj Xengine::Exec(RangeExpr& node) {
@@ -214,7 +202,7 @@ namespace rt {
         return obj;
     }
 
-    // └─ Const
+    // Const
 
     Obj Xengine::Exec(NumConst& node) {
         const auto& numstr = node.value_;
@@ -274,7 +262,7 @@ namespace rt {
         return Obj::Make_string(new String(node.value_));
     }
 
-    // └─ Stmt
+    // Stmt
 
     Obj Xengine::Exec(BlockStmt& node, std::function<void()> OnScopeReady) {
         env_.ScopePush();
@@ -287,29 +275,53 @@ namespace rt {
     }
 
     Obj Xengine::Exec(DeclStmt& node) {
-        auto obj  = Exec(*node.value_);
-        auto type = TypeTable::Get(node.value_type_->value_);
+        auto value = Exec(*node.value_);
+        auto type  = TypeTable::Get(node.value_type_->value_);
 
         // Try Convert Type
-        auto obj_convert = TypeTable::Convert(obj, type);
-        if (obj_convert.isNone()) {
+        auto value_convert = TypeTable::Convert(value, type);
+        if (value_convert.isNone()) {
             throw LogErr(LogModule::Runtime, std::format(
                 "cannot assign type '{}' to type '{}'",
-                obj.type()->name, type->name
+                value.type()->name, type->name
             ));
         }
 
         // Assign Obj Clone
-        env_.Declare(node.id_->value_, obj_convert.Clone());
+        env_.Declare(node.id_->value_, value_convert.Clone());
         return Obj();
     }
 
     Obj Xengine::Exec(AssignStmt& node) {
-        auto target = Origin(*node.target_);
         auto value  = Exec(*node.value_);
 
-        target->type()->assign_(target, value.Clone());
-        return Obj();
+        // IdExpr
+        if (node.target_->type_ == AstType::IdExpr) {
+            auto idexpr = (IdExpr*)(node.target_.get());
+            auto id     = env_.Get(idexpr->value_);
+            
+            // Try Convert Type
+            auto value_convert = TypeTable::Convert(value, id->type());
+            if (value_convert.isNone()) {
+                throw LogErr(LogModule::Runtime, std::format(
+                    "cannot assign type '{}' to type '{}'",
+                    value.type()->name, id->type()->name
+                ));
+            }
+
+            id->type()->assign_(id, value_convert.Clone());
+            return Obj();
+        }
+
+        // PickExpr
+        else if (node.target_->type_ == AstType::PickExpr) {
+            auto target = Exec(*node.target_);
+            auto value  = Exec(*node.value_);
+            target.type()->assign_(&target, value);
+            return Obj();
+        }
+        
+        throw LogErr(LogModule::Runtime, "invalid assignment target");
     }
 
     Obj Xengine::Exec(CondStmt& node) {
@@ -335,84 +347,47 @@ namespace rt {
     }
 
     Obj Xengine::Exec(ForStmt& node) {
-        bool isCatch = false;
+        auto data = Exec(*node.data_);
+        auto type = data.type();
 
         // Range
-        if (node.data_->type_ == AstType::RangeExpr) {
-            auto  rangeobj = Exec((RangeExpr&)*node.data_);
-            auto& range = rangeobj.Get_range_ref();
+        if (type == TypeTable::Get("range")) {
+            auto& range = data.Get_range_ref();
 
-            // Execute
             for (Obj o = *range.left(); ; o = range.itertype()->plus_(o, *range.step())) {
-                if (!range.isClosed()) {
-                    if (range.itertype()->ge_(o, *range.right()).Get_bool()) break;
-                }
-                else {
-                    if (range.itertype()->gt_(o, *range.right()).Get_bool()) break;
-                }
+                if (!range.isClosed() &&
+                     range.itertype()->ge_(o, *range.right()).Get_bool()) break;
+                if ( range.isClosed() &&
+                     range.itertype()->gt_(o, *range.right()).Get_bool()) break;
 
                 Exec(*node.block_, [&]() {
                     env_.Declare(node.iter_->value_, o);
                 });
             }
-
-            isCatch = true;
         }
 
-        else {
-            auto obj  = Exec(*node.data_);
-            auto type = obj.type();
+        // Array
+        else if (type == TypeTable::Get("array")) {
+            auto& array = data.Get_array_ref();
 
-            // Array
-            if (type->name == "array") {
-                auto& array = obj.Get_array_ref();
-
-                for (size_t i = 0; i < array.size(); i++) {
-                    Exec(*node.block_, [&]() {
-                        env_.Declare(node.iter_->value_, *array.Get(i));
-                    });
-                }
-
-                isCatch = true;
+            for (size_t i = 0; i < array.size(); i++) {
+                Exec(*node.block_, [&]() {
+                    env_.Declare(node.iter_->value_, *array.Get(i));
+                });
             }
         }
 
-        if (!isCatch) {
+        else {
             throw LogErr(LogModule::Runtime, "unsupported 'for' statement");
         }
+        
         return Obj();
     }
 
-    // └─ Common
+    // Common
 
     Obj Xengine::Exec(Program& node) {
         Exec((BlockStmt&)node);
         return Obj();
-    }
-
-    // Origin
-
-    // └─ Expr
-
-    Obj* Xengine::Origin(IdExpr& node) {
-        return env_.Get(node.value_);
-    }
-
-    Obj* Xengine::Origin(PickExpr& node) {
-        auto target = Origin(*node.target_);
-        Obj pick;
-
-        // Range
-        if (node.pick_->type_ == AstType::RangeExpr)
-            pick = Exec((RangeExpr&)*node.pick_);
-
-        // Index
-        else {
-            auto idx = Exec(*node.pick_);
-            auto one = TypeTable::Convert(Obj::Make_i32(1), idx.type());
-            pick = Obj::Make_range(new Range(idx, idx, one, true, idx.type()));
-        }
-
-        return target->type()->pick_ref_(*target, pick);
     }
 }

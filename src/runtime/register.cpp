@@ -152,66 +152,30 @@ namespace rt {
 
             // string
             TypeTable::Set(Type{
-                .name           = "string", .size = 0, .isRef = true,
-                .clone_         = [](const Obj& o) {
+                .name       = "string", .size = 0, .isRef = true,
+                .clone_     = [](const Obj& o) {
                     return Obj::Make_string(new String(o.Get_string_ref()));
                 },
-                .destroy_       = [](void* data) { delete (String*)data; },
-                .to_string_     = [](const Obj& o) { return o.Get_string_ref().ToCppString(); },
-                .assign_        = [](Obj* target, const Obj& value) {
+                .destroy_   = [](void* data) { delete (String*)data; },
+                .to_string_ = [](const Obj& o) { return o.Get_string_ref().ToCppString(); },
+                .assign_    = [](Obj* target, const Obj& value) {
                     *target = value;
                 },
-                .plus_          = [](const Obj& a, const Obj& b) {
+                .plus_      = [](const Obj& a, const Obj& b) {
                     return Obj::Make_string(a.Get_string_ref() + b.Get_string_ref());
                 },
-                .neg_           = [](const Obj& o) {
+                .neg_       = [](const Obj& o) {
                     auto oc = o.Clone();
                     oc.Get_string_ref().Reverse();
                     return oc;
                 },
-                .eq_            = [](const Obj& a, const Obj& b) {
+                .eq_        = [](const Obj& a, const Obj& b) {
                     return Obj::Make_bool(a.Get_string_ref().ToCppString() == b.Get_string_ref().ToCppString());
                 },
-                .neq_           = [](const Obj& a, const Obj& b) {
+                .neq_       = [](const Obj& a, const Obj& b) {
                     return Obj::Make_bool(a.Get_string_ref().ToCppString() != b.Get_string_ref().ToCppString());
                 },        
-                .pick_clone_    = [](const Obj& target, const Obj& pick) {
-                    if (pick.type() != TypeTable::Get("range")) {
-                        throw LogErr(LogModule::Runtime, std::format(
-                            "pick must be range, not {}",
-                            pick.type()->name
-                        ));
-                    }
-                    
-                    auto& src   = target.Get_string_ref();
-                    auto& range = pick.Get_range_ref();
-
-                    if (range.itertype() != TypeTable::Get("i32") &&
-                        range.itertype() != TypeTable::Get("i64"))
-                    {
-                        throw LogErr(LogModule::Runtime, std::format(
-                            "iterator type of range must be i32 or i64, not {}",
-                            range.itertype()->name
-                        ));
-                    }
-
-                    if (range.isSingle()) {
-                        return *src.Get(range.left()->Get_i32());
-                    }
-                    else {
-                        std::string result = "";
-                        for (Obj o = *range.left(); ; o = range.itertype()->plus_(o, *range.step())) {
-                            if (!range.isClosed() &&
-                                 range.itertype()->ge_(o, *range.right()).Get_bool()) break;
-                            if ( range.isClosed() &&
-                                 range.itertype()->gt_(o, *range.right()).Get_bool()) break;
-                            result += src.Get(o.Get_i32())->Get_char();
-                        }
-
-                        return Obj::Make_string(new String(result));
-                    }
-                },
-                .pick_ref_      = [](const Obj& target, const Obj& pick) {
+                .pick_      = [](const Obj& target, const Obj& pick) {
                     if (pick.type() != TypeTable::Get("range")) {
                         throw LogErr(LogModule::Runtime, std::format(
                             "pick must be range, not {}",
@@ -236,9 +200,9 @@ namespace rt {
                     }
 
                     auto* sv = new StringView(
-                        &const_cast<Obj&>(target).Get_string_ref(), new Range(range)
+                        &target.Get_string_ref(), new Range(range)
                     );
-                    return new Obj(Obj::Make_stringview(sv));
+                    return Obj::Make_stringview(sv);
                 }
             });
 
@@ -291,7 +255,7 @@ namespace rt {
                         }
                     }
                 },
-                .pick_ref_  = [](const Obj& target, const Obj& pick) -> Obj* {
+                .pick_      = [](const Obj& target, const Obj& pick) {
                     if (pick.type() != TypeTable::Get("range")) {
                         throw LogErr(LogModule::Runtime, std::format(
                             "pick must be range, not {}",
@@ -343,7 +307,7 @@ namespace rt {
                     );
 
                     auto* sv_new = new StringView(sv.str(), range_merge);
-                    return new Obj(Obj::Make_stringview(sv_new));
+                    return Obj::Make_stringview(sv_new);
                 },
             });
 
@@ -388,79 +352,6 @@ namespace rt {
                     auto oc = o.Clone();
                     oc.Get_array_ref().Reverse();
                     return oc;
-                },
-                .pick_clone_    = [](const Obj& target, const Obj& pick) {
-                    if (pick.type() != TypeTable::Get("range")) {
-                        throw LogErr(LogModule::Runtime, std::format(
-                            "pick must be range, not {}",
-                            pick.type()->name
-                        ));
-                    }
-        
-                    auto& src   = target.Get_array_ref();
-                    auto& range = pick.Get_range_ref();
-
-                    if (range.itertype() != TypeTable::Get("i32") &&
-                        range.itertype() != TypeTable::Get("i64"))
-                    {
-                        throw LogErr(LogModule::Runtime, std::format(
-                            "iterator type of range must be i32 or i64, not {}",
-                            range.itertype()->name
-                        ));
-                    }
-
-                    if (range.isSingle()) {
-                        return *src.Get(range.left()->Get_i32());
-                    }
-                    else {
-                        auto* dst  = new Array();
-                        for (Obj o = *range.left(); ; o = range.itertype()->plus_(o, *range.step())) {
-                            if (!range.isClosed() &&
-                                range.itertype()->ge_(o, *range.right()).Get_bool()) break;
-                            if ( range.isClosed() &&
-                                range.itertype()->gt_(o, *range.right()).Get_bool()) break;
-                            dst->Insert(dst->size(), new Obj(*src.Get(o.Get_i32())));
-                        }
-
-                        return Obj::Make_array(dst);
-                    }
-                },
-                .pick_ref_      = [](const Obj& target, const Obj& pick) {
-                    if (pick.type() != TypeTable::Get("range")) {
-                        throw LogErr(LogModule::Runtime, std::format(
-                            "pick must be range, not {}",
-                            pick.type()->name
-                        ));
-                    }
-        
-                    auto& src   = target.Get_array_ref();
-                    auto& range = pick.Get_range_ref();
-
-                    if (range.itertype() != TypeTable::Get("i32") &&
-                        range.itertype() != TypeTable::Get("i64"))
-                    {
-                        throw LogErr(LogModule::Runtime, std::format(
-                            "iterator type of range must be i32 or i64, not {}",
-                            range.itertype()->name
-                        ));
-                    }
-
-                    if (range.isSingle()) {
-                        return src.Get(range.left()->Get_i32());
-                    }
-                    else {
-                        auto  arr = new Array();
-                        auto* dst = new Obj(Obj::Make_array(arr));
-                        for (Obj o = *range.left(); ; o = range.itertype()->plus_(o, *range.step())) {
-                            if (!range.isClosed() &&
-                                range.itertype()->ge_(o, *range.right()).Get_bool()) break;
-                            if ( range.isClosed() &&
-                                range.itertype()->gt_(o, *range.right()).Get_bool()) break;
-                            arr->Insert(arr->size(), src.Get(o.Get_i32()));
-                        }
-
-                        return dst;
-                    }
                 }
             });
 
@@ -498,12 +389,10 @@ namespace rt {
 
         // Convert
         {
-            auto* i32_    = TypeTable::Get("i32");
-            auto* i64_    = TypeTable::Get("i64");
-            auto* f32_    = TypeTable::Get("f32");
-            auto* f64_    = TypeTable::Get("f64");
-            auto* char_   = TypeTable::Get("char");
-            auto* string_ = TypeTable::Get("string");
+            auto* i32_ = TypeTable::Get("i32");
+            auto* i64_ = TypeTable::Get("i64");
+            auto* f32_ = TypeTable::Get("f32");
+            auto* f64_ = TypeTable::Get("f64");
 
             TypeTable::ConvertSet(i32_, i64_, [](const Obj& o) { return Obj::Make_i64(o.Get_i32());         });
             TypeTable::ConvertSet(i32_, f32_, [](const Obj& o) { return Obj::Make_f32((float)o.Get_i32());  });
@@ -512,8 +401,28 @@ namespace rt {
             TypeTable::ConvertSet(i64_, f64_, [](const Obj& o) { return Obj::Make_f64((double)o.Get_i64()); });
             TypeTable::ConvertSet(f32_, f64_, [](const Obj& o) { return Obj::Make_f64((double)o.Get_f32()); });
             
+            auto* char_         = TypeTable::Get("char");
+            auto* string_       = TypeTable::Get("string");
+            auto* stringview_   = TypeTable::Get("stringview");
+
             TypeTable::ConvertSet(char_, string_, [](const Obj& o) {
                 return Obj::Make_string(new String(std::to_string(o.Get_char())));
+            });
+            TypeTable::ConvertSet(stringview_, string_, [](const Obj& o) {
+                auto& sv    = o.Get_stringview_ref();
+                auto& str   = *sv.str();
+                auto& range = *sv.range();
+
+                std::string result;
+                for (Obj cur = *range.left(); ; cur = range.itertype()->plus_(cur, *range.step())) {
+                    if (!range.isClosed() &&
+                         range.itertype()->ge_(cur, *range.right()).Get_bool()) break;
+                    if ( range.isClosed() &&
+                         range.itertype()->gt_(cur, *range.right()).Get_bool()) break;
+                    result += str.Get(cur.Get_i32())->Get_char();
+                }
+
+                return Obj::Make_string(new String(result));
             });
         
             TypeTable::ConvertsRecompute();
