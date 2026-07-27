@@ -15,7 +15,7 @@ namespace rt {
     // Expr
 
     Obj Xengine::Exec(IdExpr& node) {
-        return *env_.Get(node.value_);
+        return Obj::MakeRef(env_.Get(node.value_));
     }
 
     Obj Xengine::Exec(OperExpr& node) {
@@ -68,8 +68,9 @@ namespace rt {
         Obj pick;
 
         // Range
-        if (node.pick_->type_ == AstType::RangeExpr)
+        if (node.pick_->type_ == AstType::RangeExpr) {
             pick = Exec((RangeExpr&)*node.pick_);
+        }
 
         // Index
         else {
@@ -293,35 +294,10 @@ namespace rt {
     }
 
     Obj Xengine::Exec(AssignStmt& node) {
+        auto target = Exec(*node.target_);
         auto value  = Exec(*node.value_);
-
-        // IdExpr
-        if (node.target_->type_ == AstType::IdExpr) {
-            auto idexpr = (IdExpr*)(node.target_.get());
-            auto id     = env_.Get(idexpr->value_);
-            
-            // Try Convert Type
-            auto value_convert = TypeTable::Convert(value, id->type());
-            if (value_convert.isNone()) {
-                throw LogErr(LogModule::Runtime, std::format(
-                    "cannot assign type '{}' to type '{}'",
-                    value.type()->name, id->type()->name
-                ));
-            }
-
-            id->type()->assign_(id, value_convert.Clone());
-            return Obj();
-        }
-
-        // PickExpr
-        else if (node.target_->type_ == AstType::PickExpr) {
-            auto target = Exec(*node.target_);
-            auto value  = Exec(*node.value_);
-            target.type()->assign_(&target, value);
-            return Obj();
-        }
-        
-        throw LogErr(LogModule::Runtime, "invalid assignment target");
+        target.type()->assign_(target.Origin(), value.Clone());
+        return Obj();
     }
 
     Obj Xengine::Exec(CondStmt& node) {

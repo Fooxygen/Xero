@@ -19,9 +19,9 @@ namespace rt {
 
     struct Type {
         std::string_view      name  = "";
-        size_t                size  = 0;        // Byte width
-        bool                  isRef = false;    // Reference Type
-        std::set<const Type*> converts = {};    // List of convertible types
+        size_t                size  = 0;            // Byte width
+        bool                  isHeapStored = false; // Store Data in Heap
+        std::set<const Type*> converts = {};        // List of convertible types
 
         // Built-in Method
 

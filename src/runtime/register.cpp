@@ -24,12 +24,21 @@ namespace rt {
             // bool
             TypeTable::Set(Type{
                 .name       = "bool", .size = 1,
-                .clone_     = [](const Obj& o) { return Obj::Make_bool(o.Get_bool()); },
+                .clone_     = [](const Obj& o) {
+                    return Obj::Make_bool(o.Get_bool());
+                },
                 .to_string_ = [](const Obj& o) {
                     return o.Get_bool() ? std::string("true") : std::string("false");
                 },
                 .assign_    = [](Obj* target, const Obj& value) {
-                    *target = value;
+                    if (value.type() == TypeTable::Get("bool")) {
+                        *target = value;
+                        return;
+                    }
+
+                    throw LogErr(LogModule::Runtime, std::format(
+                        "cannot assign type '{}' to type 'bool'", value.type()->name
+                    ));
                 },
                 .gt_        = [](const Obj& l, const Obj& r) { return Obj::Make_bool(l.Get_bool() >  r.Get_bool()); },
                 .lt_        = [](const Obj& l, const Obj& r) { return Obj::Make_bool(l.Get_bool() <  r.Get_bool()); },
@@ -45,10 +54,21 @@ namespace rt {
             // i32
             TypeTable::Set(Type{
                 .name       = "i32", .size = 4,
-                .clone_     = [](const Obj& o) { return Obj::Make_i32(o.Get_i32()); },
-                .to_string_ = [](const Obj& o) { return std::to_string(o.Get_i32()); },
+                .clone_     = [](const Obj& o) {
+                    return Obj::Make_i32(o.Get_i32());
+                },
+                .to_string_ = [](const Obj& o) {
+                    return std::to_string(o.Get_i32());
+                },
                 .assign_    = [](Obj* target, const Obj& value) {
-                    *target = value;
+                    if (value.type() == TypeTable::Get("i32")) {
+                        *target = value;
+                        return;
+                    }
+
+                    throw LogErr(LogModule::Runtime, std::format(
+                        "cannot assign type '{}' to type 'i32'", value.type()->name
+                    ));
                 },
                 .plus_      = [](const Obj& a, const Obj& b) { return Obj::Make_i32(a.Get_i32() + b.Get_i32()); },
                 .minus_     = [](const Obj& a, const Obj& b) { return Obj::Make_i32(a.Get_i32() - b.Get_i32()); },
@@ -70,10 +90,21 @@ namespace rt {
             // i64
             TypeTable::Set(Type{
                 .name       = "i64", .size = 8,
-                .clone_     = [](const Obj& o) { return Obj::Make_i64(o.Get_i64()); },
-                .to_string_ = [](const Obj& o) { return std::to_string(o.Get_i64()); },
+                .clone_     = [](const Obj& o) {
+                    return Obj::Make_i64(o.Get_i64());
+                },
+                .to_string_ = [](const Obj& o) { 
+                    return std::to_string(o.Get_i64());
+                },
                 .assign_    = [](Obj* target, const Obj& value) {
-                    *target = value;
+                    if (value.type() == TypeTable::Get("i64")) {
+                        *target = value;
+                        return;
+                    }
+
+                    throw LogErr(LogModule::Runtime, std::format(
+                        "cannot assign type '{}' to type 'i64'", value.type()->name
+                    ));
                 },
                 .plus_      = [](const Obj& a, const Obj& b) { return Obj::Make_i64(a.Get_i64() + b.Get_i64()); },
                 .minus_     = [](const Obj& a, const Obj& b) { return Obj::Make_i64(a.Get_i64() - b.Get_i64()); },
@@ -95,10 +126,21 @@ namespace rt {
             // f32
             TypeTable::Set(Type{
                 .name       = "f32", .size = 4,
-                .clone_     = [](const Obj& o) { return Obj::Make_f32(o.Get_f32()); },
-                .to_string_ = [](const Obj& o) { return std::to_string(o.Get_f32()); },
+                .clone_     = [](const Obj& o) {
+                    return Obj::Make_f32(o.Get_f32());
+                },
+                .to_string_ = [](const Obj& o) {
+                    return std::to_string(o.Get_f32());
+                },
                 .assign_    = [](Obj* target, const Obj& value) {
-                    *target = value;
+                    if (value.type() == TypeTable::Get("f32")) {
+                        *target = value;
+                        return;
+                    }
+                    
+                    throw LogErr(LogModule::Runtime, std::format(
+                        "cannot assign type '{}' to type 'f32'", value.type()->name
+                    ));
                 },
                 .plus_      = [](const Obj& a, const Obj& b) { return Obj::Make_f32(a.Get_f32() + b.Get_f32()); },
                 .minus_     = [](const Obj& a, const Obj& b) { return Obj::Make_f32(a.Get_f32() - b.Get_f32()); },
@@ -116,10 +158,21 @@ namespace rt {
             // f64
             TypeTable::Set(Type{
                 .name       = "f64", .size = 8,
-                .clone_     = [](const Obj& o) { return Obj::Make_f64(o.Get_f64()); },
-                .to_string_ = [](const Obj& o) { return std::to_string(o.Get_f64()); },
+                .clone_     = [](const Obj& o) {
+                    return Obj::Make_f64(o.Get_f64());
+                },
+                .to_string_ = [](const Obj& o) {
+                    return std::to_string(o.Get_f64());
+                },
                 .assign_    = [](Obj* target, const Obj& value) {
-                    *target = value;
+                    if (value.type() == TypeTable::Get("f64")) {
+                        *target = value;
+                        return;
+                    }
+                    
+                    throw LogErr(LogModule::Runtime, std::format(
+                        "cannot assign type '{}' to type 'f64'", value.type()->name
+                    ));
                 },
                 .plus_      = [](const Obj& a, const Obj& b) { return Obj::Make_f64(a.Get_f64() + b.Get_f64()); },
                 .minus_     = [](const Obj& a, const Obj& b) { return Obj::Make_f64(a.Get_f64() - b.Get_f64()); },
@@ -137,10 +190,21 @@ namespace rt {
             // char
             TypeTable::Set(Type{
                 .name       = "char", .size = 4,
-                .clone_     = [](const Obj& o) { return Obj::Make_char(o.Get_char()); },
-                .to_string_ = [](const Obj& o) { return std::string(1, o.Get_char()); },
+                .clone_     = [](const Obj& o) {
+                    return Obj::Make_char(o.Get_char());
+                },
+                .to_string_ = [](const Obj& o) {
+                    return std::string(1, o.Get_char());
+                },
                 .assign_    = [](Obj* target, const Obj& value) {
-                    *target = value;
+                    if (value.type() == TypeTable::Get("char")) {
+                        *target = value;
+                        return;
+                    }
+                    
+                    throw LogErr(LogModule::Runtime, std::format(
+                        "cannot assign type '{}' to type 'char'", value.type()->name
+                    ));
                 },
                 .gt_        = [](const Obj& a, const Obj& b) { return Obj::Make_bool(a.Get_char() >  b.Get_char()); },
                 .lt_        = [](const Obj& a, const Obj& b) { return Obj::Make_bool(a.Get_char() <  b.Get_char()); },
@@ -152,14 +216,27 @@ namespace rt {
 
             // string
             TypeTable::Set(Type{
-                .name       = "string", .size = 0, .isRef = true,
+                .name       = "string", .size = 0, .isHeapStored = true,
                 .clone_     = [](const Obj& o) {
                     return Obj::Make_string(new String(o.Get_string_ref()));
                 },
                 .destroy_   = [](void* data) { delete (String*)data; },
-                .to_string_ = [](const Obj& o) { return o.Get_string_ref().ToCppString(); },
+                .to_string_ = [](const Obj& o) {
+                    return o.Get_string_ref().ToCppString();
+                },
                 .assign_    = [](Obj* target, const Obj& value) {
-                    *target = value;
+                    if (value.type() == TypeTable::Get("string")) {
+                        *target = value;
+                        return;
+                    }
+                    if (value.type() == TypeTable::Get("stringview")) {
+                        *target = TypeTable::Convert(value, TypeTable::Get("string"));
+                        return;
+                    }
+                    
+                    throw LogErr(LogModule::Runtime, std::format(
+                        "cannot assign type '{}' to type 'string'", value.type()->name
+                    ));
                 },
                 .plus_      = [](const Obj& a, const Obj& b) {
                     return Obj::Make_string(a.Get_string_ref() + b.Get_string_ref());
@@ -208,52 +285,96 @@ namespace rt {
 
             // stringview
             TypeTable::Set(Type{
-                .name       = "stringview", .size = 0, .isRef = true,
+                .name       = "stringview", .size = 0, .isHeapStored = true,
+                .clone_     = [](const Obj& o) {
+                    return Obj::Make_stringview(new StringView(o.Get_stringview_ref()));
+                },
                 .destroy_   = [](void* data) { delete (StringView*)data; },
+                .to_string_ = [](const Obj& o) {
+                    auto str = TypeTable::Convert(o, TypeTable::Get("string"));
+                    return str.Get_string_ref().ToCppString();
+                },
                 .assign_    = [](Obj* target, const Obj& value) {
                     auto& sv    = target->Get_stringview_ref();
                     auto& dst   = *sv.str();
                     auto& range = *sv.range();
 
-                    // Index
-                    if (range.isSingle()) {
-                        *dst.Get(range.left()->Get_i32()) = Obj::Make_char(value.Get_char());
-                        
-                        return;
-                    }
+                    auto assign_from_string = [&](const String& src) {
 
-                    // Range
-                    else {
-                        auto& src = value.Get_string_ref();
-
-                        std::vector<int32_t> indices = {};
-                        for (Obj o = *range.left(); ; o = range.itertype()->plus_(o, *range.step())) {
-                            if (!range.isClosed() &&
-                                 range.itertype()->ge_(o, *range.right()).Get_bool()) break;
-                            if ( range.isClosed() &&
-                                 range.itertype()->gt_(o, *range.right()).Get_bool()) break;
-                            indices.emplace_back(o.Get_i32());
-                        }
-
-                        size_t size_range  = indices.size();
-                        size_t size_value  = src.size();
-                        size_t size_common = std::min(size_range, size_value);
+                        size_t beg = range.left()->Get_i32();
+                        size_t len = range.isClosed()
+                            ? range.right()->Get_i32() - beg + 1
+                            : range.right()->Get_i32() - beg;
+                        size_t len_common = std::min(len, src.size());
 
                         // Replace Common
-                        for (size_t i = 0; i < size_common; i++) {
-                            *dst.Get(indices[i]) = *src.Get(i);
+                        // aaa bbbbb ccc
+                        // aaa ddddd ccc
+                        for (size_t i = 0; i < len_common; i++) {
+                            *dst.Get(beg + i) = *src.Get(i);
                         }
 
                         // Remove redundant chars
-                        for (size_t i = size_range - 1; i >= size_value; i--) {
-                            dst.Remove(indices[i]);
+                        // aaa bbbbb ccc
+                        // aaa eee   ccc
+                        for (size_t i = len - 1; i >= len_common; i--) {
+                            dst.Remove(beg + i);
                         }
 
                         // Add missing chars
-                        for (size_t i = size_range; i < size_value; i++) {
-                            dst.Insert(indices.back() + 1 + (i - size_range), new Obj(*src.Get(i)));
+                        // aaa bbbbb   ccc
+                        // aaa eeeeeee ccc
+                        for (size_t i = len_common; i < src.size(); i++) {
+                            dst.Insert(beg + i, new Obj(*src.Get(i)));
+                        }
+                    };
+
+                    if (range.isSingle()) {
+                        if (value.type() == TypeTable::Get("char")) {
+                            *dst.Get(range.left()->Get_i32()) = Obj::Make_char(value.Get_char());
+                            return;
+                        }
+                        if (value.type() == TypeTable::Get("string")) {
+                            auto& str = value.Get_string_ref();
+                            if (str.size() == 1) {
+                                *dst.Get(range.left()->Get_i32()) = Obj::Make_char(str.Get(0)->Get_char());
+                                return;
+                            }
+                            throw LogErr(LogModule::Runtime, std::format(
+                                "cannot assign type '{}' to type 'char'", value.type()->name
+                            ));
+                        }
+                        if (value.type() == TypeTable::Get("stringview")) {
+                            auto str = value.Get_stringview_ref().str();
+                            if (str->size() == 1) {
+                                *dst.Get(range.left()->Get_i32()) = Obj::Make_char(str->Get(0)->Get_char());
+                                return;
+                            }
+                            throw LogErr(LogModule::Runtime, std::format(
+                                "cannot assign type '{}' to type 'char'", value.type()->name
+                            ));
                         }
                     }
+                    else {
+                        if (value.type() == TypeTable::Get("char")) {
+                            auto str = String(std::string(1, value.Get_char()));
+                            assign_from_string(str);
+                            return;
+                        }
+                        if (value.type() == TypeTable::Get("string")) {
+                            assign_from_string(value.Get_string_ref());
+                            return;
+                        }
+                        if (value.type() == TypeTable::Get("stringview")) {
+                            auto str = TypeTable::Convert(value, TypeTable::Get("string"));
+                            assign_from_string(str.Get_string_ref());
+                            return;
+                        }
+                    }
+                    
+                    throw LogErr(LogModule::Runtime, std::format(
+                        "cannot assign type '{}' to type 'stringview'", value.type()->name
+                    ));
                 },
                 .pick_      = [](const Obj& target, const Obj& pick) {
                     if (pick.type() != TypeTable::Get("range")) {
@@ -313,7 +434,7 @@ namespace rt {
 
             // array
             TypeTable::Set(Type{
-                .name           = "array", .size = 0, .isRef = true,
+                .name           = "array", .size = 0, .isHeapStored = true,
                 .clone_         = [](const Obj& o) {
                     return Obj::Make_array(new Array(o.Get_array_ref()));
                 },
@@ -357,7 +478,7 @@ namespace rt {
 
              // range
             TypeTable::Set(Type{
-                .name       = "range", .size = 0, .isRef = true,
+                .name       = "range", .size = 0, .isHeapStored = true,
                 .clone_     = [](const Obj& o) {
                     return Obj::Make_range(new Range(o.Get_range_ref()));
                 },
@@ -413,16 +534,16 @@ namespace rt {
                 auto& str   = *sv.str();
                 auto& range = *sv.range();
 
-                std::string result;
-                for (Obj cur = *range.left(); ; cur = range.itertype()->plus_(cur, *range.step())) {
+                std::string res = "";
+                for (Obj o = *range.left(); ; o = range.itertype()->plus_(o, *range.step())) {
                     if (!range.isClosed() &&
-                         range.itertype()->ge_(cur, *range.right()).Get_bool()) break;
+                         range.itertype()->ge_(o, *range.right()).Get_bool()) break;
                     if ( range.isClosed() &&
-                         range.itertype()->gt_(cur, *range.right()).Get_bool()) break;
-                    result += str.Get(cur.Get_i32())->Get_char();
+                         range.itertype()->gt_(o, *range.right()).Get_bool()) break;
+                    res += str.Get(o.Get_i32())->Get_char();
                 }
 
-                return Obj::Make_string(new String(result));
+                return Obj::Make_string(new String(res));
             });
         
             TypeTable::ConvertsRecompute();

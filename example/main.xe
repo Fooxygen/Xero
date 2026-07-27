@@ -1,10 +1,4 @@
 
-for (x in 1..=10) {
-    println(x);
-}
-
 s: string = "Hello Xero";
-t: string = s[1..=4];
-
+s[2..=5] = s[0..=6];
 println(s);
-println(t);

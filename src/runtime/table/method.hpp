@@ -30,18 +30,18 @@ namespace rt {
             }
         };
 
-        static inline std::unordered_map<Key, Obj::Fn, KeyHash> table_;
+        static inline std::unordered_map<Key, Fn, KeyHash> table_;
 
     public:
-        static void    Reset() {
-            table_ = std::unordered_map<Key, Obj::Fn, KeyHash>();
+        static void Reset() {
+            table_ = std::unordered_map<Key, Fn, KeyHash>();
         }
 
-        static void    Set(const Type* type, const std::string& name, Obj::Fn fn) {
+        static void Set(const Type* type, const std::string& name, Fn fn) {
             table_[{type, name}] = fn;
         }
 
-        static Obj::Fn Get(const Type* type, const std::string& name) {
+        static Fn Get(const Type* type, const std::string& name) {
             return table_.contains({type, name}) ? table_.at({type, name}) : nullptr;
         }
     };

@@ -38,7 +38,7 @@ namespace rt {
 
         bool  isSingle() const;
         Range ToClosed();
-
+        
         Range& operator =(const Range& other);
     };
 }
