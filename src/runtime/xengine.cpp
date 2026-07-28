@@ -33,7 +33,7 @@ namespace rt {
         lobj = TypeTable::Convert(lobj, type);
         robj = TypeTable::Convert(robj, type);
         
-        auto method_pick = [&](const Type* t) -> Obj(*)(const Obj&, const Obj&) {
+        auto method_get = [&](const Type* t) -> Obj(*)(const Obj&, const Obj&) {
             using enum Token::Type;
             switch (node.opertype_) {
                 case Plus:  return t->plus_;
@@ -52,7 +52,7 @@ namespace rt {
             }
         };
 
-        auto obj = CallTry(method_pick(type), lobj, robj);
+        auto obj = CallTry(method_get(type), lobj, robj);
         if (!obj.isNone()) return obj;
 
         throw LogErr(LogModule::Runtime, std::format(

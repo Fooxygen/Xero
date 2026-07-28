@@ -476,10 +476,6 @@ namespace rt {
                         }
                         return;
                     }
-
-                    throw LogErr(LogModule::Runtime, std::format(
-                        "cannot assign type '{}' to type 'array'", value.type()->name
-                    ));
                 },
                 .plus_          = [](const Obj& a, const Obj& b) {
                     return Obj::Make_array(a.Get_array_ref() + b.Get_array_ref());

@@ -73,6 +73,9 @@ namespace rt {
 
     public:
         static void Reset() {
+            for (auto& [name, type] : table_) {
+                delete type;
+            }
             table_ = std::unordered_map<std::string, Type*>();
             converts_.clear();
             common_cache_.clear();

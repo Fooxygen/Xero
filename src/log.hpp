@@ -43,12 +43,13 @@ public:
         color_(color) {}
 
     std::string ModulePrint() const {
+        using enum LogModule;
         switch (module_) {
-            case LogModule::File:       return "file";
-            case LogModule::Lexer:      return "lexer";
-            case LogModule::Parser:     return "parser";
-            case LogModule::Runtime:    return "rt";
-            default: return "Undefined";
+            case File:      return "file";
+            case Lexer:     return "lexer";
+            case Parser:    return "parser";
+            case Runtime:   return "rt";
+            default:        return "Undefined";
         }
     }
     void Print() const {

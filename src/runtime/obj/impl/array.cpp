@@ -43,10 +43,9 @@ namespace rt {
         }
         if (data_) delete[] data_;
 
-        data_ = new Obj*[1];
-        data_[0] = nullptr;
+        data_ = nullptr;
         size_ = 0;
-        capacity_ = 1;
+        capacity_ = 0;
     }
 
     void Array::Reverse() {
@@ -97,6 +96,7 @@ namespace rt {
 
         Clear();
         data_ = new Obj*[other.capacity_];
+        capacity_ = other.capacity_;
 
         for (size_t i = 0; i < other.size_; i++) {
             Insert(i, new Obj(other.Get(i)->Clone()));
