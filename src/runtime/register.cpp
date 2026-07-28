@@ -439,32 +439,47 @@ namespace rt {
                     return Obj::Make_array(new Array(o.Get_array_ref()));
                 },
                 .destroy_       = [](void* data) { delete (Array*)data; },
+                .to_string_     = [](const Obj& o) {
+                    std::string res = "[";
+                    auto& arr = o.Get_array_ref();
+                    for (size_t i = 0; i < arr.size(); i++) {
+                        auto o = arr.Get(i);
+                        if (i != 0) res += ", ";
+                        res += o->type()->to_string_(*o);
+                    }
+                    res += "]";
+                    return res;
+                },
                 .assign_        = [](Obj* target, const Obj& value) {
                     auto& dst = target->Get_array_ref();
 
                     // = [x, y, z]
                     if (value.type() == TypeTable::Get("array")) {
                         auto& src = value.Get_array_ref();
-
                         if (src.size() != dst.size()) {
-                            throw LogErr(LogModule::Runtime, std::format(
-                                "assignment count mismatch for {} to 'slice of array'",
-                                value.type()->name
-                            ));
+                            throw LogErr(LogModule::Runtime,
+                                "cannot assign source of different size to 'array'"
+                            );
                         }
 
                         for (size_t i = 0; i < dst.size(); i++) {
-                            *dst.Get(i) = *src.Get(i);
+                            *dst.Get(i)->Origin() = *src.Get(i);
                         }
+                        return;
                     }
 
                     // = x
                     else {
-                        // Support batch assignment: [1, 2, ...] = 0 -> [0, 0, ...]
+                        // [1, 2, ...] = 0 -> [0, 0, ...]
                         for (size_t i = 0; i < dst.size(); i++) {
-                            *dst.Get(i) = value;
+                            *dst.Get(i)->Origin() = value;
                         }
+                        return;
                     }
+
+                    throw LogErr(LogModule::Runtime, std::format(
+                        "cannot assign type '{}' to type 'array'", value.type()->name
+                    ));
                 },
                 .plus_          = [](const Obj& a, const Obj& b) {
                     return Obj::Make_array(a.Get_array_ref() + b.Get_array_ref());
@@ -473,6 +488,26 @@ namespace rt {
                     auto oc = o.Clone();
                     oc.Get_array_ref().Reverse();
                     return oc;
+                },
+                .pick_          = [](const Obj& target, const Obj& pick) {
+                    auto& src   = target.Get_array_ref();
+                    auto& range = pick.Get_range_ref();
+
+                    if (range.isSingle()) {
+                        return Obj::MakeRef(src.Get(range.left()->Get_i32()));
+                    }
+
+                    else {
+                        auto* dst = new Array();
+                        for (Obj o = *range.left(); ; o = range.itertype()->plus_(o, *range.step())) {
+                            if (!range.isClosed() &&
+                                 range.itertype()->ge_(o, *range.right()).Get_bool()) break;
+                            if ( range.isClosed() &&
+                                 range.itertype()->gt_(o, *range.right()).Get_bool()) break;
+                            dst->Insert(dst->size(), new Obj(Obj::MakeRef(src.Get(o.Get_i32()))));
+                        }
+                        return Obj::Make_array(dst);
+                    }
                 }
             });
 
