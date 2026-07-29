@@ -652,22 +652,22 @@ namespace rt {
                 arr.Remove(args[1].Get_i32());
                 return Obj();
             });
-            MethodTable::Set(type, "pushfront", [](ARGS args) {
+            MethodTable::Set(type, "push_front", [](ARGS args) {
                 auto& arr = args[0].Get_array_ref();
                 arr.Insert(0, new Obj(args[1].Clone()));
                 return Obj();
             });
-            MethodTable::Set(type, "popfront", [](ARGS args) {
+            MethodTable::Set(type, "pop_front", [](ARGS args) {
                 auto& arr = args[0].Get_array_ref();
                 arr.Remove(0);
                 return Obj();
             });
-            MethodTable::Set(type, "pushback", [](ARGS args) {
+            MethodTable::Set(type, "push_back", [](ARGS args) {
                 auto& arr = args[0].Get_array_ref();
                 arr.Insert(arr.size(), new Obj(args[1].Clone()));
                 return Obj();
             });
-            MethodTable::Set(type, "popback", [](ARGS args) {
+            MethodTable::Set(type, "pop_back", [](ARGS args) {
                 auto& arr = args[0].Get_array_ref();
                 arr.Remove(arr.size() - 1);
                 return Obj();
