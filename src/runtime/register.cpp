@@ -643,33 +643,33 @@ namespace rt {
                 return Obj();
             });
             MethodTable::Set(type, "insert", [](ARGS args) {
-                auto& array = args[0].Get_array_ref();
-                array.Insert(args[1].Get_i32(), new Obj(args[2]));
+                auto& arr = args[0].Get_array_ref();
+                arr.Insert(args[1].Get_i32(), new Obj(args[2].Clone()));
                 return Obj();
             });
             MethodTable::Set(type, "remove", [](ARGS args) {
-                auto& array = args[0].Get_array_ref();
-                array.Remove(args[1].Get_i32());
+                auto& arr = args[0].Get_array_ref();
+                arr.Remove(args[1].Get_i32());
                 return Obj();
             });
             MethodTable::Set(type, "pushfront", [](ARGS args) {
-                auto& array = args[0].Get_array_ref();
-                array.Insert(0, new Obj(args[1]));
+                auto& arr = args[0].Get_array_ref();
+                arr.Insert(0, new Obj(args[1].Clone()));
                 return Obj();
             });
             MethodTable::Set(type, "popfront", [](ARGS args) {
-                auto& array = args[0].Get_array_ref();
-                array.Remove(0);
+                auto& arr = args[0].Get_array_ref();
+                arr.Remove(0);
                 return Obj();
             });
             MethodTable::Set(type, "pushback", [](ARGS args) {
-                auto& array = args[0].Get_array_ref();
-                array.Insert(array.size(), new Obj(args[1]));
+                auto& arr = args[0].Get_array_ref();
+                arr.Insert(arr.size(), new Obj(args[1].Clone()));
                 return Obj();
             });
             MethodTable::Set(type, "popback", [](ARGS args) {
-                auto& array = args[0].Get_array_ref();
-                array.Remove(array.size() - 1);
+                auto& arr = args[0].Get_array_ref();
+                arr.Remove(arr.size() - 1);
                 return Obj();
             });
         }
