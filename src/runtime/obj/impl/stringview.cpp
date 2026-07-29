@@ -4,32 +4,36 @@
 //  Licensed under the MIT License.
 
 #include "stringview.hpp"
+#include "runtime/obj/obj.hpp"
 #include "runtime/obj/impl/string.hpp"
-#include "runtime/obj/impl/range.hpp"
 
 namespace rt {
 
-    StringView::StringView(String* str, Range* range) {
-        str_   = str;
-        range_ = new Range(*range);
+    StringView::StringView(String* org, size_t len, size_t offset) {
+        org_    = org;
+        len_    = len;
+        offset_ = offset;
     }
 
     StringView::StringView(const StringView& other) {
-        str_   = other.str_;
-        range_ = new Range(*other.range_);
+        org_    = other.org();
+        len_    = other.len();
+        offset_ = other.offset();
     }
 
     void StringView::Clear() {
-        delete range_;
-        str_   = nullptr;
-        range_ = nullptr;
+        org_    = nullptr;
+        len_    = 0;
+        offset_ = 0;
     }
 
     StringView& StringView::operator =(const StringView& other) {
         if (this == &other) return *this;
+
         Clear();
-        str_   = other.str_;
-        range_ = new Range(*other.range_);
+        org_    = other.org();
+        len_    = other.len();
+        offset_ = other.offset();
         return *this;
     }
 }

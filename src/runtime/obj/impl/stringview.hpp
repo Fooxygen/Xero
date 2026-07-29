@@ -9,28 +9,28 @@
 
 #include "log.hpp"
 #include "string.hpp"
-#include "range.hpp"
 
 namespace rt {
     class String;
-    class Range;
 
     class StringView {
     private:
-        String* str_   = nullptr;
-        Range*  range_ = nullptr;
+        String* org_    = nullptr;
+        size_t  len_    = 0;
+        size_t  offset_ = 0;
 
         void Clear();
 
     public:
-        StringView(String* str, Range* range);
+        StringView(String* org, size_t len, size_t offset);
         StringView(const StringView& other);
         ~StringView() {
             Clear();
         }
 
-        String* str()   const { return str_; }
-        Range*  range() const { return range_; }
+        String* org()    const { return org_; }
+        size_t  len()    const { return len_ ;}
+        size_t  offset() const { return offset_ ;}
 
         StringView& operator = (const StringView& other);
     };

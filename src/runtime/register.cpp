@@ -276,10 +276,14 @@ namespace rt {
                         throw LogErr(LogModule::Runtime, "assignment with step in '[]' not allowed");
                     }
 
-                    auto* sv = new StringView(
-                        &target.Get_string_ref(), new Range(range)
+                    size_t len = range.isClosed()
+                        ? range.right()->Get_i32() - range.left()->Get_i32() + 1
+                        : range.right()->Get_i32() - range.left()->Get_i32();
+
+                    auto* view = new StringView(
+                        &src, len, range.left()->Get_i32()
                     );
-                    return Obj::Make_stringview(sv);
+                    return Obj::Make_stringview(view);
                 }
             });
 
@@ -295,49 +299,48 @@ namespace rt {
                     return str.Get_string_ref().ToCppString();
                 },
                 .assign_    = [](Obj* target, const Obj& value) {
-                    auto& sv    = target->Get_stringview_ref();
-                    auto& dst   = *sv.str();
-                    auto& range = *sv.range();
+                    auto& target_view = target->Get_stringview_ref();
+                    auto  target_str  = target_view.org();
 
                     auto assign_from_string = [&](const String& src) {
 
-                        size_t beg = range.left()->Get_i32();
-                        size_t len = range.isClosed()
-                            ? range.right()->Get_i32() - beg + 1
-                            : range.right()->Get_i32() - beg;
+                        size_t beg = target_view.offset();
+                        size_t len = target_view.len();
                         size_t len_common = std::min(len, src.size());
 
                         // Replace Common
                         // aaa bbbbb ccc
                         // aaa ddddd ccc
                         for (size_t i = 0; i < len_common; i++) {
-                            *dst.Get(beg + i) = *src.Get(i);
+                            *target_str->Get(beg + i) = *src.Get(i);
                         }
 
                         // Remove redundant chars
                         // aaa bbbbb ccc
                         // aaa eee   ccc
                         for (size_t i = len - 1; i >= len_common; i--) {
-                            dst.Remove(beg + i);
+                            target_str->Remove(beg + i);
                         }
 
                         // Add missing chars
                         // aaa bbbbb   ccc
                         // aaa eeeeeee ccc
                         for (size_t i = len_common; i < src.size(); i++) {
-                            dst.Insert(beg + i, new Obj(*src.Get(i)));
+                            target_str->Insert(beg + i, new Obj(*src.Get(i)));
                         }
                     };
 
-                    if (range.isSingle()) {
+                    if (target_view.len() == 1) {
                         if (value.type() == TypeTable::Get("char")) {
-                            *dst.Get(range.left()->Get_i32()) = Obj::Make_char(value.Get_char());
+                            *target_str->Get(target_view.offset())
+                                = Obj::Make_char(value.Get_char());
                             return;
                         }
                         if (value.type() == TypeTable::Get("string")) {
-                            auto& str = value.Get_string_ref();
-                            if (str.size() == 1) {
-                                *dst.Get(range.left()->Get_i32()) = Obj::Make_char(str.Get(0)->Get_char());
+                            auto& value_str = value.Get_string_ref();
+                            if (value_str.size() == 1) {
+                                *target_str->Get(target_view.offset())
+                                    = Obj::Make_char(value_str.Get(0)->Get_char());
                                 return;
                             }
                             throw LogErr(LogModule::Runtime, std::format(
@@ -345,9 +348,11 @@ namespace rt {
                             ));
                         }
                         if (value.type() == TypeTable::Get("stringview")) {
-                            auto str = value.Get_stringview_ref().str();
-                            if (str->size() == 1) {
-                                *dst.Get(range.left()->Get_i32()) = Obj::Make_char(str->Get(0)->Get_char());
+                            auto& value_view = value.Get_stringview_ref();
+                            auto  value_str  = value_view.org();
+                            if (value_view.len() == 1) {
+                                *target_str->Get(target_view.offset())
+                                    = Obj::Make_char(value_str->Get(value_view.offset())->Get_char());
                                 return;
                             }
                             throw LogErr(LogModule::Runtime, std::format(
@@ -384,51 +389,32 @@ namespace rt {
                         ));
                     }
 
-                    auto& sv = target.Get_stringview_ref();
-                    auto& range_org = *sv.range();
-                    auto& range_nes = pick.Get_range_ref();
+                    auto& src   = target.Get_stringview_ref();
+                    auto& range = pick.Get_range_ref();
 
-                    if (range_nes.itertype() != TypeTable::Get("i32") &&
-                        range_nes.itertype() != TypeTable::Get("i64"))
+                    if (range.itertype() != TypeTable::Get("i32") &&
+                        range.itertype() != TypeTable::Get("i64"))
                     {
                         throw LogErr(LogModule::Runtime, std::format(
                             "iterator type of range must be i32 or i64, not {}",
-                            range_nes.itertype()->name
+                            range.itertype()->name
                         ));
                     }
 
-                    if (range_nes.step()->Get_i32() != 1) {
+                    if (range.step()->Get_i32() != 1) {
                         throw LogErr(LogModule::Runtime, "assignment with step in '[]' not allowed");
                     }
 
-                    // Range Update
+                    size_t len = range.isClosed()
+                        ? range.right()->Get_i32() - range.left()->Get_i32() + 1
+                        : range.right()->Get_i32() - range.left()->Get_i32();
 
-                    auto org_closed = range_org.ToClosed();
-                    auto nes_closed = range_nes.ToClosed();
-                    
-                    auto lorg = *org_closed.left();
-                    auto rorg = *org_closed.right();
-                    auto lnes = TypeTable::Convert(*nes_closed.left(), nes_closed.itertype());
-                    auto rnes = TypeTable::Convert(*nes_closed.right(), nes_closed.itertype());
-
-                    auto lmeg = nes_closed.itertype()->plus_(
-                        lorg, lnes
+                    auto* view = new StringView(
+                        src.org(),
+                        std::min(len, src.len()),
+                        range.left()->Get_i32() + src.offset()
                     );
-                    auto len  = nes_closed.itertype()->minus_(
-                        rnes, lnes
-                    );
-                    auto rmeg = nes_closed.itertype()->plus_(
-                        lmeg, len
-                    );
-                    rmeg =  nes_closed.itertype()->le_(rmeg, rorg).Get_bool()
-                            ? rmeg : rorg;
-
-                    auto range_merge = new Range(
-                        lmeg, rmeg, Obj::Make_i32(1), true, nes_closed.itertype()
-                    );
-
-                    auto* sv_new = new StringView(sv.str(), range_merge);
-                    return Obj::Make_stringview(sv_new);
+                    return Obj::Make_stringview(view);
                 },
             });
 
@@ -561,17 +547,11 @@ namespace rt {
                 return Obj::Make_string(new String(std::to_string(o.Get_char())));
             });
             TypeTable::ConvertSet(stringview_, string_, [](const Obj& o) {
-                auto& sv    = o.Get_stringview_ref();
-                auto& str   = *sv.str();
-                auto& range = *sv.range();
+                auto& view = o.Get_stringview_ref();
 
                 std::string res = "";
-                for (Obj o = *range.left(); ; o = range.itertype()->plus_(o, *range.step())) {
-                    if (!range.isClosed() &&
-                         range.itertype()->ge_(o, *range.right()).Get_bool()) break;
-                    if ( range.isClosed() &&
-                         range.itertype()->gt_(o, *range.right()).Get_bool()) break;
-                    res += str.Get(o.Get_i32())->Get_char();
+                for (size_t i = 0; i < view.len(); i++) {
+                    res += view.org()->Get(view.offset() + i)->Get_char();
                 }
 
                 return Obj::Make_string(new String(res));
