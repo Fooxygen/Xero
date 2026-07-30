@@ -122,6 +122,7 @@ namespace rt {
         Clear();
         data_ = new Obj*[other.capacity_];
         capacity_ = other.capacity_;
+        element_type_ = other.element_type_;
 
         for (size_t i = 0; i < other.size_; i++) {
             Insert(i, new Obj(other.Get(i)->Clone()));

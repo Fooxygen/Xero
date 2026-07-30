@@ -325,8 +325,10 @@ namespace rt {
                         // Remove redundant chars
                         // aaa bbbbb ccc
                         // aaa eee   ccc
-                        for (size_t i = len - 1; i >= len_common; i--) {
-                            target_str->Remove(beg + i);
+                        if (len > len_common) {
+                            for (size_t i = len - 1; i >= len_common; i--) {
+                                target_str->Remove(beg + i);
+                            }
                         }
 
                         // Add missing chars
@@ -413,7 +415,7 @@ namespace rt {
                     }
 
                     if (range.isSingle()) {
-                        return Obj::MakeRef(src.org()->Get(range.left()->Get_i32()) + src.offset());
+                        return Obj::MakeRef(src.org()->Get(range.left()->Get_i32() + src.offset()));
                     }
 
                     else {
@@ -552,14 +554,16 @@ namespace rt {
                             *target_arr->Get(beg + i) = *src.Get(i);
                         }
 
-                        // Remove redundant chars
+                        // Remove redundant elements
                         // aaa bbbbb ccc
                         // aaa eee   ccc
-                        for (size_t i = len - 1; i >= len_common; i--) {
-                            target_arr->Remove(beg + i);
+                        if (len > len_common) {
+                            for (size_t i = len - 1; i >= len_common; i--) {
+                                target_arr->Remove(beg + i);
+                            }
                         }
 
-                        // Add missing chars
+                        // Add missing elements
                         // aaa bbbbb   ccc
                         // aaa eeeeeee ccc
                         for (size_t i = len_common; i < src.size(); i++) {
@@ -582,10 +586,6 @@ namespace rt {
                         }
                         return;
                     }
-
-                    throw LogErr(LogModule::Runtime, std::format(
-                        "cannot assign type '{}' to type 'arrayview'", value.type()->name
-                    ));
                 },
                 .pick_      = [](const Obj& target, const Obj& pick) {
                     if (pick.type() != TypeTable::Get("range")) {
@@ -612,7 +612,7 @@ namespace rt {
                     }
 
                     if (range.isSingle()) {
-                        return Obj::MakeRef(src.org()->Get(range.left()->Get_i32()) + src.offset());
+                        return Obj::MakeRef(src.org()->Get(range.left()->Get_i32() + src.offset()));
                     }
 
                     else {

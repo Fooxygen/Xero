@@ -24,13 +24,11 @@ namespace rt {
     public:
         StringView(String* org, size_t len, size_t offset);
         StringView(const StringView& other);
-        ~StringView() {
-            Clear();
-        }
+        ~StringView() { Clear(); }
 
         String* org()    const { return org_; }
-        size_t  len()    const { return len_ ;}
-        size_t  offset() const { return offset_ ;}
+        size_t  len()    const { return len_; }
+        size_t  offset() const { return offset_; }
 
         StringView& operator = (const StringView& other);
     };

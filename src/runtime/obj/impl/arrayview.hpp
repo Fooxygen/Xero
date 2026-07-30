@@ -24,9 +24,7 @@ namespace rt {
     public:
         ArrayView(Array* org, size_t len, size_t offset);
         ArrayView(const ArrayView& other);
-        ~ArrayView() {
-            Clear();
-        }
+        ~ArrayView() { Clear(); }
 
         Array* org()    const { return org_; }
         size_t len()    const { return len_ ;}

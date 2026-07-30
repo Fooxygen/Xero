@@ -16,15 +16,9 @@ namespace rt {
         std::vector<std::unordered_map<std::string, Obj>> scopes_;
 
     public:
-        void ScopePush() {
-            scopes_.emplace_back();
-        }
-        void ScopePop() {
-            scopes_.pop_back();
-        }
-        std::unordered_map<std::string, Obj>& ScopeGet() {
-            return scopes_.back();
-        }
+        void ScopePush() { scopes_.emplace_back(); }
+        void ScopePop()  { scopes_.pop_back(); }
+        std::unordered_map<std::string, Obj>& ScopeGet() { return scopes_.back(); }
 
         void Declare(const std::string& name, const Obj& value) {
             ScopeGet()[name] = value;
