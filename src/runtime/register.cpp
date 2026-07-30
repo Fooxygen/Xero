@@ -38,7 +38,7 @@ namespace rt {
                     }
 
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot assign type '{}' to type 'bool'", value.type()->name
+                        "cannot compatible type '{}' to type 'bool'", value.type()->name
                     ));
                 },
                 .gt_        = [](const Obj& l, const Obj& r) { return Obj::Make_bool(l.Get_bool() >  r.Get_bool()); },
@@ -68,7 +68,7 @@ namespace rt {
                     }
 
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot assign type '{}' to type 'i32'", value.type()->name
+                        "cannot compatible type '{}' to type 'i32'", value.type()->name
                     ));
                 },
                 .plus_      = [](const Obj& a, const Obj& b) { return Obj::Make_i32(a.Get_i32() + b.Get_i32()); },
@@ -104,7 +104,7 @@ namespace rt {
                     }
 
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot assign type '{}' to type 'i64'", value.type()->name
+                        "cannot compatible type '{}' to type 'i64'", value.type()->name
                     ));
                 },
                 .plus_      = [](const Obj& a, const Obj& b) { return Obj::Make_i64(a.Get_i64() + b.Get_i64()); },
@@ -140,7 +140,7 @@ namespace rt {
                     }
                     
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot assign type '{}' to type 'f32'", value.type()->name
+                        "cannot compatible type '{}' to type 'f32'", value.type()->name
                     ));
                 },
                 .plus_      = [](const Obj& a, const Obj& b) { return Obj::Make_f32(a.Get_f32() + b.Get_f32()); },
@@ -172,7 +172,7 @@ namespace rt {
                     }
                     
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot assign type '{}' to type 'f64'", value.type()->name
+                        "cannot compatible type '{}' to type 'f64'", value.type()->name
                     ));
                 },
                 .plus_      = [](const Obj& a, const Obj& b) { return Obj::Make_f64(a.Get_f64() + b.Get_f64()); },
@@ -204,7 +204,7 @@ namespace rt {
                     }
                     
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot assign type '{}' to type 'char'", value.type()->name
+                        "cannot compatible type '{}' to type 'char'", value.type()->name
                     ));
                 },
                 .gt_        = [](const Obj& a, const Obj& b) { return Obj::Make_bool(a.Get_char() >  b.Get_char()); },
@@ -230,13 +230,15 @@ namespace rt {
                         *target = value;
                         return;
                     }
-                    if (value.type() == TypeTable::Get("stringview")) {
+                    if (value.type() == TypeTable::Get("stringview") ||
+                        value.type() == TypeTable::Get("char"))
+                    {
                         *target = TypeTable::Convert(value, TypeTable::Get("string"));
                         return;
                     }
                     
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot assign type '{}' to type 'string'", value.type()->name
+                        "cannot compatible type '{}' to type 'string'", value.type()->name
                     ));
                 },
                 .plus_      = [](const Obj& a, const Obj& b) {
@@ -319,15 +321,15 @@ namespace rt {
                         // aaa bbbbb ccc
                         // aaa ddddd ccc
                         for (size_t i = 0; i < len_common; i++) {
-                            *target_str->Get(beg + i) = *src.Get(i);
+                            target_str->Replace(beg + i, src.Get(i)->Clone());
                         }
 
                         // Remove redundant chars
                         // aaa bbbbb ccc
                         // aaa eee   ccc
                         if (len > len_common) {
-                            for (size_t i = len - 1; i >= len_common; i--) {
-                                target_str->Remove(beg + i);
+                            for (size_t i = 0; i < len - len_common; i++) {
+                                target_str->Remove(beg + len_common);
                             }
                         }
 
@@ -353,7 +355,7 @@ namespace rt {
                                 return;
                             }
                             throw LogErr(LogModule::Runtime, std::format(
-                                "cannot assign type '{}' to type 'char'", value.type()->name
+                                "cannot compatible type '{}' to type 'char'", value.type()->name
                             ));
                         }
                         if (value.type() == TypeTable::Get("stringview")) {
@@ -365,7 +367,7 @@ namespace rt {
                                 return;
                             }
                             throw LogErr(LogModule::Runtime, std::format(
-                                "cannot assign type '{}' to type 'char'", value.type()->name
+                                "cannot compatible type '{}' to type 'char'", value.type()->name
                             ));
                         }
                     }
@@ -387,7 +389,7 @@ namespace rt {
                     }
                     
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot assign type '{}' to type 'stringview'", value.type()->name
+                        "cannot compatible type '{}' to type 'stringview'", value.type()->name
                     ));
                 },
                 .pick_      = [](const Obj& target, const Obj& pick) {
@@ -448,32 +450,21 @@ namespace rt {
 
                     // = [x, y, z]
                     if      (value.type() == TypeTable::Get("array")) {
-                        auto& src = value.Get_array_ref();
-                        if (src.size() != dst.size()) {
-                            throw LogErr(LogModule::Runtime,
-                                "cannot assign source of different size to 'array'"
-                            );
-                        }
-
-                        for (size_t i = 0; i < dst.size(); i++) {
-                            *dst.Get(i)->Origin() = *src.Get(i);
-                        }
-                        
+                        dst = value.Get_array_ref();
                         return;
                     }
 
                     // = arr[x..y]
                     else if (value.type() == TypeTable::Get("arrayview")) {
-                        *target = TypeTable::Convert(value, TypeTable::Get("array"));
+                        dst = TypeTable::Convert(value, TypeTable::Get("array")).Get_array_ref();
                         return;
                     }
 
                     // = x
                     else {
                         for (size_t i = 0; i < dst.size(); i++) {
-                            *dst.Get(i)->Origin() = value;
+                            dst.Replace(i, value);
                         }
-                        
                         return;
                     }
                 },
@@ -551,15 +542,15 @@ namespace rt {
                         // aaa bbbbb ccc
                         // aaa ddddd ccc
                         for (size_t i = 0; i < len_common; i++) {
-                            *target_arr->Get(beg + i) = *src.Get(i);
+                            target_arr->Replace(beg + i, src.Get(i)->Clone());
                         }
 
                         // Remove redundant elements
                         // aaa bbbbb ccc
                         // aaa eee   ccc
                         if (len > len_common) {
-                            for (size_t i = len - 1; i >= len_common; i--) {
-                                target_arr->Remove(beg + i);
+                            for (size_t i = 0; i < len - len_common; i++) {
+                                target_arr->Remove(beg + len_common);
                             }
                         }
 
@@ -582,7 +573,7 @@ namespace rt {
                     }
                     else {
                         for (size_t i = 0; i < target_view.len(); i++) {
-                            *target_arr->Get(target_view.offset() + i) = value;
+                            target_arr->Replace(target_view.offset() + i, value.Clone());
                         }
                         return;
                     }

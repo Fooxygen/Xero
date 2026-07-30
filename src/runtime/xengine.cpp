@@ -25,7 +25,7 @@ namespace rt {
 
         if (!type) {
             throw LogErr(LogModule::Runtime, std::format(
-                "type '{}' is incompatible with '{}'",
+                "cannot match type '{}' to type '{}'",
                 robj.type()->name, lobj.type()->name
             ));
         }
@@ -142,7 +142,7 @@ namespace rt {
         auto neg = CallTry(obj.type()->neg_, obj);
         if (neg.isNone()) {
             throw LogErr(LogModule::Runtime, std::format(
-                "unsupported '-' for '{}'",
+                "unsupported operator 'Neg' for '{}'",
                 obj.type()->name
             ));
         }
@@ -154,7 +154,7 @@ namespace rt {
         auto not_ = CallTry(obj.type()->not_, obj);
         if (not_.isNone()) {
             throw LogErr(LogModule::Runtime, std::format(
-                "unsupported '!' for '{}'",
+                "unsupported operator 'Not' for '{}'",
                 obj.type()->name
             ));
         }
@@ -283,7 +283,7 @@ namespace rt {
         auto value_convert = TypeTable::Convert(value, type);
         if (value_convert.isNone()) {
             throw LogErr(LogModule::Runtime, std::format(
-                "cannot assign type '{}' to type '{}'",
+                "cannot compatible type '{}' to type '{}'",
                 value.type()->name, type->name
             ));
         }

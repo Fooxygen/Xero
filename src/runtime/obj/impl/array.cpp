@@ -26,6 +26,18 @@ namespace rt {
         }
     }
 
+    void Array::ElementTypeCheckAndSet(const Type* type) {
+        if (!element_type_) {
+            element_type_ = type;
+        }
+        else if (type != element_type_) {
+            throw LogErr(LogModule::Runtime, std::format(
+                "cannot match type '{}' to type '{}'",
+                type->name, element_type_->name
+            ));
+        }
+    }
+
     void Array::Expand(size_t size) {
         if (size + 1 < capacity_) return;
 
@@ -73,21 +85,16 @@ namespace rt {
     void Array::Insert(size_t idx, Obj* obj) {
         IndexCheck(idx, true);
         Expand(size_ + 1);
-
-        // Element Type
-        if (!element_type_) {
-            element_type_ = obj->type();
-        }
-        else if (obj->type() != element_type_) {
-            throw LogErr(LogModule::Runtime, std::format(
-                "type '{}' is incompatible with '{}'",
-                obj->type()->name, element_type_->name
-            ));
-        }
-
+        ElementTypeCheckAndSet(obj->type());
         memmove(data_ + idx + 1, data_ + idx, sizeof(Obj*) * (size_ - idx));
         data_[idx] = obj;
         size_++;
+    }
+
+    void Array::Replace(size_t idx, const Obj& obj) {
+        IndexCheck(idx, false);
+        ElementTypeCheckAndSet(obj.type());
+        *data_[idx]->Origin() = obj;
     }
 
     void Array::Remove(size_t idx) {
@@ -103,6 +110,8 @@ namespace rt {
     }
 
     Array* Array::operator +(const Array& other) {
+        ElementTypeCheckAndSet(other.element_type());
+
         auto arr = new Array();
         arr->Expand(size_ + other.size_);
         
@@ -119,6 +128,7 @@ namespace rt {
     Array& Array::operator =(const Array& other) {
         if (this == &other) return *this;
 
+        ElementTypeCheckAndSet(other.element_type());
         Clear();
         data_ = new Obj*[other.capacity_];
         capacity_ = other.capacity_;

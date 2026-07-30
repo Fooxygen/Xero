@@ -35,6 +35,7 @@ namespace rt {
                 }
             }
         }
+        void ElementTypeCheckAndSet(const Type* type);
         void Expand(size_t size);
 
     public:
@@ -54,6 +55,7 @@ namespace rt {
         Obj* Get(size_t idx) const;
         void Reverse();
         void Insert(size_t idx, Obj* obj);
+        void Replace(size_t idx, const Obj& obj);
         void Remove(size_t idx);
 
         Array* operator + (const Array& other);
