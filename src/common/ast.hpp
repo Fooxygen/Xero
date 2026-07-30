@@ -11,6 +11,49 @@
 
 #include "token.hpp"
 
+// Type of Operation
+enum class OperType {
+    Undefined,
+
+    // Arith
+    Plus, Minus, Star, Slash, Neg,
+
+    // Relation
+    Gt, Lt, Ge, Le, Eq, Neq,
+
+    // Logical
+    And, Or, Not,
+
+    // Container
+    Pick,
+};
+
+static std::string OperTypeName(OperType type) {
+    using enum OperType;
+    switch(type) {
+        case Plus:  return "Plus";
+        case Minus: return "Minus";
+        case Star:  return "Star";
+        case Slash: return "Slash";
+        case Neg:   return "Neg";
+
+        case Gt:    return "Gt" ;
+        case Lt:    return "Lt" ;
+        case Ge:    return "Ge" ;
+        case Le:    return "Le" ;
+        case Eq:    return "Eq" ;
+        case Neq:   return "Neq";
+
+        case And:   return "And";
+        case Or:    return "Or" ;
+        case Not:   return "Not";
+
+        case Pick:  return "Pick";
+
+        default:    return "Undefined";
+    }
+}
+
 // Type of Abstract Syntax Tree's Node
 enum class AstType {
     Undefined,
@@ -29,10 +72,7 @@ enum class AstType {
     Expr,               //  Base ------
     IdExpr,             //  Identity
     OperExpr,           //  Operation
-    PickExpr,           //  Pick from Container
     RangeExpr,          //  Range
-    NegExpr,            //  Negative
-    NotExpr,            //  Not
     FnCallExpr,         //  Func Call
     MethodCallExpr,     //  Method Call
     ArrayExpr,          //  Array
@@ -62,10 +102,7 @@ static AstType BaseOfAstType(AstType type) {
 
         case IdExpr:
         case OperExpr:
-        case PickExpr:
         case RangeExpr:
-        case NegExpr:
-        case NotExpr:
         case FnCallExpr:
         case MethodCallExpr:
         case ArrayExpr:
@@ -167,12 +204,12 @@ public:
 };
 class OperExpr          : public Expr {
 public:
-    Token::Type opertype_ = Token::Type::Undefined;
+    OperType opertype_ = OperType::Undefined;
     std::unique_ptr<Expr> lexpr_ = nullptr;
     std::unique_ptr<Expr> rexpr_ = nullptr;
 
     OperExpr(
-        Token::Type opertype,
+        OperType opertype,
         std::unique_ptr<Expr> lexpr,
         std::unique_ptr<Expr> rexpr
     )
@@ -190,35 +227,10 @@ public:
     void PrintImpl(std::string prefix) override {
         PrintLabel("type", prefix);
         std::cout << COLOR_MAGENTA;
-        Token::TypePrint(opertype_);
+        std::cout << OperTypeName(opertype_);
         std::cout << COLOR_DEFAULT << std::endl;
-
         lexpr_->Print(prefix, "lexpr");
-        rexpr_->Print(prefix, "rexpr");
-    }
-};
-class PickExpr          : public Expr {
-public:
-    std::unique_ptr<Expr> target_ = nullptr;
-    std::unique_ptr<Expr> pick_   = nullptr;
-
-    PickExpr(
-        std::unique_ptr<Expr> target,
-        std::unique_ptr<Expr> pick
-    )
-    :   target_(std::move(target)),
-        pick_(std::move(pick))
-    {
-        type_ = AstType::PickExpr;
-    }
-
-    const std::string TypeName() const {
-        return "PickExpr";
-    }
-
-    void PrintImpl(std::string prefix) override {
-        target_->Print(prefix, "target");
-        pick_->Print(prefix, "pick");
+        if (rexpr_) rexpr_->Print(prefix, "rexpr");
     }
 };
 class RangeExpr         : public Expr {
@@ -274,42 +286,6 @@ public:
 
     void PrintImpl(std::string prefix) override {
         elements_->Print(prefix, "elements");
-    }
-};
-class NegExpr           : public Expr {
-public:
-    std::unique_ptr<Expr> expr_ = nullptr;
-
-    NegExpr(std::unique_ptr<Expr> expr)
-    :   expr_(std::move(expr))
-    {
-        type_ = AstType::NegExpr;
-    }
-
-    const std::string TypeName() const {
-        return "NegExpr";
-    }
-
-    void PrintImpl(std::string prefix) override {
-        expr_->Print(prefix, "expr");
-    }
-};
-class NotExpr           : public Expr {
-public:
-    std::unique_ptr<Expr> expr_ = nullptr;
-
-    NotExpr(std::unique_ptr<Expr> expr)
-    :   expr_(std::move(expr))
-    {
-        type_ = AstType::NotExpr;
-    }
-
-    const std::string TypeName() const {
-        return "NotExpr";
-    }
-
-    void PrintImpl(std::string prefix) override {
-        expr_->Print(prefix, "expr");
     }
 };
 class FnCallExpr        : public Expr {

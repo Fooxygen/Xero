@@ -24,6 +24,7 @@ namespace rt {
         void Clear();
 
     public:
+        Range() {}
         Range(const Obj& l, const Obj& r, const Obj& s, bool isClosed, const Type* itertype);
         Range(const Range& other);
         ~Range() { Clear(); }

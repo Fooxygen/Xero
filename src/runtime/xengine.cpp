@@ -19,67 +19,107 @@ namespace rt {
     }
 
     Obj Xengine::Exec(OperExpr& node) {
-        auto lobj = Exec(*node.lexpr_);
-        auto robj = Exec(*node.rexpr_);
-        auto type = TypeTable::Common({ lobj.type(), robj.type() });
 
-        if (!type) {
-            throw LogErr(LogModule::Runtime, std::format(
-                "cannot match type '{}' to type '{}'",
-                robj.type()->name, lobj.type()->name
-            ));
+        // Unary
+        auto lobj = Exec(*node.lexpr_);
+        {
+            if (node.opertype_ == OperType::Neg) {
+                return CallTry(lobj.type()->neg_, lobj);
+            }
+            if (node.opertype_ == OperType::Not) {
+                return CallTry(lobj.type()->not_, lobj);
+            }
         }
 
-        lobj = TypeTable::Convert(lobj, type);
-        robj = TypeTable::Convert(robj, type);
-        
-        auto method_get = [&](const Type* t) -> Obj(*)(const Obj&, const Obj&) {
-            using enum Token::Type;
-            switch (node.opertype_) {
-                case Plus:  return t->plus_;
-                case Minus: return t->minus_;
-                case Star:  return t->star_;
-                case Slash: return t->slash_;
-                case Gt:    return t->gt_;
-                case Lt:    return t->lt_;
-                case Ge:    return t->ge_;
-                case Le:    return t->le_;
-                case Eq:    return t->eq_;
-                case Neq:   return t->neq_;
-                case And:   return t->and_;
-                case Or:    return t->or_;
-                default:    return nullptr;
+        // Binary
+        auto robj = Exec(*node.rexpr_);
+        {
+            // Unnecessary Type Conversation
+            {
+                if (node.opertype_ == OperType::Pick) {
+
+                    // Range
+                    if (node.rexpr_->type_ != AstType::RangeExpr) {
+                        auto one = TypeTable::Convert(Obj::Make_i32(1), robj.type());
+                        robj = Obj::Make_range(new Range(robj, robj, one, true, robj.type()));
+                    }
+
+                    auto obj = lobj.type()->pick_(lobj, robj);
+                    if (!obj.isNone()) return obj;
+                }
             }
-        };
 
-        auto obj = CallTry(method_get(type), lobj, robj);
-        if (!obj.isNone()) return obj;
+            // Necessary
+            {
+                auto type = TypeTable::Common({ lobj.type(), robj.type() });
+                if (!type) {
+                    throw LogErr(LogModule::Runtime, std::format(
+                        "cannot match type '{}' to type '{}'",
+                        robj.type()->name, lobj.type()->name
+                    ));
+                }
 
+                lobj = TypeTable::Convert(lobj, type);
+                robj = TypeTable::Convert(robj, type);
+
+                if (node.opertype_ == OperType::Plus) {
+                    auto obj = CallTry(type->plus_, lobj, robj);
+                    if (!obj.isNone()) return obj;
+                }
+                if (node.opertype_ == OperType::Minus) {
+                    auto obj = CallTry(type->minus_, lobj, robj);
+                    if (!obj.isNone()) return obj;
+                }
+                if (node.opertype_ == OperType::Star) {
+                    auto obj = CallTry(type->star_, lobj, robj);
+                    if (!obj.isNone()) return obj;
+                }
+                if (node.opertype_ == OperType::Slash) {
+                    auto obj = CallTry(type->slash_, lobj, robj);
+                    if (!obj.isNone()) return obj;
+                }
+                if (node.opertype_ == OperType::Gt) {
+                    auto obj = CallTry(type->gt_, lobj, robj);
+                    if (!obj.isNone()) return obj;
+                }
+                if (node.opertype_ == OperType::Lt) {
+                    auto obj = CallTry(type->lt_, lobj, robj);
+                    if (!obj.isNone()) return obj;
+                }
+                if (node.opertype_ == OperType::Ge) {
+                    auto obj = CallTry(type->ge_, lobj, robj);
+                    if (!obj.isNone()) return obj;
+                }
+                if (node.opertype_ == OperType::Le) {
+                    auto obj = CallTry(type->le_, lobj, robj);
+                    if (!obj.isNone()) return obj;
+                }
+                if (node.opertype_ == OperType::Eq) {
+                    auto obj = CallTry(type->eq_, lobj, robj);
+                    if (!obj.isNone()) return obj;
+                }
+                if (node.opertype_ == OperType::Neq) {
+                    auto obj = CallTry(type->neq_, lobj, robj);
+                    if (!obj.isNone()) return obj;
+                }
+                if (node.opertype_ == OperType::And) {
+                    auto obj = CallTry(type->and_, lobj, robj);
+                    if (!obj.isNone()) return obj;
+                }
+                if (node.opertype_ == OperType::Or) {
+                    auto obj = CallTry(type->or_, lobj, robj);
+                    if (!obj.isNone()) return obj;
+                }
+            }
+        }
+        
+        // Failure
         throw LogErr(LogModule::Runtime, std::format(
             "unsupported operator '{}' between '{}' and '{}'",
-            Token::TypeName(node.opertype_),
+            OperTypeName(node.opertype_),
             lobj.type()->name,
             robj.type()->name
         ));
-    }
-
-    Obj Xengine::Exec(PickExpr& node) {
-        auto target = Exec(*node.target_);
-        Obj pick;
-
-        // Range
-        if (node.pick_->type_ == AstType::RangeExpr) {
-            pick = Exec((RangeExpr&)*node.pick_);
-        }
-
-        // Index
-        else {
-            auto idx = Exec(*node.pick_);
-            auto one = TypeTable::Convert(Obj::Make_i32(1), idx.type());
-            pick = Obj::Make_range(new Range(idx, idx, one, true, idx.type()));
-        }
-
-        return target.type()->pick_(target, pick);
     }
 
     Obj Xengine::Exec(RangeExpr& node) {
@@ -135,30 +175,6 @@ namespace rt {
             node.isClosed_,
             itertype
         ));
-    }
-    
-    Obj Xengine::Exec(NegExpr& node) {
-        auto obj = Exec(*node.expr_);
-        auto neg = CallTry(obj.type()->neg_, obj);
-        if (neg.isNone()) {
-            throw LogErr(LogModule::Runtime, std::format(
-                "unsupported operator 'Neg' for '{}'",
-                obj.type()->name
-            ));
-        }
-        return neg;
-    }
-
-    Obj Xengine::Exec(NotExpr& node) {
-        auto obj = Exec(*node.expr_);
-        auto not_ = CallTry(obj.type()->not_, obj);
-        if (not_.isNone()) {
-            throw LogErr(LogModule::Runtime, std::format(
-                "unsupported operator 'Not' for '{}'",
-                obj.type()->name
-            ));
-        }
-        return not_;
     }
 
     Obj Xengine::Exec(FnCallExpr& node) {

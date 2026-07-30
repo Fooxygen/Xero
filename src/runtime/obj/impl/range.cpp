@@ -9,9 +9,9 @@
 namespace rt {
 
     void Range::Clear()  {
-        delete l_;
-        delete r_;
-        delete s_;
+        if (l_) delete l_;
+        if (r_) delete r_;
+        if (s_) delete s_;
         l_ = nullptr;
         r_ = nullptr;
         s_ = nullptr;
