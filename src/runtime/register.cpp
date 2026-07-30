@@ -277,14 +277,20 @@ namespace rt {
                         throw LogErr(LogModule::Runtime, "assignment with step in '[]' not allowed");
                     }
 
-                    size_t len = range.isClosed()
-                        ? range.right()->Get_i32() - range.left()->Get_i32() + 1
-                        : range.right()->Get_i32() - range.left()->Get_i32();
+                    if (range.isSingle()) {
+                        return Obj::MakeRef(src.Get(range.left()->Get_i32()));
+                    }
 
-                    auto* view = new StringView(
-                        &src, len, range.left()->Get_i32()
-                    );
-                    return Obj::Make_stringview(view);
+                    else {
+                        size_t len = range.isClosed()
+                            ? range.right()->Get_i32() - range.left()->Get_i32() + 1
+                            : range.right()->Get_i32() - range.left()->Get_i32();
+
+                        auto* view = new StringView(
+                            &src, len, range.left()->Get_i32()
+                        );
+                        return Obj::Make_stringview(view);
+                    }
                 }
             });
 
@@ -406,16 +412,22 @@ namespace rt {
                         throw LogErr(LogModule::Runtime, "assignment with step in '[]' not allowed");
                     }
 
-                    size_t len = range.isClosed()
-                        ? range.right()->Get_i32() - range.left()->Get_i32() + 1
-                        : range.right()->Get_i32() - range.left()->Get_i32();
+                    if (range.isSingle()) {
+                        return Obj::MakeRef(src.org()->Get(range.left()->Get_i32()) + src.offset());
+                    }
 
-                    auto* view = new StringView(
-                        src.org(),
-                        std::min(len, src.len()),
-                        range.left()->Get_i32() + src.offset()
-                    );
-                    return Obj::Make_stringview(view);
+                    else {
+                        size_t len = range.isClosed()
+                            ? range.right()->Get_i32() - range.left()->Get_i32() + 1
+                            : range.right()->Get_i32() - range.left()->Get_i32();
+
+                        auto* view = new StringView(
+                            src.org(),
+                            std::min(len, src.len()),
+                            range.left()->Get_i32() + src.offset()
+                        );
+                        return Obj::Make_stringview(view);
+                    }
                 },
             });
 
@@ -599,16 +611,22 @@ namespace rt {
                         throw LogErr(LogModule::Runtime, "assignment with step in '[]' not allowed");
                     }
 
-                    size_t len = range.isClosed()
-                        ? range.right()->Get_i32() - range.left()->Get_i32() + 1
-                        : range.right()->Get_i32() - range.left()->Get_i32();
+                    if (range.isSingle()) {
+                        return Obj::MakeRef(src.org()->Get(range.left()->Get_i32()) + src.offset());
+                    }
 
-                    auto* view = new ArrayView(
-                        src.org(),
-                        std::min(len, src.len()),
-                        range.left()->Get_i32() + src.offset()
-                    );
-                    return Obj::Make_arrayview(view);
+                    else {
+                        size_t len = range.isClosed()
+                            ? range.right()->Get_i32() - range.left()->Get_i32() + 1
+                            : range.right()->Get_i32() - range.left()->Get_i32();
+
+                        auto* view = new ArrayView(
+                            src.org(),
+                            std::min(len, src.len()),
+                            range.left()->Get_i32() + src.offset()
+                        );
+                        return Obj::Make_arrayview(view);
+                    }
                 },
             });
 

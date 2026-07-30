@@ -1,7 +1,4 @@
 
-a: array = [10, 20, 30, 40, 50];
-b: array = a;
-println(a, b);
-b[1] = 60;
-c: array = a[2..=4];
-println(a, b, c);
+s: string = "Hello";
+c: char = s[0];
+println(c + s);
