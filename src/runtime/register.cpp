@@ -681,7 +681,7 @@ namespace rt {
             auto* stringview_   = TypeTable::Get("stringview");
 
             TypeTable::ConvertSet(char_, string_, [](const Obj& o) {
-                return Obj::Make_string(new String(std::to_string(o.Get_char())));
+                return Obj::Make_string(new String(std::string(1, o.Get_char())));
             });
             TypeTable::ConvertSet(stringview_, string_, [](const Obj& o) {
                 auto& view = o.Get_stringview_ref();
