@@ -1,4 +1,4 @@
 
 s: string = "Hello";
 c: char = s[0];
-println(c + s);
+println(c + s[1..=3]);

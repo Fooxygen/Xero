@@ -14,12 +14,55 @@ namespace parser {
         using ASTNODE = std::unique_ptr<AstNode>;
 
         // Delay Reduction
+
         static auto isExprsBoundary = [](const Token* next) {
             if (!next) return true;                                 // EOF
             return  next->type() == Token::Type::Comma ||           // ,
                     next->type() == Token::Type::Semicolon ||       // ;
                     next->type() == Token::Type::RParen ||          // )
                     next->type() == Token::Type::RBkt;              // ]
+        };
+        
+        static auto isOperPriority = [](Token::Type a, Token::Type b) {
+            using TT = Token::Type;
+            
+            auto group = [](Token::Type type) {
+                switch (type) {
+                    case TT::LBkt:
+                    case TT::LParen:
+                    case TT::Dot:
+                        return 5;
+
+                    case TT::Star:
+                    case TT::Slash:
+                    case TT::StarOrSlash:
+                        return 4;
+
+                    case TT::Plus:
+                    case TT::Minus:
+                    case TT::PlusOrMinus:
+                        return 3;
+
+                    case TT::Gt:
+                    case TT::Ge:
+                    case TT::Lt:
+                    case TT::Le:
+                    case TT::Eq:
+                    case TT::Neq:
+                    case TT::RelationOper:
+                        return 2;
+
+                    case TT::And:
+                        return 1;
+
+                    case TT::Or:
+                        return 0;
+
+                    default:
+                        return -1;
+                }
+            };
+            return group(a) > group(b);
         };
 
         rules_.clear();
