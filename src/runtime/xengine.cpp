@@ -326,10 +326,8 @@ namespace rt {
         auto data = Exec(*node.data_);
         auto type = data.type();
 
-        // Range
-        if (type == TypeTable::Get("range")) {
+        if      (type == TypeTable::Get("range")) {
             auto& range = data.Get_range_ref();
-
             for (Obj o = *range.left(); ; o = range.itertype()->plus_(o, *range.step())) {
                 if (!range.isClosed() &&
                      range.itertype()->ge_(o, *range.right()).Get_bool()) break;
@@ -341,18 +339,30 @@ namespace rt {
                 });
             }
         }
-
-        // Array
+        else if (type == TypeTable::Get("stringview")) {
+            auto& view = data.Get_stringview_ref();
+            for (size_t i = 0; i < view.len(); i++) {
+                Exec(*node.block_, [&]() {
+                    env_.Declare(node.iter_->value_, *view.org()->Get(view.offset() + i));
+                });
+            }
+        }
         else if (type == TypeTable::Get("array")) {
             auto& array = data.Get_array_ref();
-
             for (size_t i = 0; i < array.size(); i++) {
                 Exec(*node.block_, [&]() {
                     env_.Declare(node.iter_->value_, *array.Get(i));
                 });
             }
         }
-
+        else if (type == TypeTable::Get("arrayview")) {
+            auto& view = data.Get_arrayview_ref();
+            for (size_t i = 0; i < view.len(); i++) {
+                Exec(*node.block_, [&]() {
+                    env_.Declare(node.iter_->value_, *view.org()->Get(view.offset() + i));
+                });
+            }
+        }
         else {
             throw LogErr(LogModule::Runtime, "unsupported 'for' statement");
         }

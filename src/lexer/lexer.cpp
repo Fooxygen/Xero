@@ -143,7 +143,7 @@ namespace lexer {
 
     Token Lexer::TokenScanWord() {
         size_t pbeg = pos_;
-        while (pos_ + 1 < code_.length() && isAlphaOrNumber(code_[pos_ + 1])) {
+        while (pos_ + 1 < code_.length() && isIdentifierChar(code_[pos_ + 1])) {
             CharNext();
         }
         CharNext();

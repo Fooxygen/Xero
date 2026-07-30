@@ -761,6 +761,18 @@ namespace rt {
             });
         }
 
+        // stringview
+        {
+            auto type = TypeTable::Get("stringview");
+
+            MethodTable::Set(type, "len", [](ARGS args) {
+                return Obj::Make_i32(args[0].Get_stringview_ref().len());
+            });
+            MethodTable::Set(type, "to_string", [](ARGS args) {
+                return TypeTable::Convert(args[0], TypeTable::Get("string"));
+            });
+        }
+
         // array
         {
             auto type = TypeTable::Get("array");
@@ -768,7 +780,6 @@ namespace rt {
             MethodTable::Set(type, "len", [](ARGS args) {
                 return Obj::Make_i32(args[0].Get_array_ref().size());
             });
-
             MethodTable::Set(type, "clear", [](ARGS args) {
                 args[0].Get_array_ref().Clear();
                 return Obj();
@@ -802,6 +813,18 @@ namespace rt {
                 auto& arr = args[0].Get_array_ref();
                 arr.Remove(arr.size() - 1);
                 return Obj();
+            });
+        }
+
+        // arrayview
+        {
+            auto type = TypeTable::Get("arrayview");
+
+            MethodTable::Set(type, "len", [](ARGS args) {
+                return Obj::Make_i32(args[0].Get_arrayview_ref().len());
+            });
+            MethodTable::Set(type, "to_array", [](ARGS args) {
+                return TypeTable::Convert(args[0], TypeTable::Get("array"));
             });
         }
     }

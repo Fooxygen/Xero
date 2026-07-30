@@ -35,11 +35,8 @@ namespace lexer {
         static constexpr bool isDot(char c) {
             return c == '.';
         }
-        static constexpr bool isAlphaOrNumber(char c) {
-            return isAlpha(c) || isNumber(c);
-        }
-        static constexpr bool isNumberOrDot(char c) {
-            return isNumber(c) || isDot(c);
+        static constexpr bool isIdentifierChar(char c) {
+            return isAlpha(c) || isNumber(c) || c == '_';
         }
         
         void  WhitespaceSkip() {
