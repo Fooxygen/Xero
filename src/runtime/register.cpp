@@ -9,6 +9,7 @@
 #include "obj/impl/string.hpp"
 #include "obj/impl/stringview.hpp"
 #include "obj/impl/array.hpp"
+#include "obj/impl/arrayview.hpp"
 
 namespace rt {
 
@@ -426,21 +427,13 @@ namespace rt {
                 },
                 .destroy_       = [](void* data) { delete (Array*)data; },
                 .to_string_     = [](const Obj& o) {
-                    std::string res = "[";
-                    auto& arr = o.Get_array_ref();
-                    for (size_t i = 0; i < arr.size(); i++) {
-                        auto o = arr.Get(i);
-                        if (i != 0) res += ", ";
-                        res += o->type()->to_string_(*o);
-                    }
-                    res += "]";
-                    return res;
+                    return o.Get_array_ref().ToCppString();
                 },
                 .assign_        = [](Obj* target, const Obj& value) {
                     auto& dst = target->Get_array_ref();
 
                     // = [x, y, z]
-                    if (value.type() == TypeTable::Get("array")) {
+                    if      (value.type() == TypeTable::Get("array")) {
                         auto& src = value.Get_array_ref();
                         if (src.size() != dst.size()) {
                             throw LogErr(LogModule::Runtime,
@@ -451,15 +444,22 @@ namespace rt {
                         for (size_t i = 0; i < dst.size(); i++) {
                             *dst.Get(i)->Origin() = *src.Get(i);
                         }
+                        
+                        return;
+                    }
+
+                    // = arr[x..y]
+                    else if (value.type() == TypeTable::Get("arrayview")) {
+                        *target = TypeTable::Convert(value, TypeTable::Get("array"));
                         return;
                     }
 
                     // = x
                     else {
-                        // [1, 2, ...] = 0 -> [0, 0, ...]
                         for (size_t i = 0; i < dst.size(); i++) {
                             *dst.Get(i)->Origin() = value;
                         }
+                        
                         return;
                     }
                 },
@@ -472,25 +472,144 @@ namespace rt {
                     return oc;
                 },
                 .pick_          = [](const Obj& target, const Obj& pick) {
+                    if (pick.type() != TypeTable::Get("range")) {
+                        throw LogErr(LogModule::Runtime, std::format(
+                            "pick must be range, not {}",
+                            pick.type()->name
+                        ));
+                    }
+
                     auto& src   = target.Get_array_ref();
                     auto& range = pick.Get_range_ref();
+
+                    if (range.itertype() != TypeTable::Get("i32") &&
+                        range.itertype() != TypeTable::Get("i64"))
+                    {
+                        throw LogErr(LogModule::Runtime, std::format(
+                            "iterator type of range must be i32 or i64, not {}",
+                            range.itertype()->name
+                        ));
+                    }
+
+                    if (range.step()->Get_i32() != 1) {
+                        throw LogErr(LogModule::Runtime, "assignment with step in '[]' not allowed");
+                    }
 
                     if (range.isSingle()) {
                         return Obj::MakeRef(src.Get(range.left()->Get_i32()));
                     }
 
                     else {
-                        auto* dst = new Array();
-                        for (Obj o = *range.left(); ; o = range.itertype()->plus_(o, *range.step())) {
-                            if (!range.isClosed() &&
-                                 range.itertype()->ge_(o, *range.right()).Get_bool()) break;
-                            if ( range.isClosed() &&
-                                 range.itertype()->gt_(o, *range.right()).Get_bool()) break;
-                            dst->Insert(dst->size(), new Obj(Obj::MakeRef(src.Get(o.Get_i32()))));
-                        }
-                        return Obj::Make_array(dst);
+                        size_t len = range.isClosed()
+                            ? range.right()->Get_i32() - range.left()->Get_i32() + 1
+                            : range.right()->Get_i32() - range.left()->Get_i32();
+
+                        auto* view = new ArrayView(
+                            &src, len, range.left()->Get_i32()
+                        );
+                        return Obj::Make_arrayview(view);
                     }
                 }
+            });
+
+            // arrayview
+            TypeTable::Set(Type{
+                .name       = "arrayview", .size = 0, .isHeapStored = true,
+                .clone_     = [](const Obj& o) {
+                    return Obj::Make_arrayview(new ArrayView(o.Get_arrayview_ref()));
+                },
+                .destroy_   = [](void* data) { delete (ArrayView*)data; },
+                .to_string_ = [](const Obj& o) {
+                    auto arr = TypeTable::Convert(o, TypeTable::Get("array"));
+                    return arr.Get_array_ref().ToCppString();
+                },
+                .assign_    = [](Obj* target, const Obj& value) {
+                    auto& target_view = target->Get_arrayview_ref();
+                    auto  target_arr  = target_view.org();
+
+                    auto assign_from_array = [&](const Array& src) {
+
+                        size_t beg = target_view.offset();
+                        size_t len = target_view.len();
+                        size_t len_common = std::min(len, src.size());
+
+                        // Replace Common
+                        // aaa bbbbb ccc
+                        // aaa ddddd ccc
+                        for (size_t i = 0; i < len_common; i++) {
+                            *target_arr->Get(beg + i) = *src.Get(i);
+                        }
+
+                        // Remove redundant chars
+                        // aaa bbbbb ccc
+                        // aaa eee   ccc
+                        for (size_t i = len - 1; i >= len_common; i--) {
+                            target_arr->Remove(beg + i);
+                        }
+
+                        // Add missing chars
+                        // aaa bbbbb   ccc
+                        // aaa eeeeeee ccc
+                        for (size_t i = len_common; i < src.size(); i++) {
+                            target_arr->Insert(beg + i, new Obj(*src.Get(i)));
+                        }
+                    };
+
+                    if      (value.type() == TypeTable::Get("array")) {
+                        assign_from_array(value.Get_array_ref());
+                        return;
+                    }
+                    else if (value.type() == TypeTable::Get("arrayview")) {
+                        auto arr = TypeTable::Convert(value, TypeTable::Get("array"));
+                        assign_from_array(arr.Get_array_ref());
+                        return;
+                    }
+                    else {
+                        for (size_t i = 0; i < target_view.len(); i++) {
+                            *target_arr->Get(target_view.offset() + i) = value;
+                        }
+                        return;
+                    }
+
+                    throw LogErr(LogModule::Runtime, std::format(
+                        "cannot assign type '{}' to type 'arrayview'", value.type()->name
+                    ));
+                },
+                .pick_      = [](const Obj& target, const Obj& pick) {
+                    if (pick.type() != TypeTable::Get("range")) {
+                        throw LogErr(LogModule::Runtime, std::format(
+                            "pick must be range, not {}",
+                            pick.type()->name
+                        ));
+                    }
+
+                    auto& src   = target.Get_arrayview_ref();
+                    auto& range = pick.Get_range_ref();
+
+                    if (range.itertype() != TypeTable::Get("i32") &&
+                        range.itertype() != TypeTable::Get("i64"))
+                    {
+                        throw LogErr(LogModule::Runtime, std::format(
+                            "iterator type of range must be i32 or i64, not {}",
+                            range.itertype()->name
+                        ));
+                    }
+
+                    if (range.step()->Get_i32() != 1) {
+                        throw LogErr(LogModule::Runtime, "assignment with step in '[]' not allowed");
+                    }
+
+                    size_t len = range.isClosed()
+                        ? range.right()->Get_i32() - range.left()->Get_i32() + 1
+                        : range.right()->Get_i32() - range.left()->Get_i32();
+
+                    auto* view = new ArrayView(
+                        src.org(),
+                        std::min(len, src.len()),
+                        range.left()->Get_i32() + src.offset()
+                    );
+                    return Obj::Make_arrayview(view);
+                },
             });
 
              // range
@@ -555,6 +674,20 @@ namespace rt {
                 }
 
                 return Obj::Make_string(new String(res));
+            });
+
+            auto* array_       = TypeTable::Get("array");
+            auto* arrayview_   = TypeTable::Get("arrayview");
+
+            TypeTable::ConvertSet(arrayview_, array_, [](const Obj& o) {
+                auto& view = o.Get_arrayview_ref();
+
+                auto* arr = new Array(view.len());
+                for (size_t i = 0; i < view.len(); i++) {
+                    arr->Insert(arr->size(), new Obj(view.org()->Get(view.offset() + i)->Clone()));
+                }
+
+                return Obj::Make_array(arr);
             });
         
             TypeTable::ConvertsRecompute();

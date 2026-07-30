@@ -25,8 +25,8 @@ namespace rt {
 
         if (!type) {
             throw LogErr(LogModule::Runtime, std::format(
-                "incompatible types '{}' and '{}'",
-                lobj.type()->name, robj.type()->name
+                "type '{}' is incompatible with '{}'",
+                robj.type()->name, lobj.type()->name
             ));
         }
 

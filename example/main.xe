@@ -1,9 +1,7 @@
 
-s: string = "Hello World";
-t: string = s;
-q: string = t[2..=6];
-println(s, t, q);
-s[3] = 'O';
-t[4] = s[2..=6][4];
-q[1..=3] = "XXXXXXXXXX";
-println(s, t, q);
+a: array = [10, 20, 30, 40, 50];
+b: array = a;
+println(a, b);
+b[1] = 60;
+c: array = a[2..=4];
+println(a, b, c);

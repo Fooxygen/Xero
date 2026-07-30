@@ -12,6 +12,7 @@
 #include "runtime/obj/impl/string.hpp"
 #include "runtime/obj/impl/stringview.hpp"
 #include "runtime/obj/impl/array.hpp"
+#include "runtime/obj/impl/arrayview.hpp"
 #include "runtime/obj/impl/range.hpp"
 
 namespace rt {
@@ -207,10 +208,10 @@ namespace rt {
             v.data().ptr_ = new HeapData(str);
             return o;
         }
-        static Obj Make_stringview(StringView* sv) {
+        static Obj Make_stringview(StringView* view) {
             Obj o;
             auto& v = o.data_.emplace<Value>(TypeTable::Get("stringview"));
-            v.data().ptr_ = new HeapData(sv);
+            v.data().ptr_ = new HeapData(view);
             return o;
         }
         static Obj Make_array(size_t size = 1) {
@@ -223,6 +224,12 @@ namespace rt {
             Obj o;
             auto& v = o.data_.emplace<Value>(TypeTable::Get("array"));
             v.data().ptr_ = new HeapData(arr);
+            return o;
+        }
+        static Obj Make_arrayview(ArrayView* view) {
+            Obj o;
+            auto& v = o.data_.emplace<Value>(TypeTable::Get("arrayview"));
+            v.data().ptr_ = new HeapData(view);
             return o;
         }
         static Obj Make_range(Range* rge) {
@@ -291,6 +298,17 @@ namespace rt {
                 case UsingType::Value: {
                     auto heap = (HeapData*)value().data().ptr_;
                     return *(Array*)heap->data;
+                }
+                default: __builtin_unreachable();
+            }
+        }
+        ArrayView&  Get_arrayview_ref()     const {
+            switch (usingtype) {
+                case UsingType::Ref:
+                    return ref().obj()->Get_arrayview_ref();
+                case UsingType::Value: {
+                    auto heap = (HeapData*)value().data().ptr_;
+                    return *(ArrayView*)heap->data;
                 }
                 default: __builtin_unreachable();
             }

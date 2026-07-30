@@ -12,12 +12,14 @@ namespace rt {
         data_ = new Obj*[size];
         memset(data_, 0, sizeof(Obj*) * size);
         capacity_ = size;
+        element_type_ = nullptr;
     }
 
     Array::Array(const Array& other) {
         data_ = new Obj*[other.capacity_];
         memset(data_, 0, sizeof(Obj*) * other.capacity_);
         capacity_ = other.capacity_;
+        element_type_ = other.element_type_;
 
         for (size_t i = 0; i < other.size_; i++) {
             Insert(i, new Obj(other.Get(i)->Clone()));
@@ -35,6 +37,17 @@ namespace rt {
         delete[] data_;
         data_ = expand;
         capacity_ = capa;
+    }
+
+    std::string Array::ToCppString() const {
+        std::string res = "[";
+        for (size_t i = 0; i < size_; i++) {
+            auto o = Get(i);
+            if (i != 0) res += ", ";
+            res += o->type()->to_string_(*o);
+        }
+        res += "]";
+        return res;
     }
 
     void Array::Clear() {
@@ -60,6 +73,18 @@ namespace rt {
     void Array::Insert(size_t idx, Obj* obj) {
         IndexCheck(idx, true);
         Expand(size_ + 1);
+
+        // Element Type
+        if (!element_type_) {
+            element_type_ = obj->type();
+        }
+        else if (obj->type() != element_type_) {
+            throw LogErr(LogModule::Runtime, std::format(
+                "type '{}' is incompatible with '{}'",
+                obj->type()->name, element_type_->name
+            ));
+        }
+
         memmove(data_ + idx + 1, data_ + idx, sizeof(Obj*) * (size_ - idx));
         data_[idx] = obj;
         size_++;
