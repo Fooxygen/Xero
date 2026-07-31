@@ -38,7 +38,7 @@ namespace rt {
                     }
 
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot compatible type '{}' to type 'bool'", value.type()->name
+                        "cannot make type '{}' compatible with type 'bool'", value.type()->name
                     ));
                 },
                 .gt_        = [](const Obj& l, const Obj& r) { return Obj::Make_bool(l.Get_bool() >  r.Get_bool()); },
@@ -68,7 +68,7 @@ namespace rt {
                     }
 
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot compatible type '{}' to type 'i32'", value.type()->name
+                        "cannot make type '{}' compatible with 'i32'", value.type()->name
                     ));
                 },
                 .plus_      = [](const Obj& a, const Obj& b) { return Obj::Make_i32(a.Get_i32() + b.Get_i32()); },
@@ -104,7 +104,7 @@ namespace rt {
                     }
 
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot compatible type '{}' to type 'i64'", value.type()->name
+                        "cannot make type '{}' compatible with 'i64'", value.type()->name
                     ));
                 },
                 .plus_      = [](const Obj& a, const Obj& b) { return Obj::Make_i64(a.Get_i64() + b.Get_i64()); },
@@ -140,7 +140,7 @@ namespace rt {
                     }
                     
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot compatible type '{}' to type 'f32'", value.type()->name
+                        "cannot make type '{}' compatible with 'f32'", value.type()->name
                     ));
                 },
                 .plus_      = [](const Obj& a, const Obj& b) { return Obj::Make_f32(a.Get_f32() + b.Get_f32()); },
@@ -172,7 +172,7 @@ namespace rt {
                     }
                     
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot compatible type '{}' to type 'f64'", value.type()->name
+                        "cannot make type '{}' compatible with 'f64'", value.type()->name
                     ));
                 },
                 .plus_      = [](const Obj& a, const Obj& b) { return Obj::Make_f64(a.Get_f64() + b.Get_f64()); },
@@ -204,7 +204,7 @@ namespace rt {
                     }
                     
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot compatible type '{}' to type 'char'", value.type()->name
+                        "cannot make type '{}' compatible with 'char'", value.type()->name
                     ));
                 },
                 .gt_        = [](const Obj& a, const Obj& b) { return Obj::Make_bool(a.Get_char() >  b.Get_char()); },
@@ -238,7 +238,7 @@ namespace rt {
                     }
                     
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot compatible type '{}' to type 'string'", value.type()->name
+                        "cannot make type '{}' compatible with 'string'", value.type()->name
                     ));
                 },
                 .plus_      = [](const Obj& a, const Obj& b) {
@@ -310,6 +310,9 @@ namespace rt {
                 .assign_    = [](Obj* target, const Obj& value) {
                     auto& target_view = target->Get_stringview_ref();
                     auto  target_str  = target_view.org();
+                    if (!target_str) {
+                        throw LogErr(LogModule::Runtime, "cannot assign to empty stringview");
+                    }
 
                     auto assign_from_string = [&](const String& src) {
 
@@ -355,7 +358,7 @@ namespace rt {
                                 return;
                             }
                             throw LogErr(LogModule::Runtime, std::format(
-                                "cannot compatible type '{}' to type 'char'", value.type()->name
+                                "cannot make type '{}' compatible with 'char'", value.type()->name
                             ));
                         }
                         if (value.type() == TypeTable::Get("stringview")) {
@@ -367,7 +370,7 @@ namespace rt {
                                 return;
                             }
                             throw LogErr(LogModule::Runtime, std::format(
-                                "cannot compatible type '{}' to type 'char'", value.type()->name
+                                "cannot make type '{}' compatible with 'char'", value.type()->name
                             ));
                         }
                     }
@@ -389,7 +392,7 @@ namespace rt {
                     }
                     
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot compatible type '{}' to type 'stringview'", value.type()->name
+                        "cannot make type '{}' compatible with 'stringview'", value.type()->name
                     ));
                 },
                 .pick_      = [](const Obj& target, const Obj& pick) {
@@ -531,6 +534,9 @@ namespace rt {
                 .assign_    = [](Obj* target, const Obj& value) {
                     auto& target_view = target->Get_arrayview_ref();
                     auto  target_arr  = target_view.org();
+                    if (!target_arr) {
+                        throw LogErr(LogModule::Runtime, "cannot assign to empty arrayview");
+                    }
 
                     auto assign_from_array = [&](const Array& src) {
 

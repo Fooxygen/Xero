@@ -22,7 +22,7 @@ namespace rt {
         void Clear();
 
     public:
-        ArrayView(Array* org, size_t len, size_t offset);
+        ArrayView(Array* org = nullptr, size_t len = 0, size_t offset = 0);
         ArrayView(const ArrayView& other);
         ~ArrayView() { Clear(); }
 

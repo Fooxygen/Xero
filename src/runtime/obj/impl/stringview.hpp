@@ -22,7 +22,7 @@ namespace rt {
         void Clear();
 
     public:
-        StringView(String* org, size_t len, size_t offset);
+        StringView(String* org = nullptr, size_t len = 0, size_t offset = 0);
         StringView(const StringView& other);
         ~StringView() { Clear(); }
 

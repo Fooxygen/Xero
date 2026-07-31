@@ -295,17 +295,25 @@ namespace rt {
         auto value = Exec(*node.value_);
         auto type  = TypeTable::Get(node.value_type_->value_);
 
+        // Replace while the types are consistent
+        if (value.type() == type) {
+            env_.Declare(node.id_->value_, value);
+            return Obj();
+        }
+        
         // Try Convert Type
         auto value_convert = TypeTable::Convert(value, type);
         if (value_convert.isNone()) {
             throw LogErr(LogModule::Runtime, std::format(
-                "cannot compatible type '{}' to type '{}'",
+                "cannot make type '{}' compatible with '{}'",
                 value.type()->name, type->name
             ));
         }
 
         // Assign Obj Clone
-        env_.Declare(node.id_->value_, value_convert.Clone());
+        auto empty = Obj::MakeEmpty(type);
+        type->assign_(empty.Origin(), value_convert.Clone());
+        env_.Declare(node.id_->value_, empty);
         return Obj();
     }
 

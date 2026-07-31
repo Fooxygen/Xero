@@ -166,6 +166,28 @@ namespace rt {
             o.data_.emplace<Ref>(org);
             return o;
         }
+        static Obj MakeEmpty(const Type* type) {
+            auto& name = type->name;
+
+            if (name == "none")        return Obj();
+            if (name == "bool")        return Make_bool(false);
+            if (name == "char")        return Make_char('\0');
+            if (name == "i32")         return Make_i32(0);
+            if (name == "i64")         return Make_i64(0);
+            if (name == "f32")         return Make_f32(0.0f);
+            if (name == "f64")         return Make_f64(0.0);
+            if (name == "string")      return Make_string(new String());
+            if (name == "stringview")  return Make_stringview(new StringView());
+            if (name == "array")       return Make_array();
+            if (name == "arrayview")   return Make_arrayview(new ArrayView());
+            if (name == "range")       return Make_range(new Range());
+
+            throw LogErr(LogModule::Runtime, std::format(
+                "cannot make empty value for type '{}'",
+                name
+            ));
+        }
+        
         static Obj Make_bool(bool b) {
             Obj o;
             auto& v = o.data_.emplace<Value>(TypeTable::Get("bool"));
