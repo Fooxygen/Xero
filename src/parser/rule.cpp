@@ -13,7 +13,7 @@ namespace parser {
         using PATS    = std::initializer_list<SymbolPattern>;
         using ASTNODE = std::unique_ptr<AstNode>;
 
-        // Delay Reduction
+        // Expr Auxiliary
 
         static auto isExprsBoundary = [](const Token* next) {
             if (!next) return true;                                 // EOF
@@ -23,6 +23,8 @@ namespace parser {
                     next->type() == Token::Type::RBkt;              // ]
         };
         
+        // Oper Auxiliary
+
         static auto isOperPriority = [](Token::Type a, Token::Type b) {
             using TT = Token::Type;
             
@@ -65,8 +67,46 @@ namespace parser {
             return group(a) > group(b);
         };
 
-        rules_.clear();
+        // └─ Binary: expr <token> expr
+        auto BinOperAdd = [&](Token::Type token, OperType op) {
+            RuleAdd(
+                PATS{
+                    AT::Expr,
+                    token,
+                    AT::Expr
+                },
+                [op, token](std::vector<Symbol>& symbols, const Token* token_next) -> ASTNODE {
+                    if (token_next && isOperPriority(token_next->type(), token))
+                        return nullptr;     // postpone
+
+                    return std::make_unique<OperExpr>(
+                        op,
+                        Rule::Move<Expr>(symbols, 1),
+                        Rule::Move<Expr>(symbols, 3)
+                    );
+                }
+            );
+        };
         
+        // └─ Unary: <token> expr
+        auto UnaryOperAdd = [&](Token::Type token, OperType op) {
+            RuleAdd(
+                PATS{
+                    token,
+                    AT::Expr
+                },
+                [op](std::vector<Symbol>& symbols, auto*) {
+                    return std::make_unique<OperExpr>(
+                        op,
+                        Rule::Move<Expr>(symbols, 2),
+                        nullptr
+                    );
+                }
+            );
+        };
+
+        rules_.clear();
+
         // Declare and Assign
         
         // └─ id: expr = expr; -> declarestmt
@@ -319,161 +359,24 @@ namespace parser {
                 }
             );
         }
-        // └─ expr *|/ expr
-        {
-            RuleAdd(
-                PATS{
-                    AT::Expr,
-                    TT::StarOrSlash,
-                    AT::Expr,
-                },
-                [](std::vector<Symbol>& symbols, const Token* token_next) {
-                    size_t syms_len = symbols.size();
+        
+        // └─ Binary
+        BinOperAdd(TT::Star,  OperType::Star);
+        BinOperAdd(TT::Slash, OperType::Slash);
+        BinOperAdd(TT::Plus,  OperType::Plus);
+        BinOperAdd(TT::Minus, OperType::Minus);
+        BinOperAdd(TT::Gt,    OperType::Gt);
+        BinOperAdd(TT::Ge,    OperType::Ge);
+        BinOperAdd(TT::Lt,    OperType::Lt);
+        BinOperAdd(TT::Le,    OperType::Le);
+        BinOperAdd(TT::Eq,    OperType::Eq);
+        BinOperAdd(TT::Neq,   OperType::Neq);
+        BinOperAdd(TT::And,   OperType::And);
+        BinOperAdd(TT::Or,    OperType::Or);
 
-                    auto sym = std::get<Token>(symbols[syms_len - 2].data()).type();
-                    OperType opertype = OperType::Undefined;
-                    switch (sym) {
-                        case Token::Type::Star:     opertype = OperType::Star;  break;
-                        case Token::Type::Slash:    opertype = OperType::Slash; break;
-                        default: break;
-                    }
-                    
-                    return std::make_unique<OperExpr>(
-                        opertype,
-                        Rule::Move<Expr>(symbols, 1),
-                        Rule::Move<Expr>(symbols, 3)
-                    );
-                }
-            );
-        }
-        // └─ expr +|- expr
-        {
-            RuleAdd(
-                PATS{
-                    AT::Expr,
-                    TT::PlusOrMinus,
-                    AT::Expr,
-                },
-                [](std::vector<Symbol>& symbols, const Token* token_next) -> ASTNODE {
-                    size_t syms_len = symbols.size();
-
-                    // Oper Priority Check
-                    auto sym = std::get<Token>(symbols[syms_len - 2].data()).type();
-                    if (token_next && isOperPriority(token_next->type(), sym))
-                    return nullptr;     // postpone
-
-                    OperType opertype = OperType::Undefined;
-                    switch (sym) {
-                        case Token::Type::Plus:     opertype = OperType::Plus;  break;
-                        case Token::Type::Minus:    opertype = OperType::Minus; break;
-                        default: break;
-                    }
-
-                    return std::make_unique<OperExpr>(
-                        opertype,
-                        Rule::Move<Expr>(symbols, 1),
-                        Rule::Move<Expr>(symbols, 3)
-                    );
-                }
-            );
-        }
-        // └─ -expr
-        {
-            RuleAdd(
-                PATS{
-                    TT::Minus,
-                    AT::Expr,
-                },
-                [](std::vector<Symbol>& symbols, auto*) {
-                    return std::make_unique<OperExpr>(
-                        OperType::Neg,
-                        Rule::Move<Expr>(symbols, 2),
-                        nullptr
-                    );
-                }
-            );
-        }
-        // └─ !expr
-        {
-            RuleAdd(
-                PATS{
-                    TT::Not,
-                    AT::Expr,
-                },
-                [](std::vector<Symbol>& symbols, auto*) {
-                    return std::make_unique<OperExpr>(
-                        OperType::Not,
-                        Rule::Move<Expr>(symbols, 2),
-                        nullptr
-                    );
-                }
-            );
-        }
-        // └─ expr relationoper expr
-        {
-            RuleAdd(
-                PATS{
-                    AT::Expr,
-                    TT::RelationOper,
-                    AT::Expr
-                },
-                [](std::vector<Symbol>& symbols, const Token* token_next) -> ASTNODE {
-                    size_t syms_len = symbols.size();
-
-                    auto sym = std::get<Token>(symbols[syms_len - 2].data()).type();
-                    if (token_next && isOperPriority(token_next->type(), sym))
-                        return nullptr;
-
-                    OperType opertype = OperType::Undefined;
-                    switch (sym) {
-                        case Token::Type::Gt:   opertype = OperType::Gt;    break;
-                        case Token::Type::Ge:   opertype = OperType::Ge;    break;
-                        case Token::Type::Lt:   opertype = OperType::Lt;    break;
-                        case Token::Type::Le:   opertype = OperType::Le;    break;
-                        case Token::Type::Eq:   opertype = OperType::Eq;    break;
-                        case Token::Type::Neq:  opertype = OperType::Neq;   break;
-                        default: break;
-                    }
-
-                    return std::make_unique<OperExpr>(
-                        opertype,
-                        Rule::Move<Expr>(symbols, 1),
-                        Rule::Move<Expr>(symbols, 3)
-                    );
-                }
-            );
-        }
-        // └─ expr logicaloper expr
-        {
-            RuleAdd(
-                PATS{
-                    AT::Expr,
-                    TT::LogicalOper,
-                    AT::Expr
-                },
-                [](std::vector<Symbol>& symbols, const Token* token_next) -> ASTNODE {
-                    size_t syms_len = symbols.size();
-
-                    auto sym = std::get<Token>(symbols[syms_len - 2].data()).type();
-                    if (token_next && isOperPriority(token_next->type(), sym))
-                        return nullptr;
-
-                    OperType opertype = OperType::Undefined;
-                    switch (sym) {
-                        case Token::Type::Not:  opertype = OperType::Not;   break;
-                        case Token::Type::And:  opertype = OperType::And;   break;
-                        case Token::Type::Or:   opertype = OperType::Or;    break;
-                        default: break;
-                    }
-
-                    return std::make_unique<OperExpr>(
-                        opertype,
-                        Rule::Move<Expr>(symbols, 1),
-                        Rule::Move<Expr>(symbols, 3)
-                    );
-                }
-            );
-        }
+        // └─ Unary
+        UnaryOperAdd(TT::Minus, OperType::Neg);
+        UnaryOperAdd(TT::Not,   OperType::Not);
         
         // Array
 
