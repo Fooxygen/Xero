@@ -19,7 +19,6 @@ public:
         // └─ Punctuation
         Unsemantic,         //  Base
         Colon,              //  :
-        Assign,             //  =
         Semicolon,          //  ;
         LParen,             //  (
         RParen,             //  )
@@ -44,10 +43,8 @@ public:
 
         // └─ Arith Operator
         ArithOper,          //  Base
-        PlusOrMinus,        //  Base
         Plus,               //  +
         Minus,              //  -
-        StarOrSlash,        //  Base
         Star,               //  *
         Slash,              //  /
         
@@ -65,6 +62,12 @@ public:
         And,                //  &&
         Or,                 //  ||
         Not,                //  !
+
+        // └─ Assign Operator
+        AssignOper ,        //  Base
+        Assign,             //  =
+        PlusAssign,         //  +=
+        MinusAssign,        //  -=
 
         // └─ Keyword
         Keyword,            // Base
@@ -100,7 +103,6 @@ public:
         using enum Type;
         switch (type) {
             case Colon:
-            case Assign:
             case Semicolon:
             case LParen:
             case RParen:
@@ -124,14 +126,8 @@ public:
 
             case Plus:
             case Minus:
-                return PlusOrMinus;
-
             case Star:
             case Slash:
-                return StarOrSlash;
-
-            case PlusOrMinus:
-            case StarOrSlash:
                 return ArithOper;
 
             case Gt:
@@ -146,6 +142,11 @@ public:
             case And:
             case Or:
                 return LogicalOper;
+
+            case Assign:
+            case PlusAssign:
+            case MinusAssign:
+                return AssignOper;
 
             case If:
             case Elif:
@@ -170,7 +171,6 @@ public:
         using enum Type;
         switch (type) {
             case Colon:         return "Colon";
-            case Assign:        return "Assign";
             case Semicolon:     return "Semicolon";
             case LParen:        return "LParen";
             case RParen:        return "RParen";
@@ -190,10 +190,8 @@ public:
             case Char:          return "Char";
             case String:        return "String";
 
-            case PlusOrMinus:   return "PlusOrMinus";
             case Plus:          return "Plus";
             case Minus:         return "Minus";
-            case StarOrSlash:   return "StarOrSlash";
             case Star:          return "Star";
             case Slash:         return "Slash";
 
@@ -207,6 +205,10 @@ public:
             case Not:           return "Not";
             case And:           return "And";
             case Or:            return "Or";
+
+            case Assign:        return "Assign";
+            case PlusAssign:    return "PlusAssign";
+            case MinusAssign:   return "MinusAssign";
 
             case If:            return "If";
             case Elif:          return "Elif";

@@ -292,29 +292,40 @@ namespace rt {
     }
 
     Obj Xengine::Exec(DeclStmt& node) {
-        auto value = Exec(*node.value_);
         auto type  = TypeTable::Get(node.value_type_->value_);
 
-        // Replace while the types are consistent
-        if (value.type() == type) {
-            env_.Declare(node.id_->value_, value);
+        // obj: type = value;
+        if (node.value_) {
+            auto value = Exec(*node.value_);
+
+            // Replace
+            if (value.type() == type) {
+                env_.Declare(node.id_->value_, value);
+                return Obj();
+            }
+            
+            // Try Convert Type
+            auto value_convert = TypeTable::Convert(value, type);
+            if (value_convert.isNone()) {
+                throw LogErr(LogModule::Runtime, std::format(
+                    "cannot make type '{}' compatible with '{}'",
+                    value.type()->name, type->name
+                ));
+            }
+
+            // Assign Obj Clone
+            auto empty = Obj::MakeEmpty(type);
+            type->assign_(empty.Origin(), value_convert.Clone());
+            env_.Declare(node.id_->value_, empty);
             return Obj();
         }
-        
-        // Try Convert Type
-        auto value_convert = TypeTable::Convert(value, type);
-        if (value_convert.isNone()) {
-            throw LogErr(LogModule::Runtime, std::format(
-                "cannot make type '{}' compatible with '{}'",
-                value.type()->name, type->name
-            ));
-        }
 
-        // Assign Obj Clone
-        auto empty = Obj::MakeEmpty(type);
-        type->assign_(empty.Origin(), value_convert.Clone());
-        env_.Declare(node.id_->value_, empty);
-        return Obj();
+        // obj: type;
+        else {
+            auto empty = Obj::MakeEmpty(type);
+            env_.Declare(node.id_->value_, empty);
+            return Obj();
+        }
     }
 
     Obj Xengine::Exec(AssignStmt& node) {

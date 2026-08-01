@@ -26,6 +26,9 @@ enum class OperType {
 
     // Container
     Pick,
+
+    // Assign
+    // Not participating in OperExpr
 };
 
 static std::string OperTypeName(OperType type) {
@@ -157,6 +160,8 @@ public:
         std::cout << prefix;
         std::cout << "└── " << COLOR_ORANGE << "[" << name << "] " << COLOR_DEFAULT;
     }
+
+    virtual std::unique_ptr<AstNode> Clone() const = 0;
 };
 class Expr              : public AstNode {
 };
@@ -181,6 +186,14 @@ public:
     void PrintImpl(std::string prefix) override {
         for (auto& e : exprs_) e->Print(prefix);
     }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        std::vector<std::unique_ptr<Expr>> exprs;
+        for (auto& e : exprs_) {
+            exprs.emplace_back((Expr*)(e->Clone().release()));
+        }
+        return std::make_unique<Exprs>(exprs);
+    }
 };
 
 // Expr
@@ -199,6 +212,10 @@ public:
     void PrintImpl(std::string prefix) override {
         PrintLabel("value", prefix);
         std::cout << COLOR_BLUE << value_ << COLOR_DEFAULT << std::endl;
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        return std::make_unique<IdExpr>(value_);
     }
 };
 class OperExpr          : public Expr {
@@ -230,6 +247,14 @@ public:
         std::cout << COLOR_DEFAULT << std::endl;
         lexpr_->Print(prefix, "lexpr");
         if (rexpr_) rexpr_->Print(prefix, "rexpr");
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        return std::make_unique<OperExpr>(
+            opertype_,
+            std::unique_ptr<Expr>((Expr*)(lexpr_->Clone().release())),
+            rexpr_ ? std::unique_ptr<Expr>((Expr*)(rexpr_->Clone().release())) : nullptr
+        );
     }
 };
 class RangeExpr         : public Expr {
@@ -268,6 +293,15 @@ public:
         rexpr_->Print(prefix, "rexpr");
         if (step_) step_->Print(prefix, "step");
     }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        return std::make_unique<RangeExpr>(
+            std::unique_ptr<Expr>((Expr*)(lexpr_->Clone().release())),
+            std::unique_ptr<Expr>((Expr*)(rexpr_->Clone().release())),
+            step_ ? std::unique_ptr<Expr>((Expr*)(step_->Clone().release())) : nullptr,
+            isClosed_
+        );
+    }
 };
 class ArrayExpr         : public Expr {
 public:
@@ -285,6 +319,12 @@ public:
 
     void PrintImpl(std::string prefix) override {
         elements_->Print(prefix, "elements");
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        return std::make_unique<ArrayExpr>(
+            std::unique_ptr<Exprs>((Exprs*)(elements_->Clone().release()))
+        );
     }
 };
 class FnCallExpr        : public Expr {
@@ -309,6 +349,13 @@ public:
     void PrintImpl(std::string prefix) override {
         callee_->Print(prefix, "callee");
         args_->Print(prefix, "args");
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        return std::make_unique<FnCallExpr>(
+            std::make_unique<IdExpr>(callee_->value_),
+            std::unique_ptr<Exprs>((Exprs*)(args_->Clone().release()))
+        );
     }
 };
 class MethodCallExpr    : public Expr {
@@ -338,6 +385,14 @@ public:
         callee_->Print(prefix, "callee");
         args_->Print(prefix, "args");
     }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        return std::make_unique<MethodCallExpr>(
+            std::unique_ptr<Expr>((Expr*)(target_->Clone().release())),
+            std::make_unique<IdExpr>(callee_->value_),
+            std::unique_ptr<Exprs>((Exprs*)(args_->Clone().release()))
+        );
+    }
 };
 
 // Const
@@ -358,6 +413,10 @@ public:
     void PrintImpl(std::string prefix) override {
         PrintLabel("value", prefix);
         std::cout << COLOR_ORANGE << value_ << COLOR_DEFAULT << std::endl;
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        return std::make_unique<NumConst>(value_);
     }
 };
 class BoolConst         : public Const {
@@ -381,6 +440,10 @@ public:
         else
             std::cout << COLOR_RED << "false" << COLOR_DEFAULT << std::endl;
     }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        return std::make_unique<BoolConst>(value_);
+    }
 };
 class CharConst         : public Const {
 public:
@@ -400,6 +463,10 @@ public:
         PrintLabel("value", prefix);
         std::cout << COLOR_GREEN << "'" << value_ << "'" << COLOR_DEFAULT << std::endl;
     }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        return std::make_unique<CharConst>(value_);
+    }
 };
 class StringConst       : public Const {
 public:
@@ -418,6 +485,10 @@ public:
     void PrintImpl(std::string prefix) override {
         PrintLabel("value", prefix);
         std::cout << COLOR_GREEN << "\"" << value_ << "\"" << COLOR_DEFAULT << std::endl;
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        return std::make_unique<StringConst>(value_);
     }
 };
 
@@ -440,6 +511,14 @@ public:
         for (auto& child : children_) {
             child->Print(prefix);
         }
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        std::vector<std::unique_ptr<AstNode>> children;
+        for (auto& child : children_) {
+            children.emplace_back(child->Clone());
+        }
+        return std::make_unique<BlockStmt>(children);
     }
 };
 class DeclStmt          : public Stmt {
@@ -466,8 +545,16 @@ public:
 
     void PrintImpl(std::string prefix) override {
         id_->Print(prefix, "id");
-        value_->Print(prefix, "value");
+        if (value_) value_->Print(prefix, "value");
         value_type_->Print(prefix, "type");
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        return std::make_unique<DeclStmt>(
+            std::make_unique<IdExpr>(id_->value_),
+            value_ ? std::unique_ptr<Expr>((Expr*)(value_->Clone().release())) : nullptr,
+            std::make_unique<IdExpr>(value_type_->value_)
+        );
     }
 };
 class AssignStmt        : public Stmt {
@@ -492,6 +579,13 @@ public:
     void PrintImpl(std::string prefix) override {
         target_->Print(prefix, "target");
         value_->Print(prefix, "value");
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        return std::make_unique<AssignStmt>(
+            std::unique_ptr<Expr>((Expr*)(target_->Clone().release())),
+            std::unique_ptr<Expr>((Expr*)(value_->Clone().release()))
+        );
     }
 };
 class CondStmt          : public Stmt {
@@ -521,6 +615,14 @@ public:
         block_->Print(prefix, "block");
         if (sub_) sub_->Print(prefix, "sub");
     }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        return std::make_unique<CondStmt>(
+            cond_ ? std::unique_ptr<Expr>((Expr*)(cond_->Clone().release())) : nullptr,
+            std::unique_ptr<BlockStmt>((BlockStmt*)(block_->Clone().release())),
+            sub_ ? std::unique_ptr<CondStmt>((CondStmt*)(sub_->Clone().release())) : nullptr
+        );
+    }
 };
 class ForStmt           : public Stmt {
 public:
@@ -549,6 +651,14 @@ public:
         data_->Print(prefix, "data");
         block_->Print(prefix, "block");
     }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        return std::make_unique<ForStmt>(
+            std::make_unique<IdExpr>(iter_->value_),
+            std::unique_ptr<Expr>((Expr*)(data_->Clone().release())),
+            std::unique_ptr<BlockStmt>((BlockStmt*)(block_->Clone().release()))
+        );
+    }
 };
 
 // Program
@@ -562,5 +672,13 @@ public:
 
     const std::string TypeName() const {
         return "Program";
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        std::vector<std::unique_ptr<AstNode>> children;
+        for (auto& child : children_) {
+            children.emplace_back(child->Clone());
+        }
+        return std::make_unique<Program>(children);
     }
 };

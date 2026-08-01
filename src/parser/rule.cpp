@@ -24,17 +24,15 @@ namespace parser {
                     case TT::LBkt:
                     case TT::LParen:
                     case TT::Dot:
-                        return 5;
+                        return -1;
 
                     case TT::Star:
                     case TT::Slash:
-                    case TT::StarOrSlash:
-                        return 4;
+                        return -2;
 
                     case TT::Plus:
                     case TT::Minus:
-                    case TT::PlusOrMinus:
-                        return 3;
+                        return -3;
 
                     case TT::Gt:
                     case TT::Ge:
@@ -43,16 +41,16 @@ namespace parser {
                     case TT::Eq:
                     case TT::Neq:
                     case TT::RelationOper:
-                        return 2;
+                        return -4;
 
                     case TT::And:
-                        return 1;
+                        return -5;
 
                     case TT::Or:
-                        return 0;
+                        return -6;
 
                     default:
-                        return -1;
+                        return -7;
                 }
             };
             return group(a) > group(b);
@@ -98,47 +96,7 @@ namespace parser {
 
         rules_.clear();
 
-        // Declare and Assign
-        
-        // └─ id: expr = expr; -> declarestmt
-        {
-            RuleAdd(
-                PATS{
-                    AT::IdExpr,
-                    TT::Colon,
-                    AT::IdExpr,
-                    TT::Assign,
-                    AT::Expr,
-                    TT::Semicolon
-                },
-                [](std::vector<Symbol>& symbols, auto) {
-                    return std::make_unique<DeclStmt>(
-                        Rule::Move<IdExpr>(symbols, 1),
-                        Rule::Move<Expr>(symbols, 5),
-                        Rule::Move<IdExpr>(symbols, 3)
-                    );
-                }
-            );
-        }
-        // └─ expr = expr; -> assignstmt
-        {
-            RuleAdd(
-                PATS{
-                    AT::Expr,
-                    TT::Assign,
-                    AT::Expr,
-                    TT::Semicolon
-                },
-                [](std::vector<Symbol>& symbols, auto) {
-                    return std::make_unique<AssignStmt>(
-                        Rule::Move<Expr>(symbols, 1),
-                        Rule::Move<Expr>(symbols, 3)
-                    );
-                }
-            );
-        }
-
-        // Exprs
+        // Expr
 
         // └─ expr, expr -> exprs
         {
@@ -182,6 +140,114 @@ namespace parser {
                     TT::Semicolon,
                     TT::RParen,
                     TT::RBkt
+                }
+            );
+        }
+
+        // Declare and Assign
+        
+        // └─ id: expr = expr -> declarestmt
+        {
+            RuleAdd(
+                PATS{
+                    AT::IdExpr,
+                    TT::Colon,
+                    AT::IdExpr,
+                    TT::Assign,
+                    AT::Expr,
+                    TT::Semicolon
+                },
+                [](std::vector<Symbol>& symbols, auto) {
+                    return std::make_unique<DeclStmt>(
+                        Rule::Move<IdExpr>(symbols, 1),
+                        Rule::Move<Expr>(symbols, 5),
+                        Rule::Move<IdExpr>(symbols, 3)
+                    );
+                }
+            );
+        }
+        // └─ id: expr; -> declarestmt
+        {
+            RuleAdd(
+                PATS{
+                    AT::IdExpr,
+                    TT::Colon,
+                    AT::IdExpr,
+                    TT::Semicolon
+                },
+                [](std::vector<Symbol>& symbols, auto) {
+                    return std::make_unique<DeclStmt>(
+                        Rule::Move<IdExpr>(symbols, 1),
+                        nullptr,
+                        Rule::Move<IdExpr>(symbols, 3)
+                    );
+                }
+            );
+        }
+        // └─ expr = expr; -> assignstmt
+        {
+            RuleAdd(
+                PATS{
+                    AT::Expr,
+                    TT::Assign,
+                    AT::Expr,
+                    TT::Semicolon
+                },
+                [](std::vector<Symbol>& symbols, auto) {
+                    return std::make_unique<AssignStmt>(
+                        Rule::Move<Expr>(symbols, 1),
+                        Rule::Move<Expr>(symbols, 3)
+                    );
+                }
+            );
+        }
+        // └─ expr += expr; -> assignstmt
+        {
+            RuleAdd(
+                PATS{
+                    AT::Expr,
+                    TT::PlusAssign,
+                    AT::Expr,
+                    TT::Semicolon
+                },
+                [](std::vector<Symbol>& symbols, auto) {
+                    auto target = Rule::Move<Expr>(symbols, 1);
+                    auto lexpr  = std::unique_ptr<Expr>((Expr*)(target->Clone().release()));
+                    auto value  = std::make_unique<OperExpr>(
+                        OperType::Plus,
+                        std::move(lexpr),
+                        Rule::Move<Expr>(symbols, 3)
+                    );
+
+                    return std::make_unique<AssignStmt>(
+                        std::move(target),
+                        std::move(value)
+                    );
+                }
+            );
+        }
+        // └─ expr -= expr; -> assignstmt
+        {
+            RuleAdd(
+                PATS{
+                    AT::Expr,
+                    TT::MinusAssign,
+                    AT::Expr,
+                    TT::Semicolon
+                },
+                [](std::vector<Symbol>& symbols, auto) {
+                    auto target = Rule::Move<Expr>(symbols, 1);
+                    auto lexpr  = std::unique_ptr<Expr>((Expr*)(target->Clone().release()));
+                    auto value  = std::make_unique<OperExpr>(
+                        OperType::Minus,
+                        std::move(lexpr),
+                        Rule::Move<Expr>(symbols, 3)
+                    );
+
+                    return std::make_unique<AssignStmt>(
+                        std::move(target),
+                        std::move(value)
+                    );
                 }
             );
         }
