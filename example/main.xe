@@ -1,2 +1,7 @@
 
-a: arrayview = [10, 20, 30, 40];
+{
+    t1: string = "aaa";
+    t2: string = "bbb";
+    t3: string = t1 + t2;
+    println(t3);
+}

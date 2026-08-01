@@ -81,9 +81,16 @@ namespace rt {
         Ref&         ref()          { return std::get<Ref>(data_); }
         const Ref&   ref()   const  { return std::get<Ref>(data_); }
 
-    public:
-        Obj() {}
-        Obj(const Obj& other) {
+        void Destroy() {
+            if (usingtype == UsingType::Value && hasHeapData()) {
+                auto heapdata = (HeapData*)value().data().ptr_;
+                if (--heapdata->cnt == 0) {
+                    type()->destroy_(heapdata->data);
+                    delete heapdata;
+                }
+            }
+        }
+        void AssignFrom(const Obj& other) {
             usingtype = other.usingtype;
 
             if (other.usingtype == UsingType::Ref) {
@@ -99,6 +106,12 @@ namespace rt {
                 }
                 else value().data() = other.value().data();
             }
+        }
+
+    public:
+        Obj() {}
+        Obj(const Obj& other) {
+            AssignFrom(other);
         }
         ~Obj() {
             if (usingtype == UsingType::Value) {
@@ -350,33 +363,8 @@ namespace rt {
     
         Obj& operator=(const Obj& other) {
             if (this == &other) return *this;
-
-            // Destroy
-            if (usingtype == UsingType::Value && type()->isHeapStored) {
-                auto heapdata = (HeapData*)value().data().ptr_;
-                if (--heapdata->cnt == 0) {
-                    type()->destroy_(heapdata->data);
-                    delete heapdata;
-                }
-            }
-
-            // Assign
-            usingtype = other.usingtype;
-
-            if (other.usingtype == UsingType::Ref) {
-                data_.emplace<Ref>(other.ref().obj());
-            }
-
-            else {
-                data_.emplace<Value>(other.value().type());
-
-                if (value().type()->isHeapStored) {
-                    value().data().ptr_ = other.value().data().ptr_;
-                    ((HeapData*)value().data().ptr_)->cnt++;
-                }
-                else value().data() = other.value().data();
-            }
-
+            Destroy();
+            AssignFrom(other);
             return *this;
         }
     };

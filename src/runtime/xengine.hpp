@@ -47,6 +47,7 @@ namespace rt {
                 case AstType::CharConst:        return Exec((CharConst&)node);
                 case AstType::StringConst:      return Exec((StringConst&)node);
 
+                case AstType::BlockStmt:        return Exec((BlockStmt&)node);
                 case AstType::DeclStmt:         return Exec((DeclStmt&)node);
                 case AstType::AssignStmt:       return Exec((AssignStmt&)node);
                 case AstType::CondStmt:         return Exec((CondStmt&)node);
