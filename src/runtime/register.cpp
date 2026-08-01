@@ -7,9 +7,8 @@
 #include "table/fn.hpp"
 #include "table/method.hpp"
 #include "obj/impl/string.hpp"
-#include "obj/impl/stringview.hpp"
 #include "obj/impl/array.hpp"
-#include "obj/impl/arrayview.hpp"
+#include "obj/impl/sliceview.hpp"
 
 namespace rt {
 
@@ -288,7 +287,7 @@ namespace rt {
                             ? range.right()->Get_i32() - range.left()->Get_i32() + 1
                             : range.right()->Get_i32() - range.left()->Get_i32();
 
-                        auto* view = new StringView(
+                        auto* view = new SliceView<String>(
                             &src, len, range.left()->Get_i32()
                         );
                         return Obj::Make_stringview(view);
@@ -300,9 +299,9 @@ namespace rt {
             TypeTable::Set(Type{
                 .name       = "stringview", .size = 0, .isHeapStored = true,
                 .clone_     = [](const Obj& o) {
-                    return Obj::Make_stringview(new StringView(o.Get_stringview_ref()));
+                    return Obj::Make_stringview(new SliceView<String>(o.Get_stringview_ref()));
                 },
-                .destroy_   = [](void* data) { delete (StringView*)data; },
+                .destroy_   = [](void* data) { delete (SliceView<String>*)data; },
                 .to_string_ = [](const Obj& o) {
                     auto str = TypeTable::Convert(o, TypeTable::Get("string"));
                     return str.Get_string_ref().ToCppString();
@@ -428,7 +427,7 @@ namespace rt {
                             ? range.right()->Get_i32() - range.left()->Get_i32() + 1
                             : range.right()->Get_i32() - range.left()->Get_i32();
 
-                        auto* view = new StringView(
+                        auto* view = new SliceView<String>(
                             src.org(),
                             std::min(len, src.len()),
                             range.left()->Get_i32() + src.offset()
@@ -512,7 +511,7 @@ namespace rt {
                             ? range.right()->Get_i32() - range.left()->Get_i32() + 1
                             : range.right()->Get_i32() - range.left()->Get_i32();
 
-                        auto* view = new ArrayView(
+                        auto* view = new SliceView<Array>(
                             &src, len, range.left()->Get_i32()
                         );
                         return Obj::Make_arrayview(view);
@@ -524,9 +523,9 @@ namespace rt {
             TypeTable::Set(Type{
                 .name       = "arrayview", .size = 0, .isHeapStored = true,
                 .clone_     = [](const Obj& o) {
-                    return Obj::Make_arrayview(new ArrayView(o.Get_arrayview_ref()));
+                    return Obj::Make_arrayview(new SliceView<Array>(o.Get_arrayview_ref()));
                 },
-                .destroy_   = [](void* data) { delete (ArrayView*)data; },
+                .destroy_   = [](void* data) { delete (SliceView<Array>*)data; },
                 .to_string_ = [](const Obj& o) {
                     auto arr = TypeTable::Convert(o, TypeTable::Get("array"));
                     return arr.Get_array_ref().ToCppString();
@@ -617,7 +616,7 @@ namespace rt {
                             ? range.right()->Get_i32() - range.left()->Get_i32() + 1
                             : range.right()->Get_i32() - range.left()->Get_i32();
 
-                        auto* view = new ArrayView(
+                        auto* view = new SliceView<Array>(
                             src.org(),
                             std::min(len, src.len()),
                             range.left()->Get_i32() + src.offset()

@@ -10,9 +10,8 @@
 
 #include "runtime/table/type.hpp"
 #include "runtime/obj/impl/string.hpp"
-#include "runtime/obj/impl/stringview.hpp"
 #include "runtime/obj/impl/array.hpp"
-#include "runtime/obj/impl/arrayview.hpp"
+#include "runtime/obj/impl/sliceview.hpp"
 #include "runtime/obj/impl/range.hpp"
 
 namespace rt {
@@ -177,9 +176,9 @@ namespace rt {
             if (name == "f32")         return Make_f32(0.0f);
             if (name == "f64")         return Make_f64(0.0);
             if (name == "string")      return Make_string(new String());
-            if (name == "stringview")  return Make_stringview(new StringView());
+            if (name == "stringview")  return Make_stringview(new SliceView<String>());
             if (name == "array")       return Make_array();
-            if (name == "arrayview")   return Make_arrayview(new ArrayView());
+            if (name == "arrayview")   return Make_arrayview(new SliceView<Array>());
             if (name == "range")       return Make_range(new Range());
 
             throw LogErr(LogModule::Runtime, std::format(
@@ -230,7 +229,7 @@ namespace rt {
             v.data().ptr_ = new HeapData(str);
             return o;
         }
-        static Obj Make_stringview(StringView* view) {
+        static Obj Make_stringview(SliceView<String>* view) {
             Obj o;
             auto& v = o.data_.emplace<Value>(TypeTable::Get("stringview"));
             v.data().ptr_ = new HeapData(view);
@@ -248,7 +247,7 @@ namespace rt {
             v.data().ptr_ = new HeapData(arr);
             return o;
         }
-        static Obj Make_arrayview(ArrayView* view) {
+        static Obj Make_arrayview(SliceView<Array>* view) {
             Obj o;
             auto& v = o.data_.emplace<Value>(TypeTable::Get("arrayview"));
             v.data().ptr_ = new HeapData(view);
@@ -302,13 +301,14 @@ namespace rt {
                 default: __builtin_unreachable();
             }
         }
-        StringView& Get_stringview_ref()    const {
+        SliceView<String>&
+                    Get_stringview_ref()    const {
             switch (usingtype) {
                 case UsingType::Ref:
                     return ref().obj()->Get_stringview_ref();
                 case UsingType::Value: {
                     auto heap = (HeapData*)value().data().ptr_;
-                    return *(StringView*)heap->data;
+                    return *(SliceView<String>*)heap->data;
                 }
                 default: __builtin_unreachable();
             }
@@ -324,13 +324,14 @@ namespace rt {
                 default: __builtin_unreachable();
             }
         }
-        ArrayView&  Get_arrayview_ref()     const {
+        SliceView<Array>&
+                    Get_arrayview_ref()     const {
             switch (usingtype) {
                 case UsingType::Ref:
                     return ref().obj()->Get_arrayview_ref();
                 case UsingType::Value: {
                     auto heap = (HeapData*)value().data().ptr_;
-                    return *(ArrayView*)heap->data;
+                    return *(SliceView<Array>*)heap->data;
                 }
                 default: __builtin_unreachable();
             }

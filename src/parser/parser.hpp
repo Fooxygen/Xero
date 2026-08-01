@@ -267,6 +267,7 @@ namespace parser {
         Parser(const std::vector<Token>& tokens) : tokens_(tokens) {
             RulesInit();
         }
+        ~Parser() { rules_.clear(); }
 
         void Execute();
         std::unique_ptr<AstNode>& root() {
