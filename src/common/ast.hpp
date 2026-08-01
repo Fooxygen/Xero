@@ -170,8 +170,7 @@ class Exprs             : public AstNode {
 public:
     std::vector<std::unique_ptr<Expr>> exprs_;
 
-    Exprs(std::vector<std::unique_ptr<Expr>>& exprs)
-    :   exprs_(std::move(exprs)) {
+    Exprs(std::vector<std::unique_ptr<Expr>>& exprs) : exprs_(std::move(exprs)) {
         type_ = AstType::Exprs;
     }
 

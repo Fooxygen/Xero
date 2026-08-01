@@ -14,8 +14,10 @@ namespace parser {
         // Symbols
         for (size_t i = 0; i < tokens_.size(); i++) {
             const auto& token = tokens_[i];
-            const auto* token_next =
-                i + 1 >= tokens_.size() ? nullptr : &(tokens_[i + 1]);
+            const auto  token_next =
+                i + 1 >= tokens_.size()
+                ? Token::Type::Undefined
+                : (tokens_[i + 1]).type();
 
             // Shift
             Shift(token);
@@ -28,7 +30,7 @@ namespace parser {
 
                     // Match
                     size_t len = 0;
-                    if (!rule.PatternsMatch(symbols_, len))
+                    if (!rule.PatternsMatch(symbols_, token_next, len))
                         continue;
                 
                     // Execute
@@ -140,7 +142,7 @@ namespace parser {
         symbols_.emplace_back(Token2Symbol(token));
     }
 
-    bool   Parser::TryReduce(const Rule& rule, const Token* token_next, size_t reduce_len) {
+    bool   Parser::TryReduce(const Rule& rule, Token::Type token_next, size_t reduce_len) {
 
         // Target
         auto target = rule.reduce_callback()(symbols_, token_next);

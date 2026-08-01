@@ -6,6 +6,7 @@
 #pragma once
 
 #include <vector>
+#include <set>
 #include <functional>
 #include <variant>
 #include <algorithm>
@@ -110,7 +111,7 @@ namespace parser {
         using ReduceCallback = std::function<
             std::unique_ptr<AstNode>(
                 std::vector<Symbol>& symbols,
-                const Token* token_next
+                Token::Type token_next
             )
         >;
 
@@ -122,25 +123,50 @@ namespace parser {
 
     private:
         std::vector<SymbolPattern> patterns_;
+        std::set<Token::Type>      boundaries_delay_;   // Delay reduction when encountering boundaries
+        std::set<Token::Type>      boundaries_allow_;   // Allow reduction when encountering boundaries
         ReduceCallback             reduce_callback_;
+
+        static void PatternIndexCheck(size_t pos) {
+            if (pos < 1) {
+                throw LogErr(LogModule::Parser, "invalid rule pattern index");
+            }
+        }
+
+        bool isNeedDelay(Token::Type token_next) const {
+            if (token_next == Token::Type::Undefined) return false;
+            if (!boundaries_delay_.empty() && boundaries_delay_.contains(token_next))
+                return true;
+            if (!boundaries_allow_.empty() && !boundaries_allow_.contains(token_next))
+                return true;
+            return false;
+        }
 
     public:
         Rule(
             std::initializer_list<SymbolPattern> patterns,
-            ReduceCallback reduce_callback)
+            ReduceCallback                       reduce_callback,
+            std::initializer_list<Token::Type>   boundaries_delay = {},
+            std::initializer_list<Token::Type>   boundaries_allow = {}
+        )
         {
-            patterns_.insert(patterns_.end(), patterns.begin(), patterns.end());
+            patterns_.insert(
+                patterns_.end(),
+                patterns.begin(), patterns.end()
+            );
+            boundaries_delay_.insert(
+                boundaries_delay.begin(), boundaries_delay.end()
+            );
+            boundaries_allow_.insert(
+                boundaries_allow.begin(), boundaries_allow.end()
+            );
             reduce_callback_ = std::move(reduce_callback);
         }
 
-        const ReduceCallback& reduce_callback() const {
-            return reduce_callback_;
-        }
-        const std::vector<SymbolPattern>& patterns() const {
-            return patterns_;
-        }
+        const std::vector<SymbolPattern>& patterns() const { return patterns_; }
+        const ReduceCallback& reduce_callback()      const { return reduce_callback_; }
 
-        bool  PatternMatch(const SymbolPattern& pat, const Symbol& sym) {
+        bool PatternMatch(const SymbolPattern& pat, const Symbol& sym) {
             // Token
             if (pat.type() == Symbol::Type::Token) {
                 if (sym.type() != Symbol::Type::Token ||
@@ -157,7 +183,10 @@ namespace parser {
 
             return true;
         }
-        bool  PatternsMatch(const std::vector<Symbol>& symbols, size_t& out_reduce_len) {
+        bool PatternsMatch(
+            const std::vector<Symbol>& symbols, Token::Type token_next, size_t& out_reduce_len)
+        {
+            if (isNeedDelay(token_next)) return false;
 
             // Match Check
             size_t np = patterns_.size();
@@ -232,12 +261,17 @@ namespace parser {
 
             return false;
         }
-    
+        static bool isPatternOpt(size_t pos) {
+            PatternIndexCheck(pos);
+            return move_positions_[pos - 1] == 0;
+        }
+
         // Move AstNode as type T from symbols
         template<typename T>
-        static std::unique_ptr<T> Move(std::vector<Symbol>& syms, int pos) {
-            size_t p = move_positions_[pos - 1];
-            auto& astnode = std::get<std::unique_ptr<AstNode>>(syms[syms.size() - p].data());
+        static std::unique_ptr<T> Move(std::vector<Symbol>& syms, size_t pos) {
+            PatternIndexCheck(pos);
+            pos = move_positions_[pos - 1];
+            auto& astnode = std::get<std::unique_ptr<AstNode>>(syms[syms.size() - pos].data());
             return std::unique_ptr<T>(static_cast<T*>(astnode.release()));
         }
     };
@@ -252,14 +286,14 @@ namespace parser {
 
         // Cache
         
-        std::vector<Symbol>         symbols_;       // Symbols Stack
-        std::vector<size_t>         scopes_brace;   // Brace Scope
-        std::unique_ptr<AstNode>    root_;          // Program as AST Root Node.
+        std::vector<Symbol>      symbols_;          // Symbols Stack
+        std::vector<size_t>      scopes_brace;      // Brace Scope
+        std::unique_ptr<AstNode> root_;             // Program as AST Root Node.
 
         void RulesInit();
 
         void Shift(const Token& token);
-        bool TryReduce(const Rule& rule, const Token* token_next, size_t reduce_len);
+        bool TryReduce(const Rule& rule, Token::Type token_next, size_t reduce_len);
 
         Symbol Token2Symbol(const Token& token);
 
@@ -276,9 +310,11 @@ namespace parser {
     
         void RuleAdd(
             std::initializer_list<SymbolPattern> patterns,
-            Rule::ReduceCallback reduce_callback)
+            Rule::ReduceCallback reduce_callback,
+            std::initializer_list<Token::Type>   boundaries_delay = {},
+            std::initializer_list<Token::Type>   boundaries_allow = {})
         {
-            rules_.emplace_back(patterns, reduce_callback);
+            rules_.emplace_back(patterns, reduce_callback, boundaries_delay, boundaries_allow);
         }
     };
 }

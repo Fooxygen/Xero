@@ -37,10 +37,12 @@ public:
     Log(
         LogModule        module,
         std::string_view msg,
-        std::string_view color = COLOR_DEFAULT)
+        std::string_view color = COLOR_DEFAULT
+    )
     :   module_(module), 
         msg_(msg),
-        color_(color) {}
+        color_(color)
+    {}
 
     std::string ModulePrint() const {
         using enum LogModule;
