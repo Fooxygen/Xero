@@ -294,7 +294,13 @@ namespace rt {
         env_.ScopePush();
         if (OnScopeReady) OnScopeReady();
 
-        for (auto& child : node.children_) Exec(*child);
+        try {
+            for (auto& child : node.children_) Exec(*child);
+        }
+        catch (...) {
+            env_.ScopePop();
+            throw;
+        }
         
         env_.ScopePop();
         return Obj();
@@ -390,7 +396,6 @@ namespace rt {
                     });
                 }
                 catch (LoopSignal e) {
-                    env_.ScopePop();
                     if      (e == LoopSignal::Break) break;
                     else if (e == LoopSignal::Continue) continue;
                 }
@@ -433,7 +438,6 @@ namespace rt {
                 Exec(*node.block_, [&]() { env_.Declare(node.iter_->value_, at(i)); });
             }
             catch (LoopSignal e) {
-                env_.ScopePop();
                 if      (e == LoopSignal::Break) break;
                 else if (e == LoopSignal::Continue) continue;
             }
