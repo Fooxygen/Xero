@@ -1,4 +1,6 @@
 
-if (true || (1 / 0 == 1)) {
-    println("Hello");
+for (x in 1..20) {
+    if (x > 10) { break; }
+    println(x);
 }
+continue;

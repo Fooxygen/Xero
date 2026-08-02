@@ -71,11 +71,13 @@ public:
 
         // └─ Keyword
         Keyword,            // Base
-        If,                 // If
-        Elif,               // Else if
-        Else,               // Else
-        For,                // For
-        In,                 // In
+        If,                 // if
+        Elif,               // else if
+        Else,               // else
+        For,                // for
+        In,                 // in
+        Break,              // break
+        Continue,           // continue
     };
 
 private:
@@ -153,6 +155,8 @@ public:
             case Else:
             case For:
             case In:
+            case Break:
+            case Continue:
                 return Keyword;
 
             default:
@@ -210,11 +214,13 @@ public:
             case PlusAssign:    return "PlusAssign";
             case MinusAssign:   return "MinusAssign";
 
-            case If:            return "If";
-            case Elif:          return "Elif";
-            case Else:          return "Else";
-            case For:           return "For";
-            case In:            return "In";
+            case If:            return "if";
+            case Elif:          return "elif";
+            case Else:          return "else";
+            case For:           return "for";
+            case In:            return "in";
+            case Break:         return "break";
+            case Continue:      return "continue";
 
             default: 
                 LogWarn(LogModule::Lexer, "undefined print name for TokenType").Print();

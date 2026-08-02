@@ -10,52 +10,8 @@
 #include <vector>
 
 #include "token.hpp"
-
-// Type of Operation
-enum class OperType {
-    Undefined,
-
-    // Arith
-    Plus, Minus, Star, Slash, Neg,
-
-    // Relation
-    Gt, Lt, Ge, Le, Eq, Neq,
-
-    // Logical
-    And, Or, Not,
-
-    // Container
-    Pick,
-
-    // Assign
-    // Not participating in OperExpr
-};
-
-static std::string OperTypeName(OperType type) {
-    using enum OperType;
-    switch(type) {
-        case Plus:  return "Plus";
-        case Minus: return "Minus";
-        case Star:  return "Star";
-        case Slash: return "Slash";
-        case Neg:   return "Neg";
-
-        case Gt:    return "Gt" ;
-        case Lt:    return "Lt" ;
-        case Ge:    return "Ge" ;
-        case Le:    return "Le" ;
-        case Eq:    return "Eq" ;
-        case Neq:   return "Neq";
-
-        case And:   return "And";
-        case Or:    return "Or" ;
-        case Not:   return "Not";
-
-        case Pick:  return "Pick";
-
-        default:    return "Undefined";
-    }
-}
+#include "opertype.hpp"
+#include "loop.hpp"
 
 // Type of Abstract Syntax Tree's Node
 enum class AstType {
@@ -86,6 +42,7 @@ enum class AstType {
     DeclStmt,           //  Declaration
     AssignStmt,         //  Assignment
     CondStmt,           //  Condition
+    LoopSignalStmt,     //  Loop Signal
     ForStmt,            //  For Loop
 
     // Common
@@ -115,6 +72,7 @@ static AstType BaseOfAstType(AstType type) {
         case DeclStmt:
         case AssignStmt:
         case CondStmt:
+        case LoopSignalStmt:
         case ForStmt:
             return Stmt;
 
@@ -622,6 +580,35 @@ public:
             std::unique_ptr<BlockStmt>((BlockStmt*)(block_->Clone().release())),
             sub_ ? std::unique_ptr<CondStmt>((CondStmt*)(sub_->Clone().release())) : nullptr
         );
+    }
+};
+class LoopSignalStmt    : public Stmt {
+public:
+    LoopSignal status_;
+
+    LoopSignalStmt(LoopSignal status)
+    :   status_(status)
+    {
+        type_ = AstType::LoopSignalStmt;
+    }
+
+    const std::string TypeName() const {
+        return "LoopSignalStmt";
+    }
+
+    void PrintImpl(std::string prefix) override {
+        PrintLabel("status", prefix);
+        std::cout << COLOR_MAGENTA;
+        switch (status_) {
+            case LoopSignal::Break:     std::cout << "break"    << std::endl; break;
+            case LoopSignal::Continue:  std::cout << "continue" << std::endl; break;
+            default: __builtin_unreachable();
+        }
+        std::cout << COLOR_DEFAULT << std::endl;
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        return std::make_unique<LoopSignalStmt>(status_);
     }
 };
 class ForStmt           : public Stmt {

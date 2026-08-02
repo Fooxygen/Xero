@@ -146,7 +146,7 @@ namespace parser {
 
         // Declare and Assign
         
-        // └─ id: expr = expr -> declarestmt
+        // └─ id: expr = expr; -> declarestmt
         {
             RuleAdd(
                 PATS{
@@ -421,6 +421,7 @@ namespace parser {
         }
         
         // └─ Binary
+
         BinOperAdd(TT::Star,  OperType::Star);
         BinOperAdd(TT::Slash, OperType::Slash);
         BinOperAdd(TT::Plus,  OperType::Plus);
@@ -435,6 +436,7 @@ namespace parser {
         BinOperAdd(TT::Or,    OperType::Or);
 
         // └─ Unary
+
         UnaryOperAdd(TT::Minus, OperType::Neg);
         UnaryOperAdd(TT::Not,   OperType::Not);
         
@@ -665,8 +667,36 @@ namespace parser {
             );
         }
     
-        // ForStmt
+        // Loop
 
+        // └─ break; -> loopsignalstmt
+        {
+            RuleAdd(
+                PATS{
+                    TT::Break,
+                    TT::Semicolon
+                },
+                [](std::vector<Symbol>& symbols, auto) {
+                    return std::make_unique<LoopSignalStmt>(
+                        LoopSignal::Break
+                    );
+                }
+            );
+        }
+        // └─ continue; -> loopsignalstmt
+        {
+            RuleAdd(
+                PATS{
+                    TT::Continue,
+                    TT::Semicolon
+                },
+                [](std::vector<Symbol>& symbols, auto) {
+                    return std::make_unique<LoopSignalStmt>(
+                        LoopSignal::Continue
+                    );
+                }
+            );
+        }
         // └─ for ( x in expr ) {} -> forstmt
         {
             RuleAdd(

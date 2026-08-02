@@ -81,6 +81,13 @@ namespace parser {
                     sym = Symbol(Token(TT::In, token.lexeme(), token.line(), token.col()));
                 }
 
+                else if (token.lexeme() == "break") {
+                    sym = Symbol(Token(TT::Break, token.lexeme(), token.line(), token.col()));
+                }
+                else if (token.lexeme() == "continue") {
+                    sym = Symbol(Token(TT::Continue, token.lexeme(), token.line(), token.col()));
+                }
+
                 else {
                     sym = Symbol(std::make_unique<IdExpr>(token.lexeme()));
                 }

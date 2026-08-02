@@ -9,6 +9,8 @@
 #include "xengine.hpp"
 #include "table/fn.hpp"
 #include "table/method.hpp"
+#include "common/opertype.hpp"
+#include "common/loop.hpp"
 
 namespace rt {
     
@@ -364,11 +366,17 @@ namespace rt {
         return Obj();
     }
 
+    Obj Xengine::Exec(LoopSignalStmt& node) {
+        throw node.status_;
+    }
+
     Obj Xengine::Exec(ForStmt& node) {
         auto data = Exec(*node.data_);
         auto type = data.type();
 
-        if      (type == TypeTable::Get("range")) {
+        // Range
+
+        if (type == TypeTable::Get("range")) {
             auto& range = data.Get_range_ref();
             for (Obj o = *range.left(); ; o = range.itertype()->plus_(o, *range.step())) {
                 if (!range.isClosed() &&
@@ -376,37 +384,59 @@ namespace rt {
                 if ( range.isClosed() &&
                      range.itertype()->gt_(o, *range.right()).Get_bool()) break;
 
-                Exec(*node.block_, [&]() {
-                    env_.Declare(node.iter_->value_, o);
-                });
+                try {
+                    Exec(*node.block_, [&]() {
+                        env_.Declare(node.iter_->value_, o);
+                    });
+                }
+                catch (LoopSignal e) {
+                    env_.ScopePop();
+                    if      (e == LoopSignal::Break) break;
+                    else if (e == LoopSignal::Continue) continue;
+                }
             }
+
+            return Obj();
         }
-        else if (type == TypeTable::Get("stringview")) {
-            auto& view = data.Get_stringview_ref();
-            for (size_t i = 0; i < view.len(); i++) {
-                Exec(*node.block_, [&]() {
-                    env_.Declare(node.iter_->value_, *view.org()->Get(view.offset() + i));
-                });
-            }
-        }
-        else if (type == TypeTable::Get("array")) {
-            auto& array = data.Get_array_ref();
-            for (size_t i = 0; i < array.size(); i++) {
-                Exec(*node.block_, [&]() {
-                    env_.Declare(node.iter_->value_, *array.Get(i));
-                });
-            }
-        }
+
+        // Other
+
+        size_t len = 0;
+        std::function<Obj(size_t)> at;
+
+        if      (type == TypeTable::Get("array")) {
+            auto& arr = data.Get_array_ref();
+            len = arr.size();
+            at = [&](size_t i) { return *arr.Get(i); };
+        }      
         else if (type == TypeTable::Get("arrayview")) {
             auto& view = data.Get_arrayview_ref();
-            for (size_t i = 0; i < view.len(); i++) {
-                Exec(*node.block_, [&]() {
-                    env_.Declare(node.iter_->value_, *view.org()->Get(view.offset() + i));
-                });
-            }
+            len = view.len();
+            at = [&](size_t i) { return *view.org()->Get(view.offset() + i); };
+        }
+        else if (type == TypeTable::Get("string")) {
+            auto& str = data.Get_string_ref();
+            len = str.size();
+            at = [&](size_t i) { return *str.Get(i); };
+        }  
+        else if (type == TypeTable::Get("stringview")) {
+            auto& view = data.Get_stringview_ref();
+            len = view.len();
+            at = [&](size_t i) { return *view.org()->Get(view.offset() + i); };
         }
         else {
             throw LogErr(LogModule::Runtime, "unsupported 'for' statement");
+        }
+
+        for (size_t i = 0; i < len; i++) {
+            try {
+                Exec(*node.block_, [&]() { env_.Declare(node.iter_->value_, at(i)); });
+            }
+            catch (LoopSignal e) {
+                env_.ScopePop();
+                if      (e == LoopSignal::Break) break;
+                else if (e == LoopSignal::Continue) continue;
+            }
         }
         
         return Obj();
@@ -415,7 +445,18 @@ namespace rt {
     // Common
 
     Obj Xengine::Exec(Program& node) {
-        Exec((BlockStmt&)node);
+        try {
+            Exec((BlockStmt&)node);
+        }
+        catch (LoopSignal e) {
+            if      (e == LoopSignal::Break) {
+                throw LogErr(LogModule::Runtime, "'break' outside of loop");
+            }
+            else if (e == LoopSignal::Continue) {
+                throw LogErr(LogModule::Runtime, "'continue' outside of loop");
+            }
+        }
+        
         return Obj();
     }
 }

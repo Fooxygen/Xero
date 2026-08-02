@@ -51,6 +51,7 @@ namespace rt {
                 case AstType::DeclStmt:         return Exec((DeclStmt&)node);
                 case AstType::AssignStmt:       return Exec((AssignStmt&)node);
                 case AstType::CondStmt:         return Exec((CondStmt&)node);
+                case AstType::LoopSignalStmt:   return Exec((LoopSignalStmt&)node);
                 case AstType::ForStmt:          return Exec((ForStmt&)node);
 
                 case AstType::Program:          return Exec((Program&)node);
@@ -75,6 +76,7 @@ namespace rt {
         Obj Exec(DeclStmt& node);
         Obj Exec(AssignStmt& node);
         Obj Exec(CondStmt& node);
+        Obj Exec(LoopSignalStmt& node);
         Obj Exec(ForStmt& node);
 
         Obj Exec(Program& node);
