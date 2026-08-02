@@ -32,6 +32,13 @@ namespace rt {
         }
 
         // Binary
+
+        // Short Circuit Boolean Evaluation
+        if (node.opertype_ == OperType::And && lobj.is("bool") && !lobj.Get_bool())
+            return Obj::Make_bool(false);
+        if (node.opertype_ == OperType::Or  && lobj.is("bool") &&  lobj.Get_bool())
+            return Obj::Make_bool(true);
+
         auto robj = Exec(*node.rexpr_);
         {
             // Unnecessary Type Conversation

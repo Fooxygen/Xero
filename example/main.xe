@@ -1,4 +1,4 @@
 
-x: i32 = 3;
-x += 3 * (7 + 4);
-println(x);
+if (true || (1 / 0 == 1)) {
+    println("Hello");
+}
