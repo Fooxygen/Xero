@@ -1,28 +1,16 @@
 
-println(7 % 3);         #  1
-println(7 % -3);        #  1
-println(-7 % 3);        # -1
-println(-7 % -3);       # -1
+r: i32 = 6;
 
-println(7 %% 3);        #  1
-println(7 %% -3);       # -2
-println(-7 %% 3);       #  2
-println(-7 %% -3);      # -1
+for (x in -r..=r) {
+    s: i32 = r - abs(x);
+    
+    for (y in 0..s) print(' ');
+    print('O');
 
-println(7.5 % 2);       #  1.500000
-println(-7.5 % 2);      # -1.500000
-println(7.5 % -2);      #  1.500000
-println(-7.5 % -2);     # -1.500000
-println(7.5 % 2.5);     #  0.000000
+    if (x != 0) {
+        for (y in 0..(2 * r + 1 - 2 * s - 2)) print(' ');
+        print('O');
+    }
 
-println(7.5 %% 2);      #  1.500000
-println(-7.5 %% 2);     #  0.500000
-println(7.5 %% -2);     # -0.500000
-println(-7.5 %% -2);    # -1.500000
-
-println(10.0 % 3);      #  1.000000
-println(10 % 3.0);      #  1.000000
-println(-10 % 3.0);     # -1.000000
-println(-10.0 %% 3);    #  2.000000
-
-println(7.5 % 0.0);     #  nan
+    print('\n');
+}

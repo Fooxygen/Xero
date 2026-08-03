@@ -786,6 +786,18 @@ namespace rt {
                 return obj;
             });
         }
+    
+        // Math
+        {
+            FnTable::Set("abs", [](ARGS args) {
+                auto& num = args[0];
+                if (num.type() == TypeTable::Get("i32")) return Obj::Make_i32(std::abs(num.Get_i32()));
+                if (num.type() == TypeTable::Get("i64")) return Obj::Make_i64(std::abs(num.Get_i64()));
+                if (num.type() == TypeTable::Get("f32")) return Obj::Make_f32(std::abs(num.Get_f32()));
+                if (num.type() == TypeTable::Get("f64")) return Obj::Make_f64(std::abs(num.Get_f64()));
+                return Obj();
+            });
+        }
     }
 
     void Xengine::MethodRegister() {

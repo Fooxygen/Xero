@@ -92,7 +92,8 @@ namespace parser {
                         Rule::Move<Expr>(symbols, 2),
                         nullptr
                     );
-                }
+                },
+                PATS{ AT::Expr }
             );
         };
 
