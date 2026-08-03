@@ -71,6 +71,8 @@ public:
 
         // └─ Keyword
         Keyword,            // Base
+        True,               // true
+        False,              // false
         If,                 // if
         Elif,               // else if
         Else,               // else
@@ -150,6 +152,8 @@ public:
             case MinusAssign:
                 return AssignOper;
 
+            case True:
+            case False:
             case If:
             case Elif:
             case Else:
@@ -214,6 +218,8 @@ public:
             case PlusAssign:    return "PlusAssign";
             case MinusAssign:   return "MinusAssign";
 
+            case True:          return "true";
+            case False:         return "false";
             case If:            return "if";
             case Elif:          return "elif";
             case Else:          return "else";

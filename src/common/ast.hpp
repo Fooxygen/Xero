@@ -38,6 +38,7 @@ enum class AstType {
 
     // Stmt
     Stmt,               //  Base ------
+    ExprStmt,           //  Expr used as Stmt
     BlockStmt,          //  Grouped Stmts
     DeclStmt,           //  Declaration
     AssignStmt,         //  Assignment
@@ -68,6 +69,7 @@ static AstType BaseOfAstType(AstType type) {
         case ArrayExpr:
             return Expr;
 
+        case ExprStmt:
         case BlockStmt:
         case DeclStmt:
         case AssignStmt:
@@ -451,6 +453,30 @@ public:
 };
 
 // Stmt
+class ExprStmt          : public Stmt {
+public:
+    std::unique_ptr<Expr> expr_ = nullptr;
+
+    ExprStmt(std::unique_ptr<Expr> expr)
+    :   expr_(std::move(expr))
+    {
+        type_ = AstType::ExprStmt;
+    }
+
+    const std::string TypeName() const {
+        return "ExprStmt";
+    }
+
+    void PrintImpl(std::string prefix) override {
+        if (expr_) expr_->Print(prefix, "expr");
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        return std::make_unique<ExprStmt>(
+            std::unique_ptr<Expr>((Expr*)(expr_->Clone().release()))
+        );
+    }
+};
 class BlockStmt         : public Stmt {
 public:
     std::vector<std::unique_ptr<AstNode>> children_;

@@ -11,6 +11,11 @@ namespace parser {
         symbols_.clear();
         scopes_brace.clear();
 
+        // Token Rewrite
+        for (size_t i = 0; i < tokens_.size(); i++) {
+            TokenRewrite(tokens_[i]);
+        }
+
         // Symbols
         for (size_t i = 0; i < tokens_.size(); i++) {
             const auto& token = tokens_[i];
@@ -52,45 +57,61 @@ namespace parser {
         root_ = std::make_unique<Program>(program_children);
     }
 
+    void   Parser::TokenRewrite(Token& token) {
+        using TT = Token::Type;
+
+        switch (token.type()) {
+            case TT::Id: {
+                if      (token.lexeme() == "true") {
+                    token = Token(TT::True, token.lexeme(), token.line(), token.col());
+                }
+                else if (token.lexeme() == "false") {
+                    token = Token(TT::False, token.lexeme(), token.line(), token.col());
+                }
+
+                else if (token.lexeme() == "if") {
+                    token = Token(TT::If, token.lexeme(), token.line(), token.col());
+                }
+                else if (token.lexeme() == "elif") {
+                    token = Token(TT::Elif, token.lexeme(), token.line(), token.col());
+                }
+                else if (token.lexeme() == "else") {
+                    token = Token(TT::Else, token.lexeme(), token.line(), token.col());
+                }
+                else if (token.lexeme() == "for") {
+                    token = Token(TT::For, token.lexeme(), token.line(), token.col());
+                }
+                else if (token.lexeme() == "in") {
+                    token = Token(TT::In, token.lexeme(), token.line(), token.col());
+                }
+
+                else if (token.lexeme() == "break") {
+                    token = Token(TT::Break, token.lexeme(), token.line(), token.col());
+                }
+                else if (token.lexeme() == "continue") {
+                    token = Token(TT::Continue, token.lexeme(), token.line(), token.col());
+                }
+
+                break;
+            }
+        }
+    }
+
     Symbol Parser::Token2Symbol(const Token& token) {
         using TT = Token::Type;
 
         auto sym = Symbol(token);
         switch (token.type()) {
             case TT::Id: {
-                if      (token.lexeme() == "true") {
-                    sym = Symbol(std::make_unique<BoolConst>(true));
-                }
-                else if (token.lexeme() == "false") {
-                    sym = Symbol(std::make_unique<BoolConst>(false));
-                }
-                
-                else if (token.lexeme() == "if") {
-                    sym = Symbol(Token(TT::If, token.lexeme(), token.line(), token.col()));
-                }
-                else if (token.lexeme() == "elif") {
-                    sym = Symbol(Token(TT::Elif, token.lexeme(), token.line(), token.col()));
-                }
-                else if (token.lexeme() == "else") {
-                    sym = Symbol(Token(TT::Else, token.lexeme(), token.line(), token.col()));
-                }
-                else if (token.lexeme() == "for") {
-                    sym = Symbol(Token(TT::For, token.lexeme(), token.line(), token.col()));
-                }
-                else if (token.lexeme() == "in") {
-                    sym = Symbol(Token(TT::In, token.lexeme(), token.line(), token.col()));
-                }
-
-                else if (token.lexeme() == "break") {
-                    sym = Symbol(Token(TT::Break, token.lexeme(), token.line(), token.col()));
-                }
-                else if (token.lexeme() == "continue") {
-                    sym = Symbol(Token(TT::Continue, token.lexeme(), token.line(), token.col()));
-                }
-
-                else {
-                    sym = Symbol(std::make_unique<IdExpr>(token.lexeme()));
-                }
+                sym = Symbol(std::make_unique<IdExpr>(token.lexeme()));
+                break;
+            }
+            case TT::True: {
+                sym = Symbol(std::make_unique<BoolConst>(true));
+                break;
+            }
+            case TT::False: {
+                sym = Symbol(std::make_unique<BoolConst>(false));
                 break;
             }
             case TT::Number: {

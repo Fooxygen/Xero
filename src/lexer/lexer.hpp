@@ -89,7 +89,7 @@ namespace lexer {
         }
         void  TokensGen(bool isPrint = false);
         
-        const std::vector<Token>& tokens() const {
+        std::vector<Token>& tokens() {
             return tokens_;
         }
     };

@@ -122,10 +122,12 @@ namespace parser {
         static inline std::vector<size_t> move_positions_;
 
     private:
-        std::vector<SymbolPattern> patterns_;
-        std::set<Token::Type>      boundaries_delay_;   // Delay reduction when encountering boundaries
-        std::set<Token::Type>      boundaries_allow_;   // Allow reduction when encountering boundaries
-        ReduceCallback             reduce_callback_;
+        std::vector<SymbolPattern>  patterns_;
+        std::vector<SymbolPattern>  prefix_delay_;
+        std::vector<SymbolPattern>  prefix_allow_;
+        std::set<Token::Type>       suffix_delay_;      // Delay reduction when hit symmbol
+        std::set<Token::Type>       suffix_allow_;      // Delay reduction when miss symbol
+        ReduceCallback              reduce_callback_;
 
         static void PatternIndexCheck(size_t pos) {
             if (pos < 1) {
@@ -133,33 +135,53 @@ namespace parser {
             }
         }
 
-        bool isNeedDelay(Token::Type token_next) const {
+        bool isNeedDelayPrefix(const std::vector<Symbol>& symbols, size_t reduce_len) {
+            if (prefix_delay_.empty() && prefix_allow_.empty()) return false;
+            if (symbols.size() <= reduce_len) return false;
+
+            const Symbol& pred = symbols[symbols.size() - reduce_len - 1];
+
+            if (!prefix_delay_.empty()) {
+                for (auto& sp : prefix_delay_) {
+                    if (PatternMatch(sp, pred)) return true;
+                }
+            }
+
+            if (!prefix_allow_.empty()) {
+                bool isFind = false;
+                for (auto& sp : prefix_allow_)
+                    if (PatternMatch(sp, pred)) { isFind = true; break; }
+                if (!isFind) return true;
+            }
+            return false;
+        }
+        bool isNeedDelaySuffix(Token::Type token_next) const {
             if (token_next == Token::Type::Undefined) return false;
-            if (!boundaries_delay_.empty() && boundaries_delay_.contains(token_next))
+            if (!suffix_delay_.empty() && suffix_delay_.contains(token_next))
                 return true;
-            if (!boundaries_allow_.empty() && !boundaries_allow_.contains(token_next))
+            if (!suffix_allow_.empty() && !suffix_allow_.contains(token_next))
                 return true;
             return false;
         }
 
     public:
         Rule(
-            std::initializer_list<SymbolPattern> patterns,
-            ReduceCallback                       reduce_callback,
-            std::initializer_list<Token::Type>   boundaries_delay = {},
-            std::initializer_list<Token::Type>   boundaries_allow = {}
+            std::initializer_list<SymbolPattern>    patterns,
+            ReduceCallback                          reduce_callback,
+            std::initializer_list<SymbolPattern>    prefix_delay = {},
+            std::initializer_list<SymbolPattern>    prefix_allow = {},
+            std::initializer_list<Token::Type>      suffix_delay = {},
+            std::initializer_list<Token::Type>      suffix_allow = {}
         )
         {
             patterns_.insert(
                 patterns_.end(),
                 patterns.begin(), patterns.end()
             );
-            boundaries_delay_.insert(
-                boundaries_delay.begin(), boundaries_delay.end()
-            );
-            boundaries_allow_.insert(
-                boundaries_allow.begin(), boundaries_allow.end()
-            );
+            prefix_delay_.insert(prefix_delay_.end(), prefix_delay.begin(), prefix_delay.end());
+            prefix_allow_.insert(prefix_allow_.end(), prefix_allow.begin(), prefix_allow.end());
+            suffix_delay_.insert(suffix_delay.begin(), suffix_delay.end());
+            suffix_allow_.insert(suffix_allow.begin(), suffix_allow.end());
             reduce_callback_ = std::move(reduce_callback);
         }
 
@@ -186,7 +208,7 @@ namespace parser {
         bool PatternsMatch(
             const std::vector<Symbol>& symbols, Token::Type token_next, size_t& out_reduce_len)
         {
-            if (isNeedDelay(token_next)) return false;
+            if (isNeedDelaySuffix(token_next)) return false;
 
             // Match Check
             size_t np = patterns_.size();
@@ -252,8 +274,11 @@ namespace parser {
                     }
 
                     out_reduce_len = 0;
-                    for (auto& p : move_positions_)
+                    for (auto& p : move_positions_) {
                         if (p != 0) out_reduce_len++;
+                    }
+
+                    if (isNeedDelayPrefix(symbols, out_reduce_len)) return false;
 
                     return true;
                 }
@@ -282,7 +307,7 @@ namespace parser {
         // Predefined
 
         inline static std::vector<Rule> rules_;     // Reduce Rules
-        const std::vector<Token>&       tokens_;    // Lexer's Tokens
+        std::vector<Token>&             tokens_;    // Lexer's Tokens
 
         // Cache
         
@@ -295,10 +320,11 @@ namespace parser {
         void Shift(const Token& token);
         bool TryReduce(const Rule& rule, Token::Type token_next, size_t reduce_len);
 
+        void   TokenRewrite(Token& token);          // Modify TokenType
         Symbol Token2Symbol(const Token& token);
 
     public:
-        Parser(const std::vector<Token>& tokens) : tokens_(tokens) {
+        Parser(std::vector<Token>& tokens) : tokens_(tokens) {
             RulesInit();
         }
         ~Parser() { rules_.clear(); }
@@ -309,12 +335,17 @@ namespace parser {
         }
     
         void RuleAdd(
-            std::initializer_list<SymbolPattern> patterns,
-            Rule::ReduceCallback reduce_callback,
-            std::initializer_list<Token::Type>   boundaries_delay = {},
-            std::initializer_list<Token::Type>   boundaries_allow = {})
+            std::initializer_list<SymbolPattern>    patterns,
+            Rule::ReduceCallback                    reduce_callback,
+            std::initializer_list<SymbolPattern>    prefix_delay = {},
+            std::initializer_list<SymbolPattern>    prefix_allow = {},
+            std::initializer_list<Token::Type>      suffix_delay = {},
+            std::initializer_list<Token::Type>      suffix_allow = {})
         {
-            rules_.emplace_back(patterns, reduce_callback, boundaries_delay, boundaries_allow);
+            rules_.emplace_back(
+                patterns, reduce_callback,
+                prefix_delay, prefix_allow, suffix_delay, suffix_allow
+            );
         }
     };
 }

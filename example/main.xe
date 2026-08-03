@@ -1,5 +1,2 @@
 
-s: string = "Hello";
-for (x in s) {
-    println(x);
-}
+if (true) if (false) { println("Hello, the False"); } else { println("Hello, the inner True"); }

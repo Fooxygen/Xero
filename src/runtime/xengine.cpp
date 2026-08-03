@@ -290,6 +290,10 @@ namespace rt {
 
     // Stmt
 
+    Obj Xengine::Exec(ExprStmt& node) {
+        return Exec(*node.expr_);
+    }
+
     Obj Xengine::Exec(BlockStmt& node, std::function<void()> OnScopeReady) {
         env_.ScopePush();
         if (OnScopeReady) OnScopeReady();
