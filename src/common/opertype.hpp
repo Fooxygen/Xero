@@ -12,6 +12,7 @@ enum class OperType {
 
     // Arith
     Plus, Minus, Star, Slash, Neg,
+    ModT, ModF,
 
     // Relation
     Gt, Lt, Ge, Le, Eq, Neq,
@@ -34,6 +35,8 @@ static std::string OperTypeName(OperType type) {
         case Star:  return "Star";
         case Slash: return "Slash";
         case Neg:   return "Neg";
+        case ModT:  return "ModT";
+        case ModF:  return "ModF";
 
         case Gt:    return "Gt" ;
         case Lt:    return "Lt" ;

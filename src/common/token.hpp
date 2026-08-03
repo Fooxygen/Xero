@@ -47,6 +47,8 @@ public:
         Minus,              //  -
         Star,               //  *
         Slash,              //  /
+        ModT,               //  %
+        ModF,               //  %%
         
         // └─ Relation Operator
         RelationOper,       //  Base
@@ -132,6 +134,8 @@ public:
             case Minus:
             case Star:
             case Slash:
+            case ModT:
+            case ModF:
                 return ArithOper;
 
             case Gt:
@@ -202,6 +206,8 @@ public:
             case Minus:         return "Minus";
             case Star:          return "Star";
             case Slash:         return "Slash";
+            case ModT:          return "ModT";
+            case ModF:          return "ModF";
 
             case Gt:            return "Gt";
             case Ge:            return "Ge";

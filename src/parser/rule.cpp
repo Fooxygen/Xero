@@ -28,6 +28,8 @@ namespace parser {
 
                     case TT::Star:
                     case TT::Slash:
+                    case TT::ModF:
+                    case TT::ModT:
                         return -2;
 
                     case TT::Plus:
@@ -416,6 +418,8 @@ namespace parser {
 
         BinOperAdd(TT::Star,  OperType::Star);
         BinOperAdd(TT::Slash, OperType::Slash);
+        BinOperAdd(TT::ModT,  OperType::ModT);
+        BinOperAdd(TT::ModF,  OperType::ModF);
         BinOperAdd(TT::Plus,  OperType::Plus);
         BinOperAdd(TT::Minus, OperType::Minus);
         BinOperAdd(TT::Gt,    OperType::Gt);

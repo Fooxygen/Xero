@@ -71,6 +71,13 @@ namespace lexer {
                 }
                 else return TokenGen(Token::Type::Minus, "-");
             }
+            case '%': {
+                if (cn == '%') {
+                    CharNext();
+                    return TokenGen(Token::Type::ModF, "%%");
+                }
+                else return TokenGen(Token::Type::ModT, "%");
+            }
             case '!': {
                 if (cn == '=') {
                     CharNext();

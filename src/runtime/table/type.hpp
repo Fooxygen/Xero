@@ -38,10 +38,12 @@ namespace rt {
         // Arith Oper
 
         Obj (*plus_)  (const Obj&, const Obj&)   = nullptr;     // +
-        Obj (*minus_) (const Obj&, const Obj&)   = nullptr;     // -
+        Obj (*minus_) (const Obj&, const Obj&)   = nullptr;     // - (binary)
         Obj (*star_)  (const Obj&, const Obj&)   = nullptr;     // *
         Obj (*slash_) (const Obj&, const Obj&)   = nullptr;     // /
-        Obj (*neg_)   (const Obj&)               = nullptr;     // -
+        Obj (*neg_)   (const Obj&)               = nullptr;     // - (unary)
+        Obj (*modt_)  (const Obj&, const Obj&)   = nullptr;     // %
+        Obj (*modf_)  (const Obj&, const Obj&)   = nullptr;     // %%
         
         // Relation Oper
 

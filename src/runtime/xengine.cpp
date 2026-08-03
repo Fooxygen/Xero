@@ -87,6 +87,14 @@ namespace rt {
                     auto obj = CallTry(type->slash_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
+                if (node.opertype_ == OperType::ModT) {
+                    auto obj = CallTry(type->modt_, lobj, robj);
+                    if (!obj.isNone()) return obj;
+                }
+                if (node.opertype_ == OperType::ModF) {
+                    auto obj = CallTry(type->modf_, lobj, robj);
+                    if (!obj.isNone()) return obj;
+                }
                 if (node.opertype_ == OperType::Gt) {
                     auto obj = CallTry(type->gt_, lobj, robj);
                     if (!obj.isNone()) return obj;

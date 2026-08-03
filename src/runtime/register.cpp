@@ -3,6 +3,8 @@
 //  Copyright (c) 2026 Fooxygen.
 //  Licensed under the MIT License.
 
+#include <cmath>
+
 #include "xengine.hpp"
 #include "table/fn.hpp"
 #include "table/method.hpp"
@@ -79,6 +81,20 @@ namespace rt {
                     return Obj::Make_i32(a.Get_i32() / xb);
                 },
                 .neg_       = [](const Obj& o) { return Obj::Make_i32(-o.Get_i32()); },
+                .modt_      = [](const Obj& a, const Obj& b) {
+                    int32_t xa = a.Get_i32(), xb = b.Get_i32();
+                    if (xb == 0)  throw LogErr(LogModule::Runtime, "division by zero");
+                    if (xb == -1) return Obj::Make_i32(0);
+                    return Obj::Make_i32(xa % xb);
+                },
+                .modf_      = [](const Obj& a, const Obj& b) {
+                    int32_t xa = a.Get_i32(), xb = b.Get_i32();
+                    if (xb == 0)  throw LogErr(LogModule::Runtime, "division by zero");
+                    if (xb == -1) return Obj::Make_i32(0);
+                    auto r = xa % xb;
+                    if (r != 0 && ((r < 0) != (xb < 0))) r += xb;
+                    return Obj::Make_i32(r);
+                },
                 .gt_        = [](const Obj& a, const Obj& b) { return Obj::Make_bool(a.Get_i32() >  b.Get_i32()); },
                 .lt_        = [](const Obj& a, const Obj& b) { return Obj::Make_bool(a.Get_i32() <  b.Get_i32()); },
                 .ge_        = [](const Obj& a, const Obj& b) { return Obj::Make_bool(a.Get_i32() >= b.Get_i32()); },
@@ -115,6 +131,20 @@ namespace rt {
                     return Obj::Make_i64(a.Get_i64() / xb);
                 },
                 .neg_       = [](const Obj& o) { return Obj::Make_i64(-o.Get_i64()); },
+                .modt_      = [](const Obj& a, const Obj& b) {
+                    int64_t xa = a.Get_i64(), xb = b.Get_i64();
+                    if (xb == 0)  throw LogErr(LogModule::Runtime, "division by zero");
+                    if (xb == -1) return Obj::Make_i64(0);
+                    return Obj::Make_i64(xa % xb);
+                },
+                .modf_      = [](const Obj& a, const Obj& b) {
+                    int64_t xa = a.Get_i64(), xb = b.Get_i64();
+                    if (xb == 0)  throw LogErr(LogModule::Runtime, "division by zero");
+                    if (xb == -1) return Obj::Make_i64(0);
+                    auto r = xa % xb;
+                    if (r != 0 && ((r < 0) != (xb < 0))) r += xb;
+                    return Obj::Make_i64(r);
+                },
                 .gt_        = [](const Obj& a, const Obj& b) { return Obj::Make_bool(a.Get_i64() >  b.Get_i64()); },
                 .lt_        = [](const Obj& a, const Obj& b) { return Obj::Make_bool(a.Get_i64() <  b.Get_i64()); },
                 .ge_        = [](const Obj& a, const Obj& b) { return Obj::Make_bool(a.Get_i64() >= b.Get_i64()); },
@@ -147,6 +177,15 @@ namespace rt {
                 .star_      = [](const Obj& a, const Obj& b) { return Obj::Make_f32(a.Get_f32() * b.Get_f32()); },
                 .slash_     = [](const Obj& a, const Obj& b) { return Obj::Make_f32(a.Get_f32() / b.Get_f32()); },
                 .neg_       = [](const Obj& o) { return Obj::Make_f32(-o.Get_f32()); },
+                .modt_      = [](const Obj& a, const Obj& b) {
+                    return Obj::Make_f32(std::fmod(a.Get_f32(), b.Get_f32()));
+                },
+                .modf_      = [](const Obj& a, const Obj& b) {
+                    float xa = a.Get_f32(), xb = b.Get_f32();
+                    float r  = std::fmod(xa, xb);
+                    if (r != 0 && ((r < 0) != (xb < 0))) r += xb;
+                    return Obj::Make_f32(r);
+                },
                 .gt_        = [](const Obj& a, const Obj& b) { return Obj::Make_bool(a.Get_f32() >  b.Get_f32()); },
                 .lt_        = [](const Obj& a, const Obj& b) { return Obj::Make_bool(a.Get_f32() <  b.Get_f32()); },
                 .ge_        = [](const Obj& a, const Obj& b) { return Obj::Make_bool(a.Get_f32() >= b.Get_f32()); },
@@ -179,6 +218,15 @@ namespace rt {
                 .star_      = [](const Obj& a, const Obj& b) { return Obj::Make_f64(a.Get_f64() * b.Get_f64()); },
                 .slash_     = [](const Obj& a, const Obj& b) { return Obj::Make_f64(a.Get_f64() / b.Get_f64()); },
                 .neg_       = [](const Obj& o) { return Obj::Make_f64(-o.Get_f64()); },
+                .modt_      = [](const Obj& a, const Obj& b) {
+                    return Obj::Make_f64(std::fmod(a.Get_f64(), b.Get_f64()));
+                },
+                .modf_      = [](const Obj& a, const Obj& b) {
+                    double xa = a.Get_f64(), xb = b.Get_f64();
+                    double r  = std::fmod(xa, xb);
+                    if (r != 0 && ((r < 0) != (xb < 0))) r += xb;
+                    return Obj::Make_f64(r);
+                },
                 .gt_        = [](const Obj& a, const Obj& b) { return Obj::Make_bool(a.Get_f64() >  b.Get_f64()); },
                 .lt_        = [](const Obj& a, const Obj& b) { return Obj::Make_bool(a.Get_f64() <  b.Get_f64()); },
                 .ge_        = [](const Obj& a, const Obj& b) { return Obj::Make_bool(a.Get_f64() >= b.Get_f64()); },
