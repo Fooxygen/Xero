@@ -71,10 +71,34 @@ namespace lexer {
                 }
                 else return TokenGen(Token::Type::Minus, "-");
             }
+            case '*': {
+                if (cn == '=') {
+                    CharNext();
+                    return TokenGen(Token::Type::StarAssign, "*=");
+                }
+                else return TokenGen(Token::Type::Star, "*");
+            }
+            case '/': {
+                if (cn == '=') {
+                    CharNext();
+                    return TokenGen(Token::Type::SlashAssign, "/=");
+                }
+                else return TokenGen(Token::Type::Slash, "/");
+            }
             case '%': {
                 if (cn == '%') {
+                    if (cnn == '=') {
+                        CharNext(2);
+                        return TokenGen(Token::Type::ModFAssign, "%%=");
+                    }
+                    else {
+                        CharNext();
+                        return TokenGen(Token::Type::ModF, "%%");
+                    }
+                }
+                if (cn == '=') {
                     CharNext();
-                    return TokenGen(Token::Type::ModF, "%%");
+                    return TokenGen(Token::Type::ModTAssign, "%=");
                 }
                 else return TokenGen(Token::Type::ModT, "%");
             }
@@ -148,8 +172,6 @@ namespace lexer {
             case '[':   return TokenGen(Token::Type::LBkt,      "[");
             case ']':   return TokenGen(Token::Type::RBkt,      "]");
             case ',':   return TokenGen(Token::Type::Comma,     ",");
-            case '*':   return TokenGen(Token::Type::Star,      "*");
-            case '/':   return TokenGen(Token::Type::Slash,     "/");
         }
 
         throw LogErr(LogModule::Lexer, "invalid token");

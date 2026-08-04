@@ -70,6 +70,10 @@ public:
         Assign,             //  =
         PlusAssign,         //  +=
         MinusAssign,        //  -=
+        StarAssign,         //  *=
+        SlashAssign,        //  /=
+        ModTAssign,         //  %=
+        ModFAssign,         //  %%=
 
         // └─ Keyword
         Keyword,            // Base
@@ -154,6 +158,10 @@ public:
             case Assign:
             case PlusAssign:
             case MinusAssign:
+            case StarAssign:
+            case SlashAssign:
+            case ModTAssign:
+            case ModFAssign:
                 return AssignOper;
 
             case True:
@@ -223,6 +231,10 @@ public:
             case Assign:        return "Assign";
             case PlusAssign:    return "PlusAssign";
             case MinusAssign:   return "MinusAssign";
+            case StarAssign:    return "StarAssign";
+            case SlashAssign:   return "SlashAssign";
+            case ModTAssign:    return "ModTAssign";
+            case ModFAssign:    return "ModFAssign";
 
             case True:          return "true";
             case False:         return "false";

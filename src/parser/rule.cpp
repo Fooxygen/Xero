@@ -63,23 +63,30 @@ namespace parser {
             using OT = OperType;
 
             switch (token) {
-                case TT::Plus:  return OT::Plus;
-                case TT::Minus: return isUnary ? OT::Neg : OT::Minus;
-                case TT::Star:  return OT::Star;
-                case TT::Slash: return OT::Slash;
-                case TT::ModT:  return OT::ModT;
-                case TT::ModF:  return OT::ModF;
+                case TT::Plus:          return OT::Plus;
+                case TT::Minus:         return isUnary ? OT::Neg : OT::Minus;
+                case TT::Star:          return OT::Star;
+                case TT::Slash:         return OT::Slash;
+                case TT::ModT:          return OT::ModT;
+                case TT::ModF:          return OT::ModF;
 
-                case TT::Gt:    return OT::Gt;
-                case TT::Ge:    return OT::Ge;
-                case TT::Lt:    return OT::Lt;
-                case TT::Le:    return OT::Le;
-                case TT::Eq:    return OT::Eq;
-                case TT::Neq:   return OT::Neq;
+                case TT::Gt:            return OT::Gt;
+                case TT::Ge:            return OT::Ge;
+                case TT::Lt:            return OT::Lt;
+                case TT::Le:            return OT::Le;
+                case TT::Eq:            return OT::Eq;
+                case TT::Neq:           return OT::Neq;
 
-                case TT::And:   return OT::And;
-                case TT::Or:    return OT::Or;
-                case TT::Not:   return OT::Not;
+                case TT::And:           return OT::And;
+                case TT::Or:            return OT::Or;
+                case TT::Not:           return OT::Not;
+
+                case TT::PlusAssign:    return OT::Plus;
+                case TT::MinusAssign:   return OT::Minus;
+                case TT::StarAssign:    return OT::Star;
+                case TT::SlashAssign:   return OT::Slash;
+                case TT::ModTAssign:    return OT::ModT;
+                case TT::ModFAssign:    return OT::ModF;
 
                 default: __builtin_unreachable();
             }
@@ -190,69 +197,35 @@ namespace parser {
                 }
             );
         }
-        // └─ expr = expr; -> assignstmt
+        // └─ expr assignoper expr; -> assignstmt
         {
             RuleAdd(
                 PATS{
                     AT::Expr,
-                    TT::Assign,
+                    SymbolPattern({
+                        TT::Assign,
+                        TT::PlusAssign, TT::MinusAssign, TT::StarAssign, TT::SlashAssign,
+                        TT::ModTAssign, TT::ModFAssign
+                    }),
                     AT::Expr,
                     TT::Semicolon
                 },
                 [](std::vector<Symbol>& symbols, auto) {
-                    return std::make_unique<AssignStmt>(
-                        Rule::Move<Expr>(symbols, 1),
-                        Rule::Move<Expr>(symbols, 3)
-                    );
-                }
-            );
-        }
-        // └─ expr += expr; -> assignstmt
-        {
-            RuleAdd(
-                PATS{
-                    AT::Expr,
-                    TT::PlusAssign,
-                    AT::Expr,
-                    TT::Semicolon
-                },
-                [](std::vector<Symbol>& symbols, auto) {
+                    auto token  = Rule::GetTokenType(symbols, 2);
                     auto target = Rule::Move<Expr>(symbols, 1);
-                    auto lexpr  = std::unique_ptr<Expr>((Expr*)(target->Clone().release()));
-                    auto value  = std::make_unique<OperExpr>(
-                        OperType::Plus,
-                        std::move(lexpr),
-                        Rule::Move<Expr>(symbols, 3)
-                    );
+                    auto value  = Rule::Move<Expr>(symbols, 3);
 
+                    if (token == TT::Assign)
+                        return std::make_unique<AssignStmt>(std::move(target), std::move(value));
+
+                    auto lexpr = std::unique_ptr<Expr>((Expr*)(target->Clone().release()));
                     return std::make_unique<AssignStmt>(
                         std::move(target),
-                        std::move(value)
-                    );
-                }
-            );
-        }
-        // └─ expr -= expr; -> assignstmt
-        {
-            RuleAdd(
-                PATS{
-                    AT::Expr,
-                    TT::MinusAssign,
-                    AT::Expr,
-                    TT::Semicolon
-                },
-                [](std::vector<Symbol>& symbols, auto) {
-                    auto target = Rule::Move<Expr>(symbols, 1);
-                    auto lexpr  = std::unique_ptr<Expr>((Expr*)(target->Clone().release()));
-                    auto value  = std::make_unique<OperExpr>(
-                        OperType::Minus,
-                        std::move(lexpr),
-                        Rule::Move<Expr>(symbols, 3)
-                    );
-
-                    return std::make_unique<AssignStmt>(
-                        std::move(target),
-                        std::move(value)
+                        std::make_unique<OperExpr>(
+                            TokenType2OperType(token, false),
+                            std::move(lexpr),
+                            std::move(value)
+                        )
                     );
                 }
             );
