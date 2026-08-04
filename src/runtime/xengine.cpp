@@ -367,7 +367,7 @@ namespace rt {
         if (!node.cond_) isPass = true;
         else {
             auto cond = Exec(*node.cond_);
-            if (cond.type() == TypeTable::Get("bool")) {
+            if (cond.is("bool")) {
                 isPass = cond.Get_bool();
             }
             else {
@@ -394,7 +394,7 @@ namespace rt {
 
         // Range
 
-        if (type == TypeTable::Get("range")) {
+        if (data.is("range")) {
             auto& range = data.Get_range_ref();
             for (Obj o = *range.left(); ; o = range.itertype()->plus_(o, *range.step())) {
                 if (!range.isClosed() &&
@@ -421,22 +421,22 @@ namespace rt {
         size_t len = 0;
         std::function<Obj(size_t)> at;
 
-        if      (type == TypeTable::Get("array")) {
+        if      (data.is("array")) {
             auto& arr = data.Get_array_ref();
             len = arr.size();
             at = [&](size_t i) { return *arr.Get(i); };
         }      
-        else if (type == TypeTable::Get("arrayview")) {
+        else if (data.is("arrayview")) {
             auto& view = data.Get_arrayview_ref();
             len = view.len();
             at = [&](size_t i) { return *view.org()->Get(view.offset() + i); };
         }
-        else if (type == TypeTable::Get("string")) {
+        else if (data.is("string")) {
             auto& str = data.Get_string_ref();
             len = str.size();
             at = [&](size_t i) { return *str.Get(i); };
         }  
-        else if (type == TypeTable::Get("stringview")) {
+        else if (data.is("stringview")) {
             auto& view = data.Get_stringview_ref();
             len = view.len();
             at = [&](size_t i) { return *view.org()->Get(view.offset() + i); };

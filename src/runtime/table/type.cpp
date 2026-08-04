@@ -23,6 +23,13 @@ namespace rt {
         throw LogErr(LogModule::Runtime, "method 'assign()' not implemented for type");
     }
 
+    bool Type::isNone() const {
+        return this == TypeTable::Get("none");
+    }
+    bool Type::is(std::string_view type_name) const {
+        return this == TypeTable::Get(type_name);
+    }
+
     // TypeTable
 
     void TypeTable::ConvertSet(const Type* from, const Type* to, Obj(*fn)(const Obj&)) {

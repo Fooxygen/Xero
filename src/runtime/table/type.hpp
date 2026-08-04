@@ -17,7 +17,8 @@
 namespace rt {
     class Obj;
 
-    struct Type {
+    class Type {
+    public:
         std::string_view      name  = "";
         size_t                size  = 0;            // Byte width
         bool                  isHeapStored = false; // Store Data in Heap
@@ -63,6 +64,9 @@ namespace rt {
         // Container Oper
 
         Obj (*pick_) (const Obj&, const Obj&)   = nullptr;      // []
+
+        bool isNone() const;
+        bool is(std::string_view type_name) const;
     };
 
     class TypeTable {

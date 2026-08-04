@@ -134,10 +134,10 @@ namespace rt {
         }
         
         bool isNone() const {
-            return type() == TypeTable::Get("none");
+            return type()->isNone();
         }
         bool is(std::string_view type_name) const {
-            return type() == TypeTable::Get(type_name);
+            return type()->is(type_name);
         }
         bool hasHeapData() const {
             switch (usingtype) {

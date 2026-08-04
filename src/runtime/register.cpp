@@ -33,7 +33,7 @@ namespace rt {
                     return o.Get_bool() ? std::string("true") : std::string("false");
                 },
                 .assign_    = [](Obj* target, const Obj& value) {
-                    if (value.type() == TypeTable::Get("bool")) {
+                    if (value.is("bool")) {
                         *target = value;
                         return;
                     }
@@ -63,7 +63,7 @@ namespace rt {
                     return std::to_string(o.Get_i32());
                 },
                 .assign_    = [](Obj* target, const Obj& value) {
-                    if (value.type() == TypeTable::Get("i32")) {
+                    if (value.is("i32")) {
                         *target = value;
                         return;
                     }
@@ -113,7 +113,7 @@ namespace rt {
                     return std::to_string(o.Get_i64());
                 },
                 .assign_    = [](Obj* target, const Obj& value) {
-                    if (value.type() == TypeTable::Get("i64")) {
+                    if (value.is("i64")) {
                         *target = value;
                         return;
                     }
@@ -163,7 +163,7 @@ namespace rt {
                     return std::to_string(o.Get_f32());
                 },
                 .assign_    = [](Obj* target, const Obj& value) {
-                    if (value.type() == TypeTable::Get("f32")) {
+                    if (value.is("f32")) {
                         *target = value;
                         return;
                     }
@@ -204,7 +204,7 @@ namespace rt {
                     return std::to_string(o.Get_f64());
                 },
                 .assign_    = [](Obj* target, const Obj& value) {
-                    if (value.type() == TypeTable::Get("f64")) {
+                    if (value.is("f64")) {
                         *target = value;
                         return;
                     }
@@ -245,7 +245,7 @@ namespace rt {
                     return std::string(1, o.Get_char());
                 },
                 .assign_    = [](Obj* target, const Obj& value) {
-                    if (value.type() == TypeTable::Get("char")) {
+                    if (value.is("char")) {
                         *target = value;
                         return;
                     }
@@ -273,12 +273,12 @@ namespace rt {
                     return o.Get_string_ref().ToCppString();
                 },
                 .assign_    = [](Obj* target, const Obj& value) {
-                    if (value.type() == TypeTable::Get("string")) {
+                    if (value.is("string")) {
                         *target = value;
                         return;
                     }
-                    if (value.type() == TypeTable::Get("stringview") ||
-                        value.type() == TypeTable::Get("char"))
+                    if (value.is("stringview") ||
+                        value.is("char"))
                     {
                         *target = TypeTable::Convert(value, TypeTable::Get("string"));
                         return;
@@ -303,7 +303,7 @@ namespace rt {
                     return Obj::Make_bool(a.Get_string_ref().ToCppString() != b.Get_string_ref().ToCppString());
                 },        
                 .pick_      = [](const Obj& target, const Obj& pick) {
-                    if (pick.type() != TypeTable::Get("range")) {
+                    if (!pick.is("range")) {
                         throw LogErr(LogModule::Runtime, std::format(
                             "pick must be range, not {}",
                             pick.type()->name
@@ -313,8 +313,8 @@ namespace rt {
                     auto& src   = target.Get_string_ref();
                     auto& range = pick.Get_range_ref();
 
-                    if (range.itertype() != TypeTable::Get("i32") &&
-                        range.itertype() != TypeTable::Get("i64"))
+                    if (!range.itertype()->is("i32") &&
+                        !range.itertype()->is("i64"))
                     {
                         throw LogErr(LogModule::Runtime, std::format(
                             "iterator type of range must be i32 or i64, not {}",
@@ -392,12 +392,12 @@ namespace rt {
                     };
 
                     if (target_view.len() == 1) {
-                        if (value.type() == TypeTable::Get("char")) {
+                        if (value.is("char")) {
                             *target_str->Get(target_view.offset())
                                 = Obj::Make_char(value.Get_char());
                             return;
                         }
-                        if (value.type() == TypeTable::Get("string")) {
+                        if (value.is("string")) {
                             auto& value_str = value.Get_string_ref();
                             if (value_str.size() == 1) {
                                 *target_str->Get(target_view.offset())
@@ -408,7 +408,7 @@ namespace rt {
                                 "cannot make type '{}' compatible with 'char'", value.type()->name
                             ));
                         }
-                        if (value.type() == TypeTable::Get("stringview")) {
+                        if (value.is("stringview")) {
                             auto& value_view = value.Get_stringview_ref();
                             auto  value_str  = value_view.org();
                             if (value_view.len() == 1) {
@@ -422,16 +422,16 @@ namespace rt {
                         }
                     }
                     else {
-                        if (value.type() == TypeTable::Get("char")) {
+                        if (value.is("char")) {
                             auto str = String(std::string(1, value.Get_char()));
                             assign_from_string(str);
                             return;
                         }
-                        if (value.type() == TypeTable::Get("string")) {
+                        if (value.is("string")) {
                             assign_from_string(value.Get_string_ref());
                             return;
                         }
-                        if (value.type() == TypeTable::Get("stringview")) {
+                        if (value.is("stringview")) {
                             auto str = TypeTable::Convert(value, TypeTable::Get("string"));
                             assign_from_string(str.Get_string_ref());
                             return;
@@ -443,7 +443,7 @@ namespace rt {
                     ));
                 },
                 .pick_      = [](const Obj& target, const Obj& pick) {
-                    if (pick.type() != TypeTable::Get("range")) {
+                    if (!pick.is("range")) {
                         throw LogErr(LogModule::Runtime, std::format(
                             "pick must be range, not {}",
                             pick.type()->name
@@ -453,8 +453,8 @@ namespace rt {
                     auto& src   = target.Get_stringview_ref();
                     auto& range = pick.Get_range_ref();
 
-                    if (range.itertype() != TypeTable::Get("i32") &&
-                        range.itertype() != TypeTable::Get("i64"))
+                    if (!range.itertype()->is("i32") &&
+                        !range.itertype()->is("i64"))
                     {
                         throw LogErr(LogModule::Runtime, std::format(
                             "iterator type of range must be i32 or i64, not {}",
@@ -499,13 +499,13 @@ namespace rt {
                     auto& dst = target->Get_array_ref();
 
                     // = [x, y, z]
-                    if      (value.type() == TypeTable::Get("array")) {
+                    if      (value.is("array")) {
                         dst = value.Get_array_ref();
                         return;
                     }
 
                     // = arr[x..y]
-                    else if (value.type() == TypeTable::Get("arrayview")) {
+                    else if (value.is("arrayview")) {
                         dst = TypeTable::Convert(value, TypeTable::Get("array")).Get_array_ref();
                         return;
                     }
@@ -527,7 +527,7 @@ namespace rt {
                     return oc;
                 },
                 .pick_          = [](const Obj& target, const Obj& pick) {
-                    if (pick.type() != TypeTable::Get("range")) {
+                    if (!pick.is("range")) {
                         throw LogErr(LogModule::Runtime, std::format(
                             "pick must be range, not {}",
                             pick.type()->name
@@ -537,8 +537,8 @@ namespace rt {
                     auto& src   = target.Get_array_ref();
                     auto& range = pick.Get_range_ref();
 
-                    if (range.itertype() != TypeTable::Get("i32") &&
-                        range.itertype() != TypeTable::Get("i64"))
+                    if (!range.itertype()->is("i32") &&
+                        !range.itertype()->is("i64"))
                     {
                         throw LogErr(LogModule::Runtime, std::format(
                             "iterator type of range must be i32 or i64, not {}",
@@ -615,11 +615,11 @@ namespace rt {
                         }
                     };
 
-                    if      (value.type() == TypeTable::Get("array")) {
+                    if      (value.is("array")) {
                         assign_from_array(value.Get_array_ref());
                         return;
                     }
-                    else if (value.type() == TypeTable::Get("arrayview")) {
+                    else if (value.is("arrayview")) {
                         auto arr = TypeTable::Convert(value, TypeTable::Get("array"));
                         assign_from_array(arr.Get_array_ref());
                         return;
@@ -632,7 +632,7 @@ namespace rt {
                     }
                 },
                 .pick_      = [](const Obj& target, const Obj& pick) {
-                    if (pick.type() != TypeTable::Get("range")) {
+                    if (!pick.is("range")) {
                         throw LogErr(LogModule::Runtime, std::format(
                             "pick must be range, not {}",
                             pick.type()->name
@@ -642,8 +642,8 @@ namespace rt {
                     auto& src   = target.Get_arrayview_ref();
                     auto& range = pick.Get_range_ref();
 
-                    if (range.itertype() != TypeTable::Get("i32") &&
-                        range.itertype() != TypeTable::Get("i64"))
+                    if (!range.itertype()->is("i32") &&
+                        !range.itertype()->is("i64"))
                     {
                         throw LogErr(LogModule::Runtime, std::format(
                             "iterator type of range must be i32 or i64, not {}",
@@ -791,10 +791,10 @@ namespace rt {
         {
             FnTable::Set("abs", [](ARGS args) {
                 auto& num = args[0];
-                if (num.type() == TypeTable::Get("i32")) return Obj::Make_i32(std::abs(num.Get_i32()));
-                if (num.type() == TypeTable::Get("i64")) return Obj::Make_i64(std::abs(num.Get_i64()));
-                if (num.type() == TypeTable::Get("f32")) return Obj::Make_f32(std::abs(num.Get_f32()));
-                if (num.type() == TypeTable::Get("f64")) return Obj::Make_f64(std::abs(num.Get_f64()));
+                if (num.is("i32")) return Obj::Make_i32(std::abs(num.Get_i32()));
+                if (num.is("i64")) return Obj::Make_i64(std::abs(num.Get_i64()));
+                if (num.is("f32")) return Obj::Make_f32(std::abs(num.Get_f32()));
+                if (num.is("f64")) return Obj::Make_f64(std::abs(num.Get_f64()));
                 return Obj();
             });
         }
