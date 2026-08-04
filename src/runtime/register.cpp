@@ -117,6 +117,10 @@ namespace rt {
                         *target = value;
                         return;
                     }
+                    if (value.is("i32")) {
+                        *target = TypeTable::Convert(value, TypeTable::Get("i64"));
+                        return;
+                    }
 
                     throw LogErr(LogModule::Runtime, std::format(
                         "cannot make type '{}' compatible with 'i64'", value.type()->name
@@ -167,6 +171,10 @@ namespace rt {
                         *target = value;
                         return;
                     }
+                    if (value.is("i32") || value.is("i64")) {
+                        *target = TypeTable::Convert(value, TypeTable::Get("f32"));
+                        return;
+                    }
                     
                     throw LogErr(LogModule::Runtime, std::format(
                         "cannot make type '{}' compatible with 'f32'", value.type()->name
@@ -206,6 +214,10 @@ namespace rt {
                 .assign_    = [](Obj* target, const Obj& value) {
                     if (value.is("f64")) {
                         *target = value;
+                        return;
+                    }
+                    if (value.is("i32") || value.is("i64") || value.is("f32")) {
+                        *target = TypeTable::Convert(value, TypeTable::Get("f64"));
                         return;
                     }
                     
