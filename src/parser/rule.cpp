@@ -58,43 +58,31 @@ namespace parser {
             return group(a) > group(b);
         };
 
-        // └─ Binary: expr <token> expr
-        auto BinOperAdd = [&](Token::Type token, OperType op) {
-            RuleAdd(
-                PATS{
-                    AT::Expr,
-                    token,
-                    AT::Expr
-                },
-                [op, token](std::vector<Symbol>& symbols, Token::Type token_next) -> ASTNODE {
-                    if (isOperPriority(token_next, token))
-                        return nullptr;     // postpone
+        static auto TokenType2OperType = [](Token::Type token, bool isUnary) {
+            using TT = Token::Type;
+            using OT = OperType;
 
-                    return std::make_unique<OperExpr>(
-                        op,
-                        Rule::Move<Expr>(symbols, 1),
-                        Rule::Move<Expr>(symbols, 3)
-                    );
-                }
-            );
-        };
-        
-        // └─ Unary: <token> expr
-        auto UnaryOperAdd = [&](Token::Type token, OperType op) {
-            RuleAdd(
-                PATS{
-                    token,
-                    AT::Expr
-                },
-                [op](std::vector<Symbol>& symbols, auto) {
-                    return std::make_unique<OperExpr>(
-                        op,
-                        Rule::Move<Expr>(symbols, 2),
-                        nullptr
-                    );
-                },
-                PATS{ AT::Expr }
-            );
+            switch (token) {
+                case TT::Plus:  return OT::Plus;
+                case TT::Minus: return isUnary ? OT::Neg : OT::Minus;
+                case TT::Star:  return OT::Star;
+                case TT::Slash: return OT::Slash;
+                case TT::ModT:  return OT::ModT;
+                case TT::ModF:  return OT::ModF;
+
+                case TT::Gt:    return OT::Gt;
+                case TT::Ge:    return OT::Ge;
+                case TT::Lt:    return OT::Lt;
+                case TT::Le:    return OT::Le;
+                case TT::Eq:    return OT::Eq;
+                case TT::Neq:   return OT::Neq;
+
+                case TT::And:   return OT::And;
+                case TT::Or:    return OT::Or;
+                case TT::Not:   return OT::Not;
+
+                default: __builtin_unreachable();
+            }
         };
 
         // Stmt Auxiliary
@@ -416,26 +404,48 @@ namespace parser {
         }
         
         // └─ Binary
+        {
+            RuleAdd(
+                PATS{
+                    AT::Expr,
+                    SymbolPattern({
+                        TT::Star, TT::Slash, TT::ModT, TT::ModF,
+                        TT::Plus, TT::Minus,
+                        TT::Gt,   TT::Ge,    TT::Lt,   TT::Le, TT::Eq, TT::Neq,
+                        TT::And,  TT::Or
+                    }),
+                    AT::Expr
+                },
+                [](std::vector<Symbol>& symbols, Token::Type token_next) -> ASTNODE {
+                    auto tokentype = Rule::GetTokenType(symbols, 2);
+                    if (isOperPriority(token_next, tokentype)) return nullptr;
 
-        BinOperAdd(TT::Star,  OperType::Star);
-        BinOperAdd(TT::Slash, OperType::Slash);
-        BinOperAdd(TT::ModT,  OperType::ModT);
-        BinOperAdd(TT::ModF,  OperType::ModF);
-        BinOperAdd(TT::Plus,  OperType::Plus);
-        BinOperAdd(TT::Minus, OperType::Minus);
-        BinOperAdd(TT::Gt,    OperType::Gt);
-        BinOperAdd(TT::Ge,    OperType::Ge);
-        BinOperAdd(TT::Lt,    OperType::Lt);
-        BinOperAdd(TT::Le,    OperType::Le);
-        BinOperAdd(TT::Eq,    OperType::Eq);
-        BinOperAdd(TT::Neq,   OperType::Neq);
-        BinOperAdd(TT::And,   OperType::And);
-        BinOperAdd(TT::Or,    OperType::Or);
+                    return std::make_unique<OperExpr>(
+                        TokenType2OperType(tokentype, false),
+                        Rule::Move<Expr>(symbols, 1),
+                        Rule::Move<Expr>(symbols, 3)
+                    );
+                }
+            );
+        }
 
         // └─ Unary
-
-        UnaryOperAdd(TT::Minus, OperType::Neg);
-        UnaryOperAdd(TT::Not,   OperType::Not);
+        {
+            RuleAdd(
+                PATS{
+                    SymbolPattern({ TT::Minus, TT::Not }),
+                    AT::Expr
+                },
+                [](std::vector<Symbol>& symbols, Token::Type token_next) {
+                    return std::make_unique<OperExpr>(
+                        TokenType2OperType(Rule::GetTokenType(symbols, 1), true),
+                        Rule::Move<Expr>(symbols, 2),
+                        nullptr
+                    );
+                },
+                PATS{ AT::Expr }
+            );
+        }
         
         // Array
 

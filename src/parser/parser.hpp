@@ -6,7 +6,6 @@
 #pragma once
 
 #include <vector>
-#include <set>
 #include <functional>
 #include <variant>
 #include <algorithm>
@@ -60,35 +59,38 @@ namespace parser {
 
     class SymbolPattern {
     private:
-        Symbol::Type type_         = Symbol::Type::Undefined;
-        Token::Type  type_token_   = Token::Type::Undefined;
-        AstType      type_astnode_ = AstType::Undefined;
+        Symbol::Type type_ = Symbol::Type::Undefined;
+        std::vector<Token::Type>  type_tokens_;
+        std::vector<AstType>      type_astnodes_;
 
         bool isOptional_ = false;
 
     public:
-        SymbolPattern(Token::Type type) {
+        SymbolPattern(Token::Type type)
+        :   type_tokens_{type}
+        {
             type_ = Symbol::Type::Token;
-            type_token_ = type;
         }
-        SymbolPattern(AstType type) {
+        SymbolPattern(AstType type)
+        :   type_astnodes_{type}
+        {
             type_ = Symbol::Type::AstNode;
-            type_astnode_ = type;
+        }
+        SymbolPattern(std::initializer_list<Token::Type> types)
+        :   type_tokens_(types)
+        {
+            type_ = Symbol::Type::Token;
+        }
+        SymbolPattern(std::initializer_list<AstType> types)
+        :   type_astnodes_(types)
+        {
+            type_ = Symbol::Type::AstNode;
         }
 
-        Symbol::Type type() const {
-            return type_;
-        }
-        Token::Type  type_token() const {
-            return type_token_;
-        }
-        AstType      type_astnode() const {
-            return type_astnode_;
-        }
-    
-        bool isOptional() const {
-            return isOptional_;
-        }
+        Symbol::Type type() const { return type_; }
+        const std::vector<Token::Type>& type_tokens()   const { return type_tokens_; }
+        const std::vector<AstType>&     type_astnodes() const { return type_astnodes_; }
+        bool isOptional()   const { return isOptional_; }
     
         // Make Optional SP for TT
         static SymbolPattern Opt(Token::Type type) {
@@ -105,7 +107,7 @@ namespace parser {
     };
 
     // Parsing Rule
-    // [TokenType, Token, AstType, ....] -> AstType
+    // [TokenType, { TokenType, TokenType }, AstType, ...] -> AstType
     class Rule {
     public:
         using ReduceCallback = std::function<
@@ -125,8 +127,8 @@ namespace parser {
         std::vector<SymbolPattern>  patterns_;
         std::vector<SymbolPattern>  prefix_delay_;
         std::vector<SymbolPattern>  prefix_allow_;
-        std::set<Token::Type>       suffix_delay_;      // Delay reduction when hit symmbol
-        std::set<Token::Type>       suffix_allow_;      // Delay reduction when miss symbol
+        std::vector<Token::Type>    suffix_delay_;      // Delay reduction when hit symmbol
+        std::vector<Token::Type>    suffix_allow_;      // Delay reduction when miss symbol
         ReduceCallback              reduce_callback_;
 
         static void PatternIndexCheck(size_t pos) {
@@ -157,9 +159,9 @@ namespace parser {
         }
         bool isNeedDelaySuffix(Token::Type token_next) const {
             if (token_next == Token::Type::Undefined) return false;
-            if (!suffix_delay_.empty() && suffix_delay_.contains(token_next))
+            if (!suffix_delay_.empty() && std::ranges::contains(suffix_delay_, token_next))
                 return true;
-            if (!suffix_allow_.empty() && !suffix_allow_.contains(token_next))
+            if (!suffix_allow_.empty() && !std::ranges::contains(suffix_allow_, token_next))
                 return true;
             return false;
         }
@@ -173,37 +175,33 @@ namespace parser {
             std::initializer_list<Token::Type>      suffix_delay = {},
             std::initializer_list<Token::Type>      suffix_allow = {}
         )
-        {
-            patterns_.insert(
-                patterns_.end(),
-                patterns.begin(), patterns.end()
-            );
-            prefix_delay_.insert(prefix_delay_.end(), prefix_delay.begin(), prefix_delay.end());
-            prefix_allow_.insert(prefix_allow_.end(), prefix_allow.begin(), prefix_allow.end());
-            suffix_delay_.insert(suffix_delay.begin(), suffix_delay.end());
-            suffix_allow_.insert(suffix_allow.begin(), suffix_allow.end());
-            reduce_callback_ = std::move(reduce_callback);
-        }
+        :   patterns_(patterns),
+            prefix_delay_(prefix_delay),
+            prefix_allow_(prefix_allow),
+            suffix_delay_(suffix_delay),
+            suffix_allow_(suffix_allow),
+            reduce_callback_(std::move(reduce_callback))
+        {}
 
         const std::vector<SymbolPattern>& patterns() const { return patterns_; }
         const ReduceCallback& reduce_callback()      const { return reduce_callback_; }
 
         bool PatternMatch(const SymbolPattern& pat, const Symbol& sym) {
+
             // Token
-            if (pat.type() == Symbol::Type::Token) {
-                if (sym.type() != Symbol::Type::Token ||
-                    !Token::isTypeCompatible(pat.type_token(), sym.type_token())
-                ) return false;
+            if (sym.type() == Symbol::Type::Token) {
+                for (auto t : pat.type_tokens()) {
+                    if (Token::isTypeCompatible(t, sym.type_token())) return true;
+                }
+                return false;
             }
 
             // AstNode
-            else {
-                if (sym.type() != Symbol::Type::AstNode ||
-                    !isAstTypeCompatible(pat.type_astnode(), sym.type_astnode())
-                ) return false;
+            for (auto a : pat.type_astnodes()) {
+                if (isAstTypeCompatible(a, sym.type_astnode())) return true;
             }
-
-            return true;
+ 
+            return false;
         }
         bool PatternsMatch(
             const std::vector<Symbol>& symbols, Token::Type token_next, size_t& out_reduce_len)
@@ -298,6 +296,13 @@ namespace parser {
             pos = move_positions_[pos - 1];
             auto& astnode = std::get<std::unique_ptr<AstNode>>(syms[syms.size() - pos].data());
             return std::unique_ptr<T>(static_cast<T*>(astnode.release()));
+        }
+    
+        // Get TokenType from symbols
+        static Token::Type GetTokenType(std::vector<Symbol>& syms, size_t pos) {
+            PatternIndexCheck(pos);
+            pos = move_positions_[pos - 1];
+            return syms[syms.size() - pos].type_token();
         }
     };
 
