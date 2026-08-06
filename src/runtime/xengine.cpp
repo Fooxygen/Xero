@@ -247,16 +247,60 @@ namespace rt {
         ));
     }
 
-    Obj Xengine::Exec(FnCallExpr& node) {
-        auto& callee = *node.callee_;
-        auto& args   = *node.args_;
+    Obj Xengine::Exec(ArrayExpr& node) {
+        size_t size  = node.elements_->exprs_.size();
+        auto   obj   = Obj::Make_array(size);
+        auto&  array = obj.Get_array_ref();
+        
+        for (auto& e : node.elements_->exprs_) {
 
-        std::vector<Obj> objs;
-        for (auto& e : args.exprs_) {
-            objs.emplace_back(Exec(*e));
+            // ref count = 1
+            Obj element = Exec(*e);
+            array.Insert(array.size(), new Obj(element));   // ref count = 2
+        }
+        // ref count = 1;
+
+        return obj;
+    }
+
+    Obj Xengine::Exec(FnCallExpr& node) {
+        auto& callee_name = node.callee_->value_;
+
+        std::vector<Obj> args;
+        std::vector<const Type*> args_type;
+        for (auto& e : node.args_->exprs_) {
+            args.emplace_back(Exec(*e));
+            args_type.emplace_back(args[args.size() - 1].type());
         }
 
-        return CallThrow(FnTable::Get(callee.value_), objs);
+        // Build-in Function
+        if (auto fn = FnTable::Get(callee_name)) {
+            return CallThrow(fn, args);
+        }
+
+        // Obj-Stored Function
+        else {
+            auto callee = Exec(*node.callee_);
+            if (callee.is("function")) {
+                auto& fn = callee.Get_function_ref();
+                fn.Check(callee_name, args_type);
+
+                auto& fnexpr = fn.expr();
+                auto& params = fnexpr->params_->exprs_;
+                return Exec(*fnexpr->block_, [&]() {
+                    for (size_t i = 0; i < params.size(); i++) {
+                        auto param = (DeclExpr*)params[i].get();
+                        auto param_type = TypeTable::Get(param->bindtype_);
+                        env_.Declare(param->id_, TypeTable::Convert(args[i], param_type));
+                    }
+                });
+            }
+
+            throw LogErr(LogModule::Runtime, std::format(
+                "undefined function '{}'",
+                node.callee_->value_
+            ));
+        }
     }
 
     Obj Xengine::Exec(MethodCallExpr& node) {
@@ -273,19 +317,12 @@ namespace rt {
         return CallThrow(MethodTable::Get(target.type(), callee.value_), objs);
     }
 
-    Obj Xengine::Exec(ArrayExpr& node) {
-        size_t size  = node.elements_->exprs_.size();
-        auto   obj   = Obj::Make_array(size);
-        auto&  array = obj.Get_array_ref();
-        
-        for (auto& e : node.elements_->exprs_) {
-
-            // ref count = 1
-            Obj element = Exec(*e);
-            array.Insert(array.size(), new Obj(element));   // ref count = 2
-        }
-        // ref count = 1;
-
+    Obj Xengine::Exec(FnExpr& node) {
+        auto fn = new Function(
+            std::shared_ptr<FnExpr>((FnExpr*)(node.Clone().release()))
+        );
+        auto obj = Obj::Make_function(fn);
+        if (!node.name_.empty()) env_.Declare(node.name_, obj);
         return obj;
     }
 

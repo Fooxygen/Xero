@@ -716,6 +716,20 @@ namespace rt {
                     }
                 }
             });
+
+            // function
+            TypeTable::Set(Type{
+                .name       = "function", .size = 0, .isHeapStored = true,
+                .clone_     = [](const Obj& o) {
+                    return Obj::Make_function(new Function(o.Get_function_ref()));
+                },
+                .destroy_   = [](void* data) { delete (Function*)data; },
+                .to_string_ = [](const Obj& o) {
+                    auto& fn = o.Get_function_ref();
+                    auto  name = fn.expr() ? fn.expr()->name_ : "fn";
+                    return std::format("{}()", name);
+                }
+            });
         }
 
         // Convert

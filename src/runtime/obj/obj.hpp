@@ -13,6 +13,7 @@
 #include "runtime/obj/impl/array.hpp"
 #include "runtime/obj/impl/sliceview.hpp"
 #include "runtime/obj/impl/range.hpp"
+#include "runtime/obj/impl/function.hpp"
 
 namespace rt {
 
@@ -193,6 +194,7 @@ namespace rt {
             if (name == "array")       return Make_array();
             if (name == "arrayview")   return Make_arrayview(new SliceView<Array>());
             if (name == "range")       return Make_range(new Range());
+            if (name == "function")    return Make_function(new Function());
 
             throw LogErr(LogModule::Runtime, std::format(
                 "cannot make empty value for type '{}'",
@@ -270,6 +272,12 @@ namespace rt {
             Obj o;
             auto& v = o.data_.emplace<Value>(TypeTable::Get("range"));
             v.data().ptr_ = new HeapData(rge);
+            return o;
+        }
+        static Obj Make_function(Function* fn) {
+            Obj o;
+            auto& v = o.data_.emplace<Value>(TypeTable::Get("function"));
+            v.data().ptr_ = new HeapData(fn);
             return o;
         }
 
@@ -356,6 +364,17 @@ namespace rt {
                 case UsingType::Value: {
                     auto heap = (HeapData*)value().data().ptr_;
                     return *(Range*)heap->data;
+                }
+                default: __builtin_unreachable();
+            }
+        }
+        Function&   Get_function_ref()      const {
+            switch (usingtype) {
+                case UsingType::Ref:
+                    return ref().obj()->Get_function_ref();
+                case UsingType::Value: {
+                    auto heap = (HeapData*)value().data().ptr_;
+                    return *(Function*)heap->data;
                 }
                 default: __builtin_unreachable();
             }

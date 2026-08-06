@@ -1,3 +1,18 @@
 
-x: f64 = 7.4;
-x = 2.1;
+x: i32 = 5;
+
+fn plus(k: i32) {
+    println(k + 10);
+}
+plus(x);
+
+sayhellowhat: function = fn (str: string) {
+    println("Hello, " + str);
+};
+sayhellowhat("Xero");
+
+println(plus);
+println(sayhellowhat);
+
+nothingfn: function;
+println(nothingfn);

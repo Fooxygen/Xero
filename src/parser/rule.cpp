@@ -286,7 +286,8 @@ namespace parser {
                         Rule::Move<IdExpr>(symbols, 1),
                         Pack2Exprs(symbols, 3)
                     );
-                }
+                },
+                PATS{ TT::Fn }
             );
         }
         
