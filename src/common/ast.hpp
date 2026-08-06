@@ -30,6 +30,7 @@ enum class AstType {
     // Expr
     Expr,               //  Base ------
     IdExpr,             //  Identity
+    DeclExpr,           //  Declaration
     OperExpr,           //  Operation
     RangeExpr,          //  Range
     FnCallExpr,         //  Func Call
@@ -40,7 +41,6 @@ enum class AstType {
     Stmt,               //  Base ------
     ExprStmt,           //  Expr used as Stmt
     BlockStmt,          //  Grouped Stmts
-    DeclStmt,           //  Declaration
     AssignStmt,         //  Assignment
     CondStmt,           //  Condition
     LoopSignalStmt,     //  Loop Signal
@@ -62,6 +62,7 @@ static AstType BaseOfAstType(AstType type) {
             return Expr;
 
         case IdExpr:
+        case DeclExpr:
         case OperExpr:
         case RangeExpr:
         case FnCallExpr:
@@ -71,7 +72,6 @@ static AstType BaseOfAstType(AstType type) {
 
         case ExprStmt:
         case BlockStmt:
-        case DeclStmt:
         case AssignStmt:
         case CondStmt:
         case LoopSignalStmt:
@@ -176,6 +176,44 @@ public:
 
     std::unique_ptr<AstNode> Clone() const override {
         return std::make_unique<IdExpr>(value_);
+    }
+};
+class DeclExpr          : public Expr {
+public:
+    std::string id_      = "";
+    std::string bindtype_ = "";
+    std::unique_ptr<Expr> value_ = nullptr;
+
+    DeclExpr(
+        const std::string&    id,
+        const std::string&    bindtype,
+        std::unique_ptr<Expr> value
+    )
+    :   id_(id),
+        bindtype_(bindtype),
+        value_(std::move(value))
+    {
+        type_ = AstType::DeclExpr;
+    }
+
+    const std::string TypeName() const {
+        return "DeclExpr";
+    }
+
+    void PrintImpl(std::string prefix) override {
+        PrintLabel("id", prefix);
+        std::cout << COLOR_BLUE << id_ << COLOR_DEFAULT << std::endl;
+        PrintLabel("bindtype", prefix);
+        std::cout << COLOR_MAGENTA << bindtype_ << COLOR_DEFAULT << std::endl;
+        if (value_) value_->Print(prefix, "value");
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        return std::make_unique<DeclExpr>(
+            id_,
+            bindtype_,
+            value_ ? std::unique_ptr<Expr>((Expr*)(value_->Clone().release())) : nullptr
+        );
     }
 };
 class OperExpr          : public Expr {
@@ -503,42 +541,6 @@ public:
             children.emplace_back(child->Clone());
         }
         return std::make_unique<BlockStmt>(children);
-    }
-};
-class DeclStmt          : public Stmt {
-public:
-    std::unique_ptr<IdExpr> id_ = nullptr;
-    std::unique_ptr<Expr>   value_ = nullptr;
-    std::unique_ptr<IdExpr> value_type_ = nullptr;
-
-    DeclStmt(
-        std::unique_ptr<IdExpr> id,
-        std::unique_ptr<Expr>   value,
-        std::unique_ptr<IdExpr> value_type
-    )
-    :   id_(std::move(id)),
-        value_(std::move(value)),
-        value_type_(std::move(value_type))
-    {
-        type_ = AstType::DeclStmt;
-    }
-
-    const std::string TypeName() const {
-        return "DeclStmt";
-    }
-
-    void PrintImpl(std::string prefix) override {
-        id_->Print(prefix, "id");
-        if (value_) value_->Print(prefix, "value");
-        value_type_->Print(prefix, "type");
-    }
-
-    std::unique_ptr<AstNode> Clone() const override {
-        return std::make_unique<DeclStmt>(
-            std::make_unique<IdExpr>(id_->value_),
-            value_ ? std::unique_ptr<Expr>((Expr*)(value_->Clone().release())) : nullptr,
-            std::make_unique<IdExpr>(value_type_->value_)
-        );
     }
 };
 class AssignStmt        : public Stmt {

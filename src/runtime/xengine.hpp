@@ -36,6 +36,7 @@ namespace rt {
         Obj Exec(AstNode& node) {
             switch (node.type_) {
                 case AstType::IdExpr:           return Exec((IdExpr&)node);
+                case AstType::DeclExpr:         return Exec((DeclExpr&)node);
                 case AstType::OperExpr:         return Exec((OperExpr&)node);
                 case AstType::RangeExpr:        return Exec((RangeExpr&)node);
                 case AstType::ArrayExpr:        return Exec((ArrayExpr&)node);
@@ -49,7 +50,6 @@ namespace rt {
 
                 case AstType::ExprStmt:         return Exec((ExprStmt&)node);
                 case AstType::BlockStmt:        return Exec((BlockStmt&)node);
-                case AstType::DeclStmt:         return Exec((DeclStmt&)node);
                 case AstType::AssignStmt:       return Exec((AssignStmt&)node);
                 case AstType::CondStmt:         return Exec((CondStmt&)node);
                 case AstType::LoopSignalStmt:   return Exec((LoopSignalStmt&)node);
@@ -62,6 +62,7 @@ namespace rt {
         }
 
         Obj Exec(IdExpr& node);
+        Obj Exec(DeclExpr& node);
         Obj Exec(OperExpr& node);
         Obj Exec(RangeExpr& node);
         Obj Exec(ArrayExpr& node);
@@ -75,7 +76,6 @@ namespace rt {
 
         Obj Exec(ExprStmt& node);
         Obj Exec(BlockStmt& node, std::function<void()> OnScopeReady = nullptr);
-        Obj Exec(DeclStmt& node);
         Obj Exec(AssignStmt& node);
         Obj Exec(CondStmt& node);
         Obj Exec(LoopSignalStmt& node);

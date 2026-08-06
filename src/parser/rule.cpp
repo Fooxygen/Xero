@@ -159,41 +159,42 @@ namespace parser {
 
         // Declare and Assign
         
-        // └─ id: expr = expr; -> declarestmt
+        // └─ id: id -> declareexpr
         {
             RuleAdd(
                 PATS{
                     AT::IdExpr,
                     TT::Colon,
-                    AT::IdExpr,
-                    TT::Assign,
-                    AT::Expr,
-                    TT::Semicolon
+                    AT::IdExpr
                 },
                 [](std::vector<Symbol>& symbols, auto) {
-                    return std::make_unique<DeclStmt>(
-                        Rule::Move<IdExpr>(symbols, 1),
-                        Rule::Move<Expr>(symbols, 5),
-                        Rule::Move<IdExpr>(symbols, 3)
+                    return std::make_unique<DeclExpr>(
+                        Rule::Move<IdExpr>(symbols, 1)->value_,
+                        Rule::Move<IdExpr>(symbols, 3)->value_,
+                        nullptr
                     );
                 }
             );
         }
-        // └─ id: expr; -> declarestmt
+        // └─ declareexpr = expr -> declareexpr
         {
             RuleAdd(
                 PATS{
-                    AT::IdExpr,
-                    TT::Colon,
-                    AT::IdExpr,
-                    TT::Semicolon
+                    AT::DeclExpr,
+                    TT::Assign,
+                    AT::Expr
                 },
                 [](std::vector<Symbol>& symbols, auto) {
-                    return std::make_unique<DeclStmt>(
-                        Rule::Move<IdExpr>(symbols, 1),
-                        nullptr,
-                        Rule::Move<IdExpr>(symbols, 3)
+                    auto decl = Rule::Move<DeclExpr>(symbols, 1);
+                    return std::make_unique<DeclExpr>(
+                        decl->id_,
+                        decl->bindtype_,
+                        Rule::Move<Expr>(symbols, 3)
                     );
+                },
+                {}, {},
+                {}, TOKS{
+                    TT::Semicolon, TT::Comma
                 }
             );
         }
