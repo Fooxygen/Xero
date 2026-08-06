@@ -109,7 +109,10 @@ namespace parser {
         static auto Pack2Exprs  = [](std::vector<Symbol>& symbols, size_t pos)
             -> std::unique_ptr<Exprs>
         {
-            if (Rule::isOptPatternEmpty(pos)) return nullptr;
+            if (Rule::isOptPatternEmpty(pos)) {
+                std::vector<std::unique_ptr<Expr>> empty;
+                return std::make_unique<Exprs>(empty);
+            }
 
             size_t mp = Rule::move_positions_[pos - 1];
             if (symbols[symbols.size() - mp].type_astnode() == AstType::Exprs)
@@ -248,29 +251,6 @@ namespace parser {
         
         // Fn and Method
        
-        // └─ target.expr(expr) -> methodcallexpr
-        {
-            RuleAdd(
-                PATS{
-                    AT::Expr,
-                    TT::Dot,
-                    AT::IdExpr,
-                    TT::LParen,
-                    AT::Expr,
-                    TT::RParen
-                },
-                [](std::vector<Symbol>& symbols, auto) {
-                    std::vector<std::unique_ptr<Expr>> args;
-                    args.emplace_back(Rule::Move<Expr>(symbols, 5));
-
-                    return std::make_unique<MethodCallExpr>(
-                        Rule::Move<Expr>(symbols, 1),
-                        Rule::Move<IdExpr>(symbols, 3),
-                        std::make_unique<Exprs>(args)
-                    );
-                }
-            );
-        }
         // └─ target.expr(exprs?) -> methodcallexpr
         {
             RuleAdd(
@@ -279,76 +259,33 @@ namespace parser {
                     TT::Dot,
                     AT::IdExpr,
                     TT::LParen,
-                    SymbolPattern::Opt(AT::Exprs),
+                    SymbolPattern::Opt({ AT::Expr, AT::Exprs}),
                     TT::RParen
                 },
                 [](std::vector<Symbol>& symbols, auto) {
-
-                    // Option Check
-                    if (Rule::isOptPatternEmpty(5)) {
-                        std::vector<std::unique_ptr<Expr>> args;
-                        return std::make_unique<MethodCallExpr>(
-                            Rule::Move<Expr>(symbols, 1),
-                            Rule::Move<IdExpr>(symbols, 3),
-                            std::make_unique<Exprs>(args)
-                        );
-                    }
-                    else {
-                        return std::make_unique<MethodCallExpr>(
-                            Rule::Move<Expr>(symbols, 1),
-                            Rule::Move<IdExpr>(symbols, 3),
-                            Rule::Move<Exprs>(symbols, 5)
-                        );
-                    }
-                }
-            );
-        }
-        
-        // └─ expr(expr) -> fncallexpr
-        {
-            RuleAdd(
-                PATS{
-                    AT::IdExpr,
-                    TT::LParen,
-                    AT::Expr,
-                    TT::RParen
-                },
-                [](std::vector<Symbol>& symbols, auto) {
-                    std::vector<std::unique_ptr<Expr>> args;
-                    args.emplace_back(Rule::Move<Expr>(symbols, 3));
-
-                    return std::make_unique<FnCallExpr>(
-                        Rule::Move<IdExpr>(symbols, 1),
-                        std::make_unique<Exprs>(args)
+                    return std::make_unique<MethodCallExpr>(
+                        Rule::Move<Expr>(symbols, 1),
+                        Rule::Move<IdExpr>(symbols, 3),
+                        Pack2Exprs(symbols, 5)
                     );
                 }
             );
         }
+
         // └─ expr(exprs?) -> fncallexpr
         {
             RuleAdd(
                 PATS{
                     AT::IdExpr,
                     TT::LParen,
-                    SymbolPattern::Opt(AT::Exprs),
+                    SymbolPattern::Opt({ AT::Expr, AT::Exprs}),
                     TT::RParen
                 },
                 [](std::vector<Symbol>& symbols, auto) {
-
-                    // Option Check
-                    if (Rule::isOptPatternEmpty(3)) {
-                        std::vector<std::unique_ptr<Expr>> args;
-                        return std::make_unique<FnCallExpr>(
-                            Rule::Move<IdExpr>(symbols, 1),
-                            std::make_unique<Exprs>(args)
-                        );
-                    }
-                    else {
-                        return std::make_unique<FnCallExpr>(
-                            Rule::Move<IdExpr>(symbols, 1),
-                            Rule::Move<Exprs>(symbols, 3)
-                        );
-                    }
+                    return std::make_unique<FnCallExpr>(
+                        Rule::Move<IdExpr>(symbols, 1),
+                        Pack2Exprs(symbols, 3)
+                    );
                 }
             );
         }
@@ -489,46 +426,18 @@ namespace parser {
         
         // Array
 
-        // └─ [expr] -> arrayexpr
-        {
-            RuleAdd(
-                PATS{
-                    TT::LBkt,
-                    AT::Expr,
-                    TT::RBkt
-                },
-                [](std::vector<Symbol>& symbols, auto) {
-                    std::vector<std::unique_ptr<Expr>> elements;
-                    elements.emplace_back(Rule::Move<Expr>(symbols, 2));
-
-                    return std::make_unique<ArrayExpr>(
-                        std::make_unique<Exprs>(elements)
-                    );
-                }
-            );
-        }
         // └─ [exprs?] -> arrayexpr
         {
             RuleAdd(
                 PATS{
                     TT::LBkt,
-                    SymbolPattern::Opt(AT::Exprs),
+                    SymbolPattern::Opt({ AT::Expr, AT::Exprs}),
                     TT::RBkt
                 },
                 [](std::vector<Symbol>& symbols, auto) {
-
-                    // Option Check
-                    if (Rule::isOptPatternEmpty(2)) {
-                        std::vector<std::unique_ptr<Expr>> elements;
-                        return std::make_unique<ArrayExpr>(
-                            std::make_unique<Exprs>(elements)
-                        );
-                    }
-                    else {
-                        return std::make_unique<ArrayExpr>(
-                            Rule::Move<Exprs>(symbols, 2)
-                        );
-                    }
+                    return std::make_unique<ArrayExpr>(
+                        Pack2Exprs(symbols, 2)
+                    );
                 }
             );
         }
