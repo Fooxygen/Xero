@@ -92,15 +92,25 @@ namespace parser {
         const std::vector<AstType>&     type_astnodes() const { return type_astnodes_; }
         bool isOptional()   const { return isOptional_; }
     
-        // Make Optional SP for TT
+        // Make Optional SP 
+
         static SymbolPattern Opt(Token::Type type) {
             auto sp = SymbolPattern(type);
             sp.isOptional_ = true;
             return sp;
         }
-        // Make Optional SP for AT
         static SymbolPattern Opt(AstType type) {
             auto sp = SymbolPattern(type);
+            sp.isOptional_ = true;
+            return sp;
+        }
+        static SymbolPattern Opt(std::initializer_list<Token::Type> types) {
+            auto sp = SymbolPattern(types);
+            sp.isOptional_ = true;
+            return sp;
+        }
+        static SymbolPattern Opt(std::initializer_list<AstType> types) {
+            auto sp = SymbolPattern(types);
             sp.isOptional_ = true;
             return sp;
         }
@@ -284,7 +294,7 @@ namespace parser {
 
             return false;
         }
-        static bool isPatternOpt(size_t pos) {
+        static bool isOptPatternEmpty(size_t pos) {
             PatternIndexCheck(pos);
             return move_positions_[pos - 1] == 0;
         }

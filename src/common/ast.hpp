@@ -29,18 +29,19 @@ enum class AstType {
 
     // Expr
     Expr,               //  Base ------
+    BlockExpr,          //  Packaged Astnode
     IdExpr,             //  Identity
     DeclExpr,           //  Declaration
     OperExpr,           //  Operation
     RangeExpr,          //  Range
-    FnCallExpr,         //  Func Call
-    MethodCallExpr,     //  Method Call
     ArrayExpr,          //  Array
+    FnCallExpr,         //  Function Call
+    MethodCallExpr,     //  Method Call
+    FnExpr,             //  Function
 
     // Stmt
     Stmt,               //  Base ------
     ExprStmt,           //  Expr used as Stmt
-    BlockStmt,          //  Grouped Stmts
     AssignStmt,         //  Assignment
     CondStmt,           //  Condition
     LoopSignalStmt,     //  Loop Signal
@@ -61,17 +62,18 @@ static AstType BaseOfAstType(AstType type) {
         case Const:
             return Expr;
 
+        case BlockExpr:
         case IdExpr:
         case DeclExpr:
         case OperExpr:
         case RangeExpr:
+        case ArrayExpr:
         case FnCallExpr:
         case MethodCallExpr:
-        case ArrayExpr:
+        case FnExpr:
             return Expr;
 
         case ExprStmt:
-        case BlockStmt:
         case AssignStmt:
         case CondStmt:
         case LoopSignalStmt:
@@ -123,6 +125,7 @@ public:
 
     virtual std::unique_ptr<AstNode> Clone() const = 0;
 };
+
 class Expr              : public AstNode {
 };
 class Const             : public Expr {
@@ -131,6 +134,7 @@ class Stmt              : public AstNode {
 };
 
 // Common
+
 class Exprs             : public AstNode {
 public:
     std::vector<std::unique_ptr<Expr>> exprs_;
@@ -157,6 +161,35 @@ public:
 };
 
 // Expr
+
+class BlockExpr         : public Expr {
+public:
+    std::vector<std::unique_ptr<AstNode>> children_;
+
+    BlockExpr(std::vector<std::unique_ptr<AstNode>>& children)
+    :   children_(std::move(children))
+    {
+        type_ = AstType::BlockExpr;
+    }
+
+    const std::string TypeName() const {
+        return "BlockExpr";
+    }
+
+    void PrintImpl(std::string prefix) override {
+        for (auto& child : children_) {
+            child->Print(prefix);
+        }
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        std::vector<std::unique_ptr<AstNode>> children;
+        for (auto& child : children_) {
+            children.emplace_back(child->Clone());
+        }
+        return std::make_unique<BlockExpr>(children);
+    }
+};
 class IdExpr            : public Expr {
 public:
     std::string value_ = "";
@@ -392,8 +425,52 @@ public:
         );
     }
 };
+class FnExpr            : public Expr {
+public:
+    std::string name_     = "";
+    std::string ret_type_ = "";
+    std::unique_ptr<Exprs>     params_ = nullptr;
+    std::unique_ptr<BlockExpr> block_  = nullptr;
+
+    FnExpr(
+        std::string name,
+        std::string ret_type,
+        std::unique_ptr<Exprs>     params,
+        std::unique_ptr<BlockExpr> block
+    )
+    :   name_(name),
+        ret_type_(ret_type),
+        params_(std::move(params)),
+        block_(std::move(block))
+    {
+        type_ = AstType::FnExpr;
+    }
+
+    const std::string TypeName() const {
+        return "FnExpr";
+    }
+
+    void PrintImpl(std::string prefix) override {
+        PrintLabel("name", prefix);
+        std::cout << COLOR_BLUE << name_ << COLOR_DEFAULT << std::endl;
+        PrintLabel("ret_type", prefix);
+        std::cout << COLOR_MAGENTA << ret_type_ << COLOR_DEFAULT << std::endl;
+        if (params_) params_->Print(prefix, "params");
+        if (block_)  block_->Print(prefix, "block");
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        return std::make_unique<FnExpr>(
+            name_,
+            ret_type_,
+            params_ ? std::unique_ptr<Exprs>((Exprs*)(params_->Clone().release())) : nullptr,
+            block_  ? std::unique_ptr<BlockExpr>((BlockExpr*)(block_->Clone().release())) : nullptr
+        );
+    }
+};
 
 // Const
+
 class NumConst          : public Const {
 public:
     std::string value_ = "";
@@ -491,6 +568,7 @@ public:
 };
 
 // Stmt
+
 class ExprStmt          : public Stmt {
 public:
     std::unique_ptr<Expr> expr_ = nullptr;
@@ -513,34 +591,6 @@ public:
         return std::make_unique<ExprStmt>(
             std::unique_ptr<Expr>((Expr*)(expr_->Clone().release()))
         );
-    }
-};
-class BlockStmt         : public Stmt {
-public:
-    std::vector<std::unique_ptr<AstNode>> children_;
-
-    BlockStmt(std::vector<std::unique_ptr<AstNode>>& children)
-    :   children_(std::move(children))
-    {
-        type_ = AstType::BlockStmt;
-    }
-
-    const std::string TypeName() const {
-        return "BlockStmt";
-    }
-
-    void PrintImpl(std::string prefix) override {
-        for (auto& child : children_) {
-            child->Print(prefix);
-        }
-    }
-
-    std::unique_ptr<AstNode> Clone() const override {
-        std::vector<std::unique_ptr<AstNode>> children;
-        for (auto& child : children_) {
-            children.emplace_back(child->Clone());
-        }
-        return std::make_unique<BlockStmt>(children);
     }
 };
 class AssignStmt        : public Stmt {
@@ -577,12 +627,12 @@ public:
 class CondStmt          : public Stmt {
 public:
     std::unique_ptr<Expr>      cond_  = nullptr;
-    std::unique_ptr<BlockStmt> block_ = nullptr;
+    std::unique_ptr<BlockExpr> block_ = nullptr;
     std::unique_ptr<CondStmt>  sub_   = nullptr;
 
     CondStmt(
         std::unique_ptr<Expr>      cond,
-        std::unique_ptr<BlockStmt> block,
+        std::unique_ptr<BlockExpr> block,
         std::unique_ptr<CondStmt>  sub
     )
     :   cond_(std::move(cond)),
@@ -605,7 +655,7 @@ public:
     std::unique_ptr<AstNode> Clone() const override {
         return std::make_unique<CondStmt>(
             cond_ ? std::unique_ptr<Expr>((Expr*)(cond_->Clone().release())) : nullptr,
-            std::unique_ptr<BlockStmt>((BlockStmt*)(block_->Clone().release())),
+            std::unique_ptr<BlockExpr>((BlockExpr*)(block_->Clone().release())),
             sub_ ? std::unique_ptr<CondStmt>((CondStmt*)(sub_->Clone().release())) : nullptr
         );
     }
@@ -643,12 +693,12 @@ class ForStmt           : public Stmt {
 public:
     std::unique_ptr<IdExpr>     iter_;
     std::unique_ptr<Expr>       data_;
-    std::unique_ptr<BlockStmt>  block_;
+    std::unique_ptr<BlockExpr>  block_;
 
     ForStmt(
         std::unique_ptr<IdExpr>     iter,
         std::unique_ptr<Expr>       data,
-        std::unique_ptr<BlockStmt>  block
+        std::unique_ptr<BlockExpr>  block
     )
     :   iter_(std::move(iter)),
         data_(std::move(data)),
@@ -671,16 +721,17 @@ public:
         return std::make_unique<ForStmt>(
             std::make_unique<IdExpr>(iter_->value_),
             std::unique_ptr<Expr>((Expr*)(data_->Clone().release())),
-            std::unique_ptr<BlockStmt>((BlockStmt*)(block_->Clone().release()))
+            std::unique_ptr<BlockExpr>((BlockExpr*)(block_->Clone().release()))
         );
     }
 };
 
 // Program
-class Program           : public BlockStmt {
+
+class Program           : public BlockExpr {
 public:
     Program(std::vector<std::unique_ptr<AstNode>>& children)
-    :   BlockStmt(children)
+    :   BlockExpr(children)
     {
         type_ = AstType::Program;
     }

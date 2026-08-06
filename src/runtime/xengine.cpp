@@ -16,6 +16,22 @@ namespace rt {
     
     // Expr
 
+    Obj Xengine::Exec(BlockExpr& node, std::function<void()> OnScopeReady) {
+        env_.ScopePush();
+        if (OnScopeReady) OnScopeReady();
+
+        try {
+            for (auto& child : node.children_) Exec(*child);
+        }
+        catch (...) {
+            env_.ScopePop();
+            throw;
+        }
+        
+        env_.ScopePop();
+        return Obj();
+    }
+
     Obj Xengine::Exec(IdExpr& node) {
         return Obj::MakeRef(env_.Get(node.value_));
     }
@@ -339,22 +355,6 @@ namespace rt {
         return Exec(*node.expr_);
     }
 
-    Obj Xengine::Exec(BlockStmt& node, std::function<void()> OnScopeReady) {
-        env_.ScopePush();
-        if (OnScopeReady) OnScopeReady();
-
-        try {
-            for (auto& child : node.children_) Exec(*child);
-        }
-        catch (...) {
-            env_.ScopePop();
-            throw;
-        }
-        
-        env_.ScopePop();
-        return Obj();
-    }
-
     Obj Xengine::Exec(AssignStmt& node) {
         auto target = Exec(*node.target_);
         auto value  = Exec(*node.value_);
@@ -462,7 +462,7 @@ namespace rt {
 
     Obj Xengine::Exec(Program& node) {
         try {
-            Exec((BlockStmt&)node);
+            Exec((BlockExpr&)node);
         }
         catch (LoopSignal e) {
             if      (e == LoopSignal::Break) {

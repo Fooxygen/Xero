@@ -91,6 +91,13 @@ namespace parser {
                 else if (token.lexeme() == "continue") {
                     token = Token(TT::Continue, token.lexeme(), token.line(), token.col());
                 }
+                else if (token.lexeme() == "return") {
+                    token = Token(TT::Return, token.lexeme(), token.line(), token.col());
+                }
+
+                else if (token.lexeme() == "fn") {
+                    token = Token(TT::Fn, token.lexeme(), token.line(), token.col());
+                }
 
                 break;
             }
@@ -160,7 +167,7 @@ namespace parser {
                 std::reverse(children.begin(), children.end());
                 symbols_.pop_back();                                // erase '{'
                 symbols_.emplace_back(
-                    std::make_unique<BlockStmt>(children)
+                    std::make_unique<BlockExpr>(children)
                 );
 
                 return;

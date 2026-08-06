@@ -35,6 +35,7 @@ namespace rt {
         // Calculate the final obj
         Obj Exec(AstNode& node) {
             switch (node.type_) {
+                case AstType::BlockExpr:        return Exec((BlockExpr&)node);
                 case AstType::IdExpr:           return Exec((IdExpr&)node);
                 case AstType::DeclExpr:         return Exec((DeclExpr&)node);
                 case AstType::OperExpr:         return Exec((OperExpr&)node);
@@ -49,7 +50,6 @@ namespace rt {
                 case AstType::StringConst:      return Exec((StringConst&)node);
 
                 case AstType::ExprStmt:         return Exec((ExprStmt&)node);
-                case AstType::BlockStmt:        return Exec((BlockStmt&)node);
                 case AstType::AssignStmt:       return Exec((AssignStmt&)node);
                 case AstType::CondStmt:         return Exec((CondStmt&)node);
                 case AstType::LoopSignalStmt:   return Exec((LoopSignalStmt&)node);
@@ -61,6 +61,7 @@ namespace rt {
             }
         }
 
+        Obj Exec(BlockExpr& node, std::function<void()> OnScopeReady = nullptr);
         Obj Exec(IdExpr& node);
         Obj Exec(DeclExpr& node);
         Obj Exec(OperExpr& node);
@@ -75,7 +76,6 @@ namespace rt {
         Obj Exec(StringConst& node);
 
         Obj Exec(ExprStmt& node);
-        Obj Exec(BlockStmt& node, std::function<void()> OnScopeReady = nullptr);
         Obj Exec(AssignStmt& node);
         Obj Exec(CondStmt& node);
         Obj Exec(LoopSignalStmt& node);

@@ -55,35 +55,39 @@ namespace lexer {
                     CharNext();
                     return TokenGen(Token::Type::Eq, "==");
                 }
-                else return TokenGen(Token::Type::Assign, "=");
+                return TokenGen(Token::Type::Assign, "=");
             }
             case '+': {
                 if (cn == '=') {
                     CharNext();
                     return TokenGen(Token::Type::PlusAssign, "+=");
                 }
-                else return TokenGen(Token::Type::Plus, "+");
+                return TokenGen(Token::Type::Plus, "+");
             }
             case '-': {
                 if (cn == '=') {
                     CharNext();
                     return TokenGen(Token::Type::MinusAssign, "-=");
                 }
-                else return TokenGen(Token::Type::Minus, "-");
+                if (cn == '>') {
+                    CharNext();
+                    return TokenGen(Token::Type::Arrow, "->");
+                }
+                return TokenGen(Token::Type::Minus, "-");
             }
             case '*': {
                 if (cn == '=') {
                     CharNext();
                     return TokenGen(Token::Type::StarAssign, "*=");
                 }
-                else return TokenGen(Token::Type::Star, "*");
+                return TokenGen(Token::Type::Star, "*");
             }
             case '/': {
                 if (cn == '=') {
                     CharNext();
                     return TokenGen(Token::Type::SlashAssign, "/=");
                 }
-                else return TokenGen(Token::Type::Slash, "/");
+                return TokenGen(Token::Type::Slash, "/");
             }
             case '%': {
                 if (cn == '%') {
@@ -91,37 +95,36 @@ namespace lexer {
                         CharNext(2);
                         return TokenGen(Token::Type::ModFAssign, "%%=");
                     }
-                    else {
-                        CharNext();
-                        return TokenGen(Token::Type::ModF, "%%");
-                    }
+                    
+                    CharNext();
+                    return TokenGen(Token::Type::ModF, "%%");
                 }
                 if (cn == '=') {
                     CharNext();
                     return TokenGen(Token::Type::ModTAssign, "%=");
                 }
-                else return TokenGen(Token::Type::ModT, "%");
+                return TokenGen(Token::Type::ModT, "%");
             }
             case '!': {
                 if (cn == '=') {
                     CharNext();
                     return TokenGen(Token::Type::Neq, "!=");
                 }
-                else return TokenGen(Token::Type::Not, "!");
+                return TokenGen(Token::Type::Not, "!");
             }
             case '>': {
                 if (cn == '=') {
                     CharNext();
                     return TokenGen(Token::Type::Ge, ">=");
                 }
-                else return TokenGen(Token::Type::Gt, ">");
+                return TokenGen(Token::Type::Gt, ">");
             }
             case '<': {
                 if (cn == '=') {
                     CharNext();
                     return TokenGen(Token::Type::Le, "<=");
                 }
-                else return TokenGen(Token::Type::Lt, "<");
+                return TokenGen(Token::Type::Lt, "<");
             }
             case '&': {
                 if (cn == '&') {
@@ -143,12 +146,11 @@ namespace lexer {
                         CharNext(2);
                         return TokenGen(Token::Type::DotDotEq, "..=");
                     }
-                    else {
-                        CharNext();
-                        return TokenGen(Token::Type::DotDot, "..");
-                    }
+                    
+                    CharNext();
+                    return TokenGen(Token::Type::DotDot, "..");
                 }
-                else return TokenGen(Token::Type::Dot, ".");
+                return TokenGen(Token::Type::Dot, ".");
             }
         }
 

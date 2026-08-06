@@ -32,6 +32,7 @@ public:
         Comma,              //  ,
         Quote,              //  "
         QuoteSingle,        //  '
+        Arrow,              //  ->
 
         // Semantic
         // └─ Literal
@@ -86,6 +87,8 @@ public:
         In,                 // in
         Break,              // break
         Continue,           // continue
+        Return,             // return
+        Fn,                 // fn
     };
 
 private:
@@ -126,6 +129,7 @@ public:
             case Comma:
             case Quote:
             case QuoteSingle:
+            case Arrow:
                 return Unsemantic;
 
             case Id:
@@ -173,6 +177,8 @@ public:
             case In:
             case Break:
             case Continue:
+            case Return:
+            case Fn:
                 return Keyword;
 
             default:
@@ -204,6 +210,7 @@ public:
             case Comma:         return "Comma";
             case Quote:         return "Quote";
             case QuoteSingle:   return "QuoteSingle";
+            case Arrow:         return "Arrow";
 
             case Id:            return "Id";
             case Number:        return "Number";
@@ -245,6 +252,8 @@ public:
             case In:            return "in";
             case Break:         return "break";
             case Continue:      return "continue";
+            case Return:        return "return";
+            case Fn:            return "fn";
 
             default: 
                 LogWarn(LogModule::Lexer, "undefined print name for TokenType").Print();
