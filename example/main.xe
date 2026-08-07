@@ -1,11 +1,5 @@
 
 fn f() -> i32 {
-    for (i in 0..5) {
-        if (i == 2) return i;
-    }
-    return -1;
+    
 }
 println(f());
-
-fn g() { return; }
-g();

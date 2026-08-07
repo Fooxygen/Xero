@@ -22,7 +22,7 @@ namespace rt {
 
         void Check(
             const std::string& name,
-            std::vector<const Type*>& args_type)
+            const std::vector<const Type*>& args_type)
         {
             
             // Empty

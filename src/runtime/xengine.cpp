@@ -286,11 +286,14 @@ namespace rt {
                 auto& fn = callee.Get_function_ref();
                 fn.Check(callee_name, args_type);
 
-                auto& fnexpr = fn.expr();
-                auto& params = fnexpr->params_->exprs_;
+                auto& fnexpr   = fn.expr();
+                auto& params   = fnexpr->params_->exprs_;
+                auto  ret_type = TypeTable::Get(fnexpr->ret_type_);
 
+                Obj ret;
                 try {
-                    return Exec(*fnexpr->block_, [&]() {
+                    // Without return, get none
+                    ret = Exec(*fnexpr->block_, [&]() {
                         for (size_t i = 0; i < params.size(); i++) {
                             auto param = (DeclExpr*)params[i].get();
                             auto param_type = TypeTable::Get(param->bindtype_);
@@ -299,17 +302,23 @@ namespace rt {
                     });
                 }
                 catch (ReturnSignal e) {
-                    auto type_ret = TypeTable::Get(fnexpr->ret_type_);
-                    auto type_obj = e.value->type();
-                    if (!type_obj->converts.contains(type_ret)) {
-                        throw LogErr(LogModule::Runtime, std::format(
-                            "cannot make type '{}' compatible with '{}'",
-                            type_obj->name, type_ret->name
-                        ));
-                    }
-
-                    return TypeTable::Convert(*e.value, type_ret);
+                    ret = *e.value;
                 }
+
+                // Check return type.
+                // - has return stmt:   value must be compatible with ret type
+                // - missing return:    exec() return 'none', which isn't compatible with ret type
+                if (!ret_type->isNone() && ret.type()->isNone()) {
+                    throw LogErr(LogModule::Runtime, "missing return in function");
+                }
+                if (!ret.type()->converts.contains(ret_type)) {
+                    throw LogErr(LogModule::Runtime, std::format(
+                        "cannot make type '{}' compatible with '{}'",
+                        ret.type()->name, ret_type->name
+                    ));
+                }
+
+                return TypeTable::Convert(ret, ret_type);
             }
 
             throw LogErr(LogModule::Runtime, std::format(
