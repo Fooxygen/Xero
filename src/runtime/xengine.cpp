@@ -79,10 +79,12 @@ namespace rt {
         auto lobj = Exec(*node.lexpr_);
         {
             if (node.opertype_ == OperType::Neg) {
-                return CallTry(lobj.type()->neg_, lobj);
+                auto obj = CallTry(lobj.type()->neg_, lobj);
+                if (!obj.isNone()) return obj;
             }
             if (node.opertype_ == OperType::Not) {
-                return CallTry(lobj.type()->not_, lobj);
+                auto obj = CallTry(lobj.type()->not_, lobj);
+                if (!obj.isNone()) return obj;
             }
         }
 
