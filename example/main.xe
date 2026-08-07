@@ -1,5 +1,9 @@
 
-fn f() -> i32 {
-    
+fn f(str: string) -> string {
+    s: string = "Hello ";
+    s += str;
+    return s;
 }
-println(f());
+println(f("Xero"));
+
+println(1[2]);

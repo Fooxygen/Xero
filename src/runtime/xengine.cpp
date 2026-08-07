@@ -98,7 +98,7 @@ namespace rt {
         {
             // Unnecessary Type Conversation
             {
-                if (node.opertype_ == OperType::Pick) {
+                if (node.opertype_ == OperType::Pick && lobj.type()->pick_) {
 
                     // Range
                     if (node.rexpr_->type_ != AstType::RangeExpr) {
@@ -522,7 +522,7 @@ namespace rt {
 
     Obj Xengine::Exec(ReturnSignalStmt& node) {
         if (node.value_)
-            throw ReturnSignal{ std::make_shared<Obj>(Exec(*node.value_)) };
+            throw ReturnSignal{ std::make_shared<Obj>(Exec(*node.value_).Clone()) };
         throw ReturnSignal{ std::make_shared<Obj>() };
     }
 
