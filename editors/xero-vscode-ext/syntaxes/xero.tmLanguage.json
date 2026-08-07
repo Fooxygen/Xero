@@ -62,6 +62,14 @@
         "operators": {
             "patterns": [
                 {
+                    "name": "keyword.operator.arrow.xero",
+                    "match": "->"
+                },
+                {
+                    "name": "keyword.operator.assignment.xero",
+                    "match": "%%=|\\+=|-=|\\*=|/=|%=|="
+                },
+                {
                     "name": "keyword.operator.comparison.xero",
                     "match": ">=|<=|==|!=|>|<"
                 },
@@ -71,11 +79,7 @@
                 },
                 {
                     "name": "keyword.operator.arithmetic.xero",
-                    "match": "[+\\-*/]"
-                },
-                {
-                    "name": "keyword.operator.assignment.xero",
-                    "match": "="
+                    "match": "%%|%|[+\\-*/]"
                 },
                 {
                     "name": "keyword.operator.range.xero",
@@ -89,15 +93,15 @@
         },
         "types": {
             "name": "storage.type.xero",
-            "match": "\\b(u?i(?:8|16|32|64)|f(?:32|64)|bool|string)\\b"
+            "match": "\\b(bool|i32|i64|f32|f64|char|string|stringview|array|arrayview|range|none|function)\\b"
         },
         "functions": {
             "name": "support.function.builtin.xero",
-            "match": "\\b(print|println)\\b"
+            "match": "\\b(print|println|type|abs)\\b"
         },
         "keywords": {
             "name": "keyword.control.xero",
-            "match": "\\b(if|elif|else|for|in)\\b"
+            "match": "\\b(if|elif|else|for|in|break|continue|fn|return)\\b"
         }
     }
 }
