@@ -11,7 +11,7 @@
 
 #include "token.hpp"
 #include "opertype.hpp"
-#include "loop.hpp"
+#include "signal.hpp"
 
 // Type of Abstract Syntax Tree's Node
 enum class AstType {
@@ -46,6 +46,7 @@ enum class AstType {
     CondStmt,           //  Condition
     LoopSignalStmt,     //  Loop Signal
     ForStmt,            //  For Loop
+    ReturnSignalStmt,   //  Return Signal
 
     // Common
     Exprs,             // List of expr
@@ -78,6 +79,7 @@ static AstType BaseOfAstType(AstType type) {
         case CondStmt:
         case LoopSignalStmt:
         case ForStmt:
+        case ReturnSignalStmt:
             return Stmt;
 
         default:
@@ -662,10 +664,10 @@ public:
 };
 class LoopSignalStmt    : public Stmt {
 public:
-    LoopSignal status_;
+    LoopSignal signal_;
 
-    LoopSignalStmt(LoopSignal status)
-    :   status_(status)
+    LoopSignalStmt(LoopSignal signal)
+    :   signal_(signal)
     {
         type_ = AstType::LoopSignalStmt;
     }
@@ -675,9 +677,9 @@ public:
     }
 
     void PrintImpl(std::string prefix) override {
-        PrintLabel("status", prefix);
+        PrintLabel("signal", prefix);
         std::cout << COLOR_MAGENTA;
-        switch (status_) {
+        switch (signal_) {
             case LoopSignal::Break:     std::cout << "break"    << std::endl; break;
             case LoopSignal::Continue:  std::cout << "continue" << std::endl; break;
             default: __builtin_unreachable();
@@ -686,7 +688,7 @@ public:
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        return std::make_unique<LoopSignalStmt>(status_);
+        return std::make_unique<LoopSignalStmt>(signal_);
     }
 };
 class ForStmt           : public Stmt {
@@ -722,6 +724,30 @@ public:
             std::make_unique<IdExpr>(iter_->value_),
             std::unique_ptr<Expr>((Expr*)(data_->Clone().release())),
             std::unique_ptr<BlockExpr>((BlockExpr*)(block_->Clone().release()))
+        );
+    }
+};
+class ReturnSignalStmt  : public Stmt {
+public:
+    std::unique_ptr<Expr> value_;
+
+    ReturnSignalStmt(std::unique_ptr<Expr> value)
+    :   value_(std::move(value))
+    {
+        type_ = AstType::ReturnSignalStmt;
+    }
+
+    const std::string TypeName() const {
+        return "ReturnSignalStmt";
+    }
+
+    void PrintImpl(std::string prefix) override {
+        if (value_) value_->Print(prefix, "value");
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        return std::make_unique<ReturnSignalStmt>(
+            value_ ? std::unique_ptr<Expr>((Expr*)(value_->Clone().release())) : nullptr
         );
     }
 };

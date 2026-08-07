@@ -1,18 +1,11 @@
 
-x: i32 = 5;
-
-fn plus(k: i32) {
-    println(k + 10);
+fn f() -> i32 {
+    for (i in 0..5) {
+        if (i == 2) return i;
+    }
+    return -1;
 }
-plus(x);
+println(f());
 
-sayhellowhat: function = fn (str: string) {
-    println("Hello, " + str);
-};
-sayhellowhat("Xero");
-
-println(plus);
-println(sayhellowhat);
-
-nothingfn: function;
-println(nothingfn);
+fn g() { return; }
+g();

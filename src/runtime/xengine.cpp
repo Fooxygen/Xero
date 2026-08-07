@@ -10,7 +10,7 @@
 #include "table/fn.hpp"
 #include "table/method.hpp"
 #include "common/opertype.hpp"
-#include "common/loop.hpp"
+#include "common/signal.hpp"
 
 namespace rt {
     
@@ -273,6 +273,7 @@ namespace rt {
             args_type.emplace_back(args[args.size() - 1].type());
         }
 
+
         // Build-in Function
         if (auto fn = FnTable::Get(callee_name)) {
             return CallThrow(fn, args);
@@ -287,13 +288,28 @@ namespace rt {
 
                 auto& fnexpr = fn.expr();
                 auto& params = fnexpr->params_->exprs_;
-                return Exec(*fnexpr->block_, [&]() {
-                    for (size_t i = 0; i < params.size(); i++) {
-                        auto param = (DeclExpr*)params[i].get();
-                        auto param_type = TypeTable::Get(param->bindtype_);
-                        env_.Declare(param->id_, TypeTable::Convert(args[i], param_type));
+
+                try {
+                    return Exec(*fnexpr->block_, [&]() {
+                        for (size_t i = 0; i < params.size(); i++) {
+                            auto param = (DeclExpr*)params[i].get();
+                            auto param_type = TypeTable::Get(param->bindtype_);
+                            env_.Declare(param->id_, TypeTable::Convert(args[i], param_type));
+                        }
+                    });
+                }
+                catch (ReturnSignal e) {
+                    auto type_ret = TypeTable::Get(fnexpr->ret_type_);
+                    auto type_obj = e.value->type();
+                    if (!type_obj->converts.contains(type_ret)) {
+                        throw LogErr(LogModule::Runtime, std::format(
+                            "cannot make type '{}' compatible with '{}'",
+                            type_obj->name, type_ret->name
+                        ));
                     }
-                });
+
+                    return TypeTable::Convert(*e.value, type_ret);
+                }
             }
 
             throw LogErr(LogModule::Runtime, std::format(
@@ -422,7 +438,7 @@ namespace rt {
     }
 
     Obj Xengine::Exec(LoopSignalStmt& node) {
-        throw node.status_;
+        throw node.signal_;
     }
 
     Obj Xengine::Exec(ForStmt& node) {
@@ -495,6 +511,12 @@ namespace rt {
         return Obj();
     }
 
+    Obj Xengine::Exec(ReturnSignalStmt& node) {
+        if (node.value_)
+            throw ReturnSignal{ std::make_shared<Obj>(Exec(*node.value_)) };
+        throw ReturnSignal{ std::make_shared<Obj>() };
+    }
+
     // Common
 
     Obj Xengine::Exec(Program& node) {
@@ -508,6 +530,9 @@ namespace rt {
             else if (e == LoopSignal::Continue) {
                 throw LogErr(LogModule::Runtime, "'continue' outside of loop");
             }
+        }
+        catch (ReturnSignal e) {
+            throw LogErr(LogModule::Runtime, "'return' outside of function");
         }
         
         return Obj();

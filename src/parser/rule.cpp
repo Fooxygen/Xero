@@ -341,6 +341,21 @@ namespace parser {
                 }
             );
         }
+        // └─ return expr?; -> returnsignalstmt
+        {
+            RuleAdd(
+                PATS{
+                    TT::Return,
+                    SymbolPattern::Opt(AT::Expr),
+                    TT::Semicolon
+                },
+                [](std::vector<Symbol>& symbols, auto) {
+                    return std::make_unique<ReturnSignalStmt>(
+                        !Rule::isOptPatternEmpty(2) ? Rule::Move<Expr>(symbols, 2) : nullptr
+                    );
+                }
+            );
+        }
 
         // Expr
         

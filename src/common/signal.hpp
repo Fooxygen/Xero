@@ -5,6 +5,16 @@
 
 #pragma once
 
+#include <memory>
+
+namespace rt {
+    class Obj;
+}
+
 enum class LoopSignal {
     Break, Continue
+};
+
+struct ReturnSignal {
+    std::shared_ptr<rt::Obj> value;
 };
