@@ -101,7 +101,7 @@
         },
         "keywords": {
             "name": "keyword.control.xero",
-            "match": "\\b(if|elif|else|for|in|break|continue|fn|return)\\b"
+            "match": "\\b(if|elif|else|for|while|in|break|continue|fn|return)\\b"
         }
     }
 }
