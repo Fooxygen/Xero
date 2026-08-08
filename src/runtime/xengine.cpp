@@ -452,6 +452,12 @@ namespace rt {
         throw node.signal_;
     }
 
+    Obj Xengine::Exec(ReturnSignalStmt& node) {
+        if (node.value_)
+            throw ReturnSignal{ std::make_shared<Obj>(Exec(*node.value_).Clone()) };
+        throw ReturnSignal{ std::make_shared<Obj>() };
+    }
+
     Obj Xengine::Exec(ForStmt& node) {
         auto data = Exec(*node.data_);
         auto type = data.type();
@@ -522,10 +528,28 @@ namespace rt {
         return Obj();
     }
 
-    Obj Xengine::Exec(ReturnSignalStmt& node) {
-        if (node.value_)
-            throw ReturnSignal{ std::make_shared<Obj>(Exec(*node.value_).Clone()) };
-        throw ReturnSignal{ std::make_shared<Obj>() };
+    Obj Xengine::Exec(WhileStmt& node) {
+        while (true) {
+            auto cond = Exec(*node.cond_);
+            if (!cond.is("bool")) {
+                throw LogErr(LogModule::Runtime, std::format(
+                    "condition must be bool, not {}",
+                    cond.type()->name
+                ));
+            }
+
+            if (!cond.Get_bool()) break;
+
+            try {
+                Exec(*node.block_);
+            }
+            catch (LoopSignal e) {
+                if      (e == LoopSignal::Break)    break;
+                else if (e == LoopSignal::Continue) continue;
+            }
+        }
+
+        return Obj();
     }
 
     // Common

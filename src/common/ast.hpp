@@ -45,8 +45,9 @@ enum class AstType {
     AssignStmt,         //  Assignment
     CondStmt,           //  Condition
     LoopSignalStmt,     //  Loop Signal
-    ForStmt,            //  For Loop
     ReturnSignalStmt,   //  Return Signal
+    ForStmt,            //  For
+    WhileStmt,          //  While
 
     // Common
     Exprs,             // List of expr
@@ -78,8 +79,9 @@ static AstType BaseOfAstType(AstType type) {
         case AssignStmt:
         case CondStmt:
         case LoopSignalStmt:
-        case ForStmt:
         case ReturnSignalStmt:
+        case ForStmt:
+        case WhileStmt:
             return Stmt;
 
         default:
@@ -691,6 +693,30 @@ public:
         return std::make_unique<LoopSignalStmt>(signal_);
     }
 };
+class ReturnSignalStmt  : public Stmt {
+public:
+    std::unique_ptr<Expr> value_;
+
+    ReturnSignalStmt(std::unique_ptr<Expr> value)
+    :   value_(std::move(value))
+    {
+        type_ = AstType::ReturnSignalStmt;
+    }
+
+    const std::string TypeName() const {
+        return "ReturnSignalStmt";
+    }
+
+    void PrintImpl(std::string prefix) override {
+        if (value_) value_->Print(prefix, "value");
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        return std::make_unique<ReturnSignalStmt>(
+            value_ ? std::unique_ptr<Expr>((Expr*)(value_->Clone().release())) : nullptr
+        );
+    }
+};
 class ForStmt           : public Stmt {
 public:
     std::unique_ptr<IdExpr>     iter_;
@@ -727,27 +753,34 @@ public:
         );
     }
 };
-class ReturnSignalStmt  : public Stmt {
+class WhileStmt         : public Stmt {
 public:
-    std::unique_ptr<Expr> value_;
+    std::unique_ptr<Expr>       cond_;
+    std::unique_ptr<BlockExpr>  block_;
 
-    ReturnSignalStmt(std::unique_ptr<Expr> value)
-    :   value_(std::move(value))
+    WhileStmt(
+        std::unique_ptr<Expr>       cond,
+        std::unique_ptr<BlockExpr>  block
+    )
+    :   cond_(std::move(cond)),
+        block_(std::move(block))
     {
-        type_ = AstType::ReturnSignalStmt;
+        type_ = AstType::WhileStmt;
     }
 
     const std::string TypeName() const {
-        return "ReturnSignalStmt";
+        return "WhileStmt";
     }
 
     void PrintImpl(std::string prefix) override {
-        if (value_) value_->Print(prefix, "value");
+        cond_->Print(prefix, "cond");
+        block_->Print(prefix, "block");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        return std::make_unique<ReturnSignalStmt>(
-            value_ ? std::unique_ptr<Expr>((Expr*)(value_->Clone().release())) : nullptr
+        return std::make_unique<WhileStmt>(
+            std::unique_ptr<Expr>((Expr*)(cond_->Clone().release())),
+            std::unique_ptr<BlockExpr>((BlockExpr*)(block_->Clone().release()))
         );
     }
 };

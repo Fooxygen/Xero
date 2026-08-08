@@ -370,7 +370,7 @@ namespace parser {
                 [](std::vector<Symbol>& symbols, auto) -> ASTNODE {
                     return Rule::Move<Expr>(symbols, 2);
                 },
-                PATS{ TT::If, TT::Elif, TT::For }, {},
+                PATS{ TT::If, TT::Elif, TT::For, TT::While }, {},
                 TOKS{ TT::LBrace, TT::Arrow }
             );
         }
@@ -744,6 +744,24 @@ namespace parser {
                         Rule::Move<IdExpr>(symbols, 3),
                         Rule::Move<Expr>(symbols, 5),
                         Pack2BlockExpr(Rule::Move<AstNode>(symbols, 7))
+                    );
+                }
+            );
+        }
+        // └─ while ( cond ) stmt -> whilestmt
+        {
+            RuleAdd(
+                PATS{
+                    TT::While,
+                    TT::LParen,
+                    AT::Expr,
+                    TT::RParen,
+                    { AT::Stmt, AT::BlockExpr }
+                },
+                [](std::vector<Symbol>& symbols, auto) {
+                    return std::make_unique<WhileStmt>(
+                        Rule::Move<Expr>(symbols, 3),
+                        Pack2BlockExpr(Rule::Move<AstNode>(symbols, 5))
                     );
                 }
             );

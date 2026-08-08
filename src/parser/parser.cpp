@@ -78,13 +78,16 @@ namespace parser {
                 else if (token.lexeme() == "else") {
                     token = Token(TT::Else, token.lexeme(), token.line(), token.col());
                 }
-                else if (token.lexeme() == "for") {
-                    token = Token(TT::For, token.lexeme(), token.line(), token.col());
-                }
+                
                 else if (token.lexeme() == "in") {
                     token = Token(TT::In, token.lexeme(), token.line(), token.col());
                 }
-
+                else if (token.lexeme() == "for") {
+                    token = Token(TT::For, token.lexeme(), token.line(), token.col());
+                }
+                else if (token.lexeme() == "while") {
+                    token = Token(TT::While, token.lexeme(), token.line(), token.col());
+                }
                 else if (token.lexeme() == "break") {
                     token = Token(TT::Break, token.lexeme(), token.line(), token.col());
                 }

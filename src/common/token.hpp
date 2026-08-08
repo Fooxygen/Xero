@@ -83,8 +83,9 @@ public:
         If,                 // if
         Elif,               // else if
         Else,               // else
-        For,                // for
         In,                 // in
+        For,                // for
+        While,              // while
         Break,              // break
         Continue,           // continue
         Return,             // return
@@ -173,8 +174,9 @@ public:
             case If:
             case Elif:
             case Else:
-            case For:
             case In:
+            case For:
+            case While:
             case Break:
             case Continue:
             case Return:
@@ -248,8 +250,9 @@ public:
             case If:            return "if";
             case Elif:          return "elif";
             case Else:          return "else";
-            case For:           return "for";
             case In:            return "in";
+            case For:           return "for";
+            case While:         return "while";
             case Break:         return "break";
             case Continue:      return "continue";
             case Return:        return "return";
