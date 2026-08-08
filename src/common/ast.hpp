@@ -441,7 +441,7 @@ public:
         std::unique_ptr<BlockExpr> block
     )
     :   name_(name),
-        ret_type_(ret_type),
+        ret_type_((ret_type.empty() || ret_type == "none") ? "none" : ret_type),
         params_(std::move(params)),
         block_(std::move(block))
     {

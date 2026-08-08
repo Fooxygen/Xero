@@ -1,4 +1,7 @@
 
-a: array = [[1], [2], [3]];
-a[2] = [3, 4, 5];
-println(a);
+fn plus(x: i32, y: i32) -> i32 {
+    return x + y;
+}
+
+println(plus(1, 2));
+println(plus);

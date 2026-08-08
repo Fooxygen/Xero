@@ -726,8 +726,25 @@ namespace rt {
                 .destroy_   = [](void* data) { delete (Function*)data; },
                 .to_string_ = [](const Obj& o) {
                     auto& fn = o.Get_function_ref();
-                    auto  name = fn.expr() ? fn.expr()->name_ : "fn";
-                    return std::format("{}()", name);
+                    if (fn.expr()) {
+                        auto& fnexpr = fn.expr();
+                        std::string res = fnexpr->name_;
+
+                        res += '(';
+                        for (size_t i = 0; i < fnexpr->params_->exprs_.size(); i++) {
+                            auto param = (DeclExpr*)fnexpr->params_->exprs_[i].get();
+                            if (i != 0) res += ", ";
+                            res += param->bindtype_;
+                        }
+                        res += ')';
+
+                        if (fnexpr->ret_type_ != "none") {
+                            res += " -> " + fnexpr->ret_type_;
+                        }
+
+                        return res;
+                    }
+                    return std::string("<undefined function>");
                 }
             });
         }
