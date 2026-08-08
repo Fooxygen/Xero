@@ -1,9 +1,4 @@
 
-fn f(str: string) -> string {
-    s: string = "Hello ";
-    s += str;
-    return s;
-}
-println(f("Xero"));
-
-println(1[2]);
+a: array = [[1], [2], [3]];
+a[2] = [3, 4, 5];
+println(a);

@@ -27,6 +27,7 @@ namespace rt {
     }
 
     void Array::ElementTypeCheckAndSet(const Type* type) {
+        if (!type) return;
         if (!element_type_) {
             element_type_ = type;
         }
