@@ -25,7 +25,9 @@ jobs:
             -   name: Configure and Build
                 shell: msys2 {0}
                 run: |
-                    cmake -S src -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++
+                    cmake -S src -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+                        -DCMAKE_CXX_COMPILER=g++ \
+                        -DCMAKE_EXE_LINKER_FLAGS="-static -static-libgcc -static-libstdc++"
                     cmake --build build
 
             -   name: Package

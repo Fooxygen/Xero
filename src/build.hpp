@@ -14,7 +14,7 @@ public:
     };
 
     static const        Channel     channel       = Channel::Beta;
-    inline static const std::string channel_iter  = "0";
+    inline static const std::string channel_iter  = "1";
 
     inline static const std::string version_major = "2026";
     inline static const std::string version_minor = "0";
