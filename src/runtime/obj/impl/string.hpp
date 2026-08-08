@@ -19,6 +19,7 @@ namespace rt {
     public:
         String() = default;
         String(const std::string& s);
+        String(const String& other);
 
         std::string ToCppString() const;
         

@@ -104,11 +104,11 @@ public:
     virtual const std::string TypeName() const {
         return "Undefined";
     }
-    const void TypePrint() const {
+    void TypePrint() const {
         std::cout << TypeName();
     }
 
-    virtual void PrintImpl(std::string prefix) {}
+    virtual void PrintImpl(std::string) {}
     void         Print(std::string prefix = "", std::string alias = "", bool isBegin = false) {
         std::cout << prefix;
         if (!isBegin) std::cout << "└── ";

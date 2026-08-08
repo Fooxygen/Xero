@@ -429,7 +429,7 @@ namespace parser {
                     SymbolPattern({ TT::Minus, TT::Not }),
                     AT::Expr
                 },
-                [](std::vector<Symbol>& symbols, Token::Type token_next) {
+                [](std::vector<Symbol>& symbols, auto) {
                     return std::make_unique<OperExpr>(
                         TokenType2OperType(Rule::GetTokenType(symbols, 1), true),
                         Rule::Move<Expr>(symbols, 2),
@@ -706,7 +706,7 @@ namespace parser {
                     TT::Break,
                     TT::Semicolon
                 },
-                [](std::vector<Symbol>& symbols, auto) {
+                [](auto&, auto) {
                     return std::make_unique<LoopSignalStmt>(
                         LoopSignal::Break
                     );
@@ -720,7 +720,7 @@ namespace parser {
                     TT::Continue,
                     TT::Semicolon
                 },
-                [](std::vector<Symbol>& symbols, auto) {
+                [](auto&, auto) {
                     return std::make_unique<LoopSignalStmt>(
                         LoopSignal::Continue
                     );

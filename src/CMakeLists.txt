@@ -21,3 +21,5 @@ add_executable(xero
 )
 
 target_include_directories(xero PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+#target_compile_options(xero PRIVATE -Wall -Wextra)
+#target_compile_options(xero PRIVATE -Wall -Wextra -Werror)

@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
     try {
         // Begin
         BeginInfo begininfo;
-        for (size_t i = 1; i < argc; i++) {
+        for (int i = 1; i < argc; i++) {
             std::string arg = argv[i];
             if      (arg == "-a" || arg == "--ast") begininfo.isPrintAst   = true;
             else if (arg == "-t" || arg == "--tok") begininfo.isPrintToken = true;

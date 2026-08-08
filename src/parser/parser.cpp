@@ -104,6 +104,7 @@ namespace parser {
 
                 break;
             }
+            default: break;
         }
     }
 
@@ -136,6 +137,7 @@ namespace parser {
                 sym = Symbol(std::make_unique<StringConst>(token.lexeme()));
                 break;
             }
+            default: break;
         }
 
         return sym;

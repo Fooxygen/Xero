@@ -460,7 +460,6 @@ namespace rt {
 
     Obj Xengine::Exec(ForStmt& node) {
         auto data = Exec(*node.data_);
-        auto type = data.type();
 
         // Range
 

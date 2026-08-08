@@ -14,6 +14,9 @@ namespace rt {
         }
     }
 
+    String::String(const String& other)
+    :   Array(other) {}
+
     std::string String::ToCppString() const {
         std::string s;
         s.reserve(size());
