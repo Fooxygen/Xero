@@ -1,0 +1,44 @@
+
+name: Release for Windows
+
+on:
+    push:
+        tags:
+            - '**'
+    workflow_dispatch: {}
+
+jobs:
+    build-windows:
+        runs-on: windows-latest
+        steps:
+            -   uses: actions/checkout@v4
+
+            -   uses: msys2/setup-msys2@v2
+                with:
+                    msystem: MINGW64
+                    install: >-
+                        mingw-w64-x86_64-gcc
+                        mingw-w64-x86_64-cmake
+                        mingw-w64-x86_64-ninja
+                        mingw-w64-x86_64-zip
+
+            -   name: Configure and Build
+                shell: msys2 {0}
+                run: |
+                    cmake -S src -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++
+                    cmake --build build
+
+            -   name: Package
+                shell: msys2 {0}
+                run: |
+                    tar -czf xero-windows-x64.tar.gz -C build/bin xero.exe
+                    zip -j xero-windows-x64.zip build/bin/xero.exe
+
+            -   name: Create Draft Release
+                uses: softprops/action-gh-release@v2
+                with:
+                    files: |
+                        xero-windows-x64.tar.gz
+                        xero-windows-x64.zip
+                    draft: true
+          
