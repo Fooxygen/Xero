@@ -3,19 +3,33 @@
     "configurePresets": [
         {
             "name": "mingw-debug-x64-template",
-            "displayName": "MinGW Debug",
+            "hidden": true,
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/../build",
+            "binaryDir": "${sourceDir}/../build-debug",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "mingw-release-x64-template",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/../build-release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
             }
         }
     ],
     "buildPresets": [
         {
             "name": "mingw-debug-x64-template",
-            "displayName": "MinGW Debug x64 Template",
+            "hidden": true,
             "configurePreset": "mingw-debug-x64-template"
+        },
+        {
+            "name": "mingw-release-x64-template",
+            "hidden": true,
+            "configurePreset": "mingw-release-x64-template"
         }
     ]
 }

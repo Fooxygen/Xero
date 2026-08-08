@@ -2,15 +2,27 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Run Xero",
+            "label": "Debug Xero",
             "type": "shell",
-            "command": "${workspaceFolder}/build/bin/xero.exe",
+            "command": "${workspaceFolder}/build-debug/bin/xero.exe",
             "args": ["example/main.xe"]
         },
         {
-            "label": "Debug Xero",
+            "label": "Debug Xero with options",
             "type": "shell",
-            "command": "${workspaceFolder}/build/bin/xero.exe",
+            "command": "${workspaceFolder}/build-debug/bin/xero.exe",
+            "args": ["example/main.xe", "--ast", "--tok"]
+        },
+        {
+            "label": "Run Xero",
+            "type": "shell",
+            "command": "${workspaceFolder}/build-release/bin/xero.exe",
+            "args": ["example/main.xe"]
+        },
+        {
+            "label": "Run Xero with options",
+            "type": "shell",
+            "command": "${workspaceFolder}/build-release/bin/xero.exe",
             "args": ["example/main.xe", "--ast", "--tok"]
         }
     ]

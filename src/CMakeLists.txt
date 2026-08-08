@@ -21,5 +21,10 @@ add_executable(xero
 )
 
 target_include_directories(xero PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-#target_compile_options(xero PRIVATE -Wall -Wextra)
-#target_compile_options(xero PRIVATE -Wall -Wextra -Werror)
+target_compile_options(xero PRIVATE
+    $<$<CONFIG:Debug>:   -g -Wall -Wextra -Werror>
+    $<$<CONFIG:Release>: -O3 -flto -s -Wall -Wextra -Werror>
+)
+target_link_options(xero PRIVATE
+    $<$<CONFIG:Release>:-flto -s>
+)
