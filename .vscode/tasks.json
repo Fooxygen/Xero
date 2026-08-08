@@ -4,7 +4,14 @@
         {
             "label": "Run Xero",
             "type": "shell",
-            "command": "${workspaceFolder}/build/bin/xero.exe"
+            "command": "${workspaceFolder}/build/bin/xero.exe",
+            "args": ["example/main.xe"]
+        },
+        {
+            "label": "Debug Xero",
+            "type": "shell",
+            "command": "${workspaceFolder}/build/bin/xero.exe",
+            "args": ["example/main.xe", "--ast", "--tok"]
         }
     ]
 }

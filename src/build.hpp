@@ -13,7 +13,7 @@ public:
         Nightly, Beta, RC, Release
     };
 
-    static const        Channel     channel       = Channel::Nightly;
+    static const        Channel     channel       = Channel::Beta;
     inline static const std::string channel_iter  = "0";
 
     inline static const std::string version_major = "2026";

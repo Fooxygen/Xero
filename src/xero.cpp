@@ -18,7 +18,17 @@
 #include <windows.h>
 #endif
 
+struct BeginInfo {
+    std::string path  = "";
+    bool isPrintToken = false;
+    bool isPrintAst   = false;
+};
+
 std::string FileRead(const std::string& path) {
+    if (path.empty()) {
+        throw LogErr(LogModule::File, "empty file path");
+    }
+
     std::ifstream file(path, std::ios::binary);
     if (!file) {
         throw LogErr(LogModule::File, std::format("failed to open file '{}'", path));
@@ -29,7 +39,7 @@ std::string FileRead(const std::string& path) {
     return ss.str();
 }
 
-int main() {
+int main(int argc, char* argv[]) {
 
 #ifdef _WIN32
     SetConsoleOutputCP(CP_UTF8);
@@ -39,29 +49,36 @@ int main() {
     std::cout << BuildInfo::Print() << std::endl;
 
     try {
+        // Begin
+        BeginInfo begininfo;
+        for (size_t i = 1; i < argc; i++) {
+            std::string arg = argv[i];
+            if      (arg == "-a" || arg == "--ast") begininfo.isPrintAst   = true;
+            else if (arg == "-t" || arg == "--tok") begininfo.isPrintToken = true;
+            else begininfo.path = arg;
+        }
+
         // Code
-        std::string file_path = "";
-        std::cin >> file_path;
-        std::string code = FileRead(file_path);
+        std::string code = FileRead(begininfo.path);
 
         // Lexer
         lexer::Lexer lexer(code);
-        lexer.TokensGen(true);
+        lexer.TokensGen(begininfo.isPrintToken);
 
         // Parser
         parser::Parser parser(lexer.tokens());
         parser.Execute();
 
-        LogStart(LogModule::Parser, "output ast").Print();
-        parser.root()->Print("", "", true);
-        LogFinish(LogModule::Parser, "output ast").Print();
+        if (begininfo.isPrintAst) {
+            LogStart(LogModule::Parser, "output ast").Print();
+            parser.root()->Print("", "", true);
+            LogFinish(LogModule::Parser, "output ast").Print();
+        }
 
         // Runtime
         rt::Xengine xengine;
-        LogStart(LogModule::Runtime, "program").Print();
         xengine.Exec(*parser.root());
         std::cout << std::endl;
-        LogFinish(LogModule::Runtime, "program").Print();
     }
     catch (const Log& log) {
         log.Print();
