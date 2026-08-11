@@ -45,7 +45,7 @@ public:
     {}
 
     std::string ModulePrint() const {
-        using enum LogModule;
+        using enum LogModule;\
         switch (module_) {
             case File:      return "file";
             case Lexer:     return "lexer";
@@ -55,8 +55,8 @@ public:
         }
     }
     void Print() const {
-        std::cout << COLOR_GRAY << "[" << ModulePrint() << "]" << COLOR_DEFAULT;
-        std::cout << color_ << msg_ << COLOR_DEFAULT << std::endl;
+        std::cerr << COLOR_GRAY << "[" << ModulePrint() << "]" << COLOR_DEFAULT
+                  << color_ << msg_ << COLOR_DEFAULT << std::endl;
     }
 };
 

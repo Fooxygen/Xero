@@ -4,6 +4,7 @@
 //  Licensed under the MIT License.
 
 #include <cmath>
+#include <cstdio>
 
 #include "xengine.hpp"
 #include "table/fn.hpp"
@@ -814,8 +815,10 @@ namespace rt {
             static const auto impl = [](ARGS args) {
                 for (size_t i = 0; i < args.size(); i++) {
                     auto& arg = args[i];
-                    if (i > 0) std::cout << " ";
-                    std::cout << CallThrow(arg.type()->to_string_, arg);
+                    auto str = CallThrow(arg.type()->to_string_, arg);
+
+                    if (i > 0) std::fwrite(" ", 1, 1, stdout);
+                    std::fwrite(str.data(), 1, str.size(), stdout);
                 }
                 return Obj{};
             };
@@ -825,7 +828,8 @@ namespace rt {
             });
             FnTable::Set("println", [](ARGS args) {
                 auto obj = impl(args);
-                std::cout << std::endl;
+                std::fputc('\n', stdout);
+                std::fflush(stdout);
                 return obj;
             });
         }

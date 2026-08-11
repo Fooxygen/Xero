@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
     SetConsoleCP(CP_UTF8);
 #endif
 
-    std::cout << BuildInfo::Print() << std::endl;
+    std::cerr << BuildInfo::Print() << std::endl;
 
     try {
         // Begin
