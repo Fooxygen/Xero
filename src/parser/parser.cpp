@@ -48,13 +48,31 @@ namespace parser {
         }
 
         // Program (Root Node)
-        std::vector<std::unique_ptr<AstNode>> program_children;
-        for (auto& sym : symbols_) {
-            program_children.emplace_back(std::move(
-                std::get<std::unique_ptr<AstNode>>(sym.data())
-            ));
+        {
+            // When there are symbols that cannot be reduced to statements
+            size_t independent_sym_cnt = 0;
+            std::vector<std::unique_ptr<AstNode>> program_children;
+
+            for (auto& sym : symbols_) {
+                if (sym.type() != Symbol::Type::AstNode) {
+                    independent_sym_cnt++;
+                    continue;
+                }
+                if (independent_sym_cnt == 0) {
+                    program_children.emplace_back(std::move(
+                        std::get<std::unique_ptr<AstNode>>(sym.data())
+                    ));
+                }
+            }
+
+            if (independent_sym_cnt > 0) {
+                throw LogErr(LogModule::Parser, std::format(
+                    "reduce failed with '{}' symbols unprocessed", independent_sym_cnt
+                ));
+            }
+
+            root_ = std::make_unique<Program>(program_children);
         }
-        root_ = std::make_unique<Program>(program_children);
     }
 
     void   Parser::TokenRewrite(Token& token) {

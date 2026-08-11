@@ -9,7 +9,7 @@
             "stopAtEntry": false,
             "externalConsole": false,
             "cwd": "${workspaceFolder}",
-            "program": "${workspaceFolder}/build/bin/xero.exe",
+            "program": "${workspaceFolder}/build-debug/bin/xero.exe",
             "MIMode": "gdb",
             "miDebuggerPath": "gdb",
             "setupCommands": [
