@@ -9,25 +9,28 @@
   <!--<img src="Logo.png" width=150>-->
   <h3 align="center">Xero</h3>
   <p align="center">
-    静态类型编程语言 Xero 及其工具链
-    <br />
-    <a href="https://github.com/Fooxygen/Xero"><strong>» 阅读文档 »</strong></a>
-    <br />
-    <br />
-    <a href="https://github.com/Fooxygen/Xero/issues/new?labels=bug&template=bug-report---.md">报告问题</a>
-    &middot;
-    <a href="https://github.com/Fooxygen/Xero/issues/new?labels=enhancement&template=feature-request---.md">请求特性</a>
+    静态类型编程语言及其工具链
+    <br /><br />
+    <a href="https://github.com/Fooxygen/Xero">
+      <strong>» 阅读 Wiki</strong>
+    </a>
+    <a href="https://github.com/Fooxygen/Xero/issues/new?labels=bug&template=bug-report---.md">
+      <strong>» 报告问题</strong>
+    </a>
+    <a href="https://github.com/Fooxygen/Xero/issues/new?labels=enhancement&template=feature-request---.md">
+      <strong>» 请求特性</strong>
+    </a>
   </p>
   
 </div>
 
 ## 关于项目
 
-Xero 是一门静态类型编程语言。你可以在仓库根目录找到示例源代码 ``main.xe``.
+Xero 是一门静态类型编程语言。你可以在 `example/main.xe` 找到部分示例源代码.
 
 项目包含 Xero 的设计文档及其工具链。
 
-要执行程序，请在启动后输入任意 ``.xe`` 源代码文件路径。
+要执行程序，请参阅下文的 **编译与启动**。
 
 你可以在 [Wiki](https://github.com/Fooxygen/Xero/wiki) 中获取更多内容来了解 Xero。
 
@@ -50,20 +53,40 @@ Xero 是一门静态类型编程语言。你可以在仓库根目录找到示例
 
 ### 编译
 
-使用任务 ``CMake: Build`` 编译；
+Debug 与 Release 使用不同的 CMake 配置：
 
-使用任务 ``CMake: Clean Rebuild`` 清理并重编译；
+- **Debug**：输出到 `build-debug/`；
+- **Release**：输出到 `build-release/`；
+
+使用任务 `CMake: Build` 编译；
+
+使用任务 `CMake: Clean Rebuild` 清理并重编译；
 
 ### 启动
 
-使用任务 ``Run Xero`` 启动；
+Release 版本使用任务 `Run Xero` 启动；
 ```json
 {
     "label": "Run Xero",
     "type": "shell",
-    "command": "./build/bin/xero.exe"
+    "command": "${workspaceFolder}/build-release/bin/xero.exe",
+    "args": ["example/main.xe"]
 }
 ```
+
+需要输出 Token 流与抽象语法树时使用 `Run Xero with options`：
+```json
+{
+    "label": "Run Xero with options",
+    "type": "shell",
+    "command": "${workspaceFolder}/build-release/bin/xero.exe",
+    "args": ["example/main.xe", "--ast", "--tok"]
+}
+```
+
+Debug 版本对应 `Debug Xero` 与 `Debug Xero with options` 任务，可执行文件位于 `build-debug/bin/xero.exe`。
+
+编译后的程序输出到 `build-release/bin/xero.exe`（Release）或 `build-debug/bin/xero.exe`（Debug）。
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
