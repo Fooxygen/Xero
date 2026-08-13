@@ -78,7 +78,11 @@ int main(int argc, char* argv[]) {
         // Runtime
         rt::Xengine xengine;
         xengine.Exec(*parser.root());
-        std::cout << std::endl;
+        std::cerr << std::endl;
+    }
+    catch (const LogErr& log) {
+        log.Print();
+        return 1;
     }
     catch (const Log& log) {
         log.Print();
