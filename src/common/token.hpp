@@ -8,7 +8,8 @@
 #include <iostream>
 #include <string>
 
-#include "log.hpp"
+#include "common/log.hpp"
+#include "common/utils.hpp"
 
 class Token {
 public:
@@ -92,26 +93,17 @@ public:
         Fn,                 // fn
     };
 
-private:
     Type        type_   = Type::Undefined;
     std::string lexeme_ = "";
-
-    size_t line_ = 0;
-    size_t col_  = 0;
+    Loc         loc_;
     
 public:
     Token() {}
-    Token(Type type, const std::string& lexeme, size_t line, size_t col) {
+    Token(Type type, const std::string& lexeme, Loc loc) {
         type_   = type;
         lexeme_ = lexeme;
-        line_   = line;
-        col_    = col;
+        loc_    = loc;
     }
-
-    const Type&        type()   const { return type_; }
-    const std::string& lexeme() const { return lexeme_; }
-    size_t line() const { return line_; }
-    size_t col() const { return col_; }
 
     static Type BaseOfType(Type type) {
         using enum Type;
@@ -264,10 +256,17 @@ public:
         }
     }
     static void        TypePrint(Type type) {
-        std::cout << TypeName(type);
+        std::cerr << TypeName(type);
     }
     
-    std::string MetaPrint() const {
-        return std::format("[{}:{}] {}({})", line_, col_, TypeName(type_), lexeme_);
+    void MetaPrint() {
+        std::cerr
+        <<  COLOR_CYAN
+        <<  std::format("[{}:{}] ", loc_.line, loc_.col)
+        <<  COLOR_ORANGE
+        <<  TypeName(type_)
+        <<  COLOR_DEFAULT
+        <<  std::format("({})", lexeme_) <<
+        std::endl;
     }
 };

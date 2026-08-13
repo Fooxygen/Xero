@@ -9,7 +9,7 @@
 #include <fstream>
 
 #include "build.hpp"
-#include "log.hpp"
+#include "common/log.hpp"
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
 #include "runtime/xengine.hpp"

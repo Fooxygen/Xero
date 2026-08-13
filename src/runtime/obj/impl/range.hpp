@@ -7,7 +7,7 @@
 
 #include <cstdint>
 
-#include "log.hpp"
+#include "common/log.hpp"
 
 namespace rt {
     class Obj;

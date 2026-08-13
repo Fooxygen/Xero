@@ -31,21 +31,22 @@ namespace parser {
             type_ = Type::Token;
             data_ = token;
         }
-        Symbol(std::unique_ptr<AstNode> node) {
+        Symbol(std::unique_ptr<AstNode> node, Loc loc) {
+            node->loc_ = loc;
             type_ = Type::AstNode;
             data_ = std::move(node);
         }
-
-        Type  type() const {
+        
+        Type   type() const {
             return type_;
         }
-        Data& data() {
+        Data&  data() {
             return data_;
         }
-    
+
         Token::Type type_token() const {
             if (auto token = std::get_if<Token>(&data_)) {
-                return token->type();
+                return token->type_;
             }
             return Token::Type::Undefined;
         }
@@ -54,6 +55,16 @@ namespace parser {
                 return astnode->get()->type_;
             }
             return AstType::Undefined;
+        }
+
+        Loc loc() const {
+            if (auto token = std::get_if<Token>(&data_)) {
+                return token->loc_;
+            }
+            if (auto astnode = std::get_if<std::unique_ptr<AstNode>>(&data_)) {
+                return astnode->get()->loc_;
+            }
+            return Loc{};
         }
     };
 

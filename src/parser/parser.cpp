@@ -22,7 +22,7 @@ namespace parser {
             const auto  token_next =
                 i + 1 >= tokens_.size()
                 ? Token::Type::Undefined
-                : (tokens_[i + 1]).type();
+                : (tokens_[i + 1]).type_;
 
             // Shift
             Shift(token);
@@ -78,46 +78,46 @@ namespace parser {
     void   Parser::TokenRewrite(Token& token) {
         using TT = Token::Type;
 
-        switch (token.type()) {
+        switch (token.type_) {
             case TT::Id: {
-                if      (token.lexeme() == "true") {
-                    token = Token(TT::True, token.lexeme(), token.line(), token.col());
+                if      (token.lexeme_ == "true") {
+                    token = Token(TT::True, token.lexeme_, token.loc_);
                 }
-                else if (token.lexeme() == "false") {
-                    token = Token(TT::False, token.lexeme(), token.line(), token.col());
+                else if (token.lexeme_ == "false") {
+                    token = Token(TT::False, token.lexeme_, token.loc_);
                 }
 
-                else if (token.lexeme() == "if") {
-                    token = Token(TT::If, token.lexeme(), token.line(), token.col());
+                else if (token.lexeme_ == "if") {
+                    token = Token(TT::If, token.lexeme_, token.loc_);
                 }
-                else if (token.lexeme() == "elif") {
-                    token = Token(TT::Elif, token.lexeme(), token.line(), token.col());
+                else if (token.lexeme_ == "elif") {
+                    token = Token(TT::Elif, token.lexeme_, token.loc_);
                 }
-                else if (token.lexeme() == "else") {
-                    token = Token(TT::Else, token.lexeme(), token.line(), token.col());
+                else if (token.lexeme_ == "else") {
+                    token = Token(TT::Else, token.lexeme_, token.loc_);
                 }
                 
-                else if (token.lexeme() == "in") {
-                    token = Token(TT::In, token.lexeme(), token.line(), token.col());
+                else if (token.lexeme_ == "in") {
+                    token = Token(TT::In, token.lexeme_, token.loc_);
                 }
-                else if (token.lexeme() == "for") {
-                    token = Token(TT::For, token.lexeme(), token.line(), token.col());
+                else if (token.lexeme_ == "for") {
+                    token = Token(TT::For, token.lexeme_, token.loc_);
                 }
-                else if (token.lexeme() == "while") {
-                    token = Token(TT::While, token.lexeme(), token.line(), token.col());
+                else if (token.lexeme_ == "while") {
+                    token = Token(TT::While, token.lexeme_, token.loc_);
                 }
-                else if (token.lexeme() == "break") {
-                    token = Token(TT::Break, token.lexeme(), token.line(), token.col());
+                else if (token.lexeme_ == "break") {
+                    token = Token(TT::Break, token.lexeme_, token.loc_);
                 }
-                else if (token.lexeme() == "continue") {
-                    token = Token(TT::Continue, token.lexeme(), token.line(), token.col());
+                else if (token.lexeme_ == "continue") {
+                    token = Token(TT::Continue, token.lexeme_, token.loc_);
                 }
-                else if (token.lexeme() == "return") {
-                    token = Token(TT::Return, token.lexeme(), token.line(), token.col());
+                else if (token.lexeme_ == "return") {
+                    token = Token(TT::Return, token.lexeme_, token.loc_);
                 }
 
-                else if (token.lexeme() == "fn") {
-                    token = Token(TT::Fn, token.lexeme(), token.line(), token.col());
+                else if (token.lexeme_ == "fn") {
+                    token = Token(TT::Fn, token.lexeme_, token.loc_);
                 }
 
                 break;
@@ -127,32 +127,32 @@ namespace parser {
     }
 
     Symbol Parser::Token2Symbol(const Token& token) {
-        using TT = Token::Type;
+        using enum Token::Type;
 
         auto sym = Symbol(token);
-        switch (token.type()) {
-            case TT::Id: {
-                sym = Symbol(std::make_unique<IdExpr>(token.lexeme()));
+        switch (token.type_) {
+            case Id: {
+                sym = Symbol(std::make_unique<IdExpr>(token.lexeme_), token.loc_);
                 break;
             }
-            case TT::True: {
-                sym = Symbol(std::make_unique<BoolConst>(true));
+            case True: {
+                sym = Symbol(std::make_unique<BoolConst>(true), token.loc_);
                 break;
             }
-            case TT::False: {
-                sym = Symbol(std::make_unique<BoolConst>(false));
+            case False: {
+                sym = Symbol(std::make_unique<BoolConst>(false), token.loc_);
                 break;
             }
-            case TT::Number: {
-                sym = Symbol(std::make_unique<NumConst>(token.lexeme()));
+            case Number: {
+                sym = Symbol(std::make_unique<NumConst>(token.lexeme_), token.loc_);
                 break;
             }
-            case TT::Char: {
-                sym = Symbol(std::make_unique<CharConst>(token.lexeme()));
+            case Char: {
+                sym = Symbol(std::make_unique<CharConst>(token.lexeme_), token.loc_);
                 break;
             }
-            case TT::String: {
-                sym = Symbol(std::make_unique<StringConst>(token.lexeme()));
+            case String: {
+                sym = Symbol(std::make_unique<StringConst>(token.lexeme_), token.loc_);
                 break;
             }
             default: break;
@@ -166,12 +166,12 @@ namespace parser {
 
         // Brace Scope
         {
-            if      (token.type() == TT::LBrace) {
+            if      (token.type_ == TT::LBrace) {
                 scopes_brace.emplace_back(symbols_.size() + 1);
             }
-            else if (token.type() == TT::RBrace) {
+            else if (token.type_ == TT::RBrace) {
                 if (scopes_brace.empty()) {
-                    throw LogErr(LogModule::Parser, "unclosed brace");
+                    throw LogErr(LogModule::Parser, "unclosed brace", token.loc_);
                 }
 
                 size_t pbeg = scopes_brace.back();
@@ -190,7 +190,7 @@ namespace parser {
                 std::reverse(children.begin(), children.end());
                 symbols_.pop_back();                                // erase '{'
                 symbols_.emplace_back(
-                    std::make_unique<BlockExpr>(children)
+                    std::make_unique<BlockExpr>(children), token.loc_
                 );
 
                 return;
@@ -202,7 +202,10 @@ namespace parser {
 
     bool   Parser::TryReduce(const Rule& rule, Token::Type token_next, size_t reduce_len) {
 
-        // Target
+        // Loc
+        auto loc = symbols_[symbols_.size() - reduce_len].loc();
+
+        // Result
         auto target = rule.reduce_callback()(symbols_, token_next);
         if (!target) return false;
 
@@ -210,7 +213,7 @@ namespace parser {
         symbols_.erase(symbols_.end() - reduce_len, symbols_.end());
 
         // Push
-        symbols_.emplace_back(std::move(target));
+        symbols_.emplace_back(std::move(target), loc);
 
         return true;
     }

@@ -5,10 +5,10 @@
 
 #include <charconv>
 
-#include "log.hpp"
 #include "xengine.hpp"
 #include "table/fn.hpp"
 #include "table/method.hpp"
+#include "common/log.hpp"
 #include "common/opertype.hpp"
 #include "common/signal.hpp"
 
@@ -33,7 +33,7 @@ namespace rt {
     }
 
     Obj Xengine::Exec(IdExpr& node) {
-        return Obj::MakeRef(env_.Get(node.value_));
+        return Obj::MakeRef(env_.Get(node.value_, node.loc_));
     }
 
     Obj Xengine::Exec(DeclExpr& node) {
@@ -55,7 +55,7 @@ namespace rt {
                 throw LogErr(LogModule::Runtime, std::format(
                     "cannot make type '{}' compatible with '{}'",
                     value.type()->name, type->name
-                ));
+                ), node.loc_);
             }
 
             // Assign Obj Clone
@@ -120,7 +120,7 @@ namespace rt {
                     throw LogErr(LogModule::Runtime, std::format(
                         "cannot match type '{}' to type '{}'",
                         robj.type()->name, lobj.type()->name
-                    ));
+                    ), node.loc_);
                 }
 
                 lobj = TypeTable::Convert(lobj, type);
@@ -191,7 +191,7 @@ namespace rt {
             OperTypeName(node.opertype_),
             lobj.type()->name,
             robj.type()->name
-        ));
+        ), node.loc_);
     }
 
     Obj Xengine::Exec(RangeExpr& node) {
@@ -223,20 +223,16 @@ namespace rt {
 
         if (!itertype) {
             if (hasStep) {
-                throw LogErr(LogModule::Runtime,
-                    std::format(
-                        "failed to generate valid range iterator with '{}', '{}' and '{}'",
-                        ltype->name, rtype->name, stype->name
-                    )
-                );
+                throw LogErr(LogModule::Runtime, std::format(
+                    "failed to generate valid range iterator with '{}', '{}' and '{}'",
+                    ltype->name, rtype->name, stype->name
+                ), node.loc_);
             }
             else {
-                throw LogErr(LogModule::Runtime,
-                    std::format(
-                        "failed to generate valid range iterator with '{}' and '{}'",
-                        ltype->name, rtype->name
-                    )
-                );
+                throw LogErr(LogModule::Runtime,std::format(
+                    "failed to generate valid range iterator with '{}' and '{}'",
+                    ltype->name, rtype->name
+                ), node.loc_);
             }
         }
 
@@ -311,13 +307,13 @@ namespace rt {
                 // - has return stmt:   value must be compatible with ret type
                 // - missing return:    exec() return 'none', which isn't compatible with ret type
                 if (!ret_type->isNone() && ret.type()->isNone()) {
-                    throw LogErr(LogModule::Runtime, "missing return in function");
+                    throw LogErr(LogModule::Runtime, "missing return in function", node.loc_);
                 }
                 if (!ret.type()->converts.contains(ret_type)) {
                     throw LogErr(LogModule::Runtime, std::format(
                         "cannot make type '{}' compatible with '{}'",
                         ret.type()->name, ret_type->name
-                    ));
+                    ), node.loc_);
                 }
 
                 return TypeTable::Convert(ret, ret_type);
@@ -380,7 +376,9 @@ namespace rt {
         else {
             // error: 3.14.15
             if (numstr.substr(numstr.find(".") + 1).contains(".")) {
-                throw LogErr(LogModule::Runtime, std::format("invalid float format '{}'", numstr));
+                throw LogErr(LogModule::Runtime, std::format(
+                    "invalid float format '{}'", numstr
+                ), node.loc_);
             }
 
             // f32
@@ -398,7 +396,9 @@ namespace rt {
             }
         }
 
-        throw LogErr(LogModule::Runtime, std::format("numeric overflow '{}'", numstr));
+        throw LogErr(LogModule::Runtime, std::format(
+            "numeric overflow '{}'", numstr
+        ), node.loc_);
     }
 
     Obj Xengine::Exec(BoolConst& node) {
@@ -438,7 +438,7 @@ namespace rt {
                 throw LogErr(LogModule::Runtime, std::format(
                     "condition must be bool, not {}",
                     cond.type()->name
-                ));
+                ), node.loc_);
             }
         }
 
@@ -511,7 +511,7 @@ namespace rt {
             at = [&](size_t i) { return *view.org()->Get(view.offset() + i); };
         }
         else {
-            throw LogErr(LogModule::Runtime, "unsupported 'for' statement");
+            throw LogErr(LogModule::Runtime, "unsupported 'for' statement", node.loc_);
         }
 
         for (size_t i = 0; i < len; i++) {
@@ -534,7 +534,7 @@ namespace rt {
                 throw LogErr(LogModule::Runtime, std::format(
                     "condition must be bool, not {}",
                     cond.type()->name
-                ));
+                ), node.loc_);
             }
 
             if (!cond.Get_bool()) break;

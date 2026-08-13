@@ -9,7 +9,7 @@
 #include <cstring>
 #include <string>
 
-#include "log.hpp"
+#include "common/log.hpp"
 #include "array.hpp"
 
 namespace rt {

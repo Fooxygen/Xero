@@ -7,6 +7,7 @@
 
 #include <vector>
 
+#include "common/utils.hpp"
 #include "common/token.hpp"
 
 namespace lexer {
@@ -16,11 +17,10 @@ namespace lexer {
     private:
         std::string_view code_;
 
-        size_t pos_  = 0;
-        size_t line_ = 1;
-        size_t col_  = 1;
-        size_t prev_token_line_ = line_;
-        size_t prev_token_col_  = col_;
+        Loc    loc_;        // Current Location
+        Loc    loc_prev_;   // Previous Location
+        Loc    loc_scan_;   // Beginning of Current Location
+        size_t pos_ = 0;
 
         std::vector<Token> tokens_;
 
@@ -50,11 +50,8 @@ namespace lexer {
         }
 
         void  CharNext() {
-            if (code_[pos_] == '\n') {
-                line_++;
-                col_ = 1;
-            }
-            else col_++;
+            if (code_[pos_] == '\n') loc_.NextLine();
+            else loc_.NextChar();
             
             pos_++;
         }
@@ -83,9 +80,11 @@ namespace lexer {
         
         std::optional<Token> TokenNext();
         Token TokenGen(Token::Type type, const std::string& lexeme) {
-            prev_token_line_ = line_;
-            prev_token_col_  = col_ - lexeme.length();
-            return Token(type, lexeme, prev_token_line_, prev_token_col_);
+            loc_prev_ = {
+                .line = loc_.line,
+                .col  = loc_.col - lexeme.length()
+            };
+            return Token(type, lexeme, loc_prev_);
         }
         void  TokensGen(bool isPrint = false);
         

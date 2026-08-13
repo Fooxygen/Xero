@@ -12,7 +12,7 @@
 #include <map>
 #include <vector>
 
-#include "log.hpp"
+#include "common/log.hpp"
 
 namespace rt {
     class Obj;

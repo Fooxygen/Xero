@@ -9,7 +9,7 @@
 #include <cstdint>
 #include <cstring>
 
-#include "log.hpp"
+#include "common/log.hpp"
 #include "runtime/table/type.hpp"
 
 namespace rt {

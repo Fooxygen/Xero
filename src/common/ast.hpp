@@ -9,6 +9,7 @@
 #include <memory>
 #include <vector>
 
+#include "utils.hpp"
 #include "token.hpp"
 #include "opertype.hpp"
 #include "signal.hpp"
@@ -100,31 +101,32 @@ static bool isAstTypeCompatible(AstType expected, AstType actual) {
 class AstNode {
 public:
     AstType type_ = AstType::Undefined;
+    Loc     loc_;
 
     virtual const std::string TypeName() const {
         return "Undefined";
     }
     void TypePrint() const {
-        std::cout << TypeName();
+        std::cerr << TypeName();
     }
 
     virtual void PrintImpl(std::string) {}
     void         Print(std::string prefix = "", std::string alias = "", bool isBegin = false) {
-        std::cout << prefix;
-        if (!isBegin) std::cout << "└── ";
+        std::cerr << prefix;
+        if (!isBegin) std::cerr << "└── ";
 
         size_t indent_alias = 0;
         if (alias != "") {
             indent_alias = alias.length() + 3;
-            std::cout << COLOR_ORANGE << "[" << alias << "] " << COLOR_DEFAULT;
+            std::cerr << COLOR_ORANGE << "[" << alias << "] " << COLOR_DEFAULT;
         }
-        std::cout << TypeName() << std::endl;
+        std::cerr << TypeName() << std::endl;
 
         PrintImpl(prefix + "    " + std::string(indent_alias, ' '));
     }
     void         PrintLabel(const std::string& name, std::string prefix = "") {
-        std::cout << prefix;
-        std::cout << "└── " << COLOR_ORANGE << "[" << name << "] " << COLOR_DEFAULT;
+        std::cerr << prefix;
+        std::cerr << "└── " << COLOR_ORANGE << "[" << name << "] " << COLOR_DEFAULT;
     }
 
     virtual std::unique_ptr<AstNode> Clone() const = 0;
@@ -160,7 +162,10 @@ public:
         for (auto& e : exprs_) {
             exprs.emplace_back((Expr*)(e->Clone().release()));
         }
-        return std::make_unique<Exprs>(exprs);
+        
+        auto node = std::make_unique<Exprs>(exprs);
+        node->loc_ = loc_;
+        return node;
     }
 };
 
@@ -191,7 +196,10 @@ public:
         for (auto& child : children_) {
             children.emplace_back(child->Clone());
         }
-        return std::make_unique<BlockExpr>(children);
+        
+        auto node = std::make_unique<BlockExpr>(children);
+        node->loc_ = loc_;
+        return node;
     }
 };
 class IdExpr            : public Expr {
@@ -208,11 +216,13 @@ public:
 
     void PrintImpl(std::string prefix) override {
         PrintLabel("value", prefix);
-        std::cout << COLOR_BLUE << value_ << COLOR_DEFAULT << std::endl;
+        std::cerr << COLOR_BLUE << value_ << COLOR_DEFAULT << std::endl;
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        return std::make_unique<IdExpr>(value_);
+        auto node = std::make_unique<IdExpr>(value_);
+        node->loc_ = loc_;
+        return node;
     }
 };
 class DeclExpr          : public Expr {
@@ -239,18 +249,20 @@ public:
 
     void PrintImpl(std::string prefix) override {
         PrintLabel("id", prefix);
-        std::cout << COLOR_BLUE << id_ << COLOR_DEFAULT << std::endl;
+        std::cerr << COLOR_BLUE << id_ << COLOR_DEFAULT << std::endl;
         PrintLabel("bindtype", prefix);
-        std::cout << COLOR_MAGENTA << bindtype_ << COLOR_DEFAULT << std::endl;
+        std::cerr << COLOR_MAGENTA << bindtype_ << COLOR_DEFAULT << std::endl;
         if (value_) value_->Print(prefix, "value");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        return std::make_unique<DeclExpr>(
+        auto node = std::make_unique<DeclExpr>(
             id_,
             bindtype_,
             value_ ? std::unique_ptr<Expr>((Expr*)(value_->Clone().release())) : nullptr
         );
+        node->loc_ = loc_;
+        return node;
     }
 };
 class OperExpr          : public Expr {
@@ -277,19 +289,21 @@ public:
     
     void PrintImpl(std::string prefix) override {
         PrintLabel("type", prefix);
-        std::cout << COLOR_MAGENTA;
-        std::cout << OperTypeName(opertype_);
-        std::cout << COLOR_DEFAULT << std::endl;
+        std::cerr << COLOR_MAGENTA;
+        std::cerr << OperTypeName(opertype_);
+        std::cerr << COLOR_DEFAULT << std::endl;
         lexpr_->Print(prefix, "lexpr");
         if (rexpr_) rexpr_->Print(prefix, "rexpr");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        return std::make_unique<OperExpr>(
+        auto node =  std::make_unique<OperExpr>(
             opertype_,
             std::unique_ptr<Expr>((Expr*)(lexpr_->Clone().release())),
             rexpr_ ? std::unique_ptr<Expr>((Expr*)(rexpr_->Clone().release())) : nullptr
         );
+        node->loc_ = loc_;
+        return node;
     }
 };
 class RangeExpr         : public Expr {
@@ -319,10 +333,10 @@ public:
 
     void PrintImpl(std::string prefix) override {
         PrintLabel("type", prefix);
-        std::cout << COLOR_MAGENTA;
+        std::cerr << COLOR_MAGENTA;
         if (isClosed_)  Token::TypePrint(Token::Type::DotDotEq);
         else            Token::TypePrint(Token::Type::DotDot);
-        std::cout << COLOR_DEFAULT << std::endl;
+        std::cerr << COLOR_DEFAULT << std::endl;
 
         lexpr_->Print(prefix, "lexpr");
         rexpr_->Print(prefix, "rexpr");
@@ -330,12 +344,14 @@ public:
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        return std::make_unique<RangeExpr>(
+        auto node = std::make_unique<RangeExpr>(
             std::unique_ptr<Expr>((Expr*)(lexpr_->Clone().release())),
             std::unique_ptr<Expr>((Expr*)(rexpr_->Clone().release())),
             step_ ? std::unique_ptr<Expr>((Expr*)(step_->Clone().release())) : nullptr,
             isClosed_
         );
+        node->loc_ = loc_;
+        return node;
     }
 };
 class ArrayExpr         : public Expr {
@@ -357,9 +373,11 @@ public:
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        return std::make_unique<ArrayExpr>(
+        auto node = std::make_unique<ArrayExpr>(
             std::unique_ptr<Exprs>((Exprs*)(elements_->Clone().release()))
         );
+        node->loc_ = loc_;
+        return node;
     }
 };
 class FnCallExpr        : public Expr {
@@ -387,10 +405,12 @@ public:
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        return std::make_unique<FnCallExpr>(
+        auto node = std::make_unique<FnCallExpr>(
             std::make_unique<IdExpr>(callee_->value_),
             std::unique_ptr<Exprs>((Exprs*)(args_->Clone().release()))
         );
+        node->loc_ = loc_;
+        return node;
     }
 };
 class MethodCallExpr    : public Expr {
@@ -422,11 +442,13 @@ public:
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        return std::make_unique<MethodCallExpr>(
+        auto node = std::make_unique<MethodCallExpr>(
             std::unique_ptr<Expr>((Expr*)(target_->Clone().release())),
             std::make_unique<IdExpr>(callee_->value_),
             std::unique_ptr<Exprs>((Exprs*)(args_->Clone().release()))
         );
+        node->loc_ = loc_;
+        return node;
     }
 };
 class FnExpr            : public Expr {
@@ -456,20 +478,22 @@ public:
 
     void PrintImpl(std::string prefix) override {
         PrintLabel("name", prefix);
-        std::cout << COLOR_BLUE << name_ << COLOR_DEFAULT << std::endl;
+        std::cerr << COLOR_BLUE << name_ << COLOR_DEFAULT << std::endl;
         PrintLabel("ret_type", prefix);
-        std::cout << COLOR_MAGENTA << ret_type_ << COLOR_DEFAULT << std::endl;
+        std::cerr << COLOR_MAGENTA << ret_type_ << COLOR_DEFAULT << std::endl;
         if (params_) params_->Print(prefix, "params");
         if (block_)  block_->Print(prefix, "block");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        return std::make_unique<FnExpr>(
+        auto node = std::make_unique<FnExpr>(
             name_,
             ret_type_,
             params_ ? std::unique_ptr<Exprs>((Exprs*)(params_->Clone().release())) : nullptr,
             block_  ? std::unique_ptr<BlockExpr>((BlockExpr*)(block_->Clone().release())) : nullptr
         );
+        node->loc_ = loc_;
+        return node;
     }
 };
 
@@ -491,11 +515,13 @@ public:
 
     void PrintImpl(std::string prefix) override {
         PrintLabel("value", prefix);
-        std::cout << COLOR_ORANGE << value_ << COLOR_DEFAULT << std::endl;
+        std::cerr << COLOR_ORANGE << value_ << COLOR_DEFAULT << std::endl;
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        return std::make_unique<NumConst>(value_);
+        auto node = std::make_unique<NumConst>(value_);
+        node->loc_ = loc_;
+        return node;
     }
 };
 class BoolConst         : public Const {
@@ -515,13 +541,15 @@ public:
     void PrintImpl(std::string prefix) override {
         PrintLabel("value", prefix);
         if (value_)
-            std::cout << COLOR_GREEN << "true" << COLOR_DEFAULT << std::endl;
+            std::cerr << COLOR_GREEN << "true" << COLOR_DEFAULT << std::endl;
         else
-            std::cout << COLOR_RED << "false" << COLOR_DEFAULT << std::endl;
+            std::cerr << COLOR_RED << "false" << COLOR_DEFAULT << std::endl;
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        return std::make_unique<BoolConst>(value_);
+        auto node = std::make_unique<BoolConst>(value_);
+        node->loc_ = loc_;
+        return node;
     }
 };
 class CharConst         : public Const {
@@ -540,11 +568,13 @@ public:
 
     void PrintImpl(std::string prefix) override {
         PrintLabel("value", prefix);
-        std::cout << COLOR_GREEN << "'" << value_ << "'" << COLOR_DEFAULT << std::endl;
+        std::cerr << COLOR_GREEN << "'" << value_ << "'" << COLOR_DEFAULT << std::endl;
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        return std::make_unique<CharConst>(value_);
+        auto node = std::make_unique<CharConst>(value_);
+        node->loc_ = loc_;
+        return node;
     }
 };
 class StringConst       : public Const {
@@ -563,11 +593,13 @@ public:
 
     void PrintImpl(std::string prefix) override {
         PrintLabel("value", prefix);
-        std::cout << COLOR_GREEN << "\"" << value_ << "\"" << COLOR_DEFAULT << std::endl;
+        std::cerr << COLOR_GREEN << "\"" << value_ << "\"" << COLOR_DEFAULT << std::endl;
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        return std::make_unique<StringConst>(value_);
+        auto node = std::make_unique<StringConst>(value_);
+        node->loc_ = loc_;
+        return node;
     }
 };
 
@@ -592,9 +624,11 @@ public:
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        return std::make_unique<ExprStmt>(
+        auto node = std::make_unique<ExprStmt>(
             std::unique_ptr<Expr>((Expr*)(expr_->Clone().release()))
         );
+        node->loc_ = loc_;
+        return node;
     }
 };
 class AssignStmt        : public Stmt {
@@ -622,10 +656,12 @@ public:
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        return std::make_unique<AssignStmt>(
+        auto node = std::make_unique<AssignStmt>(
             std::unique_ptr<Expr>((Expr*)(target_->Clone().release())),
             std::unique_ptr<Expr>((Expr*)(value_->Clone().release()))
         );
+        node->loc_ = loc_;
+        return node;
     }
 };
 class CondStmt          : public Stmt {
@@ -657,11 +693,13 @@ public:
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        return std::make_unique<CondStmt>(
+        auto node = std::make_unique<CondStmt>(
             cond_ ? std::unique_ptr<Expr>((Expr*)(cond_->Clone().release())) : nullptr,
             std::unique_ptr<BlockExpr>((BlockExpr*)(block_->Clone().release())),
             sub_ ? std::unique_ptr<CondStmt>((CondStmt*)(sub_->Clone().release())) : nullptr
         );
+        node->loc_ = loc_;
+        return node;
     }
 };
 class LoopSignalStmt    : public Stmt {
@@ -680,17 +718,19 @@ public:
 
     void PrintImpl(std::string prefix) override {
         PrintLabel("signal", prefix);
-        std::cout << COLOR_MAGENTA;
+        std::cerr << COLOR_MAGENTA;
         switch (signal_) {
-            case LoopSignal::Break:     std::cout << "break"    << std::endl; break;
-            case LoopSignal::Continue:  std::cout << "continue" << std::endl; break;
+            case LoopSignal::Break:     std::cerr << "break"    << std::endl; break;
+            case LoopSignal::Continue:  std::cerr << "continue" << std::endl; break;
             default: __builtin_unreachable();
         }
-        std::cout << COLOR_DEFAULT << std::endl;
+        std::cerr << COLOR_DEFAULT << std::endl;
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        return std::make_unique<LoopSignalStmt>(signal_);
+        auto node = std::make_unique<LoopSignalStmt>(signal_);
+        node->loc_ = loc_;
+        return node;
     }
 };
 class ReturnSignalStmt  : public Stmt {
@@ -712,9 +752,11 @@ public:
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        return std::make_unique<ReturnSignalStmt>(
+        auto node = std::make_unique<ReturnSignalStmt>(
             value_ ? std::unique_ptr<Expr>((Expr*)(value_->Clone().release())) : nullptr
         );
+        node->loc_ = loc_;
+        return node;
     }
 };
 class ForStmt           : public Stmt {
@@ -746,11 +788,13 @@ public:
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        return std::make_unique<ForStmt>(
+        auto node = std::make_unique<ForStmt>(
             std::make_unique<IdExpr>(iter_->value_),
             std::unique_ptr<Expr>((Expr*)(data_->Clone().release())),
             std::unique_ptr<BlockExpr>((BlockExpr*)(block_->Clone().release()))
         );
+        node->loc_ = loc_;
+        return node;
     }
 };
 class WhileStmt         : public Stmt {
@@ -778,10 +822,12 @@ public:
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        return std::make_unique<WhileStmt>(
+        auto node = std::make_unique<WhileStmt>(
             std::unique_ptr<Expr>((Expr*)(cond_->Clone().release())),
             std::unique_ptr<BlockExpr>((BlockExpr*)(block_->Clone().release()))
         );
+        node->loc_ = loc_;
+        return node;
     }
 };
 
@@ -804,6 +850,9 @@ public:
         for (auto& child : children_) {
             children.emplace_back(child->Clone());
         }
-        return std::make_unique<Program>(children);
+        
+        auto node = std::make_unique<Program>(children);
+        node->loc_ = loc_;
+        return node;
     }
 };
