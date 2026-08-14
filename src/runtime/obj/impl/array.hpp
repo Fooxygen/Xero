@@ -10,7 +10,7 @@
 #include <cstring>
 
 #include "common/log.hpp"
-#include "runtime/table/type.hpp"
+#include "sema/semantics.hpp"
 
 namespace rt {
     class Obj;
@@ -20,7 +20,7 @@ namespace rt {
         Obj**  data_     = nullptr;
         size_t size_     = 0;
         size_t capacity_ = 0;
-        const Type* element_type_ = nullptr;
+        const sema::Type* element_type_ = nullptr;
 
         // hasRBoundary: Allowed to modify at the [max + 1] idx
         void IndexCheck(size_t idx, bool hasRBoundary = false) const {
@@ -35,7 +35,7 @@ namespace rt {
                 }
             }
         }
-        void ElementTypeCheckAndSet(const Type* type);
+        void ElementTypeCheckAndSet(const sema::Type* type);
         void Expand(size_t size);
 
     public:
@@ -45,9 +45,9 @@ namespace rt {
             Clear();
         }
 
-        size_t size()              const { return size_; }
-        size_t capacity()          const { return capacity_; }
-        const Type* element_type() const { return element_type_; }
+        size_t size()                    const { return size_; }
+        size_t capacity()                const { return capacity_; }
+        const sema::Type* element_type() const { return element_type_; }
         
         std::string ToCppString() const;
 

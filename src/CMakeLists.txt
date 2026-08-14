@@ -12,9 +12,10 @@ add_executable(xero
     lexer/lexer.cpp
     parser/parser.cpp
     parser/rule.cpp
+    sema/semantics.cpp
+    runtime/runtime.cpp
     runtime/xengine.cpp
     runtime/register.cpp
-    runtime/table/type.cpp
     runtime/obj/impl/range.cpp
     runtime/obj/impl/array.cpp
     runtime/obj/impl/string.cpp

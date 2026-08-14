@@ -22,7 +22,7 @@ namespace rt {
 
         void Check(
             const std::string& name,
-            const std::vector<const Type*>& args_type)
+            const std::vector<const sema::Type*>& args_type)
         {
             
             // Empty
@@ -46,7 +46,7 @@ namespace rt {
                 }
 
                 auto  param = (DeclExpr*)params[i].get();
-                auto  type_param = TypeTable::Get(param->bindtype_);
+                auto  type_param = sema::TypeTable::Get(param->bindtype_);
                 auto& type_arg   = args_type[i];
                 if (!type_arg->converts.contains(type_param)) {
                     throw LogErr(LogModule::Runtime, std::format(

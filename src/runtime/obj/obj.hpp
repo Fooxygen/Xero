@@ -8,7 +8,8 @@
 #include <cstdint>
 #include <variant>
 
-#include "runtime/table/type.hpp"
+#include "sema/semantics.hpp"
+#include "runtime/runtime.hpp"
 #include "runtime/obj/impl/string.hpp"
 #include "runtime/obj/impl/array.hpp"
 #include "runtime/obj/impl/sliceview.hpp"
@@ -35,18 +36,18 @@ namespace rt {
                 char        char_;
             };
 
-            const Type* type_;
-            Data        data_;
+            const sema::Type* type_;
+            Data              data_;
 
         public:
-            Value(const Type* type = TypeTable::Get("none")) {
+            Value(const sema::Type* type = sema::TypeTable::Get("none")) {
                 type_      = type;
                 data_.ptr_ = nullptr;
             }
 
-            const Type* type() const { return type_; }
-            const Data& data() const { return data_; }      
-            Data&       data()       { return data_; }      
+            const sema::Type* type() const { return type_; }
+            const Data&       data() const { return data_; }      
+            Data&             data()       { return data_; }      
         
             bool hasHeapData() const {
                 return type_->isHeapStored && data_.ptr_;
@@ -86,7 +87,7 @@ namespace rt {
             if (usingtype == UsingType::Value && hasHeapData()) {
                 auto heapdata = (HeapData*)value().data().ptr_;
                 if (--heapdata->cnt == 0) {
-                    type()->destroy_(heapdata->data);
+                    type()->impl_->destroy_(heapdata->data);
                     delete heapdata;
                 }
             }
@@ -119,14 +120,14 @@ namespace rt {
                 if (hasHeapData()) {
                     auto heapdata = (HeapData*)value().data().ptr_;
                     if (--heapdata->cnt == 0) {
-                        type()->destroy_(heapdata->data);
+                        type()->impl_->destroy_(heapdata->data);
                         delete heapdata;
                     }
                 }
             }
         }
 
-        const Type*  type()  const  {
+        const sema::Type* type()  const  {
             switch (usingtype) {
                 case UsingType::Value:  return value().type();
                 case UsingType::Ref:    return ref().obj()->type();
@@ -151,10 +152,10 @@ namespace rt {
         Obj        Clone()  const {
             switch (usingtype) {
                 case UsingType::Value: {
-                    if (type()->isHeapStored)   return type()->clone_(*this);
+                    if (type()->isHeapStored)   return type()->impl_->clone_(*this);
                     else                        return *this;
                 }
-                case UsingType::Ref: return ref().obj()->type()->clone_(*ref().obj());
+                case UsingType::Ref: return ref().obj()->type()->impl_->clone_(*ref().obj());
                 default:             __builtin_unreachable();
             }
         }
@@ -179,7 +180,7 @@ namespace rt {
             o.data_.emplace<Ref>(org);
             return o;
         }
-        static Obj MakeEmpty(const Type* type) {
+        static Obj MakeEmpty(const sema::Type* type) {
             auto& name = type->name;
 
             if (name == "none")        return Obj();
@@ -204,79 +205,79 @@ namespace rt {
         
         static Obj Make_bool(bool b) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(TypeTable::Get("bool"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("bool"));
             v.data().bool_ = b;
             return o;
         }
         static Obj Make_i32(int32_t x) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(TypeTable::Get("i32"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("i32"));
             v.data().i32_ = x;
             return o;
         }
         static Obj Make_i64(int64_t x) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(TypeTable::Get("i64"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("i64"));
             v.data().i64_ = x;
             return o;
         }
         static Obj Make_f32(float x) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(TypeTable::Get("f32"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("f32"));
             v.data().f32_ = x;
             return o;
         }
         static Obj Make_f64(double x) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(TypeTable::Get("f64"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("f64"));
             v.data().f64_ = x;
             return o;
         }
         static Obj Make_char(char c) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(TypeTable::Get("char"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("char"));
             v.data().char_ = c;
             return o;
         }
         static Obj Make_string(String* str) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(TypeTable::Get("string"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("string"));
             v.data().ptr_ = new HeapData(str);
             return o;
         }
         static Obj Make_stringview(SliceView<String>* view) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(TypeTable::Get("stringview"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("stringview"));
             v.data().ptr_ = new HeapData(view);
             return o;
         }
         static Obj Make_array(size_t size = 1) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(TypeTable::Get("array"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("array"));
             v.data().ptr_ = new HeapData(new Array(size));
             return o;
         }
         static Obj Make_array(Array* arr) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(TypeTable::Get("array"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("array"));
             v.data().ptr_ = new HeapData(arr);
             return o;
         }
         static Obj Make_arrayview(SliceView<Array>* view) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(TypeTable::Get("arrayview"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("arrayview"));
             v.data().ptr_ = new HeapData(view);
             return o;
         }
         static Obj Make_range(Range* rge) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(TypeTable::Get("range"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("range"));
             v.data().ptr_ = new HeapData(rge);
             return o;
         }
         static Obj Make_function(Function* fn) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(TypeTable::Get("function"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("function"));
             v.data().ptr_ = new HeapData(fn);
             return o;
         }

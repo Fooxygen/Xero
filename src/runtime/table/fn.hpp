@@ -19,14 +19,9 @@ namespace rt {
         static inline std::unordered_map<std::string, Fn> table_;
 
     public:
-        static void Reset() {
-            table_ = std::unordered_map<std::string, Fn>();
-        }
-
         static void Set(const std::string& name, Fn fn) {
             table_[name] = fn;
         }
-
         static Fn   Get(const std::string& name) {
             return table_.contains(name) ? table_.at(name) : nullptr;
         }

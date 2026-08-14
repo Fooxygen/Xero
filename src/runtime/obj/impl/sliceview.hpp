@@ -7,8 +7,6 @@
 
 #include <cstdint>
 
-#include "common/log.hpp"
-
 namespace rt {
 
     template <typename T>

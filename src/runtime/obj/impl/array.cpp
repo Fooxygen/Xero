@@ -26,7 +26,7 @@ namespace rt {
         }
     }
 
-    void Array::ElementTypeCheckAndSet(const Type* type) {
+    void Array::ElementTypeCheckAndSet(const sema::Type* type) {
         if (!type) return;
         if (!element_type_) {
             element_type_ = type;
@@ -57,7 +57,7 @@ namespace rt {
         for (size_t i = 0; i < size_; i++) {
             auto o = Get(i);
             if (i != 0) res += ", ";
-            res += o->type()->to_string_(*o);
+            res += o->type()->impl_->to_string_(*o);
         }
         res += "]";
         return res;

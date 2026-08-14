@@ -15,8 +15,8 @@ namespace rt {
     class MethodTable {
     private:
         struct Key {
-            const Type* type;
-            std::string name;
+            const sema::Type* type;
+            std::string       name;
 
             bool operator==(const Key& other) const {
                 return type == other.type && name == other.name;
@@ -25,7 +25,7 @@ namespace rt {
 
         struct KeyHash {
             size_t operator()(const Key& key) const {
-                return std::hash<const Type*>{}(key.type) ^
+                return std::hash<const sema::Type*>{}(key.type) ^
                        std::hash<std::string>{}(key.name);
             }
         };
@@ -33,15 +33,11 @@ namespace rt {
         static inline std::unordered_map<Key, Fn, KeyHash> table_;
 
     public:
-        static void Reset() {
-            table_ = std::unordered_map<Key, Fn, KeyHash>();
-        }
-
-        static void Set(const Type* type, const std::string& name, Fn fn) {
+        static void Set(const sema::Type* type, const std::string& name, Fn fn) {
             table_[{type, name}] = fn;
         }
 
-        static Fn Get(const Type* type, const std::string& name) {
+        static Fn Get(const sema::Type* type, const std::string& name) {
             return table_.contains({type, name}) ? table_.at({type, name}) : nullptr;
         }
     };

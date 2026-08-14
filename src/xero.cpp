@@ -12,6 +12,8 @@
 #include "common/log.hpp"
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
+#include "sema/semantics.hpp"
+#include "runtime/runtime.hpp"
 #include "runtime/xengine.hpp"
 
 #ifdef _WIN32
@@ -75,7 +77,12 @@ int main(int argc, char* argv[]) {
             LogFinish(LogModule::Parser, "output ast").Print();
         }
 
+        // Semantics
+        sema::TypeTable::Init();
+
         // Runtime
+        rt::TypeImplTable::Init();
+
         rt::Xengine xengine;
         xengine.Exec(*parser.root());
         std::cerr << std::endl;

@@ -6,7 +6,6 @@
 #pragma once
 
 #include <functional>
-#include <tuple>
 
 #include "common/ast.hpp"
 #include "obj/obj.hpp"
@@ -20,14 +19,10 @@ namespace rt {
 
     public:
         Xengine() {
-            TypeTable::Reset();
-
-            TypeRegister();
             FnRegister();
             MethodRegister();
         }
         
-        void TypeRegister();
         void FnRegister();
         void MethodRegister();
 

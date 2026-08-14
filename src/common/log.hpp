@@ -27,6 +27,7 @@ enum class LogModule {
     File,
     Lexer,
     Parser,
+    Sema,
     Runtime
 };
 
@@ -56,6 +57,7 @@ public:
             case File:      return "file";
             case Lexer:     return "lexer";
             case Parser:    return "parser";
+            case Sema:      return "sema";
             case Runtime:   return "rt";
             default:        return "Undefined";
         }
