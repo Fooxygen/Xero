@@ -1,5 +1,8 @@
 
-i: i32 = 0;
-while (i < 5) {
-    println(i); i += 1;
-}
+c1: char = '\n';
+c2: char = '\t';
+c3: char = '\r';
+c4: char = '\'';
+c5: char = '\\';
+c6: char = '"';
+s1: string = "Hello\nXero!";

@@ -568,7 +568,9 @@ public:
 
     void PrintImpl(std::string prefix) override {
         PrintLabel("value", prefix);
-        std::cerr << COLOR_GREEN << "'" << value_ << "'" << COLOR_DEFAULT << std::endl;
+        std::cerr << COLOR_GREEN << "'" <<
+            ContainedEscapePrint(value_)
+        << "'" << COLOR_DEFAULT << std::endl;
     }
 
     std::unique_ptr<AstNode> Clone() const override {
@@ -593,7 +595,9 @@ public:
 
     void PrintImpl(std::string prefix) override {
         PrintLabel("value", prefix);
-        std::cerr << COLOR_GREEN << "\"" << value_ << "\"" << COLOR_DEFAULT << std::endl;
+        std::cerr << COLOR_GREEN << "\"" <<
+            ContainedEscapePrint(value_)
+        << "\"" << COLOR_DEFAULT << std::endl;
     }
 
     std::unique_ptr<AstNode> Clone() const override {
