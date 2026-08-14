@@ -1,8 +1,3 @@
 
 c1: char = '\n';
-c2: char = '\t';
-c3: char = '\r';
-c4: char = '\'';
-c5: char = '\\';
-c6: char = '"';
-s1: string = "Hello\nXero!";
+c1: char = '\t';

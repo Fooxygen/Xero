@@ -23,7 +23,14 @@ namespace rt {
         std::unordered_map<std::string, Obj>& ScopeGet() { return scopes_.back(); }
 
         void Declare(const std::string& name, const Obj& value) {
-            ScopeGet()[name] = value;
+            auto& scope = ScopeGet();
+            if (!scope.contains(name)) scope[name] = value;
+            else {
+                throw LogErr(LogModule::Runtime, std::format(
+                    "duplicate definition of '{}' in same scope",
+                    name
+                ));
+            }
         }
         void Assign(const std::string& name, const Obj& value) {
             *Get(name) = value;

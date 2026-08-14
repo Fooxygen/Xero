@@ -51,6 +51,10 @@ int main(int argc, char* argv[]) {
     std::cerr << BuildInfo::Print() << std::endl;
 
     try {
+        if (argc < 2) {
+            throw LogErr(LogModule::File, "usage: xero.exe <file.xe> [--ast] [--tok]");
+        }
+
         // Begin
         BeginInfo begininfo;
         for (int i = 1; i < argc; i++) {
