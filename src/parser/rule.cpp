@@ -205,7 +205,7 @@ namespace parser {
                     auto decl = Rule::Move<DeclExpr>(symbols, 1);
                     return std::make_unique<DeclExpr>(
                         decl->id_,
-                        decl->bindtype_,
+                        decl->bind_type_,
                         Rule::Move<Expr>(symbols, 3)
                     );
                 },

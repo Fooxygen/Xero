@@ -14,6 +14,10 @@
 #include "opertype.hpp"
 #include "signal.hpp"
 
+namespace sema {
+    class Type;
+}
+
 // Type of Abstract Syntax Tree's Node
 enum class AstType {
     Undefined,
@@ -100,8 +104,9 @@ static bool isAstTypeCompatible(AstType expected, AstType actual) {
 // Node of Abstract Syntax Tree
 class AstNode {
 public:
-    AstType type_ = AstType::Undefined;
-    Loc     loc_;
+    AstType           type_          = AstType::Undefined;
+    Loc               loc_;
+    const sema::Type* resolved_type_ = nullptr;
 
     virtual const std::string TypeName() const {
         return "Undefined";
@@ -227,17 +232,17 @@ public:
 };
 class DeclExpr          : public Expr {
 public:
-    std::string id_      = "";
-    std::string bindtype_ = "";
+    std::string id_        = "";
+    std::string bind_type_ = "";
     std::unique_ptr<Expr> value_ = nullptr;
 
     DeclExpr(
         const std::string&    id,
-        const std::string&    bindtype,
+        const std::string&    bind_type,
         std::unique_ptr<Expr> value
     )
     :   id_(id),
-        bindtype_(bindtype),
+        bind_type_(bind_type),
         value_(std::move(value))
     {
         type_ = AstType::DeclExpr;
@@ -250,15 +255,15 @@ public:
     void PrintImpl(std::string prefix) override {
         PrintLabel("id", prefix);
         std::cerr << COLOR_BLUE << id_ << COLOR_DEFAULT << std::endl;
-        PrintLabel("bindtype", prefix);
-        std::cerr << COLOR_MAGENTA << bindtype_ << COLOR_DEFAULT << std::endl;
+        PrintLabel("bind_type", prefix);
+        std::cerr << COLOR_MAGENTA << bind_type_ << COLOR_DEFAULT << std::endl;
         if (value_) value_->Print(prefix, "value");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<DeclExpr>(
             id_,
-            bindtype_,
+            bind_type_,
             value_ ? std::unique_ptr<Expr>((Expr*)(value_->Clone().release())) : nullptr
         );
         node->loc_ = loc_;
@@ -267,16 +272,16 @@ public:
 };
 class OperExpr          : public Expr {
 public:
-    OperType opertype_ = OperType::Undefined;
+    OperType oper_type_ = OperType::Undefined;
     std::unique_ptr<Expr> lexpr_ = nullptr;
     std::unique_ptr<Expr> rexpr_ = nullptr;
 
     OperExpr(
-        OperType opertype,
+        OperType oper_type,
         std::unique_ptr<Expr> lexpr,
         std::unique_ptr<Expr> rexpr
     )
-    :   opertype_(opertype),
+    :   oper_type_(oper_type),
         lexpr_(std::move(lexpr)),  
         rexpr_(std::move(rexpr))
     {
@@ -290,7 +295,7 @@ public:
     void PrintImpl(std::string prefix) override {
         PrintLabel("type", prefix);
         std::cerr << COLOR_MAGENTA;
-        std::cerr << OperTypeName(opertype_);
+        std::cerr << OperTypeName(oper_type_);
         std::cerr << COLOR_DEFAULT << std::endl;
         lexpr_->Print(prefix, "lexpr");
         if (rexpr_) rexpr_->Print(prefix, "rexpr");
@@ -298,7 +303,7 @@ public:
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node =  std::make_unique<OperExpr>(
-            opertype_,
+            oper_type_,
             std::unique_ptr<Expr>((Expr*)(lexpr_->Clone().release())),
             rexpr_ ? std::unique_ptr<Expr>((Expr*)(rexpr_->Clone().release())) : nullptr
         );

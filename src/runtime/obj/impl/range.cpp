@@ -16,15 +16,15 @@ namespace rt {
         r_ = nullptr;
         s_ = nullptr;
         isClosed_ = false;
-        itertype_ = nullptr;
+        iter_type_ = nullptr;
     }
 
-    Range::Range(const Obj& l, const Obj& r, const Obj& s, bool isClosed, const sema::Type* itertype) {
+    Range::Range(const Obj& l, const Obj& r, const Obj& s, bool isClosed, const sema::Type* iter_type) {
         l_ = new Obj(l);
         r_ = new Obj(r);
         s_ = new Obj(s);
-        isClosed_ = isClosed;
-        itertype_ = itertype;
+        isClosed_  = isClosed;
+        iter_type_ = iter_type;
     }
 
     Range::Range(const Range& other) {
@@ -32,22 +32,22 @@ namespace rt {
         r_ = new Obj(*other.r_);
         s_ = new Obj(*other.s_);
         isClosed_ = other.isClosed_;
-        itertype_ = other.itertype_;
+        iter_type_ = other.iter_type_;
     }
 
     bool Range::isSingle() const {
-        Obj next = itertype_->impl_->plus_(*l_, *s_);
+        Obj next = iter_type_->impl_->plus_(*l_, *s_);
 
-        if (isClosed_)  return itertype_->impl_->gt_(next, *r_).Get_bool();
-        else            return itertype_->impl_->ge_(next, *r_).Get_bool();
+        if (isClosed_)  return iter_type_->impl_->gt_(next, *r_).Get_bool();
+        else            return iter_type_->impl_->ge_(next, *r_).Get_bool();
     }
 
     Range Range::ToClosed() {
         if (isClosed_) return *this;
 
-        auto r = itertype_->impl_->minus_(*r_, Obj::Make_i32(1));
+        auto r = iter_type_->impl_->minus_(*r_, Obj::Make_i32(1));
         return Range(
-            *l_, r, *s_, true, itertype_
+            *l_, r, *s_, true, iter_type_
         );
     }
 
@@ -59,7 +59,7 @@ namespace rt {
         r_ = new Obj(*other.r_);
         s_ = new Obj(*other.s_);
         isClosed_ = other.isClosed_;
-        itertype_ = other.itertype_;
+        iter_type_ = other.iter_type_;
 
         return *this;
     }

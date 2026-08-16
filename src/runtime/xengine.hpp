@@ -17,47 +17,7 @@ namespace rt {
     private:
         Env env_;
 
-    public:
-        Xengine() {
-            FnRegister();
-            MethodRegister();
-        }
-        
-        void FnRegister();
-        void MethodRegister();
-
         // Exec
-        // Calculate the final obj
-        Obj Exec(AstNode& node) {
-            switch (node.type_) {
-                case AstType::BlockExpr:        return Exec((BlockExpr&)node);
-                case AstType::IdExpr:           return Exec((IdExpr&)node);
-                case AstType::DeclExpr:         return Exec((DeclExpr&)node);
-                case AstType::OperExpr:         return Exec((OperExpr&)node);
-                case AstType::RangeExpr:        return Exec((RangeExpr&)node);
-                case AstType::ArrayExpr:        return Exec((ArrayExpr&)node);
-                case AstType::FnCallExpr:       return Exec((FnCallExpr&)node);
-                case AstType::MethodCallExpr:   return Exec((MethodCallExpr&)node);
-                case AstType::FnExpr:           return Exec((FnExpr&)node);
-
-                case AstType::NumConst:         return Exec((NumConst&)node);
-                case AstType::BoolConst:        return Exec((BoolConst&)node);
-                case AstType::CharConst:        return Exec((CharConst&)node);
-                case AstType::StringConst:      return Exec((StringConst&)node);
-
-                case AstType::ExprStmt:         return Exec((ExprStmt&)node);
-                case AstType::AssignStmt:       return Exec((AssignStmt&)node);
-                case AstType::CondStmt:         return Exec((CondStmt&)node);
-                case AstType::LoopSignalStmt:   return Exec((LoopSignalStmt&)node);
-                case AstType::ReturnSignalStmt: return Exec((ReturnSignalStmt&)node);
-                case AstType::ForStmt:          return Exec((ForStmt&)node);
-                case AstType::WhileStmt:        return Exec((WhileStmt&)node);
-
-                case AstType::Program:          return Exec((Program&)node);
-
-                default: return Obj();
-            }
-        }
 
         Obj Exec(BlockExpr& node, std::function<void()> OnScopeReady = nullptr);
         Obj Exec(IdExpr& node);
@@ -98,6 +58,48 @@ namespace rt {
         static decltype(auto) CallTry(Call call, Args&&... args) {
             if (!call) return Obj();
             return call(std::forward<Args>(args)...);
+        }
+    
+    public:
+        Xengine() {
+            FnRegister();
+            MethodRegister();
+        }
+        
+        void FnRegister();
+        void MethodRegister();
+
+        // Exec
+        // Calculate the final obj
+        Obj Exec(AstNode& node) {
+            switch (node.type_) {
+                case AstType::BlockExpr:        return Exec((BlockExpr&)node);
+                case AstType::IdExpr:           return Exec((IdExpr&)node);
+                case AstType::DeclExpr:         return Exec((DeclExpr&)node);
+                case AstType::OperExpr:         return Exec((OperExpr&)node);
+                case AstType::RangeExpr:        return Exec((RangeExpr&)node);
+                case AstType::ArrayExpr:        return Exec((ArrayExpr&)node);
+                case AstType::FnCallExpr:       return Exec((FnCallExpr&)node);
+                case AstType::MethodCallExpr:   return Exec((MethodCallExpr&)node);
+                case AstType::FnExpr:           return Exec((FnExpr&)node);
+
+                case AstType::NumConst:         return Exec((NumConst&)node);
+                case AstType::BoolConst:        return Exec((BoolConst&)node);
+                case AstType::CharConst:        return Exec((CharConst&)node);
+                case AstType::StringConst:      return Exec((StringConst&)node);
+
+                case AstType::ExprStmt:         return Exec((ExprStmt&)node);
+                case AstType::AssignStmt:       return Exec((AssignStmt&)node);
+                case AstType::CondStmt:         return Exec((CondStmt&)node);
+                case AstType::LoopSignalStmt:   return Exec((LoopSignalStmt&)node);
+                case AstType::ReturnSignalStmt: return Exec((ReturnSignalStmt&)node);
+                case AstType::ForStmt:          return Exec((ForStmt&)node);
+                case AstType::WhileStmt:        return Exec((WhileStmt&)node);
+
+                case AstType::Program:          return Exec((Program&)node);
+
+                default: return Obj();
+            }
         }
     };
 }

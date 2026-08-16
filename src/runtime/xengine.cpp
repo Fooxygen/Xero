@@ -37,37 +37,37 @@ namespace rt {
     }
 
     Obj Xengine::Exec(DeclExpr& node) {
-        auto type = sema::TypeTable::Get(node.bindtype_);
+        auto bind_type = sema::TypeTable::Get(node.bind_type_);
 
         // obj: type = value;
         if (node.value_) {
             auto value = Exec(*node.value_);
 
             // Replace
-            if (value.type() == type) {
+            if (value.type() == bind_type) {
                 env_.Declare(node.id_, value);
                 return Obj();
             }
             
             // Try Convert Type
-            auto value_convert = TypeImplTable::Convert(value, type);
+            auto value_convert = TypeImplTable::Convert(value, bind_type);
             if (value_convert.isNone()) {
                 throw LogErr(LogModule::Runtime, std::format(
                     "cannot make type '{}' compatible with '{}'",
-                    value.type()->name, type->name
+                    value.type()->name, bind_type->name
                 ), node.loc_);
             }
 
             // Assign Obj Clone
-            auto empty = Obj::MakeEmpty(type);
-            type->impl_->assign_(empty.Origin(), value_convert.Clone());
+            auto empty = Obj::MakeEmpty(bind_type);
+            bind_type->impl_->assign_(empty.Origin(), value_convert.Clone());
             env_.Declare(node.id_, empty);
             return Obj();
         }
 
         // obj: type;
         else {
-            auto empty = Obj::MakeEmpty(type);
+            auto empty = Obj::MakeEmpty(bind_type);
             env_.Declare(node.id_, empty);
             return Obj();
         }
@@ -78,11 +78,11 @@ namespace rt {
         // Unary
         auto lobj = Exec(*node.lexpr_);
         {
-            if (node.opertype_ == OperType::Neg) {
+            if (node.oper_type_ == OperType::Neg) {
                 auto obj = CallTry(lobj.type()->impl_->neg_, lobj);
                 if (!obj.isNone()) return obj;
             }
-            if (node.opertype_ == OperType::Not) {
+            if (node.oper_type_ == OperType::Not) {
                 auto obj = CallTry(lobj.type()->impl_->not_, lobj);
                 if (!obj.isNone()) return obj;
             }
@@ -91,16 +91,16 @@ namespace rt {
         // Binary
 
         // Short Circuit Boolean Evaluation
-        if (node.opertype_ == OperType::And && lobj.is("bool") && !lobj.Get_bool())
+        if (node.oper_type_ == OperType::And && lobj.is("bool") && !lobj.Get_bool())
             return Obj::Make_bool(false);
-        if (node.opertype_ == OperType::Or  && lobj.is("bool") &&  lobj.Get_bool())
+        if (node.oper_type_ == OperType::Or  && lobj.is("bool") &&  lobj.Get_bool())
             return Obj::Make_bool(true);
 
         auto robj = Exec(*node.rexpr_);
         {
             // Unnecessary Type Conversation
             {
-                if (node.opertype_ == OperType::Pick && lobj.type()->impl_->pick_) {
+                if (node.oper_type_ == OperType::Pick && lobj.type()->impl_->pick_) {
 
                     // Range
                     if (node.rexpr_->type_ != AstType::RangeExpr) {
@@ -126,59 +126,59 @@ namespace rt {
                 lobj = TypeImplTable::Convert(lobj, type);
                 robj = TypeImplTable::Convert(robj, type);
 
-                if (node.opertype_ == OperType::Plus) {
+                if (node.oper_type_ == OperType::Plus) {
                     auto obj = CallTry(type->impl_->plus_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
-                if (node.opertype_ == OperType::Minus) {
+                if (node.oper_type_ == OperType::Minus) {
                     auto obj = CallTry(type->impl_->minus_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
-                if (node.opertype_ == OperType::Star) {
+                if (node.oper_type_ == OperType::Star) {
                     auto obj = CallTry(type->impl_->star_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
-                if (node.opertype_ == OperType::Slash) {
+                if (node.oper_type_ == OperType::Slash) {
                     auto obj = CallTry(type->impl_->slash_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
-                if (node.opertype_ == OperType::ModT) {
+                if (node.oper_type_ == OperType::ModT) {
                     auto obj = CallTry(type->impl_->modt_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
-                if (node.opertype_ == OperType::ModF) {
+                if (node.oper_type_ == OperType::ModF) {
                     auto obj = CallTry(type->impl_->modf_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
-                if (node.opertype_ == OperType::Gt) {
+                if (node.oper_type_ == OperType::Gt) {
                     auto obj = CallTry(type->impl_->gt_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
-                if (node.opertype_ == OperType::Lt) {
+                if (node.oper_type_ == OperType::Lt) {
                     auto obj = CallTry(type->impl_->lt_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
-                if (node.opertype_ == OperType::Ge) {
+                if (node.oper_type_ == OperType::Ge) {
                     auto obj = CallTry(type->impl_->ge_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
-                if (node.opertype_ == OperType::Le) {
+                if (node.oper_type_ == OperType::Le) {
                     auto obj = CallTry(type->impl_->le_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
-                if (node.opertype_ == OperType::Eq) {
+                if (node.oper_type_ == OperType::Eq) {
                     auto obj = CallTry(type->impl_->eq_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
-                if (node.opertype_ == OperType::Neq) {
+                if (node.oper_type_ == OperType::Neq) {
                     auto obj = CallTry(type->impl_->neq_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
-                if (node.opertype_ == OperType::And) {
+                if (node.oper_type_ == OperType::And) {
                     auto obj = CallTry(type->impl_->and_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
-                if (node.opertype_ == OperType::Or) {
+                if (node.oper_type_ == OperType::Or) {
                     auto obj = CallTry(type->impl_->or_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
@@ -188,7 +188,7 @@ namespace rt {
         // Failure
         throw LogErr(LogModule::Runtime, std::format(
             "unsupported operator '{}' between '{}' and '{}'",
-            OperTypeName(node.opertype_),
+            OperTypeName(node.oper_type_),
             lobj.type()->name,
             robj.type()->name
         ), node.loc_);
@@ -213,15 +213,15 @@ namespace rt {
         }
 
         // Iterator
-        const sema::Type* itertype = nullptr;
+        const sema::Type* iter_type = nullptr;
         if (hasStep) {
-            itertype = sema::TypeTable::Common({ ltype, rtype, stype });
+            iter_type = sema::TypeTable::Common({ ltype, rtype, stype });
         }
         else {
-            itertype = sema::TypeTable::Common({ ltype, rtype });
+            iter_type = sema::TypeTable::Common({ ltype, rtype });
         }
 
-        if (!itertype) {
+        if (!iter_type) {
             if (hasStep) {
                 throw LogErr(LogModule::Runtime, std::format(
                     "failed to generate valid range iterator with '{}', '{}' and '{}'",
@@ -237,11 +237,11 @@ namespace rt {
         }
 
         return Obj::Make_range(new Range(
-            TypeImplTable::Convert(lobj, itertype),
-            TypeImplTable::Convert(robj, itertype),
+            TypeImplTable::Convert(lobj, iter_type),
+            TypeImplTable::Convert(robj, iter_type),
             hasStep ? sobj : Obj::Make_i32(1),
             node.isClosed_,
-            itertype
+            iter_type
         ));
     }
 
@@ -294,7 +294,7 @@ namespace rt {
                     ret = Exec(*fnexpr->block_, [&]() {
                         for (size_t i = 0; i < params.size(); i++) {
                             auto param = (DeclExpr*)params[i].get();
-                            auto param_type = sema::TypeTable::Get(param->bindtype_);
+                            auto param_type = sema::TypeTable::Get(param->bind_type_);
                             env_.Declare(param->id_, TypeImplTable::Convert(args[i], param_type));
                         }
                     });
@@ -465,11 +465,11 @@ namespace rt {
 
         if (data.is("range")) {
             auto& range = data.Get_range_ref();
-            for (Obj o = *range.left(); ; o = range.itertype()->impl_->plus_(o, *range.step())) {
+            for (Obj o = *range.left(); ; o = range.iter_type()->impl_->plus_(o, *range.step())) {
                 if (!range.isClosed() &&
-                     range.itertype()->impl_->ge_(o, *range.right()).Get_bool()) break;
+                     range.iter_type()->impl_->ge_(o, *range.right()).Get_bool()) break;
                 if ( range.isClosed() &&
-                     range.itertype()->impl_->gt_(o, *range.right()).Get_bool()) break;
+                     range.iter_type()->impl_->gt_(o, *range.right()).Get_bool()) break;
 
                 try {
                     Exec(*node.block_, [&]() {

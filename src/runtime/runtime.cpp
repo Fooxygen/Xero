@@ -330,12 +330,12 @@ namespace rt {
                     auto& src   = target.Get_string_ref();
                     auto& range = pick.Get_range_ref();
 
-                    if (!range.itertype()->is("i32") &&
-                        !range.itertype()->is("i64"))
+                    if (!range.iter_type()->is("i32") &&
+                        !range.iter_type()->is("i64"))
                     {
                         throw LogErr(LogModule::Runtime, std::format(
                             "iterator type of range must be i32 or i64, not {}",
-                            range.itertype()->name
+                            range.iter_type()->name
                         ));
                     }
 
@@ -469,12 +469,12 @@ namespace rt {
                     auto& src   = target.Get_stringview_ref();
                     auto& range = pick.Get_range_ref();
 
-                    if (!range.itertype()->is("i32") &&
-                        !range.itertype()->is("i64"))
+                    if (!range.iter_type()->is("i32") &&
+                        !range.iter_type()->is("i64"))
                     {
                         throw LogErr(LogModule::Runtime, std::format(
                             "iterator type of range must be i32 or i64, not {}",
-                            range.itertype()->name
+                            range.iter_type()->name
                         ));
                     }
 
@@ -552,12 +552,12 @@ namespace rt {
                     auto& src   = target.Get_array_ref();
                     auto& range = pick.Get_range_ref();
 
-                    if (!range.itertype()->is("i32") &&
-                        !range.itertype()->is("i64"))
+                    if (!range.iter_type()->is("i32") &&
+                        !range.iter_type()->is("i64"))
                     {
                         throw LogErr(LogModule::Runtime, std::format(
                             "iterator type of range must be i32 or i64, not {}",
-                            range.itertype()->name
+                            range.iter_type()->name
                         ));
                     }
 
@@ -656,12 +656,12 @@ namespace rt {
                     auto& src   = target.Get_arrayview_ref();
                     auto& range = pick.Get_range_ref();
 
-                    if (!range.itertype()->is("i32") &&
-                        !range.itertype()->is("i64"))
+                    if (!range.iter_type()->is("i32") &&
+                        !range.iter_type()->is("i64"))
                     {
                         throw LogErr(LogModule::Runtime, std::format(
                             "iterator type of range must be i32 or i64, not {}",
-                            range.itertype()->name
+                            range.iter_type()->name
                         ));
                     }
 
@@ -734,7 +734,7 @@ namespace rt {
                         for (size_t i = 0; i < fnexpr->params_->exprs_.size(); i++) {
                             auto param = (DeclExpr*)fnexpr->params_->exprs_[i].get();
                             if (i != 0) res += ", ";
-                            res += param->bindtype_;
+                            res += param->bind_type_;
                         }
                         res += ')';
 

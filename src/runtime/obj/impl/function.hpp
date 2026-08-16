@@ -46,7 +46,7 @@ namespace rt {
                 }
 
                 auto  param = (DeclExpr*)params[i].get();
-                auto  type_param = sema::TypeTable::Get(param->bindtype_);
+                auto  type_param = sema::TypeTable::Get(param->bind_type_);
                 auto& type_arg   = args_type[i];
                 if (!type_arg->converts.contains(type_param)) {
                     throw LogErr(LogModule::Runtime, std::format(
