@@ -1,3 +1,16 @@
 
-c1: char = '\n';
-c1: char = '\t';
+r: i32 = 3;
+
+for (x in -r..=r) {
+    s: i32 = r - abs(x);
+    
+    for (y in 0..s) print(' ');
+    print('O');
+
+    if (x != 0) {
+        for (y in 0..(2 * r + 1 - 2 * s - 2)) print(' ');
+        print('O');
+    }
+
+    print('\n');
+}
