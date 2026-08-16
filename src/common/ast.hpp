@@ -507,6 +507,10 @@ public:
 class NumConst          : public Const {
 public:
     std::string value_ = "";
+    union {
+        int64_t integer;
+        double  floating;
+    } resolved_value_;
 
     NumConst(const std::string& value)
     :   value_(value)

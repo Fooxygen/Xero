@@ -13,6 +13,7 @@ add_executable(xero
     parser/parser.cpp
     parser/rule.cpp
     sema/semantics.cpp
+    sema/sema.cpp
     runtime/runtime.cpp
     runtime/xengine.cpp
     runtime/register.cpp

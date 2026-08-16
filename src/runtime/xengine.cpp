@@ -352,52 +352,25 @@ namespace rt {
     // Const
 
     Obj Xengine::Exec(NumConst& node) {
-        const auto& numstr = node.value_;
-
-        // integer
-        if (!numstr.contains(".")) {
-            
-            // i32
-            {
-                int32_t x = 0;
-                auto [ptr, ec] = std::from_chars(numstr.data(), numstr.data() + numstr.size(), x);
-                if (ec == std::errc{}) return Obj::Make_i32(x);
-            }
-
-            // i64
-            {
-                int64_t x = 0;
-                auto [ptr, ec] = std::from_chars(numstr.data(), numstr.data() + numstr.size(), x);
-                if (ec == std::errc{}) return Obj::Make_i64(x);
-            }
+        if (node.resolved_type_ == sema::TypeTable::Get("i32")){
+            return Obj::Make_i32((int32_t)node.resolved_value_.integer);
+        }
+        if (node.resolved_type_ == sema::TypeTable::Get("i64")){
+            return Obj::Make_i64((int64_t)node.resolved_value_.integer);
+        }
+        if (node.resolved_type_ == sema::TypeTable::Get("f32")){
+            return Obj::Make_f32((float)node.resolved_value_.floating);
+        }
+        if (node.resolved_type_ == sema::TypeTable::Get("f64")){
+            return Obj::Make_f64((double)node.resolved_value_.floating);
         }
 
-        // float
-        else {
-            // error: 3.14.15
-            if (numstr.substr(numstr.find(".") + 1).contains(".")) {
-                throw LogErr(LogModule::Runtime, std::format(
-                    "invalid float format '{}'", numstr
-                ), node.loc_);
-            }
-
-            // f32
-            {
-                float x = 0.0f;
-                auto [ptr, ec] = std::from_chars(numstr.data(), numstr.data() + numstr.size(), x);
-                if (ec == std::errc{}) return Obj::Make_f32(x);
-            }
-
-            // f64
-            {
-                double x = 0.0;
-                auto [ptr, ec] = std::from_chars(numstr.data(), numstr.data() + numstr.size(), x);
-                if (ec == std::errc{}) return Obj::Make_f64(x);
-            }
+        if (!node.resolved_type_) {
+            throw LogErr(LogModule::Runtime, "number literal not resolved", node.loc_);
         }
-
         throw LogErr(LogModule::Runtime, std::format(
-            "numeric overflow '{}'", numstr
+            "number literal must be i32, i64, f32 or f64, not {}",
+            node.resolved_type_->name
         ), node.loc_);
     }
 

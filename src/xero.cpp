@@ -13,6 +13,7 @@
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
 #include "sema/semantics.hpp"
+#include "sema/sema.hpp"
 #include "runtime/runtime.hpp"
 #include "runtime/xengine.hpp"
 
@@ -81,8 +82,11 @@ int main(int argc, char* argv[]) {
             LogFinish(LogModule::Parser, "output ast").Print();
         }
 
-        // Semantics
+        // Sema
         sema::TypeTable::Init();
+
+        sema::Sema sema;
+        sema.Exec(*parser.root());
 
         // Runtime
         rt::TypeImplTable::Init();
