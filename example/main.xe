@@ -1,16 +1,4 @@
 
-r: i32 = 3;
-
-for (x in -r..=r) {
-    s: i32 = r - abs(x);
-    
-    for (y in 0..s) print(' ');
-    print('O');
-
-    if (x != 0) {
-        for (y in 0..(2 * r + 1 - 2 * s - 2)) print(' ');
-        print('O');
-    }
-
-    print('\n');
-}
+x: i32 = 3;
+y: f64 = 3.14159265358979323846264338327950288;
+z: char = 'A';

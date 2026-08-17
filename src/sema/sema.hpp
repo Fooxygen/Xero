@@ -5,15 +5,21 @@
 
 #pragma once
 
+#include <functional>
+
 #include "common/ast.hpp"
+#include "symbol.hpp"
 
 namespace sema {
 
     class Sema {
     private:
 
+        SymbolTable symbol_table_;
+
         // Exec
-        void Exec(BlockExpr& node);
+        void Exec(BlockExpr& node, std::function<void()> OnScopeReady = nullptr);
+        void Exec(IdExpr& node);
         void Exec(DeclExpr& node);
         void Exec(OperExpr& node);
         void Exec(RangeExpr& node);
@@ -23,6 +29,9 @@ namespace sema {
         void Exec(FnExpr& node);
 
         void Exec(NumConst& node);
+        void Exec(BoolConst& node);
+        void Exec(CharConst& node);
+        void Exec(StringConst& node);
 
         void Exec(ExprStmt& node);
         void Exec(AssignStmt& node);
@@ -39,6 +48,7 @@ namespace sema {
         void Exec(AstNode& node) {
             switch (node.type_) {
                 case AstType::BlockExpr:        Exec((BlockExpr&)node);         return;
+                case AstType::IdExpr:           Exec((IdExpr&)node);            return;
                 case AstType::DeclExpr:         Exec((DeclExpr&)node);          return;
                 case AstType::OperExpr:         Exec((OperExpr&)node);          return;
                 case AstType::RangeExpr:        Exec((RangeExpr&)node);         return;
@@ -48,6 +58,9 @@ namespace sema {
                 case AstType::FnExpr:           Exec((FnExpr&)node);            return;
 
                 case AstType::NumConst:         Exec((NumConst&)node);          return;
+                case AstType::BoolConst:        Exec((BoolConst&)node);         return;
+                case AstType::CharConst:        Exec((CharConst&)node);         return;
+                case AstType::StringConst:      Exec((StringConst&)node);       return;
 
                 case AstType::ExprStmt:         Exec((ExprStmt&)node);          return;
                 case AstType::AssignStmt:       Exec((AssignStmt&)node);        return;

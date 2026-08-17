@@ -10,45 +10,151 @@ namespace sema {
 
     // Expr
 
-    void Sema::Exec(BlockExpr& node) {
-        for (auto& child : node.children_) Exec(*child);
+    void Sema::Exec(BlockExpr& node, std::function<void()> OnScopeReady) {
+        node.resolved_type_ = TypeTable::Get("none");
+
+        symbol_table_.ScopePush();
+        if (OnScopeReady) OnScopeReady();
+
+        try {
+            for (auto& child : node.children_) Exec(*child);
+        }
+        catch (...) {
+            symbol_table_.ScopePop();
+            throw;
+        }
+        
+        symbol_table_.ScopePop();
+    }
+
+    void Sema::Exec(IdExpr& node) {
+
+        // Resolved Type
+        auto sym = symbol_table_.Lookup(node.value_, node.loc_);
+        if (sym->type_ == SymbolType::Var) {
+            node.resolved_type_ = ((VarSymbol*)sym)->var_type_;
+            return;
+        }
+
+        throw LogErr(LogModule::Sema, std::format(
+            "'{}' is not a variable", sym->name_
+        ), node.loc_);
     }
 
     void Sema::Exec(DeclExpr& node) {
+        node.resolved_type_ = sema::TypeTable::Get(node.bind_type_);
+
+        symbol_table_.Declare(std::make_unique<VarSymbol>(
+            node.id_, node.loc_, node.resolved_type_
+        ));
         if (node.value_) Exec(*node.value_);
     }
 
     void Sema::Exec(OperExpr& node) {
+
+        // Unary
         Exec(*node.lexpr_);
-        if (node.rexpr_) Exec(*node.rexpr_);
+        {
+            if (node.oper_type_ == OperType::Neg) {
+                node.resolved_type_ = node.lexpr_->resolved_type_;
+                return;
+            }
+            if (node.oper_type_ == OperType::Not) {
+                node.resolved_type_ = TypeTable::Get("bool");
+                return;
+            }
+        }
+
+        // Binary
+        Exec(*node.rexpr_);
+        {
+            
+            if (node.oper_type_ == OperType::Pick) {
+                return;
+            }
+
+            // Boolean
+            // TODO: Consider overloading–boolean constraint conflict
+            switch (node.oper_type_) {
+                case OperType::Gt:
+                case OperType::Lt:
+                case OperType::Ge:
+                case OperType::Le:
+                case OperType::Eq:
+                case OperType::Neq:
+                case OperType::And:
+                case OperType::Or:
+                    node.resolved_type_ = TypeTable::Get("bool");
+                    return;
+
+                default: break;
+            }
+
+            // Arith
+            node.resolved_type_ = sema::TypeTable::Common({
+                node.lexpr_->resolved_type_,
+                node.rexpr_->resolved_type_
+            });
+            if (!node.resolved_type_) {
+                throw LogErr(LogModule::Sema, std::format(
+                    "cannot match type '{}' to type '{}'",
+                    node.lexpr_->resolved_type_->name,
+                    node.rexpr_->resolved_type_->name
+                ), node.loc_);
+            }
+
+            return;
+        }
     }
 
     void Sema::Exec(RangeExpr& node) {
+        node.resolved_type_ = TypeTable::Get("range");
+
         Exec(*node.lexpr_);
         Exec(*node.rexpr_);
         if (node.step_) Exec(*node.step_);
     }
 
     void Sema::Exec(ArrayExpr& node) {
+        node.resolved_type_ = TypeTable::Get("array");
+
         for (auto& e : node.elements_->exprs_) Exec(*e);
     }
 
     void Sema::Exec(FnCallExpr& node) {
-        Exec(*node.callee_);
-        for (auto& e : node.args_->exprs_) Exec(*e);
+        node.resolved_type_ = nullptr;
     }
 
     void Sema::Exec(MethodCallExpr& node) {
-        Exec(*node.target_);
-        Exec(*node.callee_);
-        for (auto& e : node.args_->exprs_) Exec(*e);
+        node.resolved_type_ = nullptr;
     }
 
     void Sema::Exec(FnExpr& node) {
-        if (node.params_) {
-            for (auto& p : node.params_->exprs_) Exec(*p);
+        node.resolved_type_ = TypeTable::Get("function");
+
+        auto& params_expr = node.params_->exprs_;
+        std::vector<const Type*> params_type;
+        for (auto& e : params_expr) {
+            auto expr = (DeclExpr*)e.get();
+            params_type.emplace_back(TypeTable::Get(expr->bind_type_));
         }
-        if (node.block_)  Exec(*node.block_);
+
+        if (!node.name_.empty()) {
+            symbol_table_.Declare(std::make_unique<FnSymbol>(
+                node.name_, node.loc_,
+                TypeTable::Get(node.ret_type_), params_type
+            ));
+        }
+        if (node.block_) {
+            Exec(*node.block_, [&]() {
+                for (size_t i = 0; i < params_expr.size(); i++) {
+                    auto expr = (DeclExpr*)(params_expr[i].get());
+                    symbol_table_.Declare(std::make_unique<VarSymbol>(
+                        expr->id_, expr->loc_, params_type[i])
+                    );
+                }
+            });
+        }
     }
 
     // Const
@@ -56,7 +162,9 @@ namespace sema {
     void Sema::Exec(NumConst& node) {
         const auto& numstr = node.value_;
 
-        // integer
+        // Resolved Type and Value
+
+        // Integer
         if (!numstr.contains(".")) {
             
             // i32
@@ -82,7 +190,7 @@ namespace sema {
             }
         }
 
-        // floating
+        // Floating
         else {
             // error: 3.14.15
             if (numstr.substr(numstr.find(".") + 1).contains(".")) {
@@ -119,34 +227,55 @@ namespace sema {
         ), node.loc_);
     }
 
+    void Sema::Exec(BoolConst& node) {
+        node.resolved_type_ = TypeTable::Get("bool");
+    }
+
+    void Sema::Exec(CharConst& node) {
+        node.resolved_type_ = TypeTable::Get("char");
+    }
+
+    void Sema::Exec(StringConst& node) {
+        node.resolved_type_ = TypeTable::Get("string");
+    }
+
     // Stmt
 
     void Sema::Exec(ExprStmt& node) {
+        node.resolved_type_ = TypeTable::Get("none");
+
         Exec(*node.expr_);
     }
 
     void Sema::Exec(AssignStmt& node) {
+        node.resolved_type_ = TypeTable::Get("none");
+
         Exec(*node.target_);
         Exec(*node.value_);
     }
 
     void Sema::Exec(CondStmt& node) {
+        node.resolved_type_ = TypeTable::Get("none");
+
         if (node.cond_)  Exec(*node.cond_);
         Exec(*node.block_);
         if (node.sub_)   Exec(*node.sub_);
     }
 
     void Sema::Exec(ReturnSignalStmt& node) {
+        node.resolved_type_ = TypeTable::Get("none");
+
         if (node.value_) Exec(*node.value_);
     }
 
     void Sema::Exec(ForStmt& node) {
-        Exec(*node.iter_);
-        Exec(*node.data_);
-        Exec(*node.block_);
+        node.resolved_type_ = TypeTable::Get("none");
+        return;
     }
 
     void Sema::Exec(WhileStmt& node) {
+        node.resolved_type_ = TypeTable::Get("none");
+
         Exec(*node.cond_);
         Exec(*node.block_);
     }
@@ -154,6 +283,8 @@ namespace sema {
     // Common
 
     void Sema::Exec(Program& node) {
+        node.resolved_type_ = TypeTable::Get("none");
+
         Exec((BlockExpr&)node);
     }
 }

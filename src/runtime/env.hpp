@@ -23,6 +23,9 @@ namespace rt {
         std::unordered_map<std::string, Obj>& ScopeGet() { return scopes_.back(); }
 
         void Declare(const std::string& name, const Obj& value) {
+            if (name.empty()) {
+                throw LogErr(LogModule::Runtime, "empty declared name");
+            }
             auto& scope = ScopeGet();
             if (!scope.contains(name)) scope[name] = value;
             else {
@@ -33,9 +36,9 @@ namespace rt {
             }
         }
         void Assign(const std::string& name, const Obj& value) {
-            *Get(name) = value;
+            *Lookup(name) = value;
         }
-        Obj* Get(const std::string& name, std::optional<Loc> loc = std::nullopt) {
+        Obj* Lookup(const std::string& name, std::optional<Loc> loc = std::nullopt) {
             for (auto sit = scopes_.rbegin(); sit != scopes_.rend(); sit++) {
                 auto oit = sit->find(name);
                 if (oit != sit->end()) return &oit->second;
