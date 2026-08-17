@@ -257,9 +257,18 @@ namespace sema {
     void Sema::Exec(CondStmt& node) {
         node.resolved_type_ = TypeTable::Get("none");
 
-        if (node.cond_)  Exec(*node.cond_);
+        if (node.cond_) {
+            Exec(*node.cond_);
+            if (node.cond_->resolved_type_ && !node.cond_->resolved_type_->is("bool")) {
+                throw LogErr(LogModule::Sema, std::format(
+                    "condition must be bool, not {}",
+                    node.cond_->resolved_type_->name
+                ), node.loc_);
+            }
+        }
+
         Exec(*node.block_);
-        if (node.sub_)   Exec(*node.sub_);
+        if (node.sub_) Exec(*node.sub_);
     }
 
     void Sema::Exec(ReturnSignalStmt& node) {
@@ -276,7 +285,16 @@ namespace sema {
     void Sema::Exec(WhileStmt& node) {
         node.resolved_type_ = TypeTable::Get("none");
 
-        Exec(*node.cond_);
+        if (node.cond_) {
+            Exec(*node.cond_);
+            if (node.cond_->resolved_type_ && !node.cond_->resolved_type_->is("bool")) {
+                throw LogErr(LogModule::Sema, std::format(
+                    "condition must be bool, not {}",
+                    node.cond_->resolved_type_->name
+                ), node.loc_);
+            }
+        }
+
         Exec(*node.block_);
     }
 

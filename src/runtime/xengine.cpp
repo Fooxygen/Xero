@@ -357,16 +357,16 @@ namespace rt {
     // Const
 
     Obj Xengine::Exec(NumConst& node) {
-        if (node.resolved_type_ == sema::TypeTable::Get("i32")){
+        if (node.resolved_type_->is("i32")){
             return Obj::Make_i32((int32_t)node.resolved_value_.integer);
         }
-        if (node.resolved_type_ == sema::TypeTable::Get("i64")){
+        if (node.resolved_type_->is("i64")){
             return Obj::Make_i64((int64_t)node.resolved_value_.integer);
         }
-        if (node.resolved_type_ == sema::TypeTable::Get("f32")){
+        if (node.resolved_type_->is("f32")){
             return Obj::Make_f32((float)node.resolved_value_.floating);
         }
-        if (node.resolved_type_ == sema::TypeTable::Get("f64")){
+        if (node.resolved_type_->is("f64")){
             return Obj::Make_f64((double)node.resolved_value_.floating);
         }
 
@@ -405,23 +405,17 @@ namespace rt {
     }
 
     Obj Xengine::Exec(CondStmt& node) {
-        bool isPass = false;
-        if (!node.cond_) isPass = true;
-        else {
-            auto cond = Exec(*node.cond_);
-            if (cond.is("bool")) {
-                isPass = cond.Get_bool();
-            }
-            else {
-                throw LogErr(LogModule::Runtime, std::format(
-                    "condition must be bool, not {}",
-                    cond.type()->name
-                ), node.loc_);
-            }
+
+        // else
+        if (!node.cond_) {
+            Exec(*node.block_);
+            return Obj();
         }
 
-        if (isPass && node.block_) Exec(*node.block_);
-        else if (node.sub_)        Exec(*node.sub_);
+        // if OR elif
+        auto cond = Exec(*node.cond_);
+        if (cond.Get_bool())    Exec(*node.block_);
+        else if (node.sub_)     Exec(*node.sub_);
         
         return Obj();
     }
@@ -508,13 +502,6 @@ namespace rt {
     Obj Xengine::Exec(WhileStmt& node) {
         while (true) {
             auto cond = Exec(*node.cond_);
-            if (!cond.is("bool")) {
-                throw LogErr(LogModule::Runtime, std::format(
-                    "condition must be bool, not {}",
-                    cond.type()->name
-                ), node.loc_);
-            }
-
             if (!cond.Get_bool()) break;
 
             try {
