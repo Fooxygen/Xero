@@ -62,12 +62,11 @@ namespace rt {
     
     public:
         Xengine() {
-            FnRegister();
-            MethodRegister();
+            BuiltinMethodImplRegister();
         }
         
-        void FnRegister();
-        void MethodRegister();
+        void BuiltinFnImplRegister();         // stack-based
+        void BuiltinMethodImplRegister();     // table-based
 
         // Exec
         // Calculate the final obj

@@ -34,7 +34,7 @@ namespace rt {
         else if (type != element_type_) {
             throw LogErr(LogModule::Runtime, std::format(
                 "cannot match type '{}' to type '{}'",
-                type->name, element_type_->name
+                type->name_, element_type_->name_
             ));
         }
     }

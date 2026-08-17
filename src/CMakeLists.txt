@@ -14,9 +14,10 @@ add_executable(xero
     parser/rule.cpp
     sema/semantics.cpp
     sema/sema.cpp
+    sema/builtin_register.cpp
     runtime/runtime.cpp
     runtime/xengine.cpp
-    runtime/register.cpp
+    runtime/builtin_impl_register.cpp
     runtime/obj/impl/range.cpp
     runtime/obj/impl/array.cpp
     runtime/obj/impl/string.cpp

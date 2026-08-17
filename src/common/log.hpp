@@ -52,7 +52,7 @@ public:
     {}
 
     std::string ModulePrint() const {
-        using enum LogModule;\
+        using enum LogModule;
         switch (module_) {
             case File:      return "file";
             case Lexer:     return "lexer";

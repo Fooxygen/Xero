@@ -21,10 +21,10 @@ namespace sema {
 
     class Type {
     public:
-        std::string_view        name  = "";
-        size_t                  size  = 0;            // Byte width
-        bool                    isHeapStored = false; // Store Data in Heap
-        std::set<const Type*>   converts = {};        // List of convertible types
+        std::string_view        name_  = "";
+        size_t                  size_  = 0;             // Byte width
+        bool                    isHeapStored_ = false;  // Store Data in Heap
+        std::set<const Type*>   converts_ = {};         // List of convertible types
 
         const rt::TypeImpl*     impl_ = nullptr;
 
@@ -42,10 +42,10 @@ namespace sema {
         static void Init();
 
         static void        Set(const Type& t) {
-            if (!table_.contains(std::string(t.name))) {
-                table_.emplace(t.name, new Type(t));
+            if (!table_.contains(std::string(t.name_))) {
+                table_.emplace(t.name_, new Type(t));
             }
-            else throw LogErr(LogModule::Sema, std::format("existing type '{}'", t.name));
+            else throw LogErr(LogModule::Sema, std::format("existing type '{}'", t.name_));
         }
         static Type*       Get(std::string_view name) {
             auto type_it = table_.find(std::string(name));
@@ -72,14 +72,14 @@ namespace sema {
                 for (auto t : ts) {
                     if (!isFirstAdd) {
                         isFirstAdd = true;
-                        common = t->converts;
+                        common = t->converts_;
                         continue;
                     }
 
                     std::set<const Type*> temp;
                     std::set_intersection(
                         common.begin(), common.end(),
-                        t->converts.begin(), t->converts.end(),
+                        t->converts_.begin(), t->converts_.end(),
                         std::inserter(temp, temp.begin())
                     );
                     common = std::move(temp);
@@ -97,7 +97,7 @@ namespace sema {
 
                 for (auto& j : common) {
                     if (i == j) continue;
-                    if (j->converts.contains(i)) {
+                    if (j->converts_.contains(i)) {
                         isFind = false;
                         break;
                     }

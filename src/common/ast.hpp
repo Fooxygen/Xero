@@ -169,6 +169,7 @@ public:
         }
         
         auto node = std::make_unique<Exprs>(exprs);
+        node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -203,6 +204,7 @@ public:
         }
         
         auto node = std::make_unique<BlockExpr>(children);
+        node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -226,6 +228,7 @@ public:
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<IdExpr>(value_);
+        node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -266,6 +269,7 @@ public:
             bind_type_,
             value_ ? std::unique_ptr<Expr>((Expr*)(value_->Clone().release())) : nullptr
         );
+        node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -307,6 +311,7 @@ public:
             std::unique_ptr<Expr>((Expr*)(lexpr_->Clone().release())),
             rexpr_ ? std::unique_ptr<Expr>((Expr*)(rexpr_->Clone().release())) : nullptr
         );
+        node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -355,6 +360,7 @@ public:
             step_ ? std::unique_ptr<Expr>((Expr*)(step_->Clone().release())) : nullptr,
             isClosed_
         );
+        node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -381,6 +387,7 @@ public:
         auto node = std::make_unique<ArrayExpr>(
             std::unique_ptr<Exprs>((Exprs*)(elements_->Clone().release()))
         );
+        node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -414,6 +421,7 @@ public:
             std::make_unique<IdExpr>(callee_->value_),
             std::unique_ptr<Exprs>((Exprs*)(args_->Clone().release()))
         );
+        node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -452,6 +460,7 @@ public:
             std::make_unique<IdExpr>(callee_->value_),
             std::unique_ptr<Exprs>((Exprs*)(args_->Clone().release()))
         );
+        node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -497,6 +506,7 @@ public:
             params_ ? std::unique_ptr<Exprs>((Exprs*)(params_->Clone().release())) : nullptr,
             block_  ? std::unique_ptr<BlockExpr>((BlockExpr*)(block_->Clone().release())) : nullptr
         );
+        node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -529,6 +539,7 @@ public:
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<NumConst>(value_);
+        node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -557,6 +568,7 @@ public:
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<BoolConst>(value_);
+        node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -584,6 +596,7 @@ public:
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<CharConst>(value_);
+        node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -611,6 +624,7 @@ public:
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<StringConst>(value_);
+        node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -640,6 +654,7 @@ public:
         auto node = std::make_unique<ExprStmt>(
             std::unique_ptr<Expr>((Expr*)(expr_->Clone().release()))
         );
+        node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -673,6 +688,7 @@ public:
             std::unique_ptr<Expr>((Expr*)(target_->Clone().release())),
             std::unique_ptr<Expr>((Expr*)(value_->Clone().release()))
         );
+        node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -711,6 +727,7 @@ public:
             std::unique_ptr<BlockExpr>((BlockExpr*)(block_->Clone().release())),
             sub_ ? std::unique_ptr<CondStmt>((CondStmt*)(sub_->Clone().release())) : nullptr
         );
+        node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -742,6 +759,7 @@ public:
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<LoopSignalStmt>(signal_);
+        node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -768,6 +786,7 @@ public:
         auto node = std::make_unique<ReturnSignalStmt>(
             value_ ? std::unique_ptr<Expr>((Expr*)(value_->Clone().release())) : nullptr
         );
+        node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -806,6 +825,7 @@ public:
             std::unique_ptr<Expr>((Expr*)(data_->Clone().release())),
             std::unique_ptr<BlockExpr>((BlockExpr*)(block_->Clone().release()))
         );
+        node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -839,6 +859,7 @@ public:
             std::unique_ptr<Expr>((Expr*)(cond_->Clone().release())),
             std::unique_ptr<BlockExpr>((BlockExpr*)(block_->Clone().release()))
         );
+        node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -865,6 +886,7 @@ public:
         }
         
         auto node = std::make_unique<Program>(children);
+        node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }

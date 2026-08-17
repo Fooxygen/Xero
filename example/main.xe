@@ -1,4 +1,62 @@
 
+# Declarations AND Literals
 x: i32 = 3;
-y: f64 = 3.14159265358979323846264338327950288;
-z: char = 'A';
+println(x);                # 3
+
+y: f64 = 3.5;
+println(y);                # 3.500000
+
+c: char = 'A';
+println(c);                # A
+
+b: bool = true;
+println(b);                # true
+
+s: string = "hello";
+println(s);                # hello
+
+# Arit
+println(1 + 2 * 3);        # 7
+println(10 - 4);           # 6
+println(7 % 3);            # 1
+println(7.0 / 2.0);        # 3.500000
+
+# Comp AND Logic
+println(3 > 2);            # true
+println(3 <= 2);           # false
+println(true && false);    # false
+println(true || false);    # true
+
+# Builtin Functions
+println(type(3));          # i32
+println(type(3.5));        # f32
+
+# Builtin Methods
+println("hello".len());    # 5
+
+arr: array = [1, 2, 3];
+println(arr.len());        # 3
+arr.push_back(4);
+println(arr);              # [1, 2, 3, 4]
+
+# Custom function
+fn add(a: i32, b: i32) -> i32 { return a + b; }
+println(add(1, 2));        # 3
+
+# Control Flow
+n: i32 = 2;
+if (n == 1) {
+    println("one");
+}
+elif (n == 2) {
+    println("two");        # two
+}
+else {
+    println("other");
+}
+
+w: i32 = 0;
+while (w < 3) {
+    w = w + 1;
+}
+println(w);                # 3

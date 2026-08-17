@@ -25,19 +25,19 @@ namespace sema {
 
         // Info
         {
-            TypeTable::Set(Type{ .name = "none",        .size = 0 });
-            TypeTable::Set(Type{ .name = "bool",        .size = 1 });
-            TypeTable::Set(Type{ .name = "i32",         .size = 4 });
-            TypeTable::Set(Type{ .name = "i64",         .size = 8 });
-            TypeTable::Set(Type{ .name = "f32",         .size = 4 });
-            TypeTable::Set(Type{ .name = "f64",         .size = 8 });
-            TypeTable::Set(Type{ .name = "char",        .size = 4 });
-            TypeTable::Set(Type{ .name = "string",      .size = 0, .isHeapStored = true });
-            TypeTable::Set(Type{ .name = "stringview",  .size = 0, .isHeapStored = true });
-            TypeTable::Set(Type{ .name = "array",       .size = 0, .isHeapStored = true });
-            TypeTable::Set(Type{ .name = "arrayview",   .size = 0, .isHeapStored = true });
-            TypeTable::Set(Type{ .name = "range",       .size = 0, .isHeapStored = true });
-            TypeTable::Set(Type{ .name = "function",    .size = 0, .isHeapStored = true });
+            TypeTable::Set(Type{ .name_ = "none",        .size_ = 0 });
+            TypeTable::Set(Type{ .name_ = "bool",        .size_ = 1 });
+            TypeTable::Set(Type{ .name_ = "i32",         .size_ = 4 });
+            TypeTable::Set(Type{ .name_ = "i64",         .size_ = 8 });
+            TypeTable::Set(Type{ .name_ = "f32",         .size_ = 4 });
+            TypeTable::Set(Type{ .name_ = "f64",         .size_ = 8 });
+            TypeTable::Set(Type{ .name_ = "char",        .size_ = 4 });
+            TypeTable::Set(Type{ .name_ = "string",      .size_ = 0, .isHeapStored_ = true });
+            TypeTable::Set(Type{ .name_ = "stringview",  .size_ = 0, .isHeapStored_ = true });
+            TypeTable::Set(Type{ .name_ = "array",       .size_ = 0, .isHeapStored_ = true });
+            TypeTable::Set(Type{ .name_ = "arrayview",   .size_ = 0, .isHeapStored_ = true });
+            TypeTable::Set(Type{ .name_ = "range",       .size_ = 0, .isHeapStored_ = true });
+            TypeTable::Set(Type{ .name_ = "function",    .size_ = 0, .isHeapStored_ = true });
         }
 
         // Convert
@@ -74,7 +74,7 @@ namespace sema {
         if (from == to) {
             LogWarn(LogModule::Sema, std::format(
                 "cannot convert type '{}' to itself",
-                from->name
+                from->name_
             )).Print();
             return;
         }
@@ -85,14 +85,14 @@ namespace sema {
 
         // Clear
         for (auto& [name, type] : table_) {
-            type->converts.clear();
+            type->converts_.clear();
         }
 
         // Recompute
         for (auto& [name, type] : table_) {
 
             // Emplace itself
-            type->converts.emplace(type);
+            type->converts_.emplace(type);
 
             // Search all path
             std::vector<const Type*> stack = { type };
@@ -102,7 +102,7 @@ namespace sema {
 
                 for (auto& [from, to] : converts_) {
                     if (from == t) {
-                        type->converts.emplace(to);
+                        type->converts_.emplace(to);
                         stack.emplace_back(to);
                     }
                 }

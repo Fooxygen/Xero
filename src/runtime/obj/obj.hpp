@@ -50,7 +50,7 @@ namespace rt {
             Data&             data()       { return data_; }      
         
             bool hasHeapData() const {
-                return type_->isHeapStored && data_.ptr_;
+                return type_->isHeapStored_ && data_.ptr_;
             }
         };
 
@@ -102,7 +102,7 @@ namespace rt {
             else {
                 data_.emplace<Value>(other.value().type());
 
-                if (value().type()->isHeapStored) {
+                if (value().type()->isHeapStored_) {
                     value().data().ptr_ = other.value().data().ptr_;
                     ((HeapData*)value().data().ptr_)->cnt++;
                 }
@@ -152,7 +152,7 @@ namespace rt {
         Obj        Clone()  const {
             switch (usingtype) {
                 case UsingType::Value: {
-                    if (type()->isHeapStored)   return type()->impl_->clone_(*this);
+                    if (type()->isHeapStored_)  return type()->impl_->clone_(*this);
                     else                        return *this;
                 }
                 case UsingType::Ref: return ref().obj()->type()->impl_->clone_(*ref().obj());
@@ -181,7 +181,7 @@ namespace rt {
             return o;
         }
         static Obj MakeEmpty(const sema::Type* type) {
-            auto& name = type->name;
+            auto& name = type->name_;
 
             if (name == "none")        return Obj();
             if (name == "bool")        return Make_bool(false);
@@ -198,8 +198,7 @@ namespace rt {
             if (name == "function")    return Make_function(new Function());
 
             throw LogErr(LogModule::Runtime, std::format(
-                "cannot make empty value for type '{}'",
-                name
+                "cannot make empty value for type '{}'", name
             ));
         }
         

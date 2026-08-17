@@ -50,7 +50,7 @@ namespace rt {
                     }
 
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot make type '{}' compatible with type 'bool'", value.type()->name
+                        "cannot make type '{}' compatible with type 'bool'", value.type()->name_
                     ));
                 },
                 .gt_        = [](const Obj& l, const Obj& r) { return Obj::Make_bool(l.Get_bool() >  r.Get_bool()); },
@@ -79,7 +79,7 @@ namespace rt {
                     }
 
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot make type '{}' compatible with 'i32'", value.type()->name
+                        "cannot make type '{}' compatible with 'i32'", value.type()->name_
                     ));
                 },
                 .plus_      = [](const Obj& a, const Obj& b) { return Obj::Make_i32(a.Get_i32() + b.Get_i32()); },
@@ -132,7 +132,7 @@ namespace rt {
                     }
 
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot make type '{}' compatible with 'i64'", value.type()->name
+                        "cannot make type '{}' compatible with 'i64'", value.type()->name_
                     ));
                 },
                 .plus_      = [](const Obj& a, const Obj& b) { return Obj::Make_i64(a.Get_i64() + b.Get_i64()); },
@@ -185,7 +185,7 @@ namespace rt {
                     }
                     
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot make type '{}' compatible with 'f32'", value.type()->name
+                        "cannot make type '{}' compatible with 'f32'", value.type()->name_
                     ));
                 },
                 .plus_      = [](const Obj& a, const Obj& b) { return Obj::Make_f32(a.Get_f32() + b.Get_f32()); },
@@ -229,7 +229,7 @@ namespace rt {
                     }
                     
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot make type '{}' compatible with 'f64'", value.type()->name
+                        "cannot make type '{}' compatible with 'f64'", value.type()->name_
                     ));
                 },
                 .plus_      = [](const Obj& a, const Obj& b) { return Obj::Make_f64(a.Get_f64() + b.Get_f64()); },
@@ -269,7 +269,7 @@ namespace rt {
                     }
                     
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot make type '{}' compatible with 'char'", value.type()->name
+                        "cannot make type '{}' compatible with 'char'", value.type()->name_
                     ));
                 },
                 .gt_        = [](const Obj& a, const Obj& b) { return Obj::Make_bool(a.Get_char() >  b.Get_char()); },
@@ -302,7 +302,7 @@ namespace rt {
                     }
                     
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot make type '{}' compatible with 'string'", value.type()->name
+                        "cannot make type '{}' compatible with 'string'", value.type()->name_
                     ));
                 },
                 .plus_      = [](const Obj& a, const Obj& b) {
@@ -323,7 +323,7 @@ namespace rt {
                     if (!pick.is("range")) {
                         throw LogErr(LogModule::Runtime, std::format(
                             "pick must be range, not {}",
-                            pick.type()->name
+                            pick.type()->name_
                         ));
                     }
         
@@ -335,7 +335,7 @@ namespace rt {
                     {
                         throw LogErr(LogModule::Runtime, std::format(
                             "iterator type of range must be i32 or i64, not {}",
-                            range.iter_type()->name
+                            range.iter_type()->name_
                         ));
                     }
 
@@ -421,7 +421,7 @@ namespace rt {
                                 return;
                             }
                             throw LogErr(LogModule::Runtime, std::format(
-                                "cannot make type '{}' compatible with 'char'", value.type()->name
+                                "cannot make type '{}' compatible with 'char'", value.type()->name_
                             ));
                         }
                         if (value.is("stringview")) {
@@ -433,7 +433,7 @@ namespace rt {
                                 return;
                             }
                             throw LogErr(LogModule::Runtime, std::format(
-                                "cannot make type '{}' compatible with 'char'", value.type()->name
+                                "cannot make type '{}' compatible with 'char'", value.type()->name_
                             ));
                         }
                     }
@@ -455,14 +455,14 @@ namespace rt {
                     }
                     
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot make type '{}' compatible with 'stringview'", value.type()->name
+                        "cannot make type '{}' compatible with 'stringview'", value.type()->name_
                     ));
                 },
                 .pick_      = [](const Obj& target, const Obj& pick) {
                     if (!pick.is("range")) {
                         throw LogErr(LogModule::Runtime, std::format(
                             "pick must be range, not {}",
-                            pick.type()->name
+                            pick.type()->name_
                         ));
                     }
 
@@ -474,7 +474,7 @@ namespace rt {
                     {
                         throw LogErr(LogModule::Runtime, std::format(
                             "iterator type of range must be i32 or i64, not {}",
-                            range.iter_type()->name
+                            range.iter_type()->name_
                         ));
                     }
 
@@ -545,7 +545,7 @@ namespace rt {
                     if (!pick.is("range")) {
                         throw LogErr(LogModule::Runtime, std::format(
                             "pick must be range, not {}",
-                            pick.type()->name
+                            pick.type()->name_
                         ));
                     }
 
@@ -557,7 +557,7 @@ namespace rt {
                     {
                         throw LogErr(LogModule::Runtime, std::format(
                             "iterator type of range must be i32 or i64, not {}",
-                            range.iter_type()->name
+                            range.iter_type()->name_
                         ));
                     }
 
@@ -649,7 +649,7 @@ namespace rt {
                     if (!pick.is("range")) {
                         throw LogErr(LogModule::Runtime, std::format(
                             "pick must be range, not {}",
-                            pick.type()->name
+                            pick.type()->name_
                         ));
                     }
 
@@ -661,7 +661,7 @@ namespace rt {
                     {
                         throw LogErr(LogModule::Runtime, std::format(
                             "iterator type of range must be i32 or i64, not {}",
-                            range.iter_type()->name
+                            range.iter_type()->name_
                         ));
                     }
 

@@ -18,6 +18,7 @@ namespace sema {
         SymbolTable symbol_table_;
 
         // Exec
+
         void Exec(BlockExpr& node, std::function<void()> OnScopeReady = nullptr);
         void Exec(IdExpr& node);
         void Exec(DeclExpr& node);
@@ -43,8 +44,12 @@ namespace sema {
         void Exec(Program& node);
 
     public:
+        Sema() {
+            BuiltinMethodRegister();
+        }
 
         // Exec
+
         void Exec(AstNode& node) {
             switch (node.type_) {
                 case AstType::BlockExpr:        Exec((BlockExpr&)node);         return;
@@ -74,5 +79,14 @@ namespace sema {
                 default: return;
             }
         }
+    
+        // Fn
+
+        void BuiltinFnRegister();           // stack-based
+        void BuiltinMethodRegister();       // table-based
+
+        void FnCallCheck(const FnSymbol& fn, const std::vector<const Type*>& args, Loc loc);
+        std::string FnParamsPrint(const std::vector<const Type*>& params);
+        std::string FnParamsPrint(const FnSymbol& fn);
     };
 }

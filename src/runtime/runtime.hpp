@@ -11,6 +11,7 @@
 
 #include "common/log.hpp"
 #include "sema/semantics.hpp"
+#include "obj/impl/function.hpp"
 
 namespace rt {
     class Obj;
@@ -80,7 +81,38 @@ namespace rt {
                 table_.emplace(type, impl);
                 type->impl_ = impl;
             }
-            else throw LogErr(LogModule::Runtime, std::format("existing type '{}'", type->name));
+            else throw LogErr(LogModule::Runtime, std::format("existing type '{}'", type->name_));
+        }
+    };
+
+    class MethodTable {
+    private:
+        struct Key {
+            const sema::Type* type;
+            std::string       name;
+
+            bool operator==(const Key& other) const {
+                return type == other.type && name == other.name;
+            }
+        };
+
+        struct KeyHash {
+            size_t operator()(const Key& key) const {
+                return std::hash<const sema::Type*>{}(key.type) ^
+                       std::hash<std::string>{}(key.name);
+            }
+        };
+
+        static inline std::unordered_map<Key, Function, KeyHash> table_;
+
+    public:
+        static void Set(const sema::Type* type, const std::string& name, Function fn) {
+            table_.insert_or_assign(Key{type, name}, std::move(fn));
+        }
+
+        static Function* Get(const sema::Type* type, const std::string& name) {
+            auto it = table_.find({type, name});
+            return it == table_.end() ? nullptr : &it->second;
         }
     };
 }
