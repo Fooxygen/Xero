@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <variant>
 
-#include "sema/semantics.hpp"
+#include "sema/type.hpp"
 #include "runtime/runtime.hpp"
 #include "runtime/obj/impl/string.hpp"
 #include "runtime/obj/impl/array.hpp"

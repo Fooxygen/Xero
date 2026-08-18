@@ -3,7 +3,7 @@
 //  Copyright (c) 2026 Fooxygen.
 //  Licensed under the MIT License.
 
-#include "array.hpp"
+#include "runtime/obj/impl/array.hpp"
 #include "runtime/obj/obj.hpp"
 
 namespace rt {

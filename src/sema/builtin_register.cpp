@@ -3,7 +3,7 @@
 //  Copyright (c) 2026 Fooxygen.
 //  Licensed under the MIT License.
 
-#include "sema.hpp"
+#include "sema/sema.hpp"
 
 namespace sema {
 

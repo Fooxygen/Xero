@@ -10,8 +10,8 @@
 #include <unordered_map>
 
 #include "common/log.hpp"
-#include "sema/semantics.hpp"
-#include "obj/impl/function.hpp"
+#include "sema/type.hpp"
+#include "runtime/obj/impl/function.hpp"
 
 namespace rt {
     class Obj;

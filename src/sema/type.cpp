@@ -5,7 +5,7 @@
 
 #include <vector>
 
-#include "semantics.hpp"
+#include "sema/type.hpp"
 
 namespace sema {
     

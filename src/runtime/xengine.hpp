@@ -8,8 +8,8 @@
 #include <functional>
 
 #include "common/ast.hpp"
-#include "obj/obj.hpp"
-#include "env.hpp"
+#include "runtime/obj/obj.hpp"
+#include "runtime/env.hpp"
 
 namespace rt {
 

@@ -12,7 +12,7 @@ add_executable(xero
     lexer/lexer.cpp
     parser/parser.cpp
     parser/rule.cpp
-    sema/semantics.cpp
+    sema/type.cpp
     sema/sema.cpp
     sema/builtin_register.cpp
     runtime/runtime.cpp

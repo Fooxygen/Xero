@@ -3,8 +3,8 @@
 //  Copyright (c) 2026 Fooxygen.
 //  Licensed under the MIT License.
 
-#include "string.hpp"
 #include "runtime/obj/obj.hpp"
+#include "runtime/obj/impl/string.hpp"
 
 namespace rt {
 

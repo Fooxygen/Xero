@@ -8,7 +8,7 @@
 #include <functional>
 
 #include "common/ast.hpp"
-#include "symbol.hpp"
+#include "sema/symbol.hpp"
 
 namespace sema {
 

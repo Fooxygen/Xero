@@ -6,7 +6,7 @@
 #include <iostream>
 
 #include "common/log.hpp"
-#include "lexer.hpp"
+#include "lexer/lexer.hpp"
 
 namespace lexer {
 

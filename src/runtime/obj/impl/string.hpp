@@ -9,7 +9,7 @@
 #include <cstring>
 #include <string>
 
-#include "array.hpp"
+#include "runtime/obj/impl/array.hpp"
 
 namespace rt {
     class Obj;

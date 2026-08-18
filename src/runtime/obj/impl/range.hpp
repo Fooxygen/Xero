@@ -7,7 +7,7 @@
 
 #include <cstdint>
 
-#include "sema/semantics.hpp"
+#include "sema/type.hpp"
 
 namespace rt {
     class Obj;

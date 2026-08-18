@@ -5,8 +5,8 @@
 
 #include <cmath>
 
-#include "sema/semantics.hpp"
-#include "runtime.hpp"
+#include "sema/type.hpp"
+#include "runtime/runtime.hpp"
 #include "runtime/obj/obj.hpp"
 
 namespace rt {

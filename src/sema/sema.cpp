@@ -3,8 +3,8 @@
 //  Copyright (c) 2026 Fooxygen.
 //  Licensed under the MIT License.
 
-#include "sema.hpp"
-#include "semantics.hpp"
+#include "sema/sema.hpp"
+#include "sema/type.hpp"
 
 namespace sema {
 
@@ -396,7 +396,6 @@ namespace sema {
                 ), node.loc_);
             }
         }
-
         Exec(*node.block_);
     }
 

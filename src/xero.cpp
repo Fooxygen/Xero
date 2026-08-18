@@ -12,7 +12,7 @@
 #include "common/log.hpp"
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
-#include "sema/semantics.hpp"
+#include "sema/type.hpp"
 #include "sema/sema.hpp"
 #include "runtime/runtime.hpp"
 #include "runtime/xengine.hpp"

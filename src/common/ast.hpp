@@ -9,10 +9,10 @@
 #include <memory>
 #include <vector>
 
-#include "utils.hpp"
-#include "token.hpp"
-#include "opertype.hpp"
-#include "signal.hpp"
+#include "common/utils.hpp"
+#include "common/token.hpp"
+#include "common/opertype.hpp"
+#include "common/signal.hpp"
 
 namespace sema {
     class Type;

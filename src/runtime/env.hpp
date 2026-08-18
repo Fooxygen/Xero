@@ -9,7 +9,7 @@
 #include <unordered_map>
 
 #include "common/utils.hpp"
-#include "obj/obj.hpp"
+#include "runtime/obj/obj.hpp"
 
 namespace rt {
 

@@ -10,7 +10,7 @@
 #include <cstring>
 
 #include "common/log.hpp"
-#include "sema/semantics.hpp"
+#include "sema/type.hpp"
 
 namespace rt {
     class Obj;

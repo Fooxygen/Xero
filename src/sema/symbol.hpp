@@ -13,7 +13,7 @@
 
 #include "common/log.hpp"
 #include "common/utils.hpp"
-#include "sema/semantics.hpp"
+#include "sema/type.hpp"
 
 namespace sema {
     

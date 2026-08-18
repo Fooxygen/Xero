@@ -6,10 +6,10 @@
 #include <cmath>
 #include <cstdio>
 
-#include "xengine.hpp"
-#include "obj/impl/string.hpp"
-#include "obj/impl/array.hpp"
-#include "obj/impl/sliceview.hpp"
+#include "runtime/xengine.hpp"
+#include "runtime/obj/impl/string.hpp"
+#include "runtime/obj/impl/array.hpp"
+#include "runtime/obj/impl/sliceview.hpp"
 
 namespace rt {
 

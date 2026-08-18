@@ -3,7 +3,7 @@
 //  Copyright (c) 2026 Fooxygen.
 //  Licensed under the MIT License.
 
-#include "parser.hpp"
+#include "parser/parser.hpp"
 
 namespace parser {
 
