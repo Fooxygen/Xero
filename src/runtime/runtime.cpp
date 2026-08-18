@@ -33,10 +33,10 @@ namespace rt {
         // Infos
         {
             // none
-            TypeImplTable::Set(sema::TypeTable::Get("none"), TypeImpl{});
+            TypeImplTable::Set(sema::TypeTable::Lookup("none"), TypeImpl{});
 
             // bool
-            TypeImplTable::Set(sema::TypeTable::Get("bool"), TypeImpl{
+            TypeImplTable::Set(sema::TypeTable::Lookup("bool"), TypeImpl{
                 .clone_     = [](const Obj& o) {
                     return Obj::Make_bool(o.Get_bool());
                 },
@@ -65,7 +65,7 @@ namespace rt {
             });
 
             // i32
-            TypeImplTable::Set(sema::TypeTable::Get("i32"), TypeImpl{
+            TypeImplTable::Set(sema::TypeTable::Lookup("i32"), TypeImpl{
                 .clone_     = [](const Obj& o) {
                     return Obj::Make_i32(o.Get_i32());
                 },
@@ -114,7 +114,7 @@ namespace rt {
             });
 
             // i64
-            TypeImplTable::Set(sema::TypeTable::Get("i64"), TypeImpl{
+            TypeImplTable::Set(sema::TypeTable::Lookup("i64"), TypeImpl{
                 .clone_     = [](const Obj& o) {
                     return Obj::Make_i64(o.Get_i64());
                 },
@@ -127,7 +127,7 @@ namespace rt {
                         return;
                     }
                     if (value.is("i32")) {
-                        *target = TypeImplTable::Convert(value, sema::TypeTable::Get("i64"));
+                        *target = TypeImplTable::Convert(value, sema::TypeTable::Lookup("i64"));
                         return;
                     }
 
@@ -167,7 +167,7 @@ namespace rt {
             });
 
             // f32
-            TypeImplTable::Set(sema::TypeTable::Get("f32"), TypeImpl{
+            TypeImplTable::Set(sema::TypeTable::Lookup("f32"), TypeImpl{
                 .clone_     = [](const Obj& o) {
                     return Obj::Make_f32(o.Get_f32());
                 },
@@ -180,7 +180,7 @@ namespace rt {
                         return;
                     }
                     if (value.is("i32") || value.is("i64")) {
-                        *target = TypeImplTable::Convert(value, sema::TypeTable::Get("f32"));
+                        *target = TypeImplTable::Convert(value, sema::TypeTable::Lookup("f32"));
                         return;
                     }
                     
@@ -211,7 +211,7 @@ namespace rt {
             });
 
             // f64
-            TypeImplTable::Set(sema::TypeTable::Get("f64"), TypeImpl{
+            TypeImplTable::Set(sema::TypeTable::Lookup("f64"), TypeImpl{
                 .clone_     = [](const Obj& o) {
                     return Obj::Make_f64(o.Get_f64());
                 },
@@ -224,7 +224,7 @@ namespace rt {
                         return;
                     }
                     if (value.is("i32") || value.is("i64") || value.is("f32")) {
-                        *target = TypeImplTable::Convert(value, sema::TypeTable::Get("f64"));
+                        *target = TypeImplTable::Convert(value, sema::TypeTable::Lookup("f64"));
                         return;
                     }
                     
@@ -255,7 +255,7 @@ namespace rt {
             });
 
             // char
-            TypeImplTable::Set(sema::TypeTable::Get("char"), TypeImpl{
+            TypeImplTable::Set(sema::TypeTable::Lookup("char"), TypeImpl{
                 .clone_     = [](const Obj& o) {
                     return Obj::Make_char(o.Get_char());
                 },
@@ -281,7 +281,7 @@ namespace rt {
             });
 
             // string
-            TypeImplTable::Set(sema::TypeTable::Get("string"), TypeImpl{
+            TypeImplTable::Set(sema::TypeTable::Lookup("string"), TypeImpl{
                 .clone_     = [](const Obj& o) {
                     return Obj::Make_string(new String(o.Get_string_ref()));
                 },
@@ -297,7 +297,7 @@ namespace rt {
                     if (value.is("stringview") ||
                         value.is("char"))
                     {
-                        *target = TypeImplTable::Convert(value, sema::TypeTable::Get("string"));
+                        *target = TypeImplTable::Convert(value, sema::TypeTable::Lookup("string"));
                         return;
                     }
                     
@@ -361,13 +361,13 @@ namespace rt {
             });
 
             // stringview
-            TypeImplTable::Set(sema::TypeTable::Get("stringview"), TypeImpl{
+            TypeImplTable::Set(sema::TypeTable::Lookup("stringview"), TypeImpl{
                 .clone_     = [](const Obj& o) {
                     return Obj::Make_stringview(new SliceView<String>(o.Get_stringview_ref()));
                 },
                 .destroy_   = [](void* data) { delete (SliceView<String>*)data; },
                 .to_string_ = [](const Obj& o) {
-                    auto str = TypeImplTable::Convert(o, sema::TypeTable::Get("string"));
+                    auto str = TypeImplTable::Convert(o, sema::TypeTable::Lookup("string"));
                     return str.Get_string_ref().ToCppString();
                 },
                 .assign_    = [](Obj* target, const Obj& value) {
@@ -448,7 +448,7 @@ namespace rt {
                             return;
                         }
                         if (value.is("stringview")) {
-                            auto str = TypeImplTable::Convert(value, sema::TypeTable::Get("string"));
+                            auto str = TypeImplTable::Convert(value, sema::TypeTable::Lookup("string"));
                             assign_from_string(str.Get_string_ref());
                             return;
                         }
@@ -502,7 +502,7 @@ namespace rt {
             });
 
             // array
-            TypeImplTable::Set(sema::TypeTable::Get("array"), TypeImpl{
+            TypeImplTable::Set(sema::TypeTable::Lookup("array"), TypeImpl{
                 .clone_         = [](const Obj& o) {
                     return Obj::Make_array(new Array(o.Get_array_ref()));
                 },
@@ -521,7 +521,7 @@ namespace rt {
 
                     // = arr[x..y]
                     else if (value.is("arrayview")) {
-                        dst = TypeImplTable::Convert(value, sema::TypeTable::Get("array")).Get_array_ref();
+                        dst = TypeImplTable::Convert(value, sema::TypeTable::Lookup("array")).Get_array_ref();
                         return;
                     }
 
@@ -583,13 +583,13 @@ namespace rt {
             });
 
             // arrayview
-            TypeImplTable::Set(sema::TypeTable::Get("arrayview"), TypeImpl{
+            TypeImplTable::Set(sema::TypeTable::Lookup("arrayview"), TypeImpl{
                 .clone_     = [](const Obj& o) {
                     return Obj::Make_arrayview(new SliceView<Array>(o.Get_arrayview_ref()));
                 },
                 .destroy_   = [](void* data) { delete (SliceView<Array>*)data; },
                 .to_string_ = [](const Obj& o) {
-                    auto arr = TypeImplTable::Convert(o, sema::TypeTable::Get("array"));
+                    auto arr = TypeImplTable::Convert(o, sema::TypeTable::Lookup("array"));
                     return arr.Get_array_ref().ToCppString();
                 },
                 .assign_    = [](Obj* target, const Obj& value) {
@@ -634,7 +634,7 @@ namespace rt {
                         return;
                     }
                     else if (value.is("arrayview")) {
-                        auto arr = TypeImplTable::Convert(value, sema::TypeTable::Get("array"));
+                        auto arr = TypeImplTable::Convert(value, sema::TypeTable::Lookup("array"));
                         assign_from_array(arr.Get_array_ref());
                         return;
                     }
@@ -689,7 +689,7 @@ namespace rt {
             });
 
              // range
-            TypeImplTable::Set(sema::TypeTable::Get("range"), TypeImpl{
+            TypeImplTable::Set(sema::TypeTable::Lookup("range"), TypeImpl{
                 .clone_     = [](const Obj& o) {
                     return Obj::Make_range(new Range(o.Get_range_ref()));
                 },
@@ -719,7 +719,7 @@ namespace rt {
             });
 
             // function
-            TypeImplTable::Set(sema::TypeTable::Get("function"), TypeImpl{
+            TypeImplTable::Set(sema::TypeTable::Lookup("function"), TypeImpl{
                 .clone_     = [](const Obj& o) {
                     return Obj::Make_function(new Function(o.Get_function_ref()));
                 },
@@ -751,10 +751,10 @@ namespace rt {
 
         // Convert
         {
-            auto* i32_ = sema::TypeTable::Get("i32");
-            auto* i64_ = sema::TypeTable::Get("i64");
-            auto* f32_ = sema::TypeTable::Get("f32");
-            auto* f64_ = sema::TypeTable::Get("f64");
+            auto* i32_ = sema::TypeTable::Lookup("i32");
+            auto* i64_ = sema::TypeTable::Lookup("i64");
+            auto* f32_ = sema::TypeTable::Lookup("f32");
+            auto* f64_ = sema::TypeTable::Lookup("f64");
 
             TypeImplTable::ConvertSet(i32_, i64_, [](const Obj& o) { return Obj::Make_i64(o.Get_i32());         });
             TypeImplTable::ConvertSet(i32_, f32_, [](const Obj& o) { return Obj::Make_f32((float)o.Get_i32());  });
@@ -763,9 +763,9 @@ namespace rt {
             TypeImplTable::ConvertSet(i64_, f64_, [](const Obj& o) { return Obj::Make_f64((double)o.Get_i64()); });
             TypeImplTable::ConvertSet(f32_, f64_, [](const Obj& o) { return Obj::Make_f64((double)o.Get_f32()); });
             
-            auto* char_         = sema::TypeTable::Get("char");
-            auto* string_       = sema::TypeTable::Get("string");
-            auto* stringview_   = sema::TypeTable::Get("stringview");
+            auto* char_         = sema::TypeTable::Lookup("char");
+            auto* string_       = sema::TypeTable::Lookup("string");
+            auto* stringview_   = sema::TypeTable::Lookup("stringview");
 
             TypeImplTable::ConvertSet(char_, string_, [](const Obj& o) {
                 return Obj::Make_string(new String(std::string(1, o.Get_char())));
@@ -781,8 +781,8 @@ namespace rt {
                 return Obj::Make_string(new String(res));
             });
 
-            auto* array_       = sema::TypeTable::Get("array");
-            auto* arrayview_   = sema::TypeTable::Get("arrayview");
+            auto* array_       = sema::TypeTable::Lookup("array");
+            auto* arrayview_   = sema::TypeTable::Lookup("arrayview");
 
             TypeImplTable::ConvertSet(arrayview_, array_, [](const Obj& o) {
                 auto& view = o.Get_arrayview_ref();

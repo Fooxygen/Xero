@@ -276,7 +276,7 @@ namespace rt {
             // Xero AstNode
             auto& fnexpr   = fn.expr();
             auto& params   = fnexpr->params_->exprs_;
-            auto  ret_type = sema::TypeTable::Get(fnexpr->ret_type_);
+            auto  ret_type = sema::TypeTable::Lookup(fnexpr->ret_type_);
 
             Obj ret;
             try {
@@ -310,9 +310,8 @@ namespace rt {
         }
 
         throw LogErr(LogModule::Runtime, std::format(
-            "undefined function '{}'",
-            node.callee_->value_
-        ));
+            "undefined function '{}'", node.callee_->value_
+        ), node.loc_);
     }
 
     Obj Xengine::Exec(MethodCallExpr& node) {

@@ -14,7 +14,8 @@ namespace sema {
 
     class Sema {
     private:
-
+        // Symbol
+    
         SymbolTable symbol_table_;
 
         // Exec
@@ -48,6 +49,15 @@ namespace sema {
             BuiltinMethodRegister();
         }
 
+        // Symbol
+
+        void BuiltinFnRegister();           // stack-based
+        void BuiltinMethodRegister();       // table-based
+
+        void        FnCallCheck(const FnSymbol& fn, const std::vector<const Type*>& args, Loc loc);
+        std::string FnParamsPrint(const std::vector<const Type*>& params);
+        std::string FnParamsPrint(const FnSymbol& fn);
+
         // Exec
 
         void Exec(AstNode& node) {
@@ -79,14 +89,5 @@ namespace sema {
                 default: return;
             }
         }
-    
-        // Fn
-
-        void BuiltinFnRegister();           // stack-based
-        void BuiltinMethodRegister();       // table-based
-
-        void FnCallCheck(const FnSymbol& fn, const std::vector<const Type*>& args, Loc loc);
-        std::string FnParamsPrint(const std::vector<const Type*>& params);
-        std::string FnParamsPrint(const FnSymbol& fn);
     };
 }

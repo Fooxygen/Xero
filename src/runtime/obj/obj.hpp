@@ -40,7 +40,7 @@ namespace rt {
             Data              data_;
 
         public:
-            Value(const sema::Type* type = sema::TypeTable::Get("none")) {
+            Value(const sema::Type* type = sema::TypeTable::Lookup("none")) {
                 type_      = type;
                 data_.ptr_ = nullptr;
             }
@@ -204,79 +204,79 @@ namespace rt {
         
         static Obj Make_bool(bool b) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("bool"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Lookup("bool"));
             v.data().bool_ = b;
             return o;
         }
         static Obj Make_i32(int32_t x) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("i32"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Lookup("i32"));
             v.data().i32_ = x;
             return o;
         }
         static Obj Make_i64(int64_t x) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("i64"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Lookup("i64"));
             v.data().i64_ = x;
             return o;
         }
         static Obj Make_f32(float x) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("f32"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Lookup("f32"));
             v.data().f32_ = x;
             return o;
         }
         static Obj Make_f64(double x) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("f64"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Lookup("f64"));
             v.data().f64_ = x;
             return o;
         }
         static Obj Make_char(char c) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("char"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Lookup("char"));
             v.data().char_ = c;
             return o;
         }
         static Obj Make_string(String* str) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("string"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Lookup("string"));
             v.data().ptr_ = new HeapData(str);
             return o;
         }
         static Obj Make_stringview(SliceView<String>* view) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("stringview"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Lookup("stringview"));
             v.data().ptr_ = new HeapData(view);
             return o;
         }
         static Obj Make_array(size_t size = 1) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("array"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Lookup("array"));
             v.data().ptr_ = new HeapData(new Array(size));
             return o;
         }
         static Obj Make_array(Array* arr) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("array"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Lookup("array"));
             v.data().ptr_ = new HeapData(arr);
             return o;
         }
         static Obj Make_arrayview(SliceView<Array>* view) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("arrayview"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Lookup("arrayview"));
             v.data().ptr_ = new HeapData(view);
             return o;
         }
         static Obj Make_range(Range* rge) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("range"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Lookup("range"));
             v.data().ptr_ = new HeapData(rge);
             return o;
         }
         static Obj Make_function(Function* fn) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(sema::TypeTable::Get("function"));
+            auto& v = o.data_.emplace<Value>(sema::TypeTable::Lookup("function"));
             v.data().ptr_ = new HeapData(fn);
             return o;
         }

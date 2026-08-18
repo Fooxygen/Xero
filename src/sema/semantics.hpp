@@ -47,13 +47,13 @@ namespace sema {
             }
             else throw LogErr(LogModule::Sema, std::format("existing type '{}'", t.name_));
         }
-        static Type*       Get(std::string_view name) {
+        static Type*       Lookup(std::string_view name, std::optional<Loc> loc = std::nullopt) {
             auto type_it = table_.find(std::string(name));
             if (type_it != table_.end()) {
                 return type_it->second;
             }
 
-            throw LogErr(LogModule::Sema, std::format("undefined type '{}'", name));
+            throw LogErr(LogModule::Sema, std::format("undefined type '{}'", name), loc);
             return nullptr;
         }
     

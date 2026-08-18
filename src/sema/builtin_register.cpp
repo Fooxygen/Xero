@@ -10,8 +10,8 @@ namespace sema {
     void Sema::BuiltinFnRegister() {
         using TS = std::vector<const Type*>;
         
-        auto none_   = TypeTable::Get("none");
-        auto string_ = TypeTable::Get("string");
+        auto none_   = TypeTable::Lookup("none");
+        auto string_ = TypeTable::Lookup("string");
 
         // IO
         {
@@ -34,12 +34,12 @@ namespace sema {
     void Sema::BuiltinMethodRegister() {
         using TS = std::vector<const Type*>;
 
-        auto none_        = TypeTable::Get("none");
-        auto i32_         = TypeTable::Get("i32");
-        auto string_      = TypeTable::Get("string");
-        auto stringview_  = TypeTable::Get("stringview");
-        auto array_       = TypeTable::Get("array");
-        auto arrayview_   = TypeTable::Get("arrayview");
+        auto none_        = TypeTable::Lookup("none");
+        auto i32_         = TypeTable::Lookup("i32");
+        auto string_      = TypeTable::Lookup("string");
+        auto stringview_  = TypeTable::Lookup("stringview");
+        auto array_       = TypeTable::Lookup("array");
+        auto arrayview_   = TypeTable::Lookup("arrayview");
 
         // array
         {

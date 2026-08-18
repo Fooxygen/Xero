@@ -56,7 +56,7 @@ namespace rt {
         
         // string
         {
-            auto type = sema::TypeTable::Get("string");
+            auto type = sema::TypeTable::Lookup("string");
 
             MethodTable::Set(type, "len", Function([](ARGS args) {
                 return Obj::Make_i32(args[0].Get_string_ref().size());
@@ -69,19 +69,19 @@ namespace rt {
 
         // stringview
         {
-            auto type = sema::TypeTable::Get("stringview");
+            auto type = sema::TypeTable::Lookup("stringview");
 
             MethodTable::Set(type, "len", Function([](ARGS args) {
                 return Obj::Make_i32(args[0].Get_stringview_ref().len());
             }));
             MethodTable::Set(type, "to_string", Function([](ARGS args) {
-                return TypeImplTable::Convert(args[0], sema::TypeTable::Get("string"));
+                return TypeImplTable::Convert(args[0], sema::TypeTable::Lookup("string"));
             }));
         }
 
         // array
         {
-            auto type = sema::TypeTable::Get("array");
+            auto type = sema::TypeTable::Lookup("array");
 
             MethodTable::Set(type, "len", Function([](ARGS args) {
                 return Obj::Make_i32(args[0].Get_array_ref().size());
@@ -124,13 +124,13 @@ namespace rt {
 
         // arrayview
         {
-            auto type = sema::TypeTable::Get("arrayview");
+            auto type = sema::TypeTable::Lookup("arrayview");
 
             MethodTable::Set(type, "len", Function([](ARGS args) {
                 return Obj::Make_i32(args[0].Get_arrayview_ref().len());
             }));
             MethodTable::Set(type, "to_array", Function([](ARGS args) {
-                return TypeImplTable::Convert(args[0], sema::TypeTable::Get("array"));
+                return TypeImplTable::Convert(args[0], sema::TypeTable::Lookup("array"));
             }));
         }
     }

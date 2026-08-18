@@ -79,6 +79,7 @@ namespace sema {
             var_type_(var_type)
         {}
     };
+    
     class FnSymbol  : public Symbol {
     public:
         const Type* ret_type_ = nullptr;
@@ -123,7 +124,7 @@ namespace sema {
 
     public:
         static void Set(const Type* type, FnSymbol fn) {
-            table_.insert_or_assign(Key{type, fn.name_}, std::move(fn));
+            table_.insert_or_assign(Key{ type, fn.name_ }, std::move(fn));
         }
 
         static FnSymbol* Get(const Type* type, const std::string& name) {
