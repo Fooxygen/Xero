@@ -9,7 +9,7 @@
 #include <variant>
 
 #include "sema/type.hpp"
-#include "runtime/runtime.hpp"
+#include "runtime/type.hpp"
 #include "runtime/obj/impl/string.hpp"
 #include "runtime/obj/impl/array.hpp"
 #include "runtime/obj/impl/sliceview.hpp"

@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdio>
 
+#include "runtime/method.hpp"
 #include "runtime/xengine.hpp"
 #include "runtime/obj/impl/string.hpp"
 #include "runtime/obj/impl/array.hpp"
@@ -51,17 +52,17 @@ namespace rt {
         }
     }
 
-    void Xengine::BuiltinMethodImplRegister() {
+    void MethodImplTable::BuiltinImplRegister() {
         using ARGS = std::vector<Obj>&;
         
         // string
         {
             auto type = sema::TypeTable::Lookup("string");
 
-            MethodTable::Set(type, "len", Function([](ARGS args) {
+            Set(type, "len", Function([](ARGS args) {
                 return Obj::Make_i32(args[0].Get_string_ref().size());
             }));
-            MethodTable::Set(type, "clear", Function([](ARGS args) {
+            Set(type, "clear", Function([](ARGS args) {
                 args[0].Get_string_ref().Clear();
                 return Obj();
             }));
@@ -71,10 +72,10 @@ namespace rt {
         {
             auto type = sema::TypeTable::Lookup("stringview");
 
-            MethodTable::Set(type, "len", Function([](ARGS args) {
+            Set(type, "len", Function([](ARGS args) {
                 return Obj::Make_i32(args[0].Get_stringview_ref().len());
             }));
-            MethodTable::Set(type, "to_string", Function([](ARGS args) {
+            Set(type, "to_string", Function([](ARGS args) {
                 return TypeImplTable::Convert(args[0], sema::TypeTable::Lookup("string"));
             }));
         }
@@ -83,39 +84,39 @@ namespace rt {
         {
             auto type = sema::TypeTable::Lookup("array");
 
-            MethodTable::Set(type, "len", Function([](ARGS args) {
+            Set(type, "len", Function([](ARGS args) {
                 return Obj::Make_i32(args[0].Get_array_ref().size());
             }));
-            MethodTable::Set(type, "clear", Function([](ARGS args) {
+            Set(type, "clear", Function([](ARGS args) {
                 args[0].Get_array_ref().Clear();
                 return Obj();
             }));
-            MethodTable::Set(type, "insert", Function([](ARGS args) {
+            Set(type, "insert", Function([](ARGS args) {
                 auto& arr = args[0].Get_array_ref();
                 arr.Insert(args[1].Get_i32(), new Obj(args[2].Clone()));
                 return Obj();
             }));
-            MethodTable::Set(type, "remove", Function([](ARGS args) {
+            Set(type, "remove", Function([](ARGS args) {
                 auto& arr = args[0].Get_array_ref();
                 arr.Remove(args[1].Get_i32());
                 return Obj();
             }));
-            MethodTable::Set(type, "push_front", Function([](ARGS args) {
+            Set(type, "push_front", Function([](ARGS args) {
                 auto& arr = args[0].Get_array_ref();
                 arr.Insert(0, new Obj(args[1].Clone()));
                 return Obj();
             }));
-            MethodTable::Set(type, "pop_front", Function([](ARGS args) {
+            Set(type, "pop_front", Function([](ARGS args) {
                 auto& arr = args[0].Get_array_ref();
                 arr.Remove(0);
                 return Obj();
             }));
-            MethodTable::Set(type, "push_back", Function([](ARGS args) {
+            Set(type, "push_back", Function([](ARGS args) {
                 auto& arr = args[0].Get_array_ref();
                 arr.Insert(arr.size(), new Obj(args[1].Clone()));
                 return Obj();
             }));
-            MethodTable::Set(type, "pop_back", Function([](ARGS args) {
+            Set(type, "pop_back", Function([](ARGS args) {
                 auto& arr = args[0].Get_array_ref();
                 arr.Remove(arr.size() - 1);
                 return Obj();
@@ -126,10 +127,10 @@ namespace rt {
         {
             auto type = sema::TypeTable::Lookup("arrayview");
 
-            MethodTable::Set(type, "len", Function([](ARGS args) {
+            Set(type, "len", Function([](ARGS args) {
                 return Obj::Make_i32(args[0].Get_arrayview_ref().len());
             }));
-            MethodTable::Set(type, "to_array", Function([](ARGS args) {
+            Set(type, "to_array", Function([](ARGS args) {
                 return TypeImplTable::Convert(args[0], sema::TypeTable::Lookup("array"));
             }));
         }

@@ -6,6 +6,7 @@
 #include "common/log.hpp"
 #include "common/opertype.hpp"
 #include "common/signal.hpp"
+#include "runtime/method.hpp"
 #include "runtime/xengine.hpp"
 
 namespace rt {
@@ -325,7 +326,7 @@ namespace rt {
             objs.emplace_back(Exec(*e));
         }
 
-        auto fn = MethodTable::Get(target.type(), callee.value_);
+        auto fn = MethodImplTable::Lookup(target.type(), callee.value_);
         if (!fn) {
             throw LogErr(LogModule::Runtime, std::format(
                 "no method '{}' on type '{}'",

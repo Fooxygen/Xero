@@ -5,6 +5,7 @@
 
 #include "sema/sema.hpp"
 #include "sema/type.hpp"
+#include "sema/method.hpp"
 
 namespace sema {
 
@@ -217,7 +218,7 @@ namespace sema {
             args_type.emplace_back(e->resolved_type_);
         }
 
-        auto fn = MethodSymbolTable::Get(target_type, node.callee_->value_);
+        auto fn = MethodTable::Lookup(target_type, node.callee_->value_);
         if (!fn) {
             throw LogErr(LogModule::Sema, std::format(
                 "no method '{}' on type '{}'",

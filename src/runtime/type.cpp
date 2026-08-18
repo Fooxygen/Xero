@@ -6,7 +6,7 @@
 #include <cmath>
 
 #include "sema/type.hpp"
-#include "runtime/runtime.hpp"
+#include "runtime/type.hpp"
 #include "runtime/obj/obj.hpp"
 
 namespace rt {

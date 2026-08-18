@@ -13,8 +13,10 @@
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
 #include "sema/type.hpp"
+#include "sema/method.hpp"
 #include "sema/sema.hpp"
-#include "runtime/runtime.hpp"
+#include "runtime/type.hpp"
+#include "runtime/method.hpp"
 #include "runtime/xengine.hpp"
 
 #ifdef _WIN32
@@ -84,12 +86,14 @@ int main(int argc, char* argv[]) {
 
         // Sema
         sema::TypeTable::Init();
+        sema::MethodTable::BuiltinRegister();
 
         sema::Sema sema;
         sema.Exec(*parser.root());
 
         // Runtime
         rt::TypeImplTable::Init();
+        rt::MethodImplTable::BuiltinImplRegister();
 
         rt::Xengine xengine;
         xengine.Exec(*parser.root());

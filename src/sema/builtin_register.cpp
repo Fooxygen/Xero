@@ -4,6 +4,7 @@
 //  Licensed under the MIT License.
 
 #include "sema/sema.hpp"
+#include "sema/method.hpp"
 
 namespace sema {
 
@@ -32,7 +33,7 @@ namespace sema {
         }
     }
 
-    void Sema::BuiltinMethodRegister() {
+    void MethodTable::BuiltinRegister() {
         using TS = std::vector<const Type*>;
 
         auto none_        = TypeTable::Lookup("none");
@@ -44,32 +45,32 @@ namespace sema {
 
         // array
         {
-            MethodSymbolTable::Set(array_, FnSymbol("len", Loc(), i32_));
-            MethodSymbolTable::Set(array_, FnSymbol("clear", Loc(), none_));
-            MethodSymbolTable::Set(array_, FnSymbol("insert", Loc(), none_, TS{ i32_, nullptr }));
-            MethodSymbolTable::Set(array_, FnSymbol("remove", Loc(), none_, TS{ i32_ }));
-            MethodSymbolTable::Set(array_, FnSymbol("push_front", Loc(), none_, TS{ nullptr }));
-            MethodSymbolTable::Set(array_, FnSymbol("pop_front", Loc(), none_));
-            MethodSymbolTable::Set(array_, FnSymbol("push_back", Loc(), none_, TS{ nullptr }));
-            MethodSymbolTable::Set(array_, FnSymbol("pop_back", Loc(), none_));
+            Set(array_, FnSymbol("len", Loc(), i32_));
+            Set(array_, FnSymbol("clear", Loc(), none_));
+            Set(array_, FnSymbol("insert", Loc(), none_, TS{ i32_, nullptr }));
+            Set(array_, FnSymbol("remove", Loc(), none_, TS{ i32_ }));
+            Set(array_, FnSymbol("push_front", Loc(), none_, TS{ nullptr }));
+            Set(array_, FnSymbol("pop_front", Loc(), none_));
+            Set(array_, FnSymbol("push_back", Loc(), none_, TS{ nullptr }));
+            Set(array_, FnSymbol("pop_back", Loc(), none_));
         }
 
         // arrayview
         {
-            MethodSymbolTable::Set(arrayview_, FnSymbol("len", Loc(), i32_));
-            MethodSymbolTable::Set(arrayview_, FnSymbol("to_array", Loc(), array_));
+            Set(arrayview_, FnSymbol("len", Loc(), i32_));
+            Set(arrayview_, FnSymbol("to_array", Loc(), array_));
         }
 
         // string
         {
-            MethodSymbolTable::Set(string_, FnSymbol("len", Loc(), i32_));
-            MethodSymbolTable::Set(string_, FnSymbol("clear", Loc(), none_));
+            Set(string_, FnSymbol("len", Loc(), i32_));
+            Set(string_, FnSymbol("clear", Loc(), none_));
         }
 
         // stringview
         {
-            MethodSymbolTable::Set(stringview_, FnSymbol("len", Loc(), i32_));
-            MethodSymbolTable::Set(stringview_, FnSymbol("to_string", Loc(), string_));
+            Set(stringview_, FnSymbol("len", Loc(), i32_));
+            Set(stringview_, FnSymbol("to_string", Loc(), string_));
         }
     }
 }

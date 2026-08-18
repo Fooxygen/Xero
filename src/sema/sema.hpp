@@ -45,14 +45,10 @@ namespace sema {
         void Exec(Program& node);
 
     public:
-        Sema() {
-            BuiltinMethodRegister();
-        }
 
-        // Symbol
+        // Fn
 
-        void BuiltinFnRegister();           // stack-based
-        void BuiltinMethodRegister();       // table-based
+        void BuiltinFnRegister();
 
         void        FnCallCheck(const FnSymbol& fn, const std::vector<const Type*>& args, Loc loc);
         std::string FnParamsPrint(const std::vector<const Type*>& params);
