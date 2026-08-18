@@ -276,7 +276,7 @@ namespace rt {
             // Xero AstNode
             auto& fnexpr   = fn.expr();
             auto& params   = fnexpr->params_->exprs_;
-            auto  ret_type = sema::TypeTable::Lookup(fnexpr->ret_type_);
+            auto  ret_type = fnexpr->ret_resolved_type_;
 
             Obj ret;
             try {

@@ -33,23 +33,23 @@ namespace sema {
         }
         catch (...) {
             throw LogErr(LogModule::Sema, std::format(
-                "arguments of function '{}' must be {}, not {}",
+                "'{}' expects {}, got {}",
                 fn.name_, FnParamsPrint(fn), FnParamsPrint(args)
             ), loc);
         }
     }
 
     std::string Sema::FnParamsPrint(const std::vector<const Type*>& params) {
-        std::string res = "";
+        std::string res = "(";
         for (size_t i = 0; i < params.size(); i++) {
             if (i != 0) res += ", ";
             res += params[i]->name_;
         }
-        return res.empty() ? "empty" : res;
+        return res.empty() ? "empty)" : res + ')';
     }
 
     std::string Sema::FnParamsPrint(const FnSymbol& fn) {
-        std::string res = "";
+        std::string res = "(";
 
         for (size_t i = 0; i < fn.params_fix_.size(); i++) {
             if (i != 0) res += ", ";
@@ -62,7 +62,7 @@ namespace sema {
             res += "...";
         }
 
-        return res.empty() ? "empty" : res;
+        return res.empty() ? "empty)" : res + ')';
     }
 
     // Expr
@@ -92,9 +92,13 @@ namespace sema {
             node.resolved_type_ = ((VarSymbol*)sym)->var_type_;
             return;
         }
+        if (sym->type_ == SymbolType::Fn) {
+            node.resolved_type_ = ((FnSymbol*)sym)->ret_type_;
+            return;
+        }
 
         throw LogErr(LogModule::Sema, std::format(
-            "'{}' is not a variable", sym->name_
+            "'{}' is not a identifier", sym->name_
         ), node.loc_);
     }
 
@@ -226,7 +230,8 @@ namespace sema {
     }
 
     void Sema::Exec(FnExpr& node) {
-        node.resolved_type_ = TypeTable::Lookup("function");
+        node.resolved_type_     = TypeTable::Lookup("function");
+        node.ret_resolved_type_ = TypeTable::Lookup(node.ret_type_);
 
         auto& params_expr = node.params_->exprs_;
         std::vector<const Type*> params_type;
@@ -239,7 +244,7 @@ namespace sema {
         if (!node.name_.empty()) {
             symbol_table_.Declare(std::make_unique<FnSymbol>(
                 node.name_, node.loc_,
-                TypeTable::Lookup(node.ret_type_), params_type
+                node.ret_resolved_type_, params_type
             ));
         }
         if (node.block_) {

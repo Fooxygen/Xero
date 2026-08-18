@@ -8,6 +8,7 @@
 namespace sema {
 
     void Sema::BuiltinFnRegister() {
+        // nullptr: any type
         using TS = std::vector<const Type*>;
         
         auto none_   = TypeTable::Lookup("none");

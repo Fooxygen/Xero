@@ -472,6 +472,8 @@ public:
     std::unique_ptr<Exprs>     params_ = nullptr;
     std::unique_ptr<BlockExpr> block_  = nullptr;
 
+    const sema::Type* ret_resolved_type_ = nullptr;
+
     FnExpr(
         std::string name,
         std::string ret_type,
@@ -507,6 +509,7 @@ public:
             block_  ? std::unique_ptr<BlockExpr>((BlockExpr*)(block_->Clone().release())) : nullptr
         );
         node->resolved_type_ = resolved_type_;
+        node->ret_resolved_type_ = ret_resolved_type_;
         node->loc_ = loc_;
         return node;
     }
