@@ -10,7 +10,6 @@
 #include "runtime/xengine.hpp"
 #include "runtime/obj/impl/string.hpp"
 #include "runtime/obj/impl/array.hpp"
-#include "runtime/obj/impl/sliceview.hpp"
 
 namespace rt {
 

@@ -271,43 +271,51 @@ namespace rt {
         if (callee.is("function")) {
             auto& fn = callee.Get_function_ref();
 
-            // Cpp Lambda
-            if (fn.isNative()) return CallThrow(fn.native(), args);
-
-            // Xero AstNode
-            auto& fnexpr   = fn.expr();
-            auto& params   = fnexpr->params_->exprs_;
-            auto  ret_type = fnexpr->ret_resolved_type_;
-
-            Obj ret;
-            try {
-                // Without return, get none
-                ret = Exec(*fnexpr->block_, [&]() {
-                    for (size_t i = 0; i < params.size(); i++) {
-                        auto param = (DeclExpr*)params[i].get();
-                        auto param_type = param->resolved_type_;
-                        env_.Declare(param->id_, TypeImplTable::Convert(args[i], param_type));
-                    }
-                });
-            }
-            catch (ReturnSignal e) {
-                ret = *e.value;
+            // Native
+            if (fn.usingtype() == Function::UsingType::Native) {
+                return CallThrow(fn.native(), args);
             }
 
-            // Check return type.
-            // - has return stmt:   value must be compatible with ret type
-            // - missing return:    exec() return 'none', which isn't compatible with ret type
-            if (!ret_type->isNone() && ret.type()->isNone()) {
-                throw LogErr(LogModule::Runtime, "missing return in function", node.loc_);
-            }
-            if (!ret.type()->converts_.contains(ret_type)) {
-                throw LogErr(LogModule::Runtime, std::format(
-                    "cannot make type '{}' compatible with '{}'",
-                    ret.type()->name_, ret_type->name_
-                ), node.loc_);
-            }
+            // Lang
+            else {
+                auto& lang     = fn.lang();
+                if (!lang) {
+                    throw LogErr(LogModule::Runtime, "empty function", node.loc_);
+                }
+                
+                auto& params   = lang->params_->exprs_;
+                auto  ret_type = lang->ret_resolved_type_;
 
-            return TypeImplTable::Convert(ret, ret_type);
+                Obj ret;
+                try {
+                    // Without return, get none
+                    ret = Exec(*lang->block_, [&]() {
+                        for (size_t i = 0; i < params.size(); i++) {
+                            auto param = (DeclExpr*)params[i].get();
+                            auto param_type = param->resolved_type_;
+                            env_.Declare(param->id_, TypeImplTable::Convert(args[i], param_type));
+                        }
+                    });
+                }
+                catch (ReturnSignal e) {
+                    ret = *e.value;
+                }
+
+                // Check return type.
+                // - has return stmt:   value must be compatible with ret type
+                // - missing return:    exec() return 'none', which isn't compatible with ret type
+                if (!ret_type->isNone() && ret.type()->isNone()) {
+                    throw LogErr(LogModule::Runtime, "missing return in function", node.loc_);
+                }
+                if (!ret.type()->converts_.contains(ret_type)) {
+                    throw LogErr(LogModule::Runtime, std::format(
+                        "cannot make type '{}' compatible with '{}'",
+                        ret.type()->name_, ret_type->name_
+                    ), node.loc_);
+                }
+
+                return TypeImplTable::Convert(ret, ret_type);
+            }
         }
 
         throw LogErr(LogModule::Runtime, std::format(
@@ -334,12 +342,15 @@ namespace rt {
             ), node.loc_);
         }
 
-        // Cpp Lambda
-        if (fn->isNative()) return CallThrow(fn->native(), objs);
+        // Native
+        if (fn->usingtype() == Function::UsingType::Native) {
+            return CallThrow(fn->native(), objs);
+        }
 
-        // Xero AstNode
+        // Lang
+
         throw LogErr(LogModule::Runtime, std::format(
-            "method '{}' not implemented as script", callee.value_
+            "method '{}' not implemented", callee.value_
         ), node.loc_);
     }
 

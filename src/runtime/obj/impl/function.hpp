@@ -11,23 +11,30 @@
 
 namespace rt {
     class Obj;
-    using Fn = Obj(*)(std::vector<Obj>&);
+    using NativeFn = Obj(*)(std::vector<Obj>&);
+    using LangFn   = std::shared_ptr<FnExpr>;
     
     class Function {
+    public:
+        enum class UsingType {
+            Native, Lang
+        };
+    
     private:
-        std::variant<Fn, std::shared_ptr<FnExpr>> impl_;
+        UsingType usingtype_ = UsingType::Lang;
+        std::variant<LangFn, NativeFn> impl_{LangFn{}};
 
     public:
         Function() {}
-        Function(Fn fn)
-        :   impl_(fn) {}
-        Function(std::shared_ptr<FnExpr> expr)
-        :   impl_(std::move(expr)) {}
-
-        bool isNative() const { return std::holds_alternative<Fn>(impl_); }     // cpp lambda
-        Fn   native()   const { return std::get<Fn>(impl_); }
-        const std::shared_ptr<FnExpr>& expr() const {                           // xero astnode
-            return std::get<std::shared_ptr<FnExpr>>(impl_);
+        Function(NativeFn fn) : usingtype_(UsingType::Native) {
+            impl_.emplace<NativeFn>(fn);
         }
+        Function(LangFn fn)   : usingtype_(UsingType::Lang) {
+            impl_.emplace<LangFn>(std::move(fn));
+        }
+
+        UsingType     usingtype() const { return usingtype_; }
+        NativeFn      native()    const { return std::get<NativeFn>(impl_); }
+        const LangFn& lang()      const { return std::get<LangFn>(impl_); }
     };
 }

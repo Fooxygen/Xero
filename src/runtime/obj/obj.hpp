@@ -75,7 +75,7 @@ namespace rt {
         };
 
     private:
-        UsingType                   usingtype = UsingType::Value;
+        UsingType                   usingtype_ = UsingType::Value;
         std::variant<Value, Ref>    data_{Value{}};
 
         Value&       value()        { return std::get<Value>(data_); }
@@ -84,7 +84,7 @@ namespace rt {
         const Ref&   ref()   const  { return std::get<Ref>(data_); }
 
         void Destroy() {
-            if (usingtype == UsingType::Value && hasHeapData()) {
+            if (usingtype_ == UsingType::Value && hasHeapData()) {
                 auto heapdata = (HeapData*)value().data().ptr_;
                 if (--heapdata->cnt == 0) {
                     type()->impl_->destroy_(heapdata->data);
@@ -93,9 +93,9 @@ namespace rt {
             }
         }
         void AssignFrom(const Obj& other) {
-            usingtype = other.usingtype;
+            usingtype_ = other.usingtype_;
 
-            if (other.usingtype == UsingType::Ref) {
+            if (other.usingtype_ == UsingType::Ref) {
                 data_.emplace<Ref>(other.ref().obj());
             }
 
@@ -116,7 +116,7 @@ namespace rt {
             AssignFrom(other);
         }
         ~Obj() {
-            if (usingtype == UsingType::Value) {
+            if (usingtype_ == UsingType::Value) {
                 if (hasHeapData()) {
                     auto heapdata = (HeapData*)value().data().ptr_;
                     if (--heapdata->cnt == 0) {
@@ -128,7 +128,7 @@ namespace rt {
         }
 
         const sema::Type* type()  const  {
-            switch (usingtype) {
+            switch (usingtype_) {
                 case UsingType::Value:  return value().type();
                 case UsingType::Ref:    return ref().obj()->type();
                 default:                __builtin_unreachable();
@@ -142,7 +142,7 @@ namespace rt {
             return type()->is(type_name);
         }
         bool hasHeapData() const {
-            switch (usingtype) {
+            switch (usingtype_) {
                 case UsingType::Value:  return value().hasHeapData();
                 case UsingType::Ref:    return ref().obj()->hasHeapData();
                 default:                __builtin_unreachable();
@@ -150,7 +150,7 @@ namespace rt {
         }
         
         Obj        Clone()  const {
-            switch (usingtype) {
+            switch (usingtype_) {
                 case UsingType::Value: {
                     if (type()->isHeapStored_)  return type()->impl_->clone_(*this);
                     else                        return *this;
@@ -160,23 +160,23 @@ namespace rt {
             }
         }
         Obj*       Origin() {
-            if (usingtype == UsingType::Ref)
+            if (usingtype_ == UsingType::Ref)
                 return ref().obj();
             return this;
         }
         const Obj* Origin() const {
-            if (usingtype == UsingType::Ref)
+            if (usingtype_ == UsingType::Ref)
                 return ref().obj();
             return this;
         }
 
         static Obj MakeRef(Obj* org) {
-            while (org->usingtype == UsingType::Ref) {
+            while (org->usingtype_ == UsingType::Ref) {
                 org = org->ref().obj();
             }
                 
             Obj o;
-            o.usingtype = UsingType::Ref;
+            o.usingtype_ = UsingType::Ref;
             o.data_.emplace<Ref>(org);
             return o;
         }
@@ -282,37 +282,37 @@ namespace rt {
         }
 
         bool        Get_bool()              const {
-            if (usingtype == UsingType::Ref)
+            if (usingtype_ == UsingType::Ref)
                 return ref().obj()->Get_bool();
             return value().data().bool_;
         }
         int32_t     Get_i32()               const {
-            if (usingtype == UsingType::Ref)
+            if (usingtype_ == UsingType::Ref)
                 return ref().obj()->Get_i32();
             return value().data().i32_;
         }
         int64_t     Get_i64()               const {
-            if (usingtype == UsingType::Ref)
+            if (usingtype_ == UsingType::Ref)
                 return ref().obj()->Get_i64();
             return value().data().i64_;
         }
         float       Get_f32()               const {
-            if (usingtype == UsingType::Ref)
+            if (usingtype_ == UsingType::Ref)
                 return ref().obj()->Get_f32();
             return value().data().f32_;
         }
         double      Get_f64()               const {
-            if (usingtype == UsingType::Ref)
+            if (usingtype_ == UsingType::Ref)
                 return ref().obj()->Get_f64();
             return value().data().f64_;
         }
         char        Get_char()              const {
-            if (usingtype == UsingType::Ref)
+            if (usingtype_ == UsingType::Ref)
                 return ref().obj()->Get_char();
             return value().data().char_;
         }
         String&     Get_string_ref()        const {
-            switch (usingtype) {
+            switch (usingtype_) {
                 case UsingType::Ref:
                     return ref().obj()->Get_string_ref();
                 case UsingType::Value: {
@@ -324,7 +324,7 @@ namespace rt {
         }
         SliceView<String>&
                     Get_stringview_ref()    const {
-            switch (usingtype) {
+            switch (usingtype_) {
                 case UsingType::Ref:
                     return ref().obj()->Get_stringview_ref();
                 case UsingType::Value: {
@@ -335,7 +335,7 @@ namespace rt {
             }
         }
         Array&      Get_array_ref()         const {
-            switch (usingtype) {
+            switch (usingtype_) {
                 case UsingType::Ref:
                     return ref().obj()->Get_array_ref();
                 case UsingType::Value: {
@@ -347,7 +347,7 @@ namespace rt {
         }
         SliceView<Array>&
                     Get_arrayview_ref()     const {
-            switch (usingtype) {
+            switch (usingtype_) {
                 case UsingType::Ref:
                     return ref().obj()->Get_arrayview_ref();
                 case UsingType::Value: {
@@ -358,7 +358,7 @@ namespace rt {
             }
         }
         Range&      Get_range_ref()         const {
-            switch (usingtype) {
+            switch (usingtype_) {
                 case UsingType::Ref:
                     return ref().obj()->Get_range_ref();
                 case UsingType::Value: {
@@ -369,7 +369,7 @@ namespace rt {
             }
         }
         Function&   Get_function_ref()      const {
-            switch (usingtype) {
+            switch (usingtype_) {
                 case UsingType::Ref:
                     return ref().obj()->Get_function_ref();
                 case UsingType::Value: {
