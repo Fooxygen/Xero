@@ -22,6 +22,7 @@ namespace sema {
 
         void Exec(BlockExpr& node, std::function<void()> OnScopeReady = nullptr);
         void Exec(IdExpr& node);
+        void Exec(TypeExpr& node);
         void Exec(DeclExpr& node);
         void Exec(OperExpr& node);
         void Exec(RangeExpr& node);
@@ -60,6 +61,7 @@ namespace sema {
             switch (node.type_) {
                 case AstType::BlockExpr:        Exec((BlockExpr&)node);         return;
                 case AstType::IdExpr:           Exec((IdExpr&)node);            return;
+                case AstType::TypeExpr:         Exec((TypeExpr&)node);          return;
                 case AstType::DeclExpr:         Exec((DeclExpr&)node);          return;
                 case AstType::OperExpr:         Exec((OperExpr&)node);          return;
                 case AstType::RangeExpr:        Exec((RangeExpr&)node);         return;

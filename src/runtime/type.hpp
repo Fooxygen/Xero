@@ -78,7 +78,7 @@ namespace rt {
             if (!table_.contains(type)) {
                 auto impl = new TypeImpl(typeimpl);
                 table_.emplace(type, impl);
-                type->impl_ = impl;
+                type->ImplSet(impl);
             }
             else throw LogErr(LogModule::Runtime, std::format("existing type '{}'", type->name_));
         }

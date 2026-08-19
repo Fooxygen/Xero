@@ -7,9 +7,11 @@
 
 #include <cstddef>
 #include <string>
+#include <vector>
 #include <set>
 #include <map>
 #include <unordered_map>
+#include <variant>
 
 #include "common/log.hpp"
 
@@ -20,16 +22,88 @@ namespace rt {
 namespace sema {
 
     class Type {
+    private:
+        const rt::TypeImpl* impl_ = nullptr;
+    
     public:
-        std::string_view        name_  = "";
-        size_t                  size_  = 0;             // Byte width
-        bool                    isHeapStored_ = false;  // Store Data in Heap
-        std::set<const Type*>   converts_ = {};         // List of convertible types
+        enum class UsingType {
+            Base, Param
+        };
 
-        const rt::TypeImpl*     impl_ = nullptr;
+        struct BaseInfo {
+            size_t size_         = 0;           // Byte width
+            bool   isHeapStored_ = false;       // Stored Data in Heap
+            size_t params_cnt_   = 0;
+        };
+
+        struct ParamInfo {
+            const Type*              base_   = nullptr;
+            std::vector<const Type*> params_ = {};
+        };
+
+        UsingType                         usingtype_ = UsingType::Base;
+        std::string                       name_      = "";
+        std::variant<BaseInfo, ParamInfo> info_{BaseInfo{}};
+        std::set<const Type*>             converts_  = {};              // List of convertible types
+
+    public:
+        Type(std::string_view name, BaseInfo base)
+        :   usingtype_(UsingType::Base), name_(name), info_(std::move(base)) {}
+        Type(std::string_view name, ParamInfo param)
+        :   usingtype_(UsingType::Param), name_(name), info_(std::move(param)) {}
+
+        const BaseInfo&  baseinfo()  const { return std::get<BaseInfo>(info_); }
+        const ParamInfo& paraminfo() const { return std::get<ParamInfo>(info_); }
+        
+        bool isHeapStored() const {
+            return base()->baseinfo().isHeapStored_;
+        }
+        const Type*                     base() const {
+            switch(usingtype_) {
+                case UsingType::Base:  return this;
+                case UsingType::Param: return paraminfo().base_;
+                default: __builtin_unreachable();
+            }
+        }
+        const std::vector<const Type*>* params() const {
+            switch(usingtype_) {
+                case UsingType::Base:  return nullptr;
+                case UsingType::Param: return &paraminfo().params_;
+                default: __builtin_unreachable();
+            }
+        }
+        const rt::TypeImpl*             impl() const {
+            if (impl_) return impl_;
+            return base()->impl();
+        }
 
         bool isNone() const;
         bool is(std::string_view name) const;
+
+        void ImplSet(const rt::TypeImpl* impl) {
+            impl_ = impl;
+        }
+
+        static void        BaseTypeCheck(const Type* base) {
+            if (base->usingtype_ != UsingType::Base) {
+                throw LogErr(LogModule::Sema, std::format(
+                    "cannot use parameterized type '{}' as base type", base->name_
+                ));
+            }
+        }
+        // Print type name with params: "array<i32, f64>"
+        static std::string ParamsPrint(const Type* base, const std::vector<const Type*>& params) {
+            BaseTypeCheck(base);
+
+            std::string res(base->name_);
+            res += "[=";
+            for (size_t i = 0; i < params.size(); i++) {
+                if (i != 0) res += ", ";
+                res += params[i]->name_;
+            }
+            res += "=]";
+            return res;
+        }
     };
 
     class TypeTable {
@@ -41,9 +115,11 @@ namespace sema {
     public:
         static void Init();
 
-        static void        Set(const Type& t) {
+        static Type*       Set(const Type& t) {
             if (!table_.contains(std::string(t.name_))) {
-                table_.emplace(t.name_, new Type(t));
+                auto type = new Type(t);
+                table_.emplace(t.name_, type);
+                return type;
             }
             else throw LogErr(LogModule::Sema, std::format("existing type '{}'", t.name_));
         }
@@ -54,13 +130,39 @@ namespace sema {
             }
 
             throw LogErr(LogModule::Sema, std::format("undefined type '{}'", name), loc);
-            return nullptr;
         }
-    
+        static Type*       SetOrGetTypeParam(
+            const Type* base, const std::vector<const Type*>& params,
+            std::optional<Loc> loc = std::nullopt)
+        {
+            Type::BaseTypeCheck(base);
+            if (params.empty()) return Lookup(base->name_, loc);
+            if (base->baseinfo().params_cnt_ != params.size()) {
+                throw LogErr(LogModule::Sema, std::format(
+                    "type '{}' expects {} type parameter(s), got {}",
+                    base->name_, base->baseinfo().params_cnt_, params.size()
+                ), loc);
+            }
+            
+            auto name = Type::ParamsPrint(base, params);
+            auto it   = table_.find(name);
+            if (it != table_.end()) return it->second;
+
+            auto type = Set(Type(
+                name, Type::ParamInfo{
+                    .base_   = base,
+                    .params_ = params
+                }
+            ));
+            ConvertsRecompute();
+            return type;
+        }
+
         static void        ConvertSet(const Type* from, const Type* to);
         static void        ConvertsRecompute();
         
         static const Type* Common(std::set<const Type*> ts) {
+            if (ts.size() == 1) return *ts.begin();
             
             // Search Cache
             if (common_cache_.contains(ts)) return common_cache_[ts];

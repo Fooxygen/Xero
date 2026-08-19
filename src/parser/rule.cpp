@@ -146,7 +146,8 @@ namespace parser {
                     TT::Comma,
                     TT::Semicolon,
                     TT::RParen,
-                    TT::RBkt
+                    TT::RBkt,
+                    TT::REBkt
                 }
             );
         }
@@ -169,13 +170,31 @@ namespace parser {
                     TT::Comma,
                     TT::Semicolon,
                     TT::RParen,
-                    TT::RBkt
+                    TT::RBkt,
+                    TT::REBkt
                 }
             );
         }
 
-        // Declare and Assign
+        // Type, Declare and Assign
         
+        // └─ id [= exprs =] -> typeexpr
+        {
+            RuleAdd(
+                PATS{
+                    AT::IdExpr,
+                    TT::LEBkt,
+                    SymbolPattern::Opt({ AT::Expr, AT::Exprs }),
+                    TT::REBkt
+                },
+                [](std::vector<Symbol>& symbols, auto) {
+                    return std::make_unique<TypeExpr>(
+                        Rule::Move<IdExpr>(symbols, 1)->value_,
+                        Pack2Exprs(symbols, 3)
+                    );
+                }
+            );
+        }
         // └─ id: id -> declareexpr
         {
             RuleAdd(
@@ -187,7 +206,29 @@ namespace parser {
                 [](std::vector<Symbol>& symbols, auto) {
                     return std::make_unique<DeclExpr>(
                         Rule::Move<IdExpr>(symbols, 1)->value_,
-                        Rule::Move<IdExpr>(symbols, 3)->value_,
+                        std::make_unique<TypeExpr>(
+                            Rule::Move<IdExpr>(symbols, 3)->value_,
+                            nullptr
+                        ),
+                        nullptr
+                    );
+                },
+                {}, {},
+                TOKS{ TT::LEBkt }
+            );
+        }
+        // └─ id: typeexpr -> declareexpr
+        {
+            RuleAdd(
+                PATS{
+                    AT::IdExpr,
+                    TT::Colon,
+                    AT::TypeExpr
+                },
+                [](std::vector<Symbol>& symbols, auto) {
+                    return std::make_unique<DeclExpr>(
+                        Rule::Move<IdExpr>(symbols, 1)->value_,
+                        Rule::Move<TypeExpr>(symbols, 3),
                         nullptr
                     );
                 }
@@ -205,7 +246,7 @@ namespace parser {
                     auto decl = Rule::Move<DeclExpr>(symbols, 1);
                     return std::make_unique<DeclExpr>(
                         decl->id_,
-                        decl->bind_type_,
+                        std::move(decl->bind_type_) ,
                         Rule::Move<Expr>(symbols, 3)
                     );
                 },
@@ -291,7 +332,7 @@ namespace parser {
             );
         }
         
-        // └─ fn id? (exprs?) -> id blockexpr -> fnexpr
+        // └─ fn id?(exprs?) -> id blockexpr -> fnexpr
         {
             RuleAdd(
                 PATS{
@@ -317,7 +358,7 @@ namespace parser {
                 }
             );
         }
-        // └─ fn id? (exprs?) blockexpr -> fnexpr
+        // └─ fn id?(exprs?) blockexpr -> fnexpr
         {
             RuleAdd(
                 PATS{
@@ -460,7 +501,7 @@ namespace parser {
 
         // Range
  
-        // └─ expr .. expr .. expr -> rangeexpr
+        // └─ expr..expr..expr -> rangeexpr
         {
             RuleAdd(
                 PATS{
@@ -488,7 +529,7 @@ namespace parser {
                 }
             );
         }
-        // └─ expr .. expr ..= expr -> rangeexpr
+        // └─ expr..expr..=expr -> rangeexpr
         {
             RuleAdd(
                 PATS{
@@ -517,7 +558,7 @@ namespace parser {
             );
         }
 
-        // └─ expr .. expr -> rangeexpr
+        // └─ expr..expr -> rangeexpr
         {
             RuleAdd(
                 PATS{
@@ -543,7 +584,7 @@ namespace parser {
                 }
             );
         }
-        // └─ expr ..= expr -> rangeexpr
+        // └─ expr..=expr -> rangeexpr
         {
             RuleAdd(
                 PATS{

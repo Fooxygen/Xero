@@ -36,6 +36,7 @@ enum class AstType {
     Expr,               //  Base ------
     BlockExpr,          //  Packaged Astnode
     IdExpr,             //  Identity
+    TypeExpr,           //  Type
     DeclExpr,           //  Declaration
     OperExpr,           //  Operation
     RangeExpr,          //  Range
@@ -71,6 +72,7 @@ static AstType BaseOfAstType(AstType type) {
 
         case BlockExpr:
         case IdExpr:
+        case TypeExpr:
         case DeclExpr:
         case OperExpr:
         case RangeExpr:
@@ -233,19 +235,54 @@ public:
         return node;
     }
 };
+class TypeExpr          : public Expr {
+public:
+    std::string            base_   = "";
+    std::unique_ptr<Exprs> params_ = nullptr;
+
+    TypeExpr(
+        const std::string& base,
+        std::unique_ptr<Exprs> params
+    )
+    :   base_(base),
+        params_(std::move(params))
+    {
+        type_ = AstType::TypeExpr;
+    }
+
+    const std::string TypeName() const {
+        return "TypeExpr";
+    }
+
+    void PrintImpl(std::string prefix) override {
+        PrintLabel("base", prefix);
+        std::cerr << COLOR_BLUE << base_ << COLOR_DEFAULT << std::endl;
+        if (params_) params_->Print(prefix, "params");
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        auto node = std::make_unique<TypeExpr>(
+            base_,
+            params_ ? std::unique_ptr<Exprs>((Exprs*)(params_->Clone().release())) : nullptr
+        );
+        node->resolved_type_ = resolved_type_;
+        node->loc_ = loc_;
+        return node;
+    }
+};
 class DeclExpr          : public Expr {
 public:
-    std::string id_        = "";
-    std::string bind_type_ = "";
-    std::unique_ptr<Expr> value_ = nullptr;
+    std::string id_ = "";
+    std::unique_ptr<TypeExpr> bind_type_ = nullptr;
+    std::unique_ptr<Expr>     value_     = nullptr;
 
     DeclExpr(
-        const std::string&    id,
-        const std::string&    bind_type,
-        std::unique_ptr<Expr> value
+        const std::string&        id,
+        std::unique_ptr<TypeExpr> bind_type,
+        std::unique_ptr<Expr>     value
     )
     :   id_(id),
-        bind_type_(bind_type),
+        bind_type_(std::move(bind_type)),
         value_(std::move(value))
     {
         type_ = AstType::DeclExpr;
@@ -258,15 +295,14 @@ public:
     void PrintImpl(std::string prefix) override {
         PrintLabel("id", prefix);
         std::cerr << COLOR_BLUE << id_ << COLOR_DEFAULT << std::endl;
-        PrintLabel("bind_type", prefix);
-        std::cerr << COLOR_MAGENTA << bind_type_ << COLOR_DEFAULT << std::endl;
+        if (bind_type_) value_->Print(prefix, "bind_type");
         if (value_) value_->Print(prefix, "value");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<DeclExpr>(
             id_,
-            bind_type_,
+            bind_type_ ? std::unique_ptr<TypeExpr>((TypeExpr*)(bind_type_->Clone().release())) : nullptr,
             value_ ? std::unique_ptr<Expr>((Expr*)(value_->Clone().release())) : nullptr
         );
         node->resolved_type_ = resolved_type_;
@@ -368,6 +404,7 @@ public:
 class ArrayExpr         : public Expr {
 public:
     std::unique_ptr<Exprs> elements_;
+    const sema::Type*      elem_type_;
 
     ArrayExpr(std::unique_ptr<Exprs> elements)
     :   elements_(std::move(elements))

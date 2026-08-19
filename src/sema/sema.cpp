@@ -103,8 +103,35 @@ namespace sema {
         ), node.loc_);
     }
 
+    void Sema::Exec(TypeExpr& node) {
+        auto base = TypeTable::Lookup(node.base_);
+
+        if (!node.params_) node.resolved_type_ = base;
+        else {
+            std::vector<const Type*> params = {};
+            for (auto& e : node.params_->exprs_) {
+                if      (e->type_ == AstType::TypeExpr) {
+                    Exec(*e);
+                    params.emplace_back(e->resolved_type_);
+                }
+                else if (e->type_ == AstType::IdExpr) {
+                    params.emplace_back(TypeTable::Lookup(((IdExpr&)*e).value_));
+                }
+                else {
+                    throw LogErr(LogModule::Sema, "invalid type parameter", e->loc_);
+                }
+            }
+            
+            if (params.empty())
+                node.resolved_type_ = base;
+            else
+                node.resolved_type_ = TypeTable::SetOrGetTypeParam(base, params);
+        }
+    }
+
     void Sema::Exec(DeclExpr& node) {
-        node.resolved_type_ = sema::TypeTable::Lookup(node.bind_type_);
+        Exec(*node.bind_type_);
+        node.resolved_type_ = node.bind_type_->resolved_type_;
 
         symbol_table_.Declare(std::make_unique<VarSymbol>(
             node.id_, node.loc_, node.resolved_type_
@@ -178,9 +205,20 @@ namespace sema {
     }
 
     void Sema::Exec(ArrayExpr& node) {
-        node.resolved_type_ = TypeTable::Lookup("array");
+        auto& exprs = node.elements_->exprs_;
+        for (auto& e : exprs) Exec(*e);
+        if (exprs.empty())
+            node.elem_type_ = nullptr;
+        else
+            node.elem_type_ = exprs[0]->resolved_type_;
 
-        for (auto& e : node.elements_->exprs_) Exec(*e);
+        // Empty ArrayExpr
+        std::vector<const sema::Type*> params = {};
+        if (node.elem_type_) params.emplace_back(node.elem_type_);
+
+        node.resolved_type_ = TypeTable::SetOrGetTypeParam(
+            TypeTable::Lookup("array"), params
+        );
     }
 
     void Sema::Exec(FnCallExpr& node) {
@@ -218,7 +256,7 @@ namespace sema {
             args_type.emplace_back(e->resolved_type_);
         }
 
-        auto fn = MethodTable::Lookup(target_type, node.callee_->value_);
+        auto fn = MethodTable::Lookup(target_type->base(), node.callee_->value_);
         if (!fn) {
             throw LogErr(LogModule::Sema, std::format(
                 "no method '{}' on type '{}'",
@@ -238,7 +276,8 @@ namespace sema {
         std::vector<const Type*> params_type;
         for (auto& e : params_expr) {
             auto expr = (DeclExpr*)e.get();
-            expr->resolved_type_ = TypeTable::Lookup(expr->bind_type_);
+            Exec(*expr->bind_type_);
+            expr->resolved_type_ = expr->bind_type_->resolved_type_;
             params_type.emplace_back(expr->resolved_type_);
         }
 

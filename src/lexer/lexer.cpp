@@ -55,6 +55,10 @@ namespace lexer {
                     CharNext();
                     return TokenGen(Token::Type::Eq, "==");
                 }
+                if (cn == ']') {
+                    CharNext();
+                    return TokenGen(Token::Type::REBkt, "=]");
+                }
                 return TokenGen(Token::Type::Assign, "=");
             }
             case '+': {
@@ -152,6 +156,13 @@ namespace lexer {
                 }
                 return TokenGen(Token::Type::Dot, ".");
             }
+            case '[': {
+                if (cn == '=') {
+                    CharNext();
+                    return TokenGen(Token::Type::LEBkt, "[=");
+                }
+                return TokenGen(Token::Type::LBkt, "[");
+            }
         }
 
         // └─ Single Char
@@ -171,7 +182,6 @@ namespace lexer {
             case ')':   return TokenGen(Token::Type::RParen,    ")");
             case '{':   return TokenGen(Token::Type::LBrace,    "{");
             case '}':   return TokenGen(Token::Type::RBrace,    "}");
-            case '[':   return TokenGen(Token::Type::LBkt,      "[");
             case ']':   return TokenGen(Token::Type::RBkt,      "]");
             case ',':   return TokenGen(Token::Type::Comma,     ",");
         }

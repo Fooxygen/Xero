@@ -8,33 +8,30 @@
 
 namespace rt {
 
-    Array::Array(size_t size) {
+    Array::Array(const sema::Type* elem_type, size_t size) {
         data_ = new Obj*[size];
         memset(data_, 0, sizeof(Obj*) * size);
         capacity_ = size;
-        element_type_ = nullptr;
+        elem_type_ = elem_type;
     }
 
     Array::Array(const Array& other) {
         data_ = new Obj*[other.capacity_];
         memset(data_, 0, sizeof(Obj*) * other.capacity_);
-        capacity_ = other.capacity_;
-        element_type_ = other.element_type_;
+        capacity_  = other.capacity_;
+        elem_type_ = other.elem_type_;
 
         for (size_t i = 0; i < other.size_; i++) {
             Insert(i, new Obj(other.Get(i)->Clone()));
         }
     }
 
-    void Array::ElementTypeCheckAndSet(const sema::Type* type) {
-        if (!type) return;
-        if (!element_type_) {
-            element_type_ = type;
-        }
-        else if (type != element_type_) {
+    void Array::ElemTypeCheck(const sema::Type* type) {
+        if (!elem_type_ || !type) return;
+        else if (type != elem_type_) {
             throw LogErr(LogModule::Runtime, std::format(
                 "cannot match type '{}' to type '{}'",
-                type->name_, element_type_->name_
+                type->name_, elem_type_->name_
             ));
         }
     }
@@ -57,7 +54,7 @@ namespace rt {
         for (size_t i = 0; i < size_; i++) {
             auto o = Get(i);
             if (i != 0) res += ", ";
-            res += o->type()->impl_->to_string_(*o);
+            res += o->type()->impl()->to_string_(*o);
         }
         res += "]";
         return res;
@@ -86,7 +83,7 @@ namespace rt {
     void Array::Insert(size_t idx, Obj* obj) {
         IndexCheck(idx, true);
         Expand(size_ + 1);
-        ElementTypeCheckAndSet(obj->type());
+        ElemTypeCheck(obj->type());
         memmove(data_ + idx + 1, data_ + idx, sizeof(Obj*) * (size_ - idx));
         data_[idx] = obj;
         size_++;
@@ -94,7 +91,7 @@ namespace rt {
 
     void Array::Replace(size_t idx, const Obj& obj) {
         IndexCheck(idx, false);
-        ElementTypeCheckAndSet(obj.type());
+        ElemTypeCheck(obj.type());
         *data_[idx]->Origin() = obj;
     }
 
@@ -111,9 +108,12 @@ namespace rt {
     }
 
     Array* Array::operator +(const Array& other) {
-        ElementTypeCheckAndSet(other.element_type());
+        ElemTypeCheck(other.elem_type());
 
-        auto arr = new Array();
+        if (!other.elem_type())
+            return new Array(*this);            // other: [], empty elem type
+
+        auto arr = new Array(other.elem_type_);
         arr->Expand(size_ + other.size_);
         
         for (size_t i = 0; i < size_; i++) {
@@ -129,11 +129,12 @@ namespace rt {
     Array& Array::operator =(const Array& other) {
         if (this == &other) return *this;
 
-        ElementTypeCheckAndSet(other.element_type());
+        ElemTypeCheck(other.elem_type());
         Clear();
         data_ = new Obj*[other.capacity_];
         capacity_ = other.capacity_;
-        element_type_ = other.element_type_;
+        if (other.elem_type_)
+            elem_type_ = other.elem_type_;      // other: [], empty elem type
 
         for (size_t i = 0; i < other.size_; i++) {
             Insert(i, new Obj(other.Get(i)->Clone()));

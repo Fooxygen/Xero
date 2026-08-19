@@ -27,6 +27,8 @@ public:
         RBrace,             //  }
         LBkt,               //  [
         RBkt,               //  ]
+        LEBkt,              //  [=
+        REBkt,              //  =]
         Dot,                //  .
         DotDot,             //  ..
         DotDotEq,           //  ..=
@@ -116,6 +118,8 @@ public:
             case RBrace:
             case LBkt:
             case RBkt:
+            case LEBkt:
+            case REBkt:
             case Dot:
             case DotDot:
             case DotDotEq:
@@ -198,6 +202,8 @@ public:
             case RBrace:        return "RBrace";
             case LBkt:          return "LBkt";
             case RBkt:          return "RBkt";
+            case LEBkt:         return "LEBkt";
+            case REBkt:         return "REBkt";
             case Dot:           return "Dot";
             case DotDot:        return "DotDot";
             case DotDotEq:      return "DotDotEq";

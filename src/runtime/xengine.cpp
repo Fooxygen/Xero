@@ -57,7 +57,7 @@ namespace rt {
 
             // Assign Obj Clone
             auto empty = Obj::MakeEmpty(bind_type);
-            bind_type->impl_->assign_(empty.Origin(), value_convert.Clone());
+            bind_type->impl()->assign_(empty.Origin(), value_convert.Clone());
             env_.Declare(node.id_, empty);
             return Obj();
         }
@@ -76,11 +76,11 @@ namespace rt {
         auto lobj = Exec(*node.lexpr_);
         {
             if (node.oper_type_ == OperType::Neg) {
-                auto obj = CallTry(lobj.type()->impl_->neg_, lobj);
+                auto obj = CallTry(lobj.type()->impl()->neg_, lobj);
                 if (!obj.isNone()) return obj;
             }
             if (node.oper_type_ == OperType::Not) {
-                auto obj = CallTry(lobj.type()->impl_->not_, lobj);
+                auto obj = CallTry(lobj.type()->impl()->not_, lobj);
                 if (!obj.isNone()) return obj;
             }
         }
@@ -97,7 +97,7 @@ namespace rt {
         {
             // Unnecessary Type Conversation
             {
-                if (node.oper_type_ == OperType::Pick && lobj.type()->impl_->pick_) {
+                if (node.oper_type_ == OperType::Pick && lobj.type()->impl()->pick_) {
 
                     // Range
                     if (node.rexpr_->type_ != AstType::RangeExpr) {
@@ -105,7 +105,7 @@ namespace rt {
                         robj = Obj::Make_range(new Range(robj, robj, one, true, robj.type()));
                     }
 
-                    auto obj = lobj.type()->impl_->pick_(lobj, robj);
+                    auto obj = lobj.type()->impl()->pick_(lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
             }
@@ -124,59 +124,59 @@ namespace rt {
                 robj = TypeImplTable::Convert(robj, common_type);
 
                 if (node.oper_type_ == OperType::Plus) {
-                    auto obj = CallTry(common_type->impl_->plus_, lobj, robj);
+                    auto obj = CallTry(common_type->impl()->plus_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
                 if (node.oper_type_ == OperType::Minus) {
-                    auto obj = CallTry(common_type->impl_->minus_, lobj, robj);
+                    auto obj = CallTry(common_type->impl()->minus_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
                 if (node.oper_type_ == OperType::Star) {
-                    auto obj = CallTry(common_type->impl_->star_, lobj, robj);
+                    auto obj = CallTry(common_type->impl()->star_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
                 if (node.oper_type_ == OperType::Slash) {
-                    auto obj = CallTry(common_type->impl_->slash_, lobj, robj);
+                    auto obj = CallTry(common_type->impl()->slash_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
                 if (node.oper_type_ == OperType::ModT) {
-                    auto obj = CallTry(common_type->impl_->modt_, lobj, robj);
+                    auto obj = CallTry(common_type->impl()->modt_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
                 if (node.oper_type_ == OperType::ModF) {
-                    auto obj = CallTry(common_type->impl_->modf_, lobj, robj);
+                    auto obj = CallTry(common_type->impl()->modf_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
                 if (node.oper_type_ == OperType::Gt) {
-                    auto obj = CallTry(common_type->impl_->gt_, lobj, robj);
+                    auto obj = CallTry(common_type->impl()->gt_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
                 if (node.oper_type_ == OperType::Lt) {
-                    auto obj = CallTry(common_type->impl_->lt_, lobj, robj);
+                    auto obj = CallTry(common_type->impl()->lt_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
                 if (node.oper_type_ == OperType::Ge) {
-                    auto obj = CallTry(common_type->impl_->ge_, lobj, robj);
+                    auto obj = CallTry(common_type->impl()->ge_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
                 if (node.oper_type_ == OperType::Le) {
-                    auto obj = CallTry(common_type->impl_->le_, lobj, robj);
+                    auto obj = CallTry(common_type->impl()->le_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
                 if (node.oper_type_ == OperType::Eq) {
-                    auto obj = CallTry(common_type->impl_->eq_, lobj, robj);
+                    auto obj = CallTry(common_type->impl()->eq_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
                 if (node.oper_type_ == OperType::Neq) {
-                    auto obj = CallTry(common_type->impl_->neq_, lobj, robj);
+                    auto obj = CallTry(common_type->impl()->neq_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
                 if (node.oper_type_ == OperType::And) {
-                    auto obj = CallTry(common_type->impl_->and_, lobj, robj);
+                    auto obj = CallTry(common_type->impl()->and_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
                 if (node.oper_type_ == OperType::Or) {
-                    auto obj = CallTry(common_type->impl_->or_, lobj, robj);
+                    auto obj = CallTry(common_type->impl()->or_, lobj, robj);
                     if (!obj.isNone()) return obj;
                 }
             }
@@ -243,11 +243,12 @@ namespace rt {
     }
 
     Obj Xengine::Exec(ArrayExpr& node) {
-        size_t size  = node.elements_->exprs_.size();
-        auto   obj   = Obj::Make_array(size);
+        auto&  exprs = node.elements_->exprs_;
+        size_t size  = exprs.size();
+        auto   obj   = Obj::Make_array(node.elem_type_, size);
         auto&  array = obj.Get_array_ref();
         
-        for (auto& e : node.elements_->exprs_) {
+        for (auto& e : exprs) {
 
             // ref count = 1
             Obj element = Exec(*e);
@@ -334,7 +335,7 @@ namespace rt {
             objs.emplace_back(Exec(*e));
         }
 
-        auto fn = MethodImplTable::Lookup(target.type(), callee.value_);
+        auto fn = MethodImplTable::Lookup(target.type()->base(), callee.value_);
         if (!fn) {
             throw LogErr(LogModule::Runtime, std::format(
                 "no method '{}' on type '{}'",
@@ -409,7 +410,7 @@ namespace rt {
     Obj Xengine::Exec(AssignStmt& node) {
         auto target = Exec(*node.target_);
         auto value  = Exec(*node.value_);
-        target.type()->impl_->assign_(target.Origin(), value.Clone());
+        target.type()->impl()->assign_(target.Origin(), value.Clone());
         return Obj();
     }
 
@@ -446,11 +447,11 @@ namespace rt {
 
         if (data.is("range")) {
             auto& range = data.Get_range_ref();
-            for (Obj o = *range.left(); ; o = range.iter_type()->impl_->plus_(o, *range.step())) {
+            for (Obj o = *range.left(); ; o = range.iter_type()->impl()->plus_(o, *range.step())) {
                 if (!range.isClosed() &&
-                     range.iter_type()->impl_->ge_(o, *range.right()).Get_bool()) break;
+                     range.iter_type()->impl()->ge_(o, *range.right()).Get_bool()) break;
                 if ( range.isClosed() &&
-                     range.iter_type()->impl_->gt_(o, *range.right()).Get_bool()) break;
+                     range.iter_type()->impl()->gt_(o, *range.right()).Get_bool()) break;
 
                 try {
                     Exec(*node.block_, [&]() {

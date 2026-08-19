@@ -701,17 +701,17 @@ namespace rt {
                     if (range.step()) {
                         return std::format(
                             "[{} : {} : {}{}",
-                            range.left()->type()->impl_->to_string_(*range.left()),
-                            range.step()->type()->impl_->to_string_(*range.step()),
-                            range.right()->type()->impl_->to_string_(*range.right()),
+                            range.left()->type()->impl()->to_string_(*range.left()),
+                            range.step()->type()->impl()->to_string_(*range.step()),
+                            range.right()->type()->impl()->to_string_(*range.right()),
                             boundary
                         );
                     }
                     else {
                         return std::format(
                             "[{} : {}{}",
-                            range.left()->type()->impl_->to_string_(*range.left()),
-                            range.right()->type()->impl_->to_string_(*range.right()),
+                            range.left()->type()->impl()->to_string_(*range.left()),
+                            range.right()->type()->impl()->to_string_(*range.right()),
                             boundary
                         );
                     }
@@ -742,7 +742,7 @@ namespace rt {
                         for (size_t i = 0; i < lang->params_->exprs_.size(); i++) {
                             auto param = (DeclExpr*)lang->params_->exprs_[i].get();
                             if (i != 0) res += ", ";
-                            res += param->bind_type_;
+                            res += param->bind_type_->resolved_type_->base()->name_;
                         }
                         res += ')';
 
@@ -797,7 +797,10 @@ namespace rt {
             TypeImplTable::ConvertSet(arrayview_, array_, [](const Obj& o) {
                 auto& view = o.Get_arrayview_ref();
 
-                auto* arr = new Array(view.len());
+                auto* arr = new Array(
+                    view.org() ? view.org()->elem_type() : nullptr,
+                    view.len()
+                );
                 for (size_t i = 0; i < view.len(); i++) {
                     arr->Insert(arr->size(), new Obj(view.org()->Get(view.offset() + i)->Clone()));
                 }
@@ -808,8 +811,11 @@ namespace rt {
     }
 
     Obj TypeImplTable::Convert(const Obj& obj, const sema::Type* type) {
-        if (obj.type() == type) return obj;
-        auto it = converts_.find(std::pair{ obj.type(), type });
+        auto from = obj.type()->base();
+        auto to   = type->base();
+
+        if (from == to) return obj;
+        auto it = converts_.find(std::pair{ from, to });
         if (it != converts_.end()) return it->second(obj);
         return Obj();
     }

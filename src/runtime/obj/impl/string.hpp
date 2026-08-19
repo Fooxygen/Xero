@@ -16,7 +16,7 @@ namespace rt {
 
     class String : public Array {
     public:
-        String() = default;
+        String() : Array(sema::TypeTable::Lookup("char")) {}
         String(const std::string& s);
         String(const String& other);
 

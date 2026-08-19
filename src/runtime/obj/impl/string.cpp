@@ -8,7 +8,9 @@
 
 namespace rt {
 
-    String::String(const std::string& s) {
+    String::String(const std::string& s)
+    :   Array(sema::TypeTable::Lookup("char"))
+    {
         for (size_t i = 0; i < s.size(); i++) {
             Insert(size(), new Obj(Obj::Make_char(s[i])));
         }

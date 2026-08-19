@@ -17,10 +17,10 @@ namespace rt {
     
     class Array {
     private:
-        Obj**  data_     = nullptr;
-        size_t size_     = 0;
-        size_t capacity_ = 0;
-        const sema::Type* element_type_ = nullptr;
+        Obj**             data_      = nullptr;
+        size_t            size_      = 0;
+        size_t            capacity_  = 0;
+        const sema::Type* elem_type_ = nullptr;     // nulllptr: empty array from arrayexpr
 
         // hasRBoundary: Allowed to modify at the [max + 1] idx
         void IndexCheck(size_t idx, bool hasRBoundary = false) const {
@@ -35,19 +35,19 @@ namespace rt {
                 }
             }
         }
-        void ElementTypeCheckAndSet(const sema::Type* type);
+        void ElemTypeCheck(const sema::Type* type);
         void Expand(size_t size);
 
     public:
-        Array(size_t size = 1);
+        Array(const sema::Type* elem_type, size_t size = 1);
         Array(const Array& other);
         ~Array() {
             Clear();
         }
 
-        size_t size()                    const { return size_; }
-        size_t capacity()                const { return capacity_; }
-        const sema::Type* element_type() const { return element_type_; }
+        size_t            size()      const { return size_; }
+        size_t            capacity()  const { return capacity_; }
+        const sema::Type* elem_type() const { return elem_type_; }
         
         std::string ToCppString() const;
 

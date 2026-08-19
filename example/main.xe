@@ -1,66 +1,50 @@
 
-# Native Function
-println(println)
+# Parametric Type and Array Test
 
-# Lang Function
-fn add(a: i32, b: i32) -> i32 { return a + b; }
-println(add);
-println(add(1, 2));        # 3
+# Basic
+a1: array[=i32=] = [1, 2, 3];
+println(a1);                                            # [1, 2, 3]
+println(a1.len());                                      # 3
 
-# Declarations AND Literals
-x: i32 = 3;
-println(x);                # 3
+# Empty
+b1: array[=i32=] = [];
+b1.push_back(1);
+b1.push_back(2);
+println(b1);                                            # [1, 2]
 
-y: f64 = 3.5;
-println(y);                # 3.500000
+# Nested
+c1: array[=array[=i32=]=] = [[1, 2], [3, 4]];
+println(c1);                                            # [[1, 2], [3, 4]]
+println(c1.len());                                      # 2
 
-c: char = 'A';
-println(c);                # A
+# Operation
+d1: array[=i32=] = [1, 2];
+e1: array[=i32=] = [];
+println(d1 + e1);                                       # [1, 2]
 
-b: bool = true;
-println(b);                # true
+# Other
+fn first1(arr: array[=i32=]) -> i32 { return arr[0]; }
+f1: array[=i32=] = [7, 8];
+println(first1(f1));                                    # 7
+g1: i32 = 3;
+println(g1);                                            # 3
+h1: string = "hi";
+println(h1.len());                                      # 2
+println(type(3));                                       # i32
+fn add1(m: i32, n: i32) -> i32 { return m + n; }
+println(add1(1, 2));                                    # 3
 
-s: string = "hello";
-println(s);                # hello
+# Error
 
-# Arit
-println(1 + 2 * 3);        # 7
-println(10 - 4);           # 6
-println(7 % 3);            # 1
-println(7.0 / 2.0);        # 3.500000
+# nf1: array[=i32=] = [1.5, 2.5];                       # cannot match type 'f32' to type 'i32'
+# ng1: array[=i32, f64=] = [1, 2];                      # type 'array' expects 1 type parameter(s), got 2
+# nh1: array[=not_a_type=] = [1];                       # undefined type 'not_a_type'
+# ni1: i32[=i32=] = 1;                                  # type 'i32' expects 0 type parameter(s), got 1
+# nj1: array[=i32=][=f64=] = [1];                       # reduce failed with '3' symbols unprocessed
+# nk1: array[=array[=i32=]=] = [[1.5]];                 # cannot match type 'array[=f32=]' to type 'array[=i32=]'
 
-# Comp AND Logic
-println(3 > 2);            # true
-println(3 <= 2);           # false
-println(true && false);    # false
-println(true || false);    # true
-
-# Builtin Functions
-println(type(3));          # i32
-println(type(3.5));        # f32
-
-# Builtin Methods
-println("hello".len());    # 5
-
-arr: array = [1, 2, 3];
-println(arr.len());        # 3
-arr.push_back(4);
-println(arr);              # [1, 2, 3, 4]
-
-# Control Flow
-n: i32 = 2;
-if (n == 1) {
-    println("one");
-}
-elif (n == 2) {
-    println("two");        # two
-}
-else {
-    println("other");
-}
-
-w: i32 = 0;
-while (w < 3) {
-    w = w + 1;
-}
-println(w);                # 3
+##
+fn take1(arr: array[=i32=]) -> i32 { return 0; }        # [err] 'take1' expects (array[=i32=]), got (array[=f64=])
+nl1: array[=f64=] = [1.5];
+println(take1(nl1));
+##

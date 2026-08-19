@@ -23,7 +23,7 @@ namespace rt {
                 static const auto impl = [](ARGS args) {
                     for (size_t i = 0; i < args.size(); i++) {
                         auto& arg = args[i];
-                        auto str = CallThrow(arg.type()->impl_->to_string_, arg);
+                        auto str = CallThrow(arg.type()->impl()->to_string_, arg);
 
                         if (i > 0) std::fwrite(" ", 1, 1, stdout);
                         std::fwrite(str.data(), 1, str.size(), stdout);

@@ -46,11 +46,11 @@ namespace rt {
             }
 
             const sema::Type* type() const { return type_; }
-            const Data&       data() const { return data_; }      
-            Data&             data()       { return data_; }      
+            const Data&       data() const { return data_; }
+            Data&             data()       { return data_; }
         
             bool hasHeapData() const {
-                return type_->isHeapStored_ && data_.ptr_;
+                return type_->isHeapStored() && data_.ptr_;
             }
         };
 
@@ -87,7 +87,7 @@ namespace rt {
             if (usingtype_ == UsingType::Value && hasHeapData()) {
                 auto heapdata = (HeapData*)value().data().ptr_;
                 if (--heapdata->cnt == 0) {
-                    type()->impl_->destroy_(heapdata->data);
+                    type()->impl()->destroy_(heapdata->data);
                     delete heapdata;
                 }
             }
@@ -102,7 +102,7 @@ namespace rt {
             else {
                 data_.emplace<Value>(other.value().type());
 
-                if (value().type()->isHeapStored_) {
+                if (value().type()->isHeapStored()) {
                     value().data().ptr_ = other.value().data().ptr_;
                     ((HeapData*)value().data().ptr_)->cnt++;
                 }
@@ -120,7 +120,7 @@ namespace rt {
                 if (hasHeapData()) {
                     auto heapdata = (HeapData*)value().data().ptr_;
                     if (--heapdata->cnt == 0) {
-                        type()->impl_->destroy_(heapdata->data);
+                        type()->impl()->destroy_(heapdata->data);
                         delete heapdata;
                     }
                 }
@@ -152,10 +152,12 @@ namespace rt {
         Obj        Clone()  const {
             switch (usingtype_) {
                 case UsingType::Value: {
-                    if (type()->isHeapStored_)  return type()->impl_->clone_(*this);
-                    else                        return *this;
+                    if (type()->isHeapStored()) 
+                        return type()->impl()->clone_(*this);
+                    else
+                        return *this;
                 }
-                case UsingType::Ref: return ref().obj()->type()->impl_->clone_(*ref().obj());
+                case UsingType::Ref: return ref().obj()->type()->impl()->clone_(*ref().obj());
                 default:             __builtin_unreachable();
             }
         }
@@ -181,7 +183,7 @@ namespace rt {
             return o;
         }
         static Obj MakeEmpty(const sema::Type* type) {
-            auto& name = type->name_;
+            auto& name = type->base()->name_;
 
             if (name == "none")        return Obj();
             if (name == "bool")        return Make_bool(false);
@@ -192,7 +194,9 @@ namespace rt {
             if (name == "f64")         return Make_f64(0.0);
             if (name == "string")      return Make_string(new String());
             if (name == "stringview")  return Make_stringview(new SliceView<String>());
-            if (name == "array")       return Make_array();
+            if (name == "array")       return Make_array(
+                type->params() ? (*type->params())[0] : nullptr
+            );
             if (name == "arrayview")   return Make_arrayview(new SliceView<Array>());
             if (name == "range")       return Make_range(new Range());
             if (name == "function")    return Make_function(new Function());
@@ -250,15 +254,26 @@ namespace rt {
             v.data().ptr_ = new HeapData(view);
             return o;
         }
-        static Obj Make_array(size_t size = 1) {
+        static Obj Make_array(const sema::Type* elem_type, size_t size = 1) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(sema::TypeTable::Lookup("array"));
-            v.data().ptr_ = new HeapData(new Array(size));
+
+            auto array_ = sema::TypeTable::Lookup("array");
+            auto& v = o.data_.emplace<Value>(elem_type
+                ? sema::TypeTable::SetOrGetTypeParam(array_, { elem_type })
+                : array_
+            );
+
+            v.data().ptr_ = new HeapData(new Array(elem_type, size));
             return o;
         }
         static Obj Make_array(Array* arr) {
             Obj o;
-            auto& v = o.data_.emplace<Value>(sema::TypeTable::Lookup("array"));
+            auto array_ = sema::TypeTable::Lookup("array");
+            auto& v = o.data_.emplace<Value>(arr->elem_type()
+                ? sema::TypeTable::SetOrGetTypeParam(array_, { arr->elem_type() })
+                : array_
+            );
+
             v.data().ptr_ = new HeapData(arr);
             return o;
         }

@@ -36,16 +36,16 @@ namespace rt {
     }
 
     bool Range::isSingle() const {
-        Obj next = iter_type_->impl_->plus_(*l_, *s_);
+        Obj next = iter_type_->impl()->plus_(*l_, *s_);
 
-        if (isClosed_)  return iter_type_->impl_->gt_(next, *r_).Get_bool();
-        else            return iter_type_->impl_->ge_(next, *r_).Get_bool();
+        if (isClosed_)  return iter_type_->impl()->gt_(next, *r_).Get_bool();
+        else            return iter_type_->impl()->ge_(next, *r_).Get_bool();
     }
 
     Range Range::ToClosed() {
         if (isClosed_) return *this;
 
-        auto r = iter_type_->impl_->minus_(*r_, Obj::Make_i32(1));
+        auto r = iter_type_->impl()->minus_(*r_, Obj::Make_i32(1));
         return Range(
             *l_, r, *s_, true, iter_type_
         );

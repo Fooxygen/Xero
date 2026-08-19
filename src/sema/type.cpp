@@ -12,11 +12,14 @@ namespace sema {
     // Type
 
     bool Type::isNone() const {
-        return this == TypeTable::Lookup("none");
+        return is("none");
     }
 
     bool Type::is(std::string_view name) const {
-        return this == TypeTable::Lookup(name);
+        if (this->name_ == name) return true;
+
+        const Type* base_type = base();
+        return base_type != this && base_type->is(name);
     }
 
     // TypeTable
@@ -25,19 +28,19 @@ namespace sema {
 
         // Info
         {
-            TypeTable::Set(Type{ .name_ = "none",        .size_ = 0 });
-            TypeTable::Set(Type{ .name_ = "bool",        .size_ = 1 });
-            TypeTable::Set(Type{ .name_ = "i32",         .size_ = 4 });
-            TypeTable::Set(Type{ .name_ = "i64",         .size_ = 8 });
-            TypeTable::Set(Type{ .name_ = "f32",         .size_ = 4 });
-            TypeTable::Set(Type{ .name_ = "f64",         .size_ = 8 });
-            TypeTable::Set(Type{ .name_ = "char",        .size_ = 4 });
-            TypeTable::Set(Type{ .name_ = "string",      .size_ = 0, .isHeapStored_ = true });
-            TypeTable::Set(Type{ .name_ = "stringview",  .size_ = 0, .isHeapStored_ = true });
-            TypeTable::Set(Type{ .name_ = "array",       .size_ = 0, .isHeapStored_ = true });
-            TypeTable::Set(Type{ .name_ = "arrayview",   .size_ = 0, .isHeapStored_ = true });
-            TypeTable::Set(Type{ .name_ = "range",       .size_ = 0, .isHeapStored_ = true });
-            TypeTable::Set(Type{ .name_ = "function",    .size_ = 0, .isHeapStored_ = true });
+            TypeTable::Set(Type("none",         Type::BaseInfo{ .size_ = 0 }));
+            TypeTable::Set(Type("bool",         Type::BaseInfo{ .size_ = 1 }));
+            TypeTable::Set(Type("i32",          Type::BaseInfo{ .size_ = 4 }));
+            TypeTable::Set(Type("i64",          Type::BaseInfo{ .size_ = 8 }));
+            TypeTable::Set(Type("f32",          Type::BaseInfo{ .size_ = 4 }));
+            TypeTable::Set(Type("f64",          Type::BaseInfo{ .size_ = 8 }));
+            TypeTable::Set(Type("char",         Type::BaseInfo{ .size_ = 4 }));
+            TypeTable::Set(Type("string",       Type::BaseInfo{ .size_ = 0, .isHeapStored_ = true }));
+            TypeTable::Set(Type("stringview",   Type::BaseInfo{ .size_ = 0, .isHeapStored_ = true }));
+            TypeTable::Set(Type("array",        Type::BaseInfo{ .size_ = 0, .isHeapStored_ = true, .params_cnt_ = 1 }));
+            TypeTable::Set(Type("arrayview",    Type::BaseInfo{ .size_ = 0, .isHeapStored_ = true }));
+            TypeTable::Set(Type("range",        Type::BaseInfo{ .size_ = 0, .isHeapStored_ = true }));
+            TypeTable::Set(Type("function",     Type::BaseInfo{ .size_ = 0, .isHeapStored_ = true }));
         }
 
         // Convert
