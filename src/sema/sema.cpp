@@ -426,7 +426,25 @@ namespace sema {
 
     void Sema::Exec(ForStmt& node) {
         node.resolved_type_ = TypeTable::Lookup("none");
-        return;
+        
+        Exec(*node.data_);
+        auto data_type = node.data_->resolved_type_;
+        const sema::Type* elem_type = nullptr;
+        
+        if (data_type->is("array")) {
+            elem_type = (*data_type->params())[0];
+        }
+        if (data_type->is("string") || data_type->is("stringview")) {
+            elem_type = TypeTable::Lookup("char");
+        }
+
+        // TODO: range
+
+        Exec(*node.block_, [&]() {
+            symbol_table_.Declare(std::make_unique<VarSymbol>(
+                node.iter_->value_, node.iter_->loc_, elem_type)
+            );
+        });
     }
 
     void Sema::Exec(WhileStmt& node) {

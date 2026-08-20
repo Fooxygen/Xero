@@ -1,6 +1,3 @@
 
-fn make(x: i32) -> array[=i32=] {
-    a: array[=i32=] = [x, x, x];
-    return a;
-}
-println(make(2));
+a: array[=i32=] = [1, 2, 3];
+println(a);

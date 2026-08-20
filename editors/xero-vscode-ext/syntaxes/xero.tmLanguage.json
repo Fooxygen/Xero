@@ -3,6 +3,7 @@
     "name": "Xero",
     "patterns": [
         { "include": "#comments" },
+        { "name": "punctuation.bracket.generic.xero", "match": "\\[=|=\\]" },
         { "include": "#numbers" },
         { "include": "#booleans" },
         { "include": "#chars" },
@@ -97,7 +98,7 @@
         },
         "functions": {
             "name": "support.function.builtin.xero",
-            "match": "\\b(print|println|type|abs)\\b"
+            "match": "\\b(print|println|type)\\b"
         },
         "keywords": {
             "name": "keyword.control.xero",
