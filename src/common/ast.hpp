@@ -295,7 +295,7 @@ public:
     void PrintImpl(std::string prefix) override {
         PrintLabel("id", prefix);
         std::cerr << COLOR_BLUE << id_ << COLOR_DEFAULT << std::endl;
-        if (bind_type_) value_->Print(prefix, "bind_type");
+        if (bind_type_) bind_type_->Print(prefix, "bind_type");
         if (value_) value_->Print(prefix, "value");
     }
 

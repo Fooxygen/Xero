@@ -5,7 +5,7 @@
             "name": "Debug Xero",
             "type": "cppdbg",
             "request": "launch",
-            "args": ["example/main.xe"],
+            "args": ["example/main.xe", "--tok", "--ast"],
             "stopAtEntry": false,
             "externalConsole": false,
             "cwd": "${workspaceFolder}",
