@@ -270,8 +270,12 @@ namespace sema {
 
     void Sema::Exec(FnExpr& node) {
         node.resolved_type_     = TypeTable::Lookup("function");
-        node.ret_resolved_type_ = TypeTable::Lookup(node.ret_type_);
 
+        // Return Type
+        Exec(*node.ret_type_);
+        node.ret_resolved_type_ = node.ret_type_->resolved_type_;
+
+        // Params
         auto& params_expr = node.params_->exprs_;
         std::vector<const Type*> params_type;
         for (auto& e : params_expr) {
@@ -281,6 +285,7 @@ namespace sema {
             params_type.emplace_back(expr->resolved_type_);
         }
 
+        // Symbol
         if (!node.name_.empty()) {
             symbol_table_.Declare(std::make_unique<FnSymbol>(
                 node.name_, node.loc_,

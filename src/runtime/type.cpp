@@ -747,8 +747,8 @@ namespace rt {
                         res += ')';
 
                         // Return Type
-                        if (lang->ret_type_ != "none") {
-                            res += " -> " + lang->ret_type_;
+                        if (lang->ret_type_) {
+                            res += " -> " + lang->ret_type_->resolved_type_->name_;
                         }
 
                         return res;

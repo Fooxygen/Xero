@@ -332,7 +332,7 @@ namespace parser {
             );
         }
         
-        // └─ fn id?(exprs?) -> id blockexpr -> fnexpr
+        // └─ fn id?(exprs?) -> <id, typeexpr> blockexpr -> fnexpr
         {
             RuleAdd(
                 PATS{
@@ -342,19 +342,35 @@ namespace parser {
                     SymbolPattern::Opt({ AT::Expr, AT::Exprs }),
                     TT::RParen,
                     TT::Arrow,
-                    AT::IdExpr,
+                    SymbolPattern({ AT::IdExpr, AT::TypeExpr }),
                     AT::BlockExpr
                 },
-                [](std::vector<Symbol>& symbols, auto) {
+                [](std::vector<Symbol>& symbols, auto) -> ASTNODE {
                     std::string name = "";
-                    if (!Rule::isOptPatternEmpty(2)) name = Rule::Move<IdExpr>(symbols, 2)->value_;
+                    if (!Rule::isOptPatternEmpty(2))
+                        name = Rule::Move<IdExpr>(symbols, 2)->value_;
 
-                    return std::make_unique<FnExpr>(
-                        name,
-                        Rule::Move<IdExpr>(symbols, 7)->value_,
-                        Pack2Exprs(symbols, 4),
-                        Rule::Move<BlockExpr>(symbols, 8)
-                    );
+                    if (Rule::is(symbols, 7, AT::IdExpr)) {
+                        return std::make_unique<FnExpr>(
+                            name,
+                            std::make_unique<TypeExpr>(
+                                Rule::Move<IdExpr>(symbols, 7)->value_,
+                                nullptr
+                            ),
+                            Pack2Exprs(symbols, 4),
+                            Rule::Move<BlockExpr>(symbols, 8)
+                        );
+                    }
+                    if (Rule::is(symbols, 7, AT::TypeExpr)) {
+                        return std::make_unique<FnExpr>(
+                            name,
+                            Rule::Move<TypeExpr>(symbols, 7),
+                            Pack2Exprs(symbols, 4),
+                            Rule::Move<BlockExpr>(symbols, 8)
+                        );
+                    }
+
+                    return nullptr;
                 }
             );
         }
@@ -375,7 +391,7 @@ namespace parser {
 
                     return std::make_unique<FnExpr>(
                         name,
-                        "none",
+                        nullptr,
                         Pack2Exprs(symbols, 4),
                         Rule::Move<BlockExpr>(symbols, 6)
                     );

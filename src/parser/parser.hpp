@@ -310,6 +310,30 @@ namespace parser {
             return move_positions_[pos - 1] == 0;
         }
 
+        static bool is(std::vector<Symbol>& syms, size_t pos, Token::Type token_type) {
+            PatternIndexCheck(pos);
+            pos = move_positions_[pos - 1];
+            auto& target = syms[syms.size() - pos];
+            
+            return  target.type() == Symbol::Type::Token &&
+                    target.type_token() == token_type;
+        }
+
+        static bool is(std::vector<Symbol>& syms, size_t pos, AstType ast_type) {
+            PatternIndexCheck(pos);
+            pos = move_positions_[pos - 1];
+            auto& target = syms[syms.size() - pos];
+            
+            return  target.type() == Symbol::Type::AstNode &&
+                    target.type_astnode() == ast_type;
+        }
+
+        static Token::Type GetTokenType(std::vector<Symbol>& syms, size_t pos) {
+            PatternIndexCheck(pos);
+            pos = move_positions_[pos - 1];
+            return syms[syms.size() - pos].type_token();
+        }
+
         // Move AstNode as type T from symbols
         template<typename T>
         static std::unique_ptr<T> Move(std::vector<Symbol>& syms, size_t pos) {
@@ -317,13 +341,6 @@ namespace parser {
             pos = move_positions_[pos - 1];
             auto& astnode = std::get<std::unique_ptr<AstNode>>(syms[syms.size() - pos].data());
             return std::unique_ptr<T>(static_cast<T*>(astnode.release()));
-        }
-    
-        // Get TokenType from symbols
-        static Token::Type GetTokenType(std::vector<Symbol>& syms, size_t pos) {
-            PatternIndexCheck(pos);
-            pos = move_positions_[pos - 1];
-            return syms[syms.size() - pos].type_token();
         }
     };
 

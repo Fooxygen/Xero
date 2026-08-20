@@ -272,7 +272,7 @@ public:
 };
 class DeclExpr          : public Expr {
 public:
-    std::string id_ = "";
+    std::string               id_        = "";
     std::unique_ptr<TypeExpr> bind_type_ = nullptr;
     std::unique_ptr<Expr>     value_     = nullptr;
 
@@ -404,7 +404,8 @@ public:
 class ArrayExpr         : public Expr {
 public:
     std::unique_ptr<Exprs> elements_;
-    const sema::Type*      elem_type_;
+
+    const sema::Type*      elem_type_ = nullptr;
 
     ArrayExpr(std::unique_ptr<Exprs> elements)
     :   elements_(std::move(elements))
@@ -424,6 +425,7 @@ public:
         auto node = std::make_unique<ArrayExpr>(
             std::unique_ptr<Exprs>((Exprs*)(elements_->Clone().release()))
         );
+        node->elem_type_ = elem_type_;
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
@@ -504,21 +506,21 @@ public:
 };
 class FnExpr            : public Expr {
 public:
-    std::string name_     = "";
-    std::string ret_type_ = "";
-    std::unique_ptr<Exprs>     params_ = nullptr;
-    std::unique_ptr<BlockExpr> block_  = nullptr;
+    std::string                name_     = "";
+    std::unique_ptr<TypeExpr>  ret_type_ = nullptr;
+    std::unique_ptr<Exprs>     params_   = nullptr;
+    std::unique_ptr<BlockExpr> block_    = nullptr;
 
     const sema::Type* ret_resolved_type_ = nullptr;
 
     FnExpr(
-        std::string name,
-        std::string ret_type,
+        std::string                name,
+        std::unique_ptr<TypeExpr>  ret_type,
         std::unique_ptr<Exprs>     params,
         std::unique_ptr<BlockExpr> block
     )
     :   name_(name),
-        ret_type_((ret_type.empty() || ret_type == "none") ? "none" : ret_type),
+        ret_type_(std::move(ret_type)),
         params_(std::move(params)),
         block_(std::move(block))
     {
@@ -532,8 +534,7 @@ public:
     void PrintImpl(std::string prefix) override {
         PrintLabel("name", prefix);
         std::cerr << COLOR_BLUE << name_ << COLOR_DEFAULT << std::endl;
-        PrintLabel("ret_type", prefix);
-        std::cerr << COLOR_MAGENTA << ret_type_ << COLOR_DEFAULT << std::endl;
+        if (ret_type_) ret_type_->Print(prefix, "ret_type");
         if (params_) params_->Print(prefix, "params");
         if (block_)  block_->Print(prefix, "block");
     }
@@ -541,12 +542,12 @@ public:
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<FnExpr>(
             name_,
-            ret_type_,
+            ret_type_ ? std::unique_ptr<TypeExpr>((TypeExpr*)(ret_type_->Clone().release())) : nullptr,
             params_ ? std::unique_ptr<Exprs>((Exprs*)(params_->Clone().release())) : nullptr,
             block_  ? std::unique_ptr<BlockExpr>((BlockExpr*)(block_->Clone().release())) : nullptr
         );
-        node->resolved_type_ = resolved_type_;
         node->ret_resolved_type_ = ret_resolved_type_;
+        node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -557,6 +558,7 @@ public:
 class NumConst          : public Const {
 public:
     std::string value_ = "";
+    
     union {
         int64_t integer;
         double  floating;
