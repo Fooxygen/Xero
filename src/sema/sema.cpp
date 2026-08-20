@@ -34,7 +34,7 @@ namespace sema {
         }
         catch (...) {
             throw LogErr(LogModule::Sema, std::format(
-                "'{}' expects {}, got {}",
+                "function '{}' expects {} type parameter(s), got {}",
                 fn.name_, FnParamsPrint(fn), FnParamsPrint(args)
             ), loc);
         }
@@ -99,7 +99,7 @@ namespace sema {
         }
 
         throw LogErr(LogModule::Sema, std::format(
-            "'{}' is not a identifier", sym->name_
+            "undefined identifier '{}'", sym->name_
         ), node.loc_);
     }
 
@@ -118,7 +118,9 @@ namespace sema {
                     params.emplace_back(TypeTable::Lookup(((IdExpr&)*e).value_));
                 }
                 else {
-                    throw LogErr(LogModule::Sema, "invalid type parameter", e->loc_);
+                    throw LogErr(LogModule::Sema, std::format(
+                        "invalid type parameter '{}'", e->TypeName()
+                    ), e->loc_);
                 }
             }
             
@@ -186,7 +188,7 @@ namespace sema {
             });
             if (!node.resolved_type_) {
                 throw LogErr(LogModule::Sema, std::format(
-                    "cannot match type '{}' to type '{}'",
+                    "cannot make type '{}' compatible with '{}'",
                     node.lexpr_->resolved_type_->name_,
                     node.rexpr_->resolved_type_->name_
                 ), node.loc_);
@@ -225,7 +227,7 @@ namespace sema {
         auto sym = symbol_table_.Lookup(node.callee_->value_, node.loc_);
         if (sym->type_ != SymbolType::Fn) {
             throw LogErr(LogModule::Sema, std::format(
-                "'{}' is not a function", sym->name_
+                "undefined function '{}'", sym->name_
             ), node.loc_);
         }
 
@@ -243,12 +245,6 @@ namespace sema {
     void Sema::Exec(MethodCallExpr& node) {
         Exec(*node.target_);
         auto target_type = node.target_->resolved_type_;
-        if (!target_type) {
-            throw LogErr(LogModule::Sema, std::format(
-                "cannot resolve type of method target for '{}'",
-                node.callee_->value_
-            ), node.loc_);
-        }
 
         std::vector<const Type*> args_type;
         for (auto& e : node.args_->exprs_) {
@@ -259,7 +255,7 @@ namespace sema {
         auto fn = MethodTable::Lookup(target_type->base(), node.callee_->value_);
         if (!fn) {
             throw LogErr(LogModule::Sema, std::format(
-                "no method '{}' on type '{}'",
+                "undefined method '{}' on type '{}'",
                 node.callee_->value_, target_type->name_
             ), node.loc_);
         }
@@ -408,7 +404,7 @@ namespace sema {
             Exec(*node.cond_);
             if (node.cond_->resolved_type_ && !node.cond_->resolved_type_->is("bool")) {
                 throw LogErr(LogModule::Sema, std::format(
-                    "condition must be bool, not {}",
+                    "'condition' must be 'bool', not '{}'",
                     node.cond_->resolved_type_->name_
                 ), node.loc_);
             }
@@ -454,7 +450,7 @@ namespace sema {
             Exec(*node.cond_);
             if (node.cond_->resolved_type_ && !node.cond_->resolved_type_->is("bool")) {
                 throw LogErr(LogModule::Sema, std::format(
-                    "condition must be bool, not {}",
+                    "'condition' must be 'bool', not '{}'",
                     node.cond_->resolved_type_->name_
                 ), node.loc_);
             }

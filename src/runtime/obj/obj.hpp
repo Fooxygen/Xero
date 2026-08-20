@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <variant>
+#include <utility>
 
 #include "sema/type.hpp"
 #include "runtime/type.hpp"
@@ -131,7 +132,7 @@ namespace rt {
             switch (usingtype_) {
                 case UsingType::Value:  return value().type();
                 case UsingType::Ref:    return ref().obj()->type();
-                default:                __builtin_unreachable();
+                default:                std::unreachable();
             }
         }
         
@@ -145,7 +146,7 @@ namespace rt {
             switch (usingtype_) {
                 case UsingType::Value:  return value().hasHeapData();
                 case UsingType::Ref:    return ref().obj()->hasHeapData();
-                default:                __builtin_unreachable();
+                default:                std::unreachable();
             }
         }
         
@@ -158,7 +159,7 @@ namespace rt {
                         return *this;
                 }
                 case UsingType::Ref: return ref().obj()->type()->impl()->clone_(*ref().obj());
-                default:             __builtin_unreachable();
+                default:             std::unreachable();
             }
         }
         Obj*       Origin() {
@@ -334,7 +335,7 @@ namespace rt {
                     auto heap = (HeapData*)value().data().ptr_;
                     return *(String*)heap->data;
                 }
-                default: __builtin_unreachable();
+                default: std::unreachable();
             }
         }
         SliceView<String>&
@@ -346,7 +347,7 @@ namespace rt {
                     auto heap = (HeapData*)value().data().ptr_;
                     return *(SliceView<String>*)heap->data;
                 }
-                default: __builtin_unreachable();
+                default: std::unreachable();
             }
         }
         Array&      Get_array_ref()         const {
@@ -357,7 +358,7 @@ namespace rt {
                     auto heap = (HeapData*)value().data().ptr_;
                     return *(Array*)heap->data;
                 }
-                default: __builtin_unreachable();
+                default: std::unreachable();
             }
         }
         SliceView<Array>&
@@ -369,7 +370,7 @@ namespace rt {
                     auto heap = (HeapData*)value().data().ptr_;
                     return *(SliceView<Array>*)heap->data;
                 }
-                default: __builtin_unreachable();
+                default: std::unreachable();
             }
         }
         Range&      Get_range_ref()         const {
@@ -380,7 +381,7 @@ namespace rt {
                     auto heap = (HeapData*)value().data().ptr_;
                     return *(Range*)heap->data;
                 }
-                default: __builtin_unreachable();
+                default: std::unreachable();
             }
         }
         Function&   Get_function_ref()      const {
@@ -391,7 +392,7 @@ namespace rt {
                     auto heap = (HeapData*)value().data().ptr_;
                     return *(Function*)heap->data;
                 }
-                default: __builtin_unreachable();
+                default: std::unreachable();
             }
         }
     

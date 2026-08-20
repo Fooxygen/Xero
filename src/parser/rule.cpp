@@ -3,6 +3,8 @@
 //  Copyright (c) 2026 Fooxygen.
 //  Licensed under the MIT License.
 
+#include <utility>
+
 #include "parser/parser.hpp"
 
 namespace parser {
@@ -88,7 +90,7 @@ namespace parser {
                 case TT::ModTAssign:    return OT::ModT;
                 case TT::ModFAssign:    return OT::ModF;
 
-                default: __builtin_unreachable();
+                default: std::unreachable();
             }
         };
 

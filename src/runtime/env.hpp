@@ -30,7 +30,7 @@ namespace rt {
             if (!scope.contains(name)) scope[name] = value;
             else {
                 throw LogErr(LogModule::Runtime, std::format(
-                    "duplicate definition of '{}' in same scope",
+                    "duplicate definition of '{}' in this scope",
                     name
                 ));
             }
@@ -44,7 +44,7 @@ namespace rt {
                 if (oit != sit->end()) return &oit->second;
             }
 
-            throw LogErr(LogModule::Runtime, std::format("undefined object '{}'", name), loc);
+            throw LogErr(LogModule::Runtime, std::format("undefined obj '{}'", name), loc);
         }
     };
 }

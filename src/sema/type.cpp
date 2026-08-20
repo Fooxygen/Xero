@@ -74,13 +74,7 @@ namespace sema {
     }
 
     void TypeTable::ConvertSet(const Type* from, const Type* to) {
-        if (from == to) {
-            LogWarn(LogModule::Sema, std::format(
-                "cannot convert type '{}' to itself",
-                from->name_
-            )).Print();
-            return;
-        }
+        if (from == to) return;
         converts_.emplace(from, to);
     }
 

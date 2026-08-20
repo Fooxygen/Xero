@@ -17,17 +17,12 @@ namespace rt {
 
     class TypeImpl {
     public:
-        // Built-in Method
+        // Basic
 
-        static Obj         methdef_clone(const Obj&);
-        static void        methdef_destroy(void*);
-        static std::string methdef_to_string(const Obj&);
-        static void        methdef_assign(Obj*, const Obj&);
-
-        Obj         (*clone_)(const Obj&)        = methdef_clone;
-        void        (*destroy_)(void*)           = methdef_destroy;
-        std::string (*to_string_)(const Obj&)    = methdef_to_string;
-        void        (*assign_)(Obj*, const Obj&) = methdef_assign;
+        Obj         (*clone_)(const Obj&)        = nullptr;
+        void        (*destroy_)(void*)           = nullptr;
+        std::string (*to_string_)(const Obj&)    = nullptr;
+        void        (*assign_)(Obj*, const Obj&) = nullptr;
 
         // Arith Oper
 

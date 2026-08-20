@@ -12,6 +12,7 @@
 #include <map>
 #include <unordered_map>
 #include <variant>
+#include <utility>
 
 #include "common/log.hpp"
 
@@ -62,14 +63,14 @@ namespace sema {
             switch(usingtype_) {
                 case UsingType::Base:  return this;
                 case UsingType::Param: return paraminfo().base_;
-                default: __builtin_unreachable();
+                default: std::unreachable();
             }
         }
         const std::vector<const Type*>* params() const {
             switch(usingtype_) {
                 case UsingType::Base:  return nullptr;
                 case UsingType::Param: return &paraminfo().params_;
-                default: __builtin_unreachable();
+                default: std::unreachable();
             }
         }
         const rt::TypeImpl*             impl() const {
@@ -87,7 +88,7 @@ namespace sema {
         static void        BaseTypeCheck(const Type* base) {
             if (base->usingtype_ != UsingType::Base) {
                 throw LogErr(LogModule::Sema, std::format(
-                    "cannot use parameterized type '{}' as base type", base->name_
+                    "invalid base type '{}'", base->name_
                 ));
             }
         }

@@ -8,6 +8,7 @@
 #include <iostream>
 #include <memory>
 #include <vector>
+#include <utility>
 
 #include "common/utils.hpp"
 #include "common/token.hpp"
@@ -794,7 +795,7 @@ public:
         switch (signal_) {
             case LoopSignal::Break:     std::cerr << "break"    << std::endl; break;
             case LoopSignal::Continue:  std::cerr << "continue" << std::endl; break;
-            default: __builtin_unreachable();
+            default: std::unreachable();
         }
         std::cerr << COLOR_DEFAULT << std::endl;
     }

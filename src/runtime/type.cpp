@@ -11,21 +11,6 @@
 
 namespace rt {
 
-    // TypeImpl
-
-    Obj         TypeImpl::methdef_clone(const Obj&) {
-        throw LogErr(LogModule::Runtime, "method 'clone()' not implemented for type");
-    }
-    void        TypeImpl::methdef_destroy(void*) {
-        throw LogErr(LogModule::Runtime, "method 'destroy()' not implemented for type");
-    }
-    std::string TypeImpl::methdef_to_string(const Obj&) {
-        throw LogErr(LogModule::Runtime, "method 'to_string()' not implemented for type");
-    }
-    void        TypeImpl::methdef_assign(Obj*, const Obj&) {
-        throw LogErr(LogModule::Runtime, "method 'assign()' not implemented for type");
-    }
-
     // TypeImplTable
 
     void TypeImplTable::Init() {
@@ -50,7 +35,7 @@ namespace rt {
                     }
 
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot make type '{}' compatible with type 'bool'", value.type()->name_
+                        "cannot make type '{}' compatible with 'bool'", value.type()->name_
                     ));
                 },
                 .gt_        = [](const Obj& l, const Obj& r) { return Obj::Make_bool(l.Get_bool() >  r.Get_bool()); },
@@ -322,7 +307,7 @@ namespace rt {
                 .pick_      = [](const Obj& target, const Obj& pick) {
                     if (!pick.is("range")) {
                         throw LogErr(LogModule::Runtime, std::format(
-                            "pick must be range, not {}",
+                            "'parameter of pick' must be 'range', not '{}'",
                             pick.type()->name_
                         ));
                     }
@@ -334,7 +319,7 @@ namespace rt {
                         !range.iter_type()->is("i64"))
                     {
                         throw LogErr(LogModule::Runtime, std::format(
-                            "iterator type of range must be i32 or i64, not {}",
+                            "'iterator type of range' must be 'i32' or 'i64', not '{}'",
                             range.iter_type()->name_
                         ));
                     }
@@ -374,7 +359,7 @@ namespace rt {
                     auto& target_view = target->Get_stringview_ref();
                     auto  target_str  = target_view.org();
                     if (!target_str) {
-                        throw LogErr(LogModule::Runtime, "cannot assign to empty stringview");
+                        throw LogErr(LogModule::Runtime, "cannot assign to 'empty stringview'");
                     }
 
                     auto assign_from_string = [&](const String& src) {
@@ -461,7 +446,7 @@ namespace rt {
                 .pick_      = [](const Obj& target, const Obj& pick) {
                     if (!pick.is("range")) {
                         throw LogErr(LogModule::Runtime, std::format(
-                            "pick must be range, not {}",
+                            "'parameter of pick' must be 'range', not '{}'",
                             pick.type()->name_
                         ));
                     }
@@ -473,7 +458,7 @@ namespace rt {
                         !range.iter_type()->is("i64"))
                     {
                         throw LogErr(LogModule::Runtime, std::format(
-                            "iterator type of range must be i32 or i64, not {}",
+                            "'iterator type of range' must be 'i32' or 'i64', not '{}'",
                             range.iter_type()->name_
                         ));
                     }
@@ -544,7 +529,7 @@ namespace rt {
                 .pick_          = [](const Obj& target, const Obj& pick) {
                     if (!pick.is("range")) {
                         throw LogErr(LogModule::Runtime, std::format(
-                            "pick must be range, not {}",
+                            "'parameter of pick' must be 'range', not '{}'",
                             pick.type()->name_
                         ));
                     }
@@ -556,7 +541,7 @@ namespace rt {
                         !range.iter_type()->is("i64"))
                     {
                         throw LogErr(LogModule::Runtime, std::format(
-                            "iterator type of range must be i32 or i64, not {}",
+                            "'iterator type of range' must be 'i32' or 'i64', not '{}'",
                             range.iter_type()->name_
                         ));
                     }
@@ -596,7 +581,7 @@ namespace rt {
                     auto& target_view = target->Get_arrayview_ref();
                     auto  target_arr  = target_view.org();
                     if (!target_arr) {
-                        throw LogErr(LogModule::Runtime, "cannot assign to empty arrayview");
+                        throw LogErr(LogModule::Runtime, "cannot assign to 'empty arrayview'");
                     }
 
                     auto assign_from_array = [&](const Array& src) {
@@ -648,7 +633,7 @@ namespace rt {
                 .pick_      = [](const Obj& target, const Obj& pick) {
                     if (!pick.is("range")) {
                         throw LogErr(LogModule::Runtime, std::format(
-                            "pick must be range, not {}",
+                            "'parameter of pick' must be 'range', not '{}'",
                             pick.type()->name_
                         ));
                     }
@@ -660,7 +645,7 @@ namespace rt {
                         !range.iter_type()->is("i64"))
                     {
                         throw LogErr(LogModule::Runtime, std::format(
-                            "iterator type of range must be i32 or i64, not {}",
+                            "'iterator type of range' must be 'i32' or 'i64', not '{}'",
                             range.iter_type()->name_
                         ));
                     }

@@ -30,7 +30,7 @@ namespace rt {
         if (!elem_type_ || !type) return;
         else if (type != elem_type_) {
             throw LogErr(LogModule::Runtime, std::format(
-                "cannot match type '{}' to type '{}'",
+                "cannot make type '{}' compatible with '{}'",
                 type->name_, elem_type_->name_
             ));
         }

@@ -46,18 +46,19 @@ namespace rt {
 
         // Call Wrapper
 
-        // Throw while call equals null
         template<typename Call, typename... Args>
         static decltype(auto) CallThrow(Call call, Args&&... args) {
-            if (!call) throw LogErr(LogModule::Runtime, "call not implemented for type");
+            if (!call) throw LogErr(LogModule::Runtime, "undefined function");
             return call(std::forward<Args>(args)...);
         }
 
-        // Return None Obj while call equals null
         template<typename Call, typename... Args>
-        static decltype(auto) CallTry(Call call, Args&&... args) {
-            if (!call) return Obj();
-            return call(std::forward<Args>(args)...);
+        static auto CallTry(Call call, Args&&... args)
+            -> std::optional<std::invoke_result_t<Call, Args...>>
+        {
+            using R = std::invoke_result_t<Call, Args...>;
+            if (!call) return std::nullopt;
+            return std::optional<R>(call(std::forward<Args>(args)...));
         }
     
     public:

@@ -77,11 +77,11 @@ namespace rt {
         {
             if (node.oper_type_ == OperType::Neg) {
                 auto obj = CallTry(lobj.type()->impl()->neg_, lobj);
-                if (!obj.isNone()) return obj;
+                if (obj) return obj.value();
             }
             if (node.oper_type_ == OperType::Not) {
                 auto obj = CallTry(lobj.type()->impl()->not_, lobj);
-                if (!obj.isNone()) return obj;
+                if (obj) return obj.value();
             }
         }
 
@@ -125,59 +125,59 @@ namespace rt {
 
                 if (node.oper_type_ == OperType::Plus) {
                     auto obj = CallTry(common_type->impl()->plus_, lobj, robj);
-                    if (!obj.isNone()) return obj;
+                    if (obj) return obj.value();
                 }
                 if (node.oper_type_ == OperType::Minus) {
                     auto obj = CallTry(common_type->impl()->minus_, lobj, robj);
-                    if (!obj.isNone()) return obj;
+                    if (obj) return obj.value();
                 }
                 if (node.oper_type_ == OperType::Star) {
                     auto obj = CallTry(common_type->impl()->star_, lobj, robj);
-                    if (!obj.isNone()) return obj;
+                    if (obj) return obj.value();
                 }
                 if (node.oper_type_ == OperType::Slash) {
                     auto obj = CallTry(common_type->impl()->slash_, lobj, robj);
-                    if (!obj.isNone()) return obj;
+                    if (obj) return obj.value();
                 }
                 if (node.oper_type_ == OperType::ModT) {
                     auto obj = CallTry(common_type->impl()->modt_, lobj, robj);
-                    if (!obj.isNone()) return obj;
+                    if (obj) return obj.value();
                 }
                 if (node.oper_type_ == OperType::ModF) {
                     auto obj = CallTry(common_type->impl()->modf_, lobj, robj);
-                    if (!obj.isNone()) return obj;
+                    if (obj) return obj.value();
                 }
                 if (node.oper_type_ == OperType::Gt) {
                     auto obj = CallTry(common_type->impl()->gt_, lobj, robj);
-                    if (!obj.isNone()) return obj;
+                    if (obj) return obj.value();
                 }
                 if (node.oper_type_ == OperType::Lt) {
                     auto obj = CallTry(common_type->impl()->lt_, lobj, robj);
-                    if (!obj.isNone()) return obj;
+                    if (obj) return obj.value();
                 }
                 if (node.oper_type_ == OperType::Ge) {
                     auto obj = CallTry(common_type->impl()->ge_, lobj, robj);
-                    if (!obj.isNone()) return obj;
+                    if (obj) return obj.value();
                 }
                 if (node.oper_type_ == OperType::Le) {
                     auto obj = CallTry(common_type->impl()->le_, lobj, robj);
-                    if (!obj.isNone()) return obj;
+                    if (obj) return obj.value();
                 }
                 if (node.oper_type_ == OperType::Eq) {
                     auto obj = CallTry(common_type->impl()->eq_, lobj, robj);
-                    if (!obj.isNone()) return obj;
+                    if (obj) return obj.value();
                 }
                 if (node.oper_type_ == OperType::Neq) {
                     auto obj = CallTry(common_type->impl()->neq_, lobj, robj);
-                    if (!obj.isNone()) return obj;
+                    if (obj) return obj.value();
                 }
                 if (node.oper_type_ == OperType::And) {
                     auto obj = CallTry(common_type->impl()->and_, lobj, robj);
-                    if (!obj.isNone()) return obj;
+                    if (obj) return obj.value();
                 }
                 if (node.oper_type_ == OperType::Or) {
                     auto obj = CallTry(common_type->impl()->or_, lobj, robj);
-                    if (!obj.isNone()) return obj;
+                    if (obj) return obj.value();
                 }
             }
         }
@@ -279,9 +279,11 @@ namespace rt {
 
             // Lang
             else {
-                auto& lang     = fn.lang();
+                auto& lang = fn.lang();
                 if (!lang) {
-                    throw LogErr(LogModule::Runtime, "empty function", node.loc_);
+                    throw LogErr(LogModule::Runtime, std::format(
+                        "undefined function '{}'", node.callee_->value_
+                    ), node.loc_);
                 }
                 
                 auto& params   = lang->params_->exprs_;
@@ -338,7 +340,7 @@ namespace rt {
         auto fn = MethodImplTable::Lookup(target.type()->base(), callee.value_);
         if (!fn) {
             throw LogErr(LogModule::Runtime, std::format(
-                "no method '{}' on type '{}'",
+                "undefined method '{}' on type '{}'",
                 callee.value_, target.type()->name_
             ), node.loc_);
         }
@@ -349,10 +351,11 @@ namespace rt {
         }
 
         // Lang
+        else {
 
-        throw LogErr(LogModule::Runtime, std::format(
-            "method '{}' not implemented", callee.value_
-        ), node.loc_);
+        }
+
+        return Obj();
     }
 
     Obj Xengine::Exec(FnExpr& node) {
@@ -378,10 +381,6 @@ namespace rt {
         }
         if (node.resolved_type_->is("f64")){
             return Obj::Make_f64((double)node.resolved_value_.floating);
-        }
-
-        if (!node.resolved_type_) {
-            throw LogErr(LogModule::Runtime, "number literal not resolved", node.loc_);
         }
         throw LogErr(LogModule::Runtime, std::format(
             "number literal must be i32, i64, f32 or f64, not {}",
@@ -493,7 +492,7 @@ namespace rt {
             at = [&](size_t i) { return *view.org()->Get(view.offset() + i); };
         }
         else {
-            throw LogErr(LogModule::Runtime, "unsupported 'for' statement", node.loc_);
+            throw LogErr(LogModule::Runtime, "unsupported 'data type' in 'for' statement", node.loc_);
         }
 
         for (size_t i = 0; i < len; i++) {
