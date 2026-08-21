@@ -429,7 +429,10 @@ namespace sema {
         const sema::Type* elem_type = nullptr;
         
         if (data_type->is("array")) {
-            elem_type = (*data_type->params())[0];
+            auto params_type = data_type->params();
+            if (params_type && !params_type->empty()) {
+                elem_type = (*params_type)[0];
+            }
         }
         if (data_type->is("string") || data_type->is("stringview")) {
             elem_type = TypeTable::Lookup("char");

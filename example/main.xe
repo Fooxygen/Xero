@@ -1,3 +1,4 @@
 
-a: array[=i32=] = [1, 2, 3];
-println(a);
+for (x in []) {
+    println(x);
+}

@@ -22,6 +22,31 @@ namespace sema {
         return base_type != this && base_type->is(name);
     }
 
+    bool Type::isHeapStored() const {
+        return base()->baseinfo().isHeapStored_;
+    }
+
+    void Type::BaseTypeCheck() const {
+        if (usingtype_ != UsingType::Base) {
+            throw LogErr(LogModule::Sema, std::format(
+                "invalid base type '{}'", name_
+            ));
+        }
+    }
+    
+    std::string Type::ParamsPrint(const Type* base, const std::vector<const Type*>& params) {
+        base->BaseTypeCheck();
+
+        std::string res(base->name_);
+        res += "[=";
+        for (size_t i = 0; i < params.size(); i++) {
+            if (i != 0) res += ", ";
+            res += params[i]->name_;
+        }
+        res += "=]";
+        return res;
+    }
+
     // TypeTable
 
     void TypeTable::Init() {
@@ -73,6 +98,49 @@ namespace sema {
         }
     }
 
+    Type* TypeTable::Set(const Type& t) {
+        if (!table_.contains(std::string(t.name_))) {
+            auto type = new Type(t);
+            table_.emplace(t.name_, type);
+            return type;
+        }
+        else throw LogErr(LogModule::Sema, std::format("existing type '{}'", t.name_));
+    }
+    
+    Type* TypeTable::Lookup(std::string_view name, std::optional<Loc> loc) {
+        auto type_it = table_.find(std::string(name));
+        if (type_it != table_.end()) {
+            return type_it->second;
+        }
+
+        throw LogErr(LogModule::Sema, std::format("undefined type '{}'", name), loc);
+    }
+    
+    Type* TypeTable::SetOrGetTypeParam(const Type* base, const std::vector<const Type*>& params, std::optional<Loc> loc)
+    {
+        base->BaseTypeCheck();
+        if (params.empty()) return Lookup(base->name_, loc);
+        if (base->baseinfo().params_cnt_ != params.size()) {
+            throw LogErr(LogModule::Sema, std::format(
+                "type '{}' expects {} type parameter(s), got {}",
+                base->name_, base->baseinfo().params_cnt_, params.size()
+            ), loc);
+        }
+        
+        auto name = Type::ParamsPrint(base, params);
+        auto it   = table_.find(name);
+        if (it != table_.end()) return it->second;
+
+        auto type = Set(Type(
+            name, Type::ParamInfo{
+                .base_   = base,
+                .params_ = params
+            }
+        ));
+        ConvertsRecompute();
+        return type;
+    }
+    
     void TypeTable::ConvertSet(const Type* from, const Type* to) {
         if (from == to) return;
         converts_.emplace(from, to);
