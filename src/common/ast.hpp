@@ -97,7 +97,7 @@ static AstType BaseOfAstType(AstType type) {
     }
 }
 
-static bool isAstTypeCompatible(AstType expected, AstType actual) {
+static bool    isAstTypeCompatible(AstType expected, AstType actual) {
     if (expected == AstType::Undefined ||
         actual   == AstType::Undefined) return false;
     if (expected == actual) return true;

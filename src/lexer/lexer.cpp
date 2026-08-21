@@ -10,7 +10,15 @@
 
 namespace lexer {
 
-    void Lexer::TokensGen(bool isPrint) {
+    Token Lexer::TokenGen(TT type, const std::string& lexeme) {
+        loc_prev_ = {
+            .line = loc_.line,
+            .col  = loc_.col - lexeme.length()
+        };
+        return Token(type, lexeme, loc_prev_);
+    }
+
+    void  Lexer::TokensGen(bool isPrint) {
         if (isPrint) {
             LogStart(LogModule::Lexer, "output tokens").Print();
         }
@@ -19,10 +27,10 @@ namespace lexer {
             if (!next_opt.has_value()) break;
 
             auto next = next_opt.value();
-            if (next.type_ != Token::Type::Undefined) {
+            if (next.type_ != TT::Undefined) {
                 auto& token = tokens_.emplace_back(next);
 
-                if (isPrint && token.type_ != Token::Type::Undefined) token.MetaPrint();
+                if (isPrint && token.type_ != TT::Undefined) token.MetaPrint();
             }
         }
         if (isPrint) {
@@ -53,94 +61,94 @@ namespace lexer {
             case '=': {
                 if (cn == '=') {
                     CharNext();
-                    return TokenGen(Token::Type::Eq, "==");
+                    return TokenGen(TT::Eq, "==");
                 }
                 if (cn == ']') {
                     CharNext();
-                    return TokenGen(Token::Type::REBkt, "=]");
+                    return TokenGen(TT::REBkt, "=]");
                 }
-                return TokenGen(Token::Type::Assign, "=");
+                return TokenGen(TT::Assign, "=");
             }
             case '+': {
                 if (cn == '=') {
                     CharNext();
-                    return TokenGen(Token::Type::PlusAssign, "+=");
+                    return TokenGen(TT::PlusAssign, "+=");
                 }
-                return TokenGen(Token::Type::Plus, "+");
+                return TokenGen(TT::Plus, "+");
             }
             case '-': {
                 if (cn == '=') {
                     CharNext();
-                    return TokenGen(Token::Type::MinusAssign, "-=");
+                    return TokenGen(TT::MinusAssign, "-=");
                 }
                 if (cn == '>') {
                     CharNext();
-                    return TokenGen(Token::Type::Arrow, "->");
+                    return TokenGen(TT::Arrow, "->");
                 }
-                return TokenGen(Token::Type::Minus, "-");
+                return TokenGen(TT::Minus, "-");
             }
             case '*': {
                 if (cn == '=') {
                     CharNext();
-                    return TokenGen(Token::Type::StarAssign, "*=");
+                    return TokenGen(TT::StarAssign, "*=");
                 }
-                return TokenGen(Token::Type::Star, "*");
+                return TokenGen(TT::Star, "*");
             }
             case '/': {
                 if (cn == '=') {
                     CharNext();
-                    return TokenGen(Token::Type::SlashAssign, "/=");
+                    return TokenGen(TT::SlashAssign, "/=");
                 }
-                return TokenGen(Token::Type::Slash, "/");
+                return TokenGen(TT::Slash, "/");
             }
             case '%': {
                 if (cn == '%') {
                     if (cnn == '=') {
                         CharNext(2);
-                        return TokenGen(Token::Type::ModFAssign, "%%=");
+                        return TokenGen(TT::ModFAssign, "%%=");
                     }
                     
                     CharNext();
-                    return TokenGen(Token::Type::ModF, "%%");
+                    return TokenGen(TT::ModF, "%%");
                 }
                 if (cn == '=') {
                     CharNext();
-                    return TokenGen(Token::Type::ModTAssign, "%=");
+                    return TokenGen(TT::ModTAssign, "%=");
                 }
-                return TokenGen(Token::Type::ModT, "%");
+                return TokenGen(TT::ModT, "%");
             }
             case '!': {
                 if (cn == '=') {
                     CharNext();
-                    return TokenGen(Token::Type::Neq, "!=");
+                    return TokenGen(TT::Neq, "!=");
                 }
-                return TokenGen(Token::Type::Not, "!");
+                return TokenGen(TT::Not, "!");
             }
             case '>': {
                 if (cn == '=') {
                     CharNext();
-                    return TokenGen(Token::Type::Ge, ">=");
+                    return TokenGen(TT::Ge, ">=");
                 }
-                return TokenGen(Token::Type::Gt, ">");
+                return TokenGen(TT::Gt, ">");
             }
             case '<': {
                 if (cn == '=') {
                     CharNext();
-                    return TokenGen(Token::Type::Le, "<=");
+                    return TokenGen(TT::Le, "<=");
                 }
-                return TokenGen(Token::Type::Lt, "<");
+                return TokenGen(TT::Lt, "<");
             }
             case '&': {
                 if (cn == '&') {
                     CharNext();
-                    return TokenGen(Token::Type::And, "&&");
+                    return TokenGen(TT::And, "&&");
                 }
                 break;
             }
             case '|': {
                 if (cn == '|') {
                     CharNext();
-                    return TokenGen(Token::Type::Or, "||");
+                    return TokenGen(TT::Or, "||");
                 }
                 break;
             }
@@ -148,20 +156,20 @@ namespace lexer {
                 if (cn == '.') {
                     if (cnn == '=') {
                         CharNext(2);
-                        return TokenGen(Token::Type::DotDotEq, "..=");
+                        return TokenGen(TT::DotDotEq, "..=");
                     }
                     
                     CharNext();
-                    return TokenGen(Token::Type::DotDot, "..");
+                    return TokenGen(TT::DotDot, "..");
                 }
-                return TokenGen(Token::Type::Dot, ".");
+                return TokenGen(TT::Dot, ".");
             }
             case '[': {
                 if (cn == '=') {
                     CharNext();
-                    return TokenGen(Token::Type::LEBkt, "[=");
+                    return TokenGen(TT::LEBkt, "[=");
                 }
-                return TokenGen(Token::Type::LBkt, "[");
+                return TokenGen(TT::LBkt, "[");
             }
         }
 
@@ -176,14 +184,14 @@ namespace lexer {
                 }
                 else return TokenScanSingleComment();
             }
-            case ':':   return TokenGen(Token::Type::Colon,     ":");
-            case ';':   return TokenGen(Token::Type::Semicolon, ";");
-            case '(':   return TokenGen(Token::Type::LParen,    "(");
-            case ')':   return TokenGen(Token::Type::RParen,    ")");
-            case '{':   return TokenGen(Token::Type::LBrace,    "{");
-            case '}':   return TokenGen(Token::Type::RBrace,    "}");
-            case ']':   return TokenGen(Token::Type::RBkt,      "]");
-            case ',':   return TokenGen(Token::Type::Comma,     ",");
+            case ':':   return TokenGen(TT::Colon,     ":");
+            case ';':   return TokenGen(TT::Semicolon, ";");
+            case '(':   return TokenGen(TT::LParen,    "(");
+            case ')':   return TokenGen(TT::RParen,    ")");
+            case '{':   return TokenGen(TT::LBrace,    "{");
+            case '}':   return TokenGen(TT::RBrace,    "}");
+            case ']':   return TokenGen(TT::RBkt,      "]");
+            case ',':   return TokenGen(TT::Comma,     ",");
         }
 
         throw LogErr(LogModule::Lexer, "invalid token", loc_scan_);
@@ -197,7 +205,7 @@ namespace lexer {
         CharNext();
         std::string lexeme = std::string(code_.substr(pbeg, pos_ - pbeg));
 
-        return TokenGen(Token::Type::Id, lexeme);
+        return TokenGen(TT::Id, lexeme);
     }
 
     Token Lexer::TokenScanNumber() {
@@ -226,7 +234,7 @@ namespace lexer {
         CharNext();
 
         return TokenGen(
-            Token::Type::Number,
+            TT::Number,
             std::string(code_.substr(pbeg, pos_ - pbeg))
         );
     }
@@ -240,7 +248,7 @@ namespace lexer {
 
             if (c == '\'') {
                 CharNext();
-                return TokenGen(Token::Type::Char, lexeme);
+                return TokenGen(TT::Char, lexeme);
             }
 
             if (c == '\n')
@@ -283,7 +291,7 @@ namespace lexer {
 
             if (c == '"') {
                 CharNext();
-                return TokenGen(Token::Type::String, lexeme);
+                return TokenGen(TT::String, lexeme);
             }
 
             if (c == '\n')

@@ -11,40 +11,40 @@ namespace sema {
 
     // Fn
 
-    void Sema::FnCallCheck(const FnSymbol& fn, const std::vector<const Type*>& args, Loc loc) {
+    void Sema::FnCallCheck(const FnSymbol& fn, const std::vector<const Type*>& args_type, Loc loc) {
         auto& params_fix = fn.params_fix_;
         auto& param_inf  = fn.param_inf_;
         
         try {
             // Fixed
-            if (args.size() < params_fix.size()) throw 0;
+            if (args_type.size() < params_fix.size()) throw 0;
             for (size_t i = 0; i < params_fix.size(); i++) {
-                if (params_fix[i] && !args[i]->converts_.contains(params_fix[i])) throw 0;
+                if (params_fix[i] && !args_type[i]->converts_.contains(params_fix[i])) throw 0;
             }
 
             // Infinite
             if (param_inf) {
-                for (size_t i = params_fix.size(); i < args.size(); i++) {
-                    if (*param_inf && !args[i]->converts_.contains(*param_inf)) throw 0;
+                for (size_t i = params_fix.size(); i < args_type.size(); i++) {
+                    if (*param_inf && !args_type[i]->converts_.contains(*param_inf)) throw 0;
                 }
             }
             else {
-                if (args.size() > params_fix.size()) throw 0;
+                if (args_type.size() > params_fix.size()) throw 0;
             }
         }
         catch (...) {
             throw LogErr(LogModule::Sema, std::format(
                 "function '{}' expects {} type parameter(s), got {}",
-                fn.name_, FnParamsPrint(fn), FnParamsPrint(args)
+                fn.name_, FnParamsPrint(fn), FnParamsPrint(args_type)
             ), loc);
         }
     }
 
-    std::string Sema::FnParamsPrint(const std::vector<const Type*>& params) {
+    std::string Sema::FnParamsPrint(const std::vector<const Type*>& params_type) {
         std::string res = "(";
-        for (size_t i = 0; i < params.size(); i++) {
+        for (size_t i = 0; i < params_type.size(); i++) {
             if (i != 0) res += ", ";
-            res += params[i]->name_;
+            res += params_type[i]->name_;
         }
         return res.empty() ? "empty)" : res + ')';
     }
@@ -108,14 +108,14 @@ namespace sema {
 
         if (!node.params_) node.resolved_type_ = base;
         else {
-            std::vector<const Type*> params = {};
+            std::vector<const Type*> params_type = {};
             for (auto& e : node.params_->exprs_) {
                 if      (e->type_ == AstType::TypeExpr) {
                     Exec(*e);
-                    params.emplace_back(e->resolved_type_);
+                    params_type.emplace_back(e->resolved_type_);
                 }
                 else if (e->type_ == AstType::IdExpr) {
-                    params.emplace_back(TypeTable::Lookup(((IdExpr&)*e).value_));
+                    params_type.emplace_back(TypeTable::Lookup(((IdExpr&)*e).value_));
                 }
                 else {
                     throw LogErr(LogModule::Sema, std::format(
@@ -124,10 +124,10 @@ namespace sema {
                 }
             }
             
-            if (params.empty())
+            if (params_type.empty())
                 node.resolved_type_ = base;
             else
-                node.resolved_type_ = TypeTable::SetOrGetTypeParam(base, params);
+                node.resolved_type_ = TypeTable::SetOrGetTypeParam(base, params_type);
         }
     }
 
@@ -142,15 +142,16 @@ namespace sema {
     }
 
     void Sema::Exec(OperExpr& node) {
+        using enum OperType;
 
         // Unary
         Exec(*node.lexpr_);
         {
-            if (node.oper_type_ == OperType::Neg) {
+            if (node.oper_type_ == Neg) {
                 node.resolved_type_ = node.lexpr_->resolved_type_;
                 return;
             }
-            if (node.oper_type_ == OperType::Not) {
+            if (node.oper_type_ == Not) {
                 node.resolved_type_ = TypeTable::Lookup("bool");
                 return;
             }
@@ -160,21 +161,21 @@ namespace sema {
         Exec(*node.rexpr_);
         {
             
-            if (node.oper_type_ == OperType::Pick) {
+            if (node.oper_type_ == Pick) {
                 return;
             }
 
             // Boolean
             // TODO: Consider overloading–boolean constraint conflict
             switch (node.oper_type_) {
-                case OperType::Gt:
-                case OperType::Lt:
-                case OperType::Ge:
-                case OperType::Le:
-                case OperType::Eq:
-                case OperType::Neq:
-                case OperType::And:
-                case OperType::Or:
+                case Gt:
+                case Lt:
+                case Ge:
+                case Le:
+                case Eq:
+                case Neq:
+                case And:
+                case Or:
                     node.resolved_type_ = TypeTable::Lookup("bool");
                     return;
 
@@ -231,7 +232,7 @@ namespace sema {
             ), node.loc_);
         }
 
-        std::vector<const Type*> args_type;
+        std::vector<const Type*> args_type = {};
         for (auto& e : node.args_->exprs_) {
             Exec(*e);
             args_type.emplace_back(e->resolved_type_);
@@ -246,7 +247,7 @@ namespace sema {
         Exec(*node.target_);
         auto target_type = node.target_->resolved_type_;
 
-        std::vector<const Type*> args_type;
+        std::vector<const Type*> args_type = {};
         for (auto& e : node.args_->exprs_) {
             Exec(*e);
             args_type.emplace_back(e->resolved_type_);
@@ -273,7 +274,7 @@ namespace sema {
 
         // Params
         auto& params_expr = node.params_->exprs_;
-        std::vector<const Type*> params_type;
+        std::vector<const Type*> params_type = {};
         for (auto& e : params_expr) {
             auto expr = (DeclExpr*)e.get();
             Exec(*expr->bind_type_);

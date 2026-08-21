@@ -11,6 +11,8 @@
 #include "sema/symbol.hpp"
 
 namespace sema {
+    using AT      = AstType;
+    using OT      = OperType;
 
     class Sema {
     private:

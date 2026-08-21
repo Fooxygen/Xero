@@ -14,10 +14,19 @@
 #include "common/ast.hpp"
 
 namespace parser {
-
+    using TT        = Token::Type;
+    using AT        = AstType;
+    using OT        = OperType;
+    using TS        = std::vector<Token>;
+    using TTS       = std::vector<TT>;
+    using ATS       = std::vector<AT>;
+    using TTS_INIT  = std::initializer_list<TT>;
+    using ATS_INIT  = std::initializer_list<AT>;
+    using ASTNODE   = std::unique_ptr<AstNode>;
+    
     class Symbol {
     public:
-        using Data = std::variant<Token, std::unique_ptr<AstNode>>;
+        using Data = std::variant<Token, ASTNODE>;
         enum class Type {
             Undefined, Token, AstNode
         };
@@ -31,111 +40,95 @@ namespace parser {
             type_ = Type::Token;
             data_ = token;
         }
-        Symbol(std::unique_ptr<AstNode> node, Loc loc) {
+        Symbol(ASTNODE node, Loc loc) {
             node->loc_ = loc;
             type_ = Type::AstNode;
             data_ = std::move(node);
         }
         
-        Type   type() const {
-            return type_;
-        }
-        Data&  data() {
-            return data_;
-        }
+        Type   type() const { return type_; }
+        Data&  data()       { return data_; }
 
-        Token::Type type_token() const {
+        TT     type_token()   const {
             if (auto token = std::get_if<Token>(&data_)) {
                 return token->type_;
             }
-            return Token::Type::Undefined;
+            return TT::Undefined;
         }
-        AstType     type_astnode() const {
-            if (auto astnode = std::get_if<std::unique_ptr<AstNode>>(&data_)) {
+        AT     type_astnode() const {
+            if (auto astnode = std::get_if<ASTNODE>(&data_)) {
                 return astnode->get()->type_;
             }
-            return AstType::Undefined;
+            return AT::Undefined;
         }
-
-        Loc loc() const {
+        Loc    loc()          const {
             if (auto token = std::get_if<Token>(&data_)) {
                 return token->loc_;
             }
-            if (auto astnode = std::get_if<std::unique_ptr<AstNode>>(&data_)) {
+            if (auto astnode = std::get_if<ASTNODE>(&data_)) {
                 return astnode->get()->loc_;
             }
             return Loc{};
         }
     };
+    using ST = Symbol::Type;
+    using SS = std::vector<Symbol>;
 
     class SymbolPattern {
     private:
-        Symbol::Type type_ = Symbol::Type::Undefined;
-        std::vector<Token::Type>  type_tokens_;
-        std::vector<AstType>      type_astnodes_;
+        ST  type_          = ST::Undefined;
+        TTS type_tokens_   = {};
+        ATS type_astnodes_ = {};
 
         bool isOptional_ = false;
 
     public:
-        SymbolPattern(Token::Type type)
-        :   type_tokens_{type}
-        {
-            type_ = Symbol::Type::Token;
-        }
-        SymbolPattern(AstType type)
-        :   type_astnodes_{type}
-        {
-            type_ = Symbol::Type::AstNode;
-        }
-        SymbolPattern(std::initializer_list<Token::Type> types)
-        :   type_tokens_(types)
-        {
-            type_ = Symbol::Type::Token;
-        }
-        SymbolPattern(std::initializer_list<AstType> types)
-        :   type_astnodes_(types)
-        {
-            type_ = Symbol::Type::AstNode;
-        }
+        SymbolPattern(TT type)
+        :   type_tokens_{type} { type_ = ST::Token; }
+        SymbolPattern(AT type)
+        :   type_astnodes_{type} { type_ = ST::AstNode; }
+        SymbolPattern(TTS_INIT types)
+        :   type_tokens_(types) { type_ = ST::Token; }
+        SymbolPattern(ATS_INIT types)
+        :   type_astnodes_(types) { type_ = ST::AstNode; }
 
-        Symbol::Type type() const { return type_; }
-        const std::vector<Token::Type>& type_tokens()   const { return type_tokens_; }
-        const std::vector<AstType>&     type_astnodes() const { return type_astnodes_; }
-        bool isOptional()   const { return isOptional_; }
+        ST         type()          const { return type_; }
+        const TTS& type_tokens()   const { return type_tokens_; }
+        const ATS& type_astnodes() const { return type_astnodes_; }
+        bool       isOptional()    const { return isOptional_; }
     
         // Make Optional SP 
 
-        static SymbolPattern Opt(Token::Type type) {
+        static SymbolPattern Opt(TT type) {
             auto sp = SymbolPattern(type);
             sp.isOptional_ = true;
             return sp;
         }
-        static SymbolPattern Opt(AstType type) {
+        static SymbolPattern Opt(AT type) {
             auto sp = SymbolPattern(type);
             sp.isOptional_ = true;
             return sp;
         }
-        static SymbolPattern Opt(std::initializer_list<Token::Type> types) {
+        static SymbolPattern Opt(TTS_INIT types) {
             auto sp = SymbolPattern(types);
             sp.isOptional_ = true;
             return sp;
         }
-        static SymbolPattern Opt(std::initializer_list<AstType> types) {
+        static SymbolPattern Opt(ATS_INIT types) {
             auto sp = SymbolPattern(types);
             sp.isOptional_ = true;
             return sp;
         }
     };
+    using PATS      = std::vector<SymbolPattern>;
+    using PATS_INIT = std::initializer_list<SymbolPattern>;
 
     // Parsing Rule
     // [TokenType, { TokenType, TokenType }, AstType, ...] -> AstType
     class Rule {
     public:
         using ReduceCallback = std::function<
-            std::unique_ptr<AstNode>(
-                std::vector<Symbol>& symbols,
-                Token::Type token_next
-            )
+            ASTNODE(SS& symbols, TT token_next)
         >;
 
         // for Move():
@@ -145,12 +138,12 @@ namespace parser {
         static inline std::vector<size_t> move_positions_;
 
     private:
-        std::vector<SymbolPattern>  patterns_;
-        std::vector<SymbolPattern>  prefix_delay_;
-        std::vector<SymbolPattern>  prefix_allow_;
-        std::vector<Token::Type>    suffix_delay_;      // Delay reduction when hit symmbol
-        std::vector<Token::Type>    suffix_allow_;      // Delay reduction when miss symbol
-        ReduceCallback              reduce_callback_;
+        PATS           patterns_;
+        PATS           prefix_delay_;
+        PATS           prefix_allow_;
+        TTS            suffix_delay_;      // Delay reduction when hit symmbol
+        TTS            suffix_allow_;      // Delay reduction when miss symbol
+        ReduceCallback reduce_callback_;
 
         static void PatternIndexCheck(size_t pos) {
             if (pos < 1) {
@@ -158,7 +151,7 @@ namespace parser {
             }
         }
 
-        bool isNeedDelayPrefix(const std::vector<Symbol>& symbols, size_t reduce_len) {
+        bool isNeedDelayPrefix(const SS& symbols, size_t reduce_len) {
             if (prefix_delay_.empty() && prefix_allow_.empty()) return false;
             if (symbols.size() <= reduce_len) return false;
 
@@ -178,8 +171,8 @@ namespace parser {
             }
             return false;
         }
-        bool isNeedDelaySuffix(Token::Type token_next) const {
-            if (token_next == Token::Type::Undefined) return false;
+        bool isNeedDelaySuffix(TT token_next) const {
+            if (token_next == TT::Undefined) return false;
             if (!suffix_delay_.empty() && std::ranges::contains(suffix_delay_, token_next))
                 return true;
             if (!suffix_allow_.empty() && !std::ranges::contains(suffix_allow_, token_next))
@@ -189,12 +182,12 @@ namespace parser {
 
     public:
         Rule(
-            std::initializer_list<SymbolPattern>    patterns,
-            ReduceCallback                          reduce_callback,
-            std::initializer_list<SymbolPattern>    prefix_delay = {},
-            std::initializer_list<SymbolPattern>    prefix_allow = {},
-            std::initializer_list<Token::Type>      suffix_delay = {},
-            std::initializer_list<Token::Type>      suffix_allow = {}
+            PATS_INIT      patterns,
+            ReduceCallback reduce_callback,
+            PATS_INIT      prefix_delay = {},
+            PATS_INIT      prefix_allow = {},
+            TTS_INIT       suffix_delay = {},
+            TTS_INIT       suffix_allow = {}
         )
         :   patterns_(patterns),
             prefix_delay_(prefix_delay),
@@ -204,13 +197,13 @@ namespace parser {
             reduce_callback_(std::move(reduce_callback))
         {}
 
-        const std::vector<SymbolPattern>& patterns() const { return patterns_; }
-        const ReduceCallback& reduce_callback()      const { return reduce_callback_; }
+        const PATS&           patterns()        const { return patterns_; }
+        const ReduceCallback& reduce_callback() const { return reduce_callback_; }
 
         bool PatternMatch(const SymbolPattern& pat, const Symbol& sym) {
 
             // Token
-            if (sym.type() == Symbol::Type::Token) {
+            if (sym.type() == ST::Token) {
                 for (auto t : pat.type_tokens()) {
                     if (Token::isTypeCompatible(t, sym.type_token())) return true;
                 }
@@ -224,9 +217,7 @@ namespace parser {
  
             return false;
         }
-        bool PatternsMatch(
-            const std::vector<Symbol>& symbols, Token::Type token_next, size_t& out_reduce_len)
-        {
+        bool PatternsMatch(const SS& symbols, TT token_next, size_t& out_reduce_len) {
             if (isNeedDelaySuffix(token_next)) return false;
 
             // Match Check
@@ -310,25 +301,24 @@ namespace parser {
             return move_positions_[pos - 1] == 0;
         }
 
-        static bool is(std::vector<Symbol>& syms, size_t pos, Token::Type token_type) {
+        static bool is(SS& syms, size_t pos, TT token_type) {
             PatternIndexCheck(pos);
             pos = move_positions_[pos - 1];
             auto& target = syms[syms.size() - pos];
             
-            return  target.type() == Symbol::Type::Token &&
+            return  target.type() == ST::Token &&
                     target.type_token() == token_type;
         }
-
-        static bool is(std::vector<Symbol>& syms, size_t pos, AstType ast_type) {
+        static bool is(SS& syms, size_t pos, AT ast_type) {
             PatternIndexCheck(pos);
             pos = move_positions_[pos - 1];
             auto& target = syms[syms.size() - pos];
             
-            return  target.type() == Symbol::Type::AstNode &&
+            return  target.type() == ST::AstNode &&
                     target.type_astnode() == ast_type;
         }
 
-        static Token::Type GetTokenType(std::vector<Symbol>& syms, size_t pos) {
+        static Token::Type GetTokenType(SS& syms, size_t pos) {
             PatternIndexCheck(pos);
             pos = move_positions_[pos - 1];
             return syms[syms.size() - pos].type_token();
@@ -336,10 +326,10 @@ namespace parser {
 
         // Move AstNode as type T from symbols
         template<typename T>
-        static std::unique_ptr<T> Move(std::vector<Symbol>& syms, size_t pos) {
+        static std::unique_ptr<T> Move(SS& syms, size_t pos) {
             PatternIndexCheck(pos);
             pos = move_positions_[pos - 1];
-            auto& astnode = std::get<std::unique_ptr<AstNode>>(syms[syms.size() - pos].data());
+            auto& astnode = std::get<ASTNODE>(syms[syms.size() - pos].data());
             return std::unique_ptr<T>(static_cast<T*>(astnode.release()));
         }
     };
@@ -349,41 +339,41 @@ namespace parser {
     private:
         // Predefined
 
-        inline static std::vector<Rule> rules_;     // Reduce Rules
-        std::vector<Token>&             tokens_;    // Lexer's Tokens
+        inline static std::vector<Rule> rules_; // Reduce Rules
+        TS& tokens_;    // Lexer's Tokens
 
         // Cache
         
-        std::vector<Symbol>      symbols_;          // Symbols Stack
-        std::vector<size_t>      scopes_brace;      // Brace Scope
-        std::unique_ptr<AstNode> root_;             // Program as AST Root Node.
+        SS                  symbols_;           // Symbols Stack
+        std::vector<size_t> scopes_brace;       // Brace Scope
+        ASTNODE             root_;              // Program as AST Root Node.
 
         void RulesInit();
 
         void Shift(const Token& token);
-        bool TryReduce(const Rule& rule, Token::Type token_next, size_t reduce_len);
+        bool TryReduce(const Rule& rule, TT token_next, size_t reduce_len);
 
         void   TokenRewrite(Token& token);          // Modify TokenType
         Symbol Token2Symbol(const Token& token);
 
     public:
-        Parser(std::vector<Token>& tokens) : tokens_(tokens) {
+        Parser(TS& tokens) : tokens_(tokens) {
             RulesInit();
         }
         ~Parser() { rules_.clear(); }
 
         void Execute();
-        std::unique_ptr<AstNode>& root() {
+        ASTNODE& root() {
             return root_;
         }
     
         void RuleAdd(
-            std::initializer_list<SymbolPattern>    patterns,
-            Rule::ReduceCallback                    reduce_callback,
-            std::initializer_list<SymbolPattern>    prefix_delay = {},
-            std::initializer_list<SymbolPattern>    prefix_allow = {},
-            std::initializer_list<Token::Type>      suffix_delay = {},
-            std::initializer_list<Token::Type>      suffix_allow = {})
+            PATS_INIT               patterns,
+            Rule::ReduceCallback    reduce_callback,
+            PATS_INIT               prefix_delay = {},
+            PATS_INIT               prefix_allow = {},
+            TTS_INIT                suffix_delay = {},
+            TTS_INIT                suffix_allow = {})
         {
             rules_.emplace_back(
                 patterns, reduce_callback,

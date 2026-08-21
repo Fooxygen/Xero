@@ -10,18 +10,11 @@
 namespace parser {
 
     void Parser::RulesInit() {
-        using TT      = Token::Type;
-        using AT      = AstType;
-        using PATS    = std::initializer_list<SymbolPattern>;
-        using TOKS    = std::initializer_list<Token::Type>;
-        using ASTNODE = std::unique_ptr<AstNode>;
 
         // Oper Auxiliary
 
-        static auto isOperPriority = [](Token::Type a, Token::Type b) {
-            using TT = Token::Type;
-            
-            auto group = [](Token::Type type) {
+        static auto isOperPriority = [](TT a, TT b) {
+            auto group = [](TT type) {
                 switch (type) {
                     case TT::LBkt:
                     case TT::LParen:
@@ -60,10 +53,7 @@ namespace parser {
             return group(a) > group(b);
         };
 
-        static auto TokenType2OperType = [](Token::Type token, bool isUnary) {
-            using TT = Token::Type;
-            using OT = OperType;
-
+        static auto TokenType2OperType = [](TT token, bool isUnary) {
             switch (token) {
                 case TT::Plus:          return OT::Plus;
                 case TT::Minus:         return isUnary ? OT::Neg : OT::Minus;
@@ -96,19 +86,19 @@ namespace parser {
 
         // Pack Auxiliary
 
-        static auto Pack2BlockExpr = [](std::unique_ptr<AstNode> stmt)
+        static auto Pack2BlockExpr = [](ASTNODE stmt)
             -> std::unique_ptr<BlockExpr>
         {
-            if (stmt->type_ == AstType::BlockExpr) {
+            if (stmt->type_ == AT::BlockExpr) {
                 return std::unique_ptr<BlockExpr>((BlockExpr*)stmt.release());
             }
 
-            std::vector<std::unique_ptr<AstNode>> children;
+            std::vector<ASTNODE> children;
             children.emplace_back(std::move(stmt));
             return std::make_unique<BlockExpr>(children);
         };
         
-        static auto Pack2Exprs  = [](std::vector<Symbol>& symbols, size_t pos)
+        static auto Pack2Exprs  = [](SS& symbols, size_t pos)
             -> std::unique_ptr<Exprs>
         {
             if (Rule::isOptPatternEmpty(pos)) {
@@ -117,7 +107,7 @@ namespace parser {
             }
 
             size_t mp = Rule::move_positions_[pos - 1];
-            if (symbols[symbols.size() - mp].type_astnode() == AstType::Exprs)
+            if (symbols[symbols.size() - mp].type_astnode() == AT::Exprs)
                 return Rule::Move<Exprs>(symbols, pos);
 
             std::vector<std::unique_ptr<Expr>> exprs;
@@ -132,48 +122,42 @@ namespace parser {
         // └─ expr, expr -> exprs
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     AT::Expr,
                     TT::Comma,
                     AT::Expr
                 },
-                [](std::vector<Symbol>& symbols, auto) -> ASTNODE {
+                [](SS& symbols, auto) -> ASTNODE {
                     std::vector<std::unique_ptr<Expr>> args;
                     args.emplace_back(Rule::Move<Expr>(symbols, 1));
                     args.emplace_back(Rule::Move<Expr>(symbols, 3));
                     return std::make_unique<Exprs>(args);
                 },
-                {}, {},
-                {}, TOKS{
-                    TT::Comma,
-                    TT::Semicolon,
-                    TT::RParen,
-                    TT::RBkt,
-                    TT::REBkt
+                {}, {}, {},
+                TTS_INIT{
+                    TT::Comma,  TT::Semicolon,
+                    TT::RParen, TT::RBkt, TT::REBkt
                 }
             );
         }
         // └─ exprs, expr -> exprs
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     AT::Exprs,
                     TT::Comma,
                     AT::Expr
                 },
-                [](std::vector<Symbol>& symbols, auto) -> ASTNODE {
+                [](SS& symbols, auto) -> ASTNODE {
                     auto exprs = Rule::Move<Exprs>(symbols, 1);
                     auto expr  = Rule::Move<Expr>(symbols, 3);
                     exprs->exprs_.emplace_back(std::move(expr));
                     return exprs;
                 },
-                {}, {},
-                {}, TOKS{
-                    TT::Comma,
-                    TT::Semicolon,
-                    TT::RParen,
-                    TT::RBkt,
-                    TT::REBkt
+                {}, {}, {},
+                TTS_INIT{
+                    TT::Comma,  TT::Semicolon,
+                    TT::RParen, TT::RBkt, TT::REBkt
                 }
             );
         }
@@ -183,13 +167,13 @@ namespace parser {
         // └─ id [= exprs =] -> typeexpr
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     AT::IdExpr,
                     TT::LEBkt,
                     SymbolPattern::Opt({ AT::Expr, AT::Exprs }),
                     TT::REBkt
                 },
-                [](std::vector<Symbol>& symbols, auto) {
+                [](SS& symbols, auto) {
                     return std::make_unique<TypeExpr>(
                         Rule::Move<IdExpr>(symbols, 1)->value_,
                         Pack2Exprs(symbols, 3)
@@ -200,12 +184,12 @@ namespace parser {
         // └─ id: id -> declareexpr
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     AT::IdExpr,
                     TT::Colon,
                     AT::IdExpr
                 },
-                [](std::vector<Symbol>& symbols, auto) {
+                [](SS& symbols, auto) {
                     return std::make_unique<DeclExpr>(
                         Rule::Move<IdExpr>(symbols, 1)->value_,
                         std::make_unique<TypeExpr>(
@@ -216,18 +200,18 @@ namespace parser {
                     );
                 },
                 {}, {},
-                TOKS{ TT::LEBkt }
+                TTS_INIT{ TT::LEBkt }
             );
         }
         // └─ id: typeexpr -> declareexpr
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     AT::IdExpr,
                     TT::Colon,
                     AT::TypeExpr
                 },
-                [](std::vector<Symbol>& symbols, auto) {
+                [](SS& symbols, auto) {
                     return std::make_unique<DeclExpr>(
                         Rule::Move<IdExpr>(symbols, 1)->value_,
                         Rule::Move<TypeExpr>(symbols, 3),
@@ -239,12 +223,12 @@ namespace parser {
         // └─ declareexpr = expr -> declareexpr
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     AT::DeclExpr,
                     TT::Assign,
                     AT::Expr
                 },
-                [](std::vector<Symbol>& symbols, auto) {
+                [](SS& symbols, auto) {
                     auto decl = Rule::Move<DeclExpr>(symbols, 1);
                     return std::make_unique<DeclExpr>(
                         decl->id_,
@@ -252,8 +236,8 @@ namespace parser {
                         Rule::Move<Expr>(symbols, 3)
                     );
                 },
-                {}, {},
-                {}, TOKS{
+                {}, {}, {},
+                TTS_INIT{
                     TT::Semicolon, TT::Comma
                 }
             );
@@ -261,7 +245,7 @@ namespace parser {
         // └─ expr assignoper expr; -> assignstmt
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     AT::Expr,
                     SymbolPattern({
                         TT::Assign,
@@ -271,7 +255,7 @@ namespace parser {
                     AT::Expr,
                     TT::Semicolon
                 },
-                [](std::vector<Symbol>& symbols, auto) {
+                [](SS& symbols, auto) {
                     auto token  = Rule::GetTokenType(symbols, 2);
                     auto target = Rule::Move<Expr>(symbols, 1);
                     auto value  = Rule::Move<Expr>(symbols, 3);
@@ -297,7 +281,7 @@ namespace parser {
         // └─ target.expr(exprs?) -> methodcallexpr
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     AT::Expr,
                     TT::Dot,
                     AT::IdExpr,
@@ -305,7 +289,7 @@ namespace parser {
                     SymbolPattern::Opt({ AT::Expr, AT::Exprs}),
                     TT::RParen
                 },
-                [](std::vector<Symbol>& symbols, auto) {
+                [](SS& symbols, auto) {
                     return std::make_unique<MethodCallExpr>(
                         Rule::Move<Expr>(symbols, 1),
                         Rule::Move<IdExpr>(symbols, 3),
@@ -318,26 +302,26 @@ namespace parser {
         // └─ expr(exprs?) -> fncallexpr
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     AT::IdExpr,
                     TT::LParen,
                     SymbolPattern::Opt({ AT::Expr, AT::Exprs}),
                     TT::RParen
                 },
-                [](std::vector<Symbol>& symbols, auto) {
+                [](SS& symbols, auto) {
                     return std::make_unique<FnCallExpr>(
                         Rule::Move<IdExpr>(symbols, 1),
                         Pack2Exprs(symbols, 3)
                     );
                 },
-                PATS{ TT::Fn }
+                PATS_INIT{ TT::Fn }
             );
         }
         
         // └─ fn id?(exprs?) -> <id, typeexpr> blockexpr -> fnexpr
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     TT::Fn,
                     SymbolPattern::Opt(AT::IdExpr),
                     TT::LParen,
@@ -347,7 +331,7 @@ namespace parser {
                     SymbolPattern({ AT::IdExpr, AT::TypeExpr }),
                     AT::BlockExpr
                 },
-                [](std::vector<Symbol>& symbols, auto) -> ASTNODE {
+                [](SS& symbols, auto) -> ASTNODE {
                     std::string name = "";
                     if (!Rule::isOptPatternEmpty(2))
                         name = Rule::Move<IdExpr>(symbols, 2)->value_;
@@ -379,7 +363,7 @@ namespace parser {
         // └─ fn id?(exprs?) blockexpr -> fnexpr
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     TT::Fn,
                     SymbolPattern::Opt(AT::IdExpr),
                     TT::LParen,
@@ -387,7 +371,7 @@ namespace parser {
                     TT::RParen,
                     AT::BlockExpr
                 },
-                [](std::vector<Symbol>& symbols, auto) {
+                [](SS& symbols, auto) {
                     std::string name = "";
                     if (!Rule::isOptPatternEmpty(2)) name = Rule::Move<IdExpr>(symbols, 2)->value_;
 
@@ -403,12 +387,12 @@ namespace parser {
         // └─ return expr?; -> returnsignalstmt
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     TT::Return,
                     SymbolPattern::Opt(AT::Expr),
                     TT::Semicolon
                 },
-                [](std::vector<Symbol>& symbols, auto) {
+                [](SS& symbols, auto) {
                     return std::make_unique<ReturnSignalStmt>(
                         !Rule::isOptPatternEmpty(2) ? Rule::Move<Expr>(symbols, 2) : nullptr
                     );
@@ -421,7 +405,7 @@ namespace parser {
         // └─ (expr) -> expr
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     TT::LParen,
                     AT::Expr,
                     TT::RParen,
@@ -429,8 +413,9 @@ namespace parser {
                 [](std::vector<Symbol>& symbols, auto) -> ASTNODE {
                     return Rule::Move<Expr>(symbols, 2);
                 },
-                PATS{ TT::If, TT::Elif, TT::For, TT::While }, {},
-                TOKS{ TT::LBrace, TT::Arrow }
+                PATS_INIT{ TT::If, TT::Elif, TT::For, TT::While },
+                {},
+                TTS_INIT{ TT::LBrace, TT::Arrow }
             );
         }
 
@@ -439,15 +424,15 @@ namespace parser {
         // └─ expr[expr]
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     AT::Expr,
                     TT::LBkt,
                     AT::Expr,
                     TT::RBkt
                 },
-                [](std::vector<Symbol>& symbols, auto) {
+                [](SS& symbols, auto) {
                     return std::make_unique<OperExpr>(
-                        OperType::Pick,
+                        OT::Pick,
                         Rule::Move<Expr>(symbols, 1),
                         Rule::Move<Expr>(symbols, 3)
                     );
@@ -458,7 +443,7 @@ namespace parser {
         // └─ Binary
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     AT::Expr,
                     SymbolPattern({
                         TT::Star, TT::Slash, TT::ModT, TT::ModF,
@@ -468,7 +453,7 @@ namespace parser {
                     }),
                     AT::Expr
                 },
-                [](std::vector<Symbol>& symbols, Token::Type token_next) -> ASTNODE {
+                [](SS& symbols, TT token_next) -> ASTNODE {
                     auto tokentype = Rule::GetTokenType(symbols, 2);
                     if (isOperPriority(token_next, tokentype)) return nullptr;
 
@@ -484,18 +469,18 @@ namespace parser {
         // └─ Unary
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     SymbolPattern({ TT::Minus, TT::Not }),
                     AT::Expr
                 },
-                [](std::vector<Symbol>& symbols, auto) {
+                [](SS& symbols, auto) {
                     return std::make_unique<OperExpr>(
                         TokenType2OperType(Rule::GetTokenType(symbols, 1), true),
                         Rule::Move<Expr>(symbols, 2),
                         nullptr
                     );
                 },
-                PATS{ AT::Expr }
+                PATS_INIT{ AT::Expr }
             );
         }
         
@@ -504,12 +489,12 @@ namespace parser {
         // └─ [exprs?] -> arrayexpr
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     TT::LBkt,
                     SymbolPattern::Opt({ AT::Expr, AT::Exprs}),
                     TT::RBkt
                 },
-                [](std::vector<Symbol>& symbols, auto) {
+                [](SS& symbols, auto) {
                     return std::make_unique<ArrayExpr>(
                         Pack2Exprs(symbols, 2)
                     );
@@ -522,14 +507,14 @@ namespace parser {
         // └─ expr..expr..expr -> rangeexpr
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     AT::Expr,
                     TT::DotDot,
                     AT::Expr,
                     TT::DotDot,
                     AT::Expr,
                 },
-                [](std::vector<Symbol>& symbols, auto) -> ASTNODE {                    
+                [](SS& symbols, auto) -> ASTNODE {                    
                     return std::make_unique<RangeExpr>(
                         Rule::Move<Expr>(symbols, 1),
                         Rule::Move<Expr>(symbols, 5),
@@ -538,7 +523,7 @@ namespace parser {
                     );
                 },
                 {}, {},
-                TOKS{
+                TTS_INIT{
                     TT::DotDot,
                     TT::DotDotEq,
                     TT::LBkt,
@@ -550,14 +535,14 @@ namespace parser {
         // └─ expr..expr..=expr -> rangeexpr
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     AT::Expr,
                     TT::DotDot,
                     AT::Expr,
                     TT::DotDotEq,
                     AT::Expr,
                 },
-                [](std::vector<Symbol>& symbols, auto) -> ASTNODE {
+                [](SS& symbols, auto) -> ASTNODE {
                     return std::make_unique<RangeExpr>(
                         Rule::Move<Expr>(symbols, 1),
                         Rule::Move<Expr>(symbols, 5),
@@ -566,7 +551,7 @@ namespace parser {
                     );
                 },
                 {}, {},
-                TOKS{
+                TTS_INIT{
                     TT::DotDot,
                     TT::DotDotEq,
                     TT::LBkt,
@@ -579,12 +564,12 @@ namespace parser {
         // └─ expr..expr -> rangeexpr
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     AT::Expr,
                     TT::DotDot,
                     AT::Expr,
                 },
-                [](std::vector<Symbol>& symbols, auto) -> ASTNODE {
+                [](SS& symbols, auto) -> ASTNODE {
                     return std::make_unique<RangeExpr>(
                         Rule::Move<Expr>(symbols, 1),
                         Rule::Move<Expr>(symbols, 3),
@@ -593,7 +578,7 @@ namespace parser {
                     );
                 },
                 {}, {},
-                TOKS{
+                TTS_INIT{
                     TT::DotDot,
                     TT::DotDotEq,
                     TT::LBkt,
@@ -605,12 +590,12 @@ namespace parser {
         // └─ expr..=expr -> rangeexpr
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     AT::Expr,
                     TT::DotDotEq,
                     AT::Expr,
                 },
-                [](std::vector<Symbol>& symbols, auto) -> ASTNODE {
+                [](SS& symbols, auto) -> ASTNODE {
                     return std::make_unique<RangeExpr>(
                         Rule::Move<Expr>(symbols, 1),
                         Rule::Move<Expr>(symbols, 3),
@@ -619,7 +604,7 @@ namespace parser {
                     );
                 },
                 {}, {},
-                TOKS{
+                TTS_INIT{
                     TT::DotDot,
                     TT::DotDotEq,
                     TT::LBkt,
@@ -634,14 +619,14 @@ namespace parser {
         // └─ if (cond) stmt/blockexpr -> condstmt
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     TT::If,
                     TT::LParen,
                     AT::Expr,
                     TT::RParen,
                     { AT::Stmt, AT::BlockExpr }
                 },
-                [](std::vector<Symbol>& symbols, auto) {
+                [](SS& symbols, auto) {
                     return std::make_unique<CondStmt>(
                         Rule::Move<Expr>(symbols, 3),
                         Pack2BlockExpr(Rule::Move<AstNode>(symbols, 5)),
@@ -649,13 +634,13 @@ namespace parser {
                     );
                 },
                 {}, {},
-                TOKS{ TT::Elif, TT::Else }
+                TTS_INIT{ TT::Elif, TT::Else }
             );
         }
         // └─ if (expr) stmt elif (expr) stmt -> condstmt
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     TT::If,
                     TT::LParen,
                     AT::Expr,
@@ -667,7 +652,7 @@ namespace parser {
                     TT::RParen,
                     { AT::Stmt, AT::BlockExpr }
                 },
-                [](std::vector<Symbol>& symbols, auto) {
+                [](SS& symbols, auto) {
                     return std::make_unique<CondStmt>(
                         Rule::Move<Expr>(symbols, 3),
                         Pack2BlockExpr(Rule::Move<AstNode>(symbols, 5)),
@@ -683,7 +668,7 @@ namespace parser {
         // └─ if (expr) stmt else stmt -> condstmt
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     TT::If,
                     TT::LParen,
                     AT::Expr,
@@ -692,7 +677,7 @@ namespace parser {
                     TT::Else,
                     { AT::Stmt, AT::BlockExpr }
                 },
-                [](std::vector<Symbol>& symbols, auto) {
+                [](SS& symbols, auto) {
                     return std::make_unique<CondStmt>(
                         Rule::Move<Expr>(symbols, 3),
                         Pack2BlockExpr(Rule::Move<AstNode>(symbols, 5)),
@@ -708,7 +693,7 @@ namespace parser {
         // └─ condstmt elif (cond) stmt -> condstmt
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     AT::CondStmt,
                     TT::Elif,
                     TT::LParen,
@@ -716,7 +701,7 @@ namespace parser {
                     TT::RParen,
                     { AT::Stmt, AT::BlockExpr }
                 },
-                [](std::vector<Symbol>& symbols, auto) {
+                [](SS& symbols, auto) {
                     auto stmt = Rule::Move<CondStmt>(symbols, 1);
 
                     CondStmt* tail = stmt.get();
@@ -735,12 +720,12 @@ namespace parser {
         // └─ condstmt else stmt -> condstmt
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     AT::CondStmt,
                     TT::Else,
                     { AT::Stmt, AT::BlockExpr }
                 },
-                [](std::vector<Symbol>& symbols, auto) {
+                [](SS& symbols, auto) {
                     auto stmt = Rule::Move<CondStmt>(symbols, 1);
 
                     CondStmt* tail = stmt.get();
@@ -761,7 +746,7 @@ namespace parser {
         // └─ break; -> loopsignalstmt
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     TT::Break,
                     TT::Semicolon
                 },
@@ -775,7 +760,7 @@ namespace parser {
         // └─ continue; -> loopsignalstmt
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     TT::Continue,
                     TT::Semicolon
                 },
@@ -789,7 +774,7 @@ namespace parser {
         // └─ for ( x in expr ) stmt -> forstmt
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     TT::For,
                     TT::LParen,
                     AT::IdExpr,
@@ -798,7 +783,7 @@ namespace parser {
                     TT::RParen,
                     { AT::Stmt, AT::BlockExpr }
                 },
-                [](std::vector<Symbol>& symbols, auto) {
+                [](SS& symbols, auto) {
                     return std::make_unique<ForStmt>(
                         Rule::Move<IdExpr>(symbols, 3),
                         Rule::Move<Expr>(symbols, 5),
@@ -810,14 +795,14 @@ namespace parser {
         // └─ while ( cond ) stmt -> whilestmt
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     TT::While,
                     TT::LParen,
                     AT::Expr,
                     TT::RParen,
                     { AT::Stmt, AT::BlockExpr }
                 },
-                [](std::vector<Symbol>& symbols, auto) {
+                [](SS& symbols, auto) {
                     return std::make_unique<WhileStmt>(
                         Rule::Move<Expr>(symbols, 3),
                         Pack2BlockExpr(Rule::Move<AstNode>(symbols, 5))
@@ -831,11 +816,11 @@ namespace parser {
         // └─ expr; -> exprstmt
         {
             RuleAdd(
-                PATS{
+                PATS_INIT{
                     AT::Expr,
                     TT::Semicolon
                 },
-                [](std::vector<Symbol>& symbols, auto) {
+                [](SS& symbols, auto) {
                     return std::make_unique<ExprStmt>(
                         Rule::Move<Expr>(symbols, 1)
                     );

@@ -11,6 +11,7 @@
 #include "common/token.hpp"
 
 namespace lexer {
+    using TT = Token::Type;
 
     // Lexical Analyzer
     class Lexer {
@@ -71,25 +72,13 @@ namespace lexer {
             pos_(0)
         {}
 
-        bool  isScanEnd() {
-            return pos_ >= code_.length();
-        };
-        bool  isNextScanEnd() {
-            return pos_ + 1 >= code_.length();
-        };
+        std::vector<Token>& tokens() { return tokens_; }
+
+        bool  isScanEnd()     { return pos_ >= code_.length(); };
+        bool  isNextScanEnd() { return pos_ + 1 >= code_.length(); };
         
         std::optional<Token> TokenNext();
-        Token TokenGen(Token::Type type, const std::string& lexeme) {
-            loc_prev_ = {
-                .line = loc_.line,
-                .col  = loc_.col - lexeme.length()
-            };
-            return Token(type, lexeme, loc_prev_);
-        }
-        void  TokensGen(bool isPrint = false);
-        
-        std::vector<Token>& tokens() {
-            return tokens_;
-        }
+        Token                TokenGen(TT type, const std::string& lexeme);
+        void                 TokensGen(bool isPrint = false);
     };
 }

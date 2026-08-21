@@ -21,7 +21,7 @@ namespace parser {
             const auto& token = tokens_[i];
             const auto  token_next =
                 i + 1 >= tokens_.size()
-                ? Token::Type::Undefined
+                ? TT::Undefined
                 : (tokens_[i + 1]).type_;
 
             // Shift
@@ -76,48 +76,48 @@ namespace parser {
     }
 
     void   Parser::TokenRewrite(Token& token) {
-        using TT = Token::Type;
+        using enum Token::Type;
 
         switch (token.type_) {
-            case TT::Id: {
+            case Id: {
                 if      (token.lexeme_ == "true") {
-                    token = Token(TT::True, token.lexeme_, token.loc_);
+                    token = Token(True, token.lexeme_, token.loc_);
                 }
                 else if (token.lexeme_ == "false") {
-                    token = Token(TT::False, token.lexeme_, token.loc_);
+                    token = Token(False, token.lexeme_, token.loc_);
                 }
 
                 else if (token.lexeme_ == "if") {
-                    token = Token(TT::If, token.lexeme_, token.loc_);
+                    token = Token(If, token.lexeme_, token.loc_);
                 }
                 else if (token.lexeme_ == "elif") {
-                    token = Token(TT::Elif, token.lexeme_, token.loc_);
+                    token = Token(Elif, token.lexeme_, token.loc_);
                 }
                 else if (token.lexeme_ == "else") {
-                    token = Token(TT::Else, token.lexeme_, token.loc_);
+                    token = Token(Else, token.lexeme_, token.loc_);
                 }
                 
                 else if (token.lexeme_ == "in") {
-                    token = Token(TT::In, token.lexeme_, token.loc_);
+                    token = Token(In, token.lexeme_, token.loc_);
                 }
                 else if (token.lexeme_ == "for") {
-                    token = Token(TT::For, token.lexeme_, token.loc_);
+                    token = Token(For, token.lexeme_, token.loc_);
                 }
                 else if (token.lexeme_ == "while") {
-                    token = Token(TT::While, token.lexeme_, token.loc_);
+                    token = Token(While, token.lexeme_, token.loc_);
                 }
                 else if (token.lexeme_ == "break") {
-                    token = Token(TT::Break, token.lexeme_, token.loc_);
+                    token = Token(Break, token.lexeme_, token.loc_);
                 }
                 else if (token.lexeme_ == "continue") {
-                    token = Token(TT::Continue, token.lexeme_, token.loc_);
+                    token = Token(Continue, token.lexeme_, token.loc_);
                 }
                 else if (token.lexeme_ == "return") {
-                    token = Token(TT::Return, token.lexeme_, token.loc_);
+                    token = Token(Return, token.lexeme_, token.loc_);
                 }
 
                 else if (token.lexeme_ == "fn") {
-                    token = Token(TT::Fn, token.lexeme_, token.loc_);
+                    token = Token(Fn, token.lexeme_, token.loc_);
                 }
 
                 break;
@@ -162,14 +162,14 @@ namespace parser {
     }
 
     void   Parser::Shift(const Token& token) {
-        using TT = Token::Type;
+        using enum Token::Type;
 
         // Brace Scope
         {
-            if      (token.type_ == TT::LBrace) {
+            if      (token.type_ == LBrace) {
                 scopes_brace.emplace_back(symbols_.size() + 1);
             }
-            else if (token.type_ == TT::RBrace) {
+            else if (token.type_ == RBrace) {
                 if (scopes_brace.empty()) {
                     throw LogErr(LogModule::Parser, "unclosed brace", token.loc_);
                 }
@@ -200,7 +200,7 @@ namespace parser {
         symbols_.emplace_back(Token2Symbol(token));
     }
 
-    bool   Parser::TryReduce(const Rule& rule, Token::Type token_next, size_t reduce_len) {
+    bool   Parser::TryReduce(const Rule& rule, TT token_next, size_t reduce_len) {
 
         // Loc
         auto loc = symbols_[symbols_.size() - reduce_len].loc();

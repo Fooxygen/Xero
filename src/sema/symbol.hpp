@@ -68,13 +68,8 @@ namespace sema {
     public:
         const Type* var_type_ = nullptr;
 
-        VarSymbol(
-            std::string name, Loc loc,
-            const Type* var_type
-        )
-        :   Symbol(name, SymbolType::Var, loc),
-            var_type_(var_type)
-        {}
+        VarSymbol(std::string name, Loc loc, const Type* var_type)
+        :   Symbol(name, SymbolType::Var, loc), var_type_(var_type) {}
     };
     
     class FnSymbol  : public Symbol {
