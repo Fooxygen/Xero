@@ -1,4 +1,4 @@
 
-for (x in []) {
-    println(x);
+fn main() {
+    println(1);
 }

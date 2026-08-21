@@ -266,11 +266,16 @@ namespace sema {
     }
 
     void Sema::Exec(FnExpr& node) {
-        node.resolved_type_     = TypeTable::Lookup("function");
+        node.resolved_type_ = TypeTable::Lookup("function");
 
         // Return Type
-        Exec(*node.ret_type_);
-        node.ret_resolved_type_ = node.ret_type_->resolved_type_;
+        if (node.ret_type_) {
+            Exec(*node.ret_type_);
+            node.ret_resolved_type_ = node.ret_type_->resolved_type_;
+        }
+        else {
+            node.ret_resolved_type_ = TypeTable::Lookup("none");
+        }
 
         // Params
         auto& params_expr = node.params_->exprs_;
