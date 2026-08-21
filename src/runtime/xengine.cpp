@@ -301,7 +301,7 @@ namespace rt {
                     });
                 }
                 catch (ReturnSignal e) {
-                    ret = *e.value;
+                    ret = *e.value_;
                 }
 
                 // Check return type.
@@ -371,16 +371,16 @@ namespace rt {
 
     Obj Xengine::Exec(NumConst& node) {
         if (node.resolved_type_->is("i32")){
-            return Obj::Make_i32((int32_t)node.resolved_value_.integer);
+            return Obj::Make_i32((int32_t)node.resolved_value_.integer_);
         }
         if (node.resolved_type_->is("i64")){
-            return Obj::Make_i64((int64_t)node.resolved_value_.integer);
+            return Obj::Make_i64((int64_t)node.resolved_value_.integer_);
         }
         if (node.resolved_type_->is("f32")){
-            return Obj::Make_f32((float)node.resolved_value_.floating);
+            return Obj::Make_f32((float)node.resolved_value_.floating_);
         }
         if (node.resolved_type_->is("f64")){
-            return Obj::Make_f64((double)node.resolved_value_.floating);
+            return Obj::Make_f64((double)node.resolved_value_.floating_);
         }
         throw LogErr(LogModule::Runtime, std::format(
             "number literal must be i32, i64, f32 or f64, not {}",

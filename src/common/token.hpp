@@ -70,7 +70,7 @@ public:
         Not,                //  !
 
         // └─ Assign Operator
-        AssignOper ,        //  Base
+        AssignOper,         //  Base
         Assign,             //  =
         PlusAssign,         //  +=
         MinusAssign,        //  -=
@@ -268,7 +268,7 @@ public:
     void MetaPrint() {
         std::cerr
         <<  COLOR_CYAN
-        <<  std::format("[{}:{}] ", loc_.line, loc_.col)
+        <<  std::format("[{}:{}] ", loc_.line_, loc_.col_)
         <<  COLOR_ORANGE
         <<  TypeName(type_)
         <<  COLOR_DEFAULT

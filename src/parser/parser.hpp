@@ -56,8 +56,8 @@ namespace parser {
             return TT::Undefined;
         }
         AT     type_astnode() const {
-            if (auto astnode = std::get_if<ASTNODE>(&data_)) {
-                return astnode->get()->type_;
+            if (auto node = std::get_if<ASTNODE>(&data_)) {
+                return node->get()->type_;
             }
             return AT::Undefined;
         }
@@ -65,8 +65,8 @@ namespace parser {
             if (auto token = std::get_if<Token>(&data_)) {
                 return token->loc_;
             }
-            if (auto astnode = std::get_if<ASTNODE>(&data_)) {
-                return astnode->get()->loc_;
+            if (auto node = std::get_if<ASTNODE>(&data_)) {
+                return node->get()->loc_;
             }
             return Loc{};
         }
@@ -329,8 +329,8 @@ namespace parser {
         static std::unique_ptr<T> Move(SS& syms, size_t pos) {
             PatternIndexCheck(pos);
             pos = move_positions_[pos - 1];
-            auto& astnode = std::get<ASTNODE>(syms[syms.size() - pos].data());
-            return std::unique_ptr<T>(static_cast<T*>(astnode.release()));
+            auto& node = std::get<ASTNODE>(syms[syms.size() - pos].data());
+            return std::unique_ptr<T>(static_cast<T*>(node.release()));
         }
     };
 
@@ -340,26 +340,24 @@ namespace parser {
         // Predefined
 
         inline static std::vector<Rule> rules_; // Reduce Rules
-        TS& tokens_;    // Lexer's Tokens
+        TS& tokens_;                            // Lexer's Tokens
 
         // Cache
         
         SS                  symbols_;           // Symbols Stack
-        std::vector<size_t> scopes_brace;       // Brace Scope
-        ASTNODE             root_;              // Program as AST Root Node.
+        std::vector<size_t> scopes_brace_;      // Brace Scope
+        ASTNODE             root_;              // Program
 
         void RulesInit();
 
         void Shift(const Token& token);
         bool TryReduce(const Rule& rule, TT token_next, size_t reduce_len);
 
-        void   TokenRewrite(Token& token);          // Modify TokenType
+        void   TokenRewrite(Token& token);
         Symbol Token2Symbol(const Token& token);
 
     public:
-        Parser(TS& tokens) : tokens_(tokens) {
-            RulesInit();
-        }
+        Parser(TS& tokens) : tokens_(tokens) { RulesInit(); }
         ~Parser() { rules_.clear(); }
 
         void Execute();

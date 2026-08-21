@@ -16,5 +16,5 @@ enum class LoopSignal {
 };
 
 struct ReturnSignal {
-    std::shared_ptr<rt::Obj> value;
+    std::shared_ptr<rt::Obj> value_;
 };

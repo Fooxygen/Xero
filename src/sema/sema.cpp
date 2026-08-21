@@ -317,7 +317,7 @@ namespace sema {
                 auto [ptr, ec] = std::from_chars(numstr.data(), numstr.data() + numstr.size(), x);
                 if (ec == std::errc{}) {
                     node.resolved_type_ = sema::TypeTable::Lookup("i32");
-                    node.resolved_value_.integer = x;
+                    node.resolved_value_.integer_ = x;
                     return;
                 }
             }
@@ -328,7 +328,7 @@ namespace sema {
                 auto [ptr, ec] = std::from_chars(numstr.data(), numstr.data() + numstr.size(), x);
                 if (ec == std::errc{}) {
                     node.resolved_type_ = sema::TypeTable::Lookup("i64");
-                    node.resolved_value_.integer = x;
+                    node.resolved_value_.integer_ = x;
                     return;
                 }
             }
@@ -349,7 +349,7 @@ namespace sema {
                 auto [ptr, ec] = std::from_chars(numstr.data(), numstr.data() + numstr.size(), x);
                 if (ec == std::errc{}) {
                     node.resolved_type_ = sema::TypeTable::Lookup("f32");
-                    node.resolved_value_.floating = x;
+                    node.resolved_value_.floating_ = x;
                     return;
                 }
             }
@@ -360,7 +360,7 @@ namespace sema {
                 auto [ptr, ec] = std::from_chars(numstr.data(), numstr.data() + numstr.size(), x);
                 if (ec == std::errc{}) {
                     node.resolved_type_ = sema::TypeTable::Lookup("f64");
-                    node.resolved_value_.floating = x;
+                    node.resolved_value_.floating_ = x;
                     return;
                 }
             }

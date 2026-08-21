@@ -67,12 +67,10 @@ namespace rt {
 
         class HeapData {
         public:
-            void*  data = nullptr;
-            size_t cnt  = 0;
+            void*  data_ = nullptr;
+            size_t cnt_  = 0;
 
-            HeapData(void* data_) : data(data_) {
-                cnt = 1;
-            }
+            HeapData(void* data) : data_(data) { cnt_ = 1; }
         };
 
     private:
@@ -87,8 +85,8 @@ namespace rt {
         void Destroy() {
             if (usingtype_ == UsingType::Value && hasHeapData()) {
                 auto heapdata = (HeapData*)value().data().ptr_;
-                if (--heapdata->cnt == 0) {
-                    type()->impl()->destroy_(heapdata->data);
+                if (--heapdata->cnt_ == 0) {
+                    type()->impl()->destroy_(heapdata->data_);
                     delete heapdata;
                 }
             }
@@ -105,7 +103,7 @@ namespace rt {
 
                 if (value().type()->isHeapStored()) {
                     value().data().ptr_ = other.value().data().ptr_;
-                    ((HeapData*)value().data().ptr_)->cnt++;
+                    ((HeapData*)value().data().ptr_)->cnt_++;
                 }
                 else value().data() = other.value().data();
             }
@@ -120,8 +118,8 @@ namespace rt {
             if (usingtype_ == UsingType::Value) {
                 if (hasHeapData()) {
                     auto heapdata = (HeapData*)value().data().ptr_;
-                    if (--heapdata->cnt == 0) {
-                        type()->impl()->destroy_(heapdata->data);
+                    if (--heapdata->cnt_ == 0) {
+                        type()->impl()->destroy_(heapdata->data_);
                         delete heapdata;
                     }
                 }
@@ -333,7 +331,7 @@ namespace rt {
                     return ref().obj()->Get_string_ref();
                 case UsingType::Value: {
                     auto heap = (HeapData*)value().data().ptr_;
-                    return *(String*)heap->data;
+                    return *(String*)heap->data_;
                 }
                 default: std::unreachable();
             }
@@ -345,7 +343,7 @@ namespace rt {
                     return ref().obj()->Get_stringview_ref();
                 case UsingType::Value: {
                     auto heap = (HeapData*)value().data().ptr_;
-                    return *(SliceView<String>*)heap->data;
+                    return *(SliceView<String>*)heap->data_;
                 }
                 default: std::unreachable();
             }
@@ -356,7 +354,7 @@ namespace rt {
                     return ref().obj()->Get_array_ref();
                 case UsingType::Value: {
                     auto heap = (HeapData*)value().data().ptr_;
-                    return *(Array*)heap->data;
+                    return *(Array*)heap->data_;
                 }
                 default: std::unreachable();
             }
@@ -368,7 +366,7 @@ namespace rt {
                     return ref().obj()->Get_arrayview_ref();
                 case UsingType::Value: {
                     auto heap = (HeapData*)value().data().ptr_;
-                    return *(SliceView<Array>*)heap->data;
+                    return *(SliceView<Array>*)heap->data_;
                 }
                 default: std::unreachable();
             }
@@ -379,7 +377,7 @@ namespace rt {
                     return ref().obj()->Get_range_ref();
                 case UsingType::Value: {
                     auto heap = (HeapData*)value().data().ptr_;
-                    return *(Range*)heap->data;
+                    return *(Range*)heap->data_;
                 }
                 default: std::unreachable();
             }
@@ -390,7 +388,7 @@ namespace rt {
                     return ref().obj()->Get_function_ref();
                 case UsingType::Value: {
                     auto heap = (HeapData*)value().data().ptr_;
-                    return *(Function*)heap->data;
+                    return *(Function*)heap->data_;
                 }
                 default: std::unreachable();
             }

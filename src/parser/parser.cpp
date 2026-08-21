@@ -9,7 +9,7 @@ namespace parser {
 
     void   Parser::Execute() {
         symbols_.clear();
-        scopes_brace.clear();
+        scopes_brace_.clear();
 
         // Token Rewrite
         for (size_t i = 0; i < tokens_.size(); i++) {
@@ -167,16 +167,16 @@ namespace parser {
         // Brace Scope
         {
             if      (token.type_ == LBrace) {
-                scopes_brace.emplace_back(symbols_.size() + 1);
+                scopes_brace_.emplace_back(symbols_.size() + 1);
             }
             else if (token.type_ == RBrace) {
-                if (scopes_brace.empty()) {
+                if (scopes_brace_.empty()) {
                     throw LogErr(LogModule::Parser, "unclosed brace", token.loc_);
                 }
 
-                size_t pbeg = scopes_brace.back();
+                size_t pbeg = scopes_brace_.back();
                 size_t pend = symbols_.size() - 1;
-                scopes_brace.pop_back();
+                scopes_brace_.pop_back();
 
                 std::vector<std::unique_ptr<AstNode>> children;
                 for (size_t i = 0; i < pend - pbeg + 1; i++) {

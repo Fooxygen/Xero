@@ -67,7 +67,7 @@ public:
         <<  COLOR_GRAY <<  "[" << ModulePrint() << "]";
 
         if (loc_.has_value()) {
-            std::cerr << COLOR_CYAN << std::format("[{}:{}]", loc_->line, loc_->col);
+            std::cerr << COLOR_CYAN << std::format("[{}:{}]", loc_->line_, loc_->col_);
         }
 
         std::cerr
@@ -106,4 +106,3 @@ public:
     LogFinish(LogModule module, std::string_view msg)
     :   Log(module, std::format("[finish] {}", msg), COLOR_GREEN) {}
 };
-

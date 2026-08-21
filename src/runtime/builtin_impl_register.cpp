@@ -3,7 +3,6 @@
 //  Copyright (c) 2026 Fooxygen.
 //  Licensed under the MIT License.
 
-#include <cmath>
 #include <cstdio>
 
 #include "runtime/method.hpp"

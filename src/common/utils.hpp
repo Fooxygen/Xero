@@ -11,11 +11,11 @@
 // Row and column of Token
 class Loc {
 public:
-    size_t line = 1;
-    size_t col  = 1;
+    size_t line_ = 1;
+    size_t col_  = 1;
 
-    void NextChar() { col++; }
-    void NextLine() { line++; col = 1; }
+    void NextChar() { col_++; }
+    void NextLine() { line_++; col_ = 1; }
 };
 
 // Visualized Escape Char in String

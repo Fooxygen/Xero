@@ -27,7 +27,7 @@ enum class OperType {
     // Not participating in OperExpr
 };
 
-static std::string OperTypeName(OperType type) {
+inline static std::string OperTypeName(OperType type) {
     using enum OperType;
     switch(type) {
         case Plus:  return "Plus";

@@ -5,8 +5,6 @@
 
 #pragma once
 
-#include <cstdint>
-
 #include "sema/type.hpp"
 
 namespace rt {

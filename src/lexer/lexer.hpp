@@ -74,8 +74,8 @@ namespace lexer {
 
         std::vector<Token>& tokens() { return tokens_; }
 
-        bool  isScanEnd()     { return pos_ >= code_.length(); };
-        bool  isNextScanEnd() { return pos_ + 1 >= code_.length(); };
+        bool  isScanEnd()     const { return pos_ >= code_.length(); }
+        bool  isNextScanEnd() const { return pos_ + 1 >= code_.length(); }
         
         std::optional<Token> TokenNext();
         Token                TokenGen(TT type, const std::string& lexeme);

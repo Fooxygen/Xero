@@ -3,6 +3,10 @@
 //  Copyright (c) 2026 Fooxygen.
 //  Licensed under the MIT License.
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -19,14 +23,10 @@
 #include "runtime/method.hpp"
 #include "runtime/xengine.hpp"
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
 struct BeginInfo {
-    std::string path  = "";
-    bool isPrintToken = false;
-    bool isPrintAst   = false;
+    std::string path_   = "";
+    bool isPrintToken_  = false;
+    bool isPrintAst_    = false;
 };
 
 std::string FileRead(const std::string& path) {
@@ -62,23 +62,23 @@ int main(int argc, char* argv[]) {
         BeginInfo begininfo;
         for (int i = 1; i < argc; i++) {
             std::string arg = argv[i];
-            if      (arg == "-a" || arg == "--ast") begininfo.isPrintAst   = true;
-            else if (arg == "-t" || arg == "--tok") begininfo.isPrintToken = true;
-            else begininfo.path = arg;
+            if      (arg == "-a" || arg == "--ast") begininfo.isPrintAst_   = true;
+            else if (arg == "-t" || arg == "--tok") begininfo.isPrintToken_ = true;
+            else begininfo.path_ = arg;
         }
 
         // Code
-        std::string code = FileRead(begininfo.path);
+        std::string code = FileRead(begininfo.path_);
 
         // Lexer
         lexer::Lexer lexer(code);
-        lexer.TokensGen(begininfo.isPrintToken);
+        lexer.TokensGen(begininfo.isPrintToken_);
 
         // Parser
         parser::Parser parser(lexer.tokens());
         parser.Execute();
 
-        if (begininfo.isPrintAst) {
+        if (begininfo.isPrintAst_) {
             LogStart(LogModule::Parser, "output ast").Print();
             parser.root()->Print("", "", true);
             LogFinish(LogModule::Parser, "output ast").Print();

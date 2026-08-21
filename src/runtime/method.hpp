@@ -16,18 +16,18 @@ namespace rt {
     class MethodImplTable {
     private:
         struct Key {
-            const sema::Type* type;
-            std::string       name;
+            const sema::Type* type_;
+            std::string       name_;
 
             bool operator==(const Key& other) const {
-                return type == other.type && name == other.name;
+                return type_ == other.type_ && name_ == other.name_;
             }
         };
 
         struct KeyHash {
             size_t operator()(const Key& key) const {
-                return std::hash<const sema::Type*>{}(key.type) ^
-                       std::hash<std::string>{}(key.name);
+                return std::hash<const sema::Type*>{}(key.type_) ^
+                       std::hash<std::string>{}(key.name_);
             }
         };
 

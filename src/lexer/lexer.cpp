@@ -3,7 +3,7 @@
 //  Copyright (c) 2026 Fooxygen.
 //  Licensed under the MIT License.
 
-#include <iostream>
+#include <format>
 
 #include "common/log.hpp"
 #include "lexer/lexer.hpp"
@@ -12,8 +12,8 @@ namespace lexer {
 
     Token Lexer::TokenGen(TT type, const std::string& lexeme) {
         loc_prev_ = {
-            .line = loc_.line,
-            .col  = loc_.col - lexeme.length()
+            .line_ = loc_.line_,
+            .col_  = loc_.col_ - lexeme.length()
         };
         return Token(type, lexeme, loc_prev_);
     }

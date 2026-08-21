@@ -60,7 +60,7 @@ enum class AstType {
     Exprs,             // List of expr
 };
 
-static AstType BaseOfAstType(AstType type) {
+inline static AstType BaseOfAstType(AstType type) {
     using enum AstType;
     switch (type) {
         case NumConst:
@@ -97,7 +97,7 @@ static AstType BaseOfAstType(AstType type) {
     }
 }
 
-static bool    isAstTypeCompatible(AstType expected, AstType actual) {
+inline static bool    isAstTypeCompatible(AstType expected, AstType actual) {
     if (expected == AstType::Undefined ||
         actual   == AstType::Undefined) return false;
     if (expected == actual) return true;
@@ -561,8 +561,8 @@ public:
     std::string value_ = "";
     
     union {
-        int64_t integer;
-        double  floating;
+        int64_t integer_;
+        double  floating_;
     } resolved_value_;
 
     NumConst(const std::string& value)
