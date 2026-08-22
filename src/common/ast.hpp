@@ -584,7 +584,8 @@ public:
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<NumConst>(value_);
-        node->resolved_type_ = resolved_type_;
+        node->resolved_value_ = resolved_value_;
+        node->resolved_type_  = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
