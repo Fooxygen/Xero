@@ -1,0 +1,28 @@
+
+# Arithmetic, modulo, and compound assignment
+
+w: i32    = 10;
+h: i32    = 5;
+area: i32 = w * h;
+println("Area =", area);
+
+a: i32 = 7;
+b: i32 = 3;
+println(a, "%", b, "=", a % b);
+println(-a, "%%", b, "=", -a %% b);
+
+x: i32 = 10;
+x += 5;
+x *= 2;
+println("x =", x);
+
+r: f64 = 10.0 / 3;
+println("10.0 / 3 =", r);
+
+##
+Area = 50
+7 % 3 = 1
+-7 %% 3 = 2
+x = 30
+10.0 / 3 = 3.333333
+##

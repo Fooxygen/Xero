@@ -1,0 +1,35 @@
+
+# String: concat, reverse, compare, index
+
+s: string = "Xero";
+println("len =", s.len());
+
+t: string = -s;
+println("reversed:", t);
+
+a: string = "abc";
+b: string = "abc";
+println("equal:", a == b);
+
+word: string = "level";
+rev:  string = -word;
+if (word == rev) {
+    println(word, "is a palindrome");
+}
+else {
+    println(word, "is not a palindrome");
+}
+
+c: char = word[0];
+println("first char:", c);
+first: string = c;
+println("as string:", first);
+
+##
+len = 4
+reversed: oreX
+equal: true
+level is a palindrome
+first char: l
+as string: l
+##

@@ -106,6 +106,10 @@ int main(int argc, char* argv[]) {
     catch (const Log& log) {
         log.Print();
     }
+    catch (const std::exception& e) {
+        LogErr(LogModule::File, std::format("unexpected error: {}", e.what())).Print();
+        return 1;
+    }
     
     return 0;
 }

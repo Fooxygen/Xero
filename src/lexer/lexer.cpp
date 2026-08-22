@@ -248,6 +248,9 @@ namespace lexer {
 
             if (c == '\'') {
                 CharNext();
+                if (lexeme.length() != 1) {
+                    throw LogErr(LogModule::Lexer, "char literal must contain exactly one character", loc_scan_);
+                }
                 return TokenGen(TT::Char, lexeme);
             }
 

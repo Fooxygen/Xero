@@ -1,0 +1,47 @@
+
+# Sieve of Eratosthenes
+
+fn sieve(n: i32) -> array[=bool=] {
+    mark: array[=bool=] = [];
+    for (i in 0..=n) {
+        mark.push_back(true);
+    }
+    mark[0] = false;
+    mark[1] = false;
+
+    i: i32 = 2;
+    while (i * i <= n) {
+        if (mark[i]) {
+            j: i32 = i * i;
+            while (j <= n) {
+                mark[j] = false;
+                j += i;
+            }
+        }
+        i += 1;
+    }
+    return mark;
+}
+
+fn print_primes(n: i32) {
+    mark: array[=bool=] = sieve(n);
+    println("Primes in 2..", n, ":");
+    for (i in 2..=n) {
+        if (mark[i]) println(i);
+    }
+}
+
+print_primes(30);
+
+##
+2
+3
+5
+7
+11
+13
+17
+19
+23
+29
+##

@@ -1,0 +1,73 @@
+
+# Range: ..   ..=   step
+
+r1: range[=i32=] = 0..5;
+println("0..5:");
+for (i in r1) println(i);
+
+println("0..=5:");
+for (i in 0..=5) println(i);
+
+println("0..2..10 (step 2):");
+for (i in 0..2..10) println(i);
+
+println("10..-1..-10 (decreasing):");
+for (i in 10..-1..-10) println(i);
+
+println("-5..=5:");
+for (i in -5..=5) println(i);
+
+##
+0..5:
+0
+1
+2
+3
+4
+0..=5:
+0
+1
+2
+3
+4
+5
+0..2..10 (step 2):
+0
+2
+4
+6
+8
+10..-1..-10 (decreasing):
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+-1
+-2
+-3
+-4
+-5
+-6
+-7
+-8
+-9
+-5..=5:
+-5
+-4
+-3
+-2
+-1
+0
+1
+2
+3
+4
+5
+##

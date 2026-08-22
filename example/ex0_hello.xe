@@ -1,0 +1,20 @@
+
+# Hello: variable declaration and output
+
+x: i32    = 10;
+y: f64    = 3.14;
+c: char   = 'X';
+s: string = "Xero";
+b: bool   = true;
+
+println(x, y, c, s, b);
+println("Welcome to " + s + "!");
+println("Type of x is " + type(x));
+println("Type of s is " + type(s));
+
+##
+10 3.140000 X Xero true
+Welcome to Xero!
+Type of x is i32
+Type of s is string
+##

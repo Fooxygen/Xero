@@ -163,7 +163,7 @@ namespace sema {
         // Binary
         Exec(*node.rexpr_);
         {
-            
+            // Pick
             if (node.oper_type_ == Pick) {
                 return;
             }
@@ -248,22 +248,27 @@ namespace sema {
     }
 
     void Sema::Exec(FnCallExpr& node) {
-        auto sym = symbol_table_.Lookup(node.callee_->value_, node.loc_);
-        if (sym->type_ != SymbolType::Fn) {
-            throw LogErr(LogModule::Sema, std::format(
-                "undefined function '{}'", sym->name_
-            ), node.loc_);
-        }
 
+        // Args Type
         std::vector<const Type*> args_type = {};
         for (auto& e : node.args_->exprs_) {
             Exec(*e);
             args_type.emplace_back(e->resolved_type_);
         }
 
-        auto fn = (const FnSymbol*)sym;
-        FnCallCheck(*fn, args_type, node.loc_);
-        node.resolved_type_ = fn->ret_type_;
+        // Callee
+        auto sym = symbol_table_.Lookup(node.callee_->value_, node.loc_);
+
+        // Stored in Variable
+        if (sym->type_ == SymbolType::Var) {
+            node.resolved_type_ = TypeTable::Lookup("none");
+        }
+
+        else {
+            auto fnsym = (const FnSymbol*)sym;
+            FnCallCheck(*fnsym, args_type, node.loc_);
+            node.resolved_type_ = fnsym->ret_type_;
+        }
     }
 
     void Sema::Exec(MethodCallExpr& node) {

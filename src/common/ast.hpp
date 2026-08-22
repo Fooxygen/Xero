@@ -399,6 +399,7 @@ public:
             step_ ? std::unique_ptr<Expr>((Expr*)(step_->Clone().release())) : nullptr,
             isClosed_
         );
+        node->iter_type_ = iter_type_;
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
@@ -565,7 +566,7 @@ public:
     union {
         int64_t integer_;
         double  floating_;
-    } resolved_value_;
+    } resolved_value_ = {};
 
     NumConst(const std::string& value)
     :   value_(value)
