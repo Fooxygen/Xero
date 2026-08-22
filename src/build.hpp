@@ -10,7 +10,7 @@
 class BuildInfo {
 public:
     enum class Channel {
-        Nightly, Beta, RC, Release
+        Snapshot, Beta, RC, Release
     };
 
     static const        Channel     channel_       = Channel::Beta;
@@ -22,7 +22,7 @@ public:
 
     static std::string ChannelPrint() {
         switch (channel_) {
-            case Channel::Nightly:  return std::format("Nightly ({})", __DATE__);
+            case Channel::Snapshot: return std::format("Snapshot ({})", __DATE__);
             case Channel::Beta:     return "Beta " + channel_iter_;
             case Channel::RC:       return "RC " + channel_iter_;
             case Channel::Release:  return "";
