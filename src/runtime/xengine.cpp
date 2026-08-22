@@ -117,7 +117,7 @@ namespace rt {
                 auto common_type = sema::TypeTable::Common({ lobj.type(), robj.type() });
                 if (!common_type) {
                     throw LogErr(LogModule::Runtime, std::format(
-                        "cannot match type '{}' to type '{}'",
+                        "cannot make type '{}' compatible with '{}'",
                         robj.type()->name_, lobj.type()->name_
                     ), node.loc_);
                 }

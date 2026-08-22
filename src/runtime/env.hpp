@@ -30,7 +30,7 @@ namespace rt {
             if (!scope.contains(name)) scope[name] = value;
             else {
                 throw LogErr(LogModule::Runtime, std::format(
-                    "duplicate definition of '{}' in this scope",
+                    "duplicate definition of '{}' in same scope",
                     name
                 ));
             }
