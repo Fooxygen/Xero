@@ -6,7 +6,11 @@
 #pragma once
 
 #include <cstddef>
+#include <sstream>
 #include <string>
+#include <ranges>
+#include <concepts>
+#include <functional>
 
 // Row and column of Token
 class Loc {
@@ -31,4 +35,28 @@ inline std::string ContainedEscapePrint(const std::string& s) {
         }
     }
     return res;
+}
+
+// Join range elements into a formatted string
+template <std::ranges::input_range R, typename Fn>
+requires std::invocable<Fn, std::ranges::range_value_t<R>>
+inline std::string JoinWithBoundary (
+    const R& elements,
+    Fn to_string,
+    std::string_view left  = "(",
+    std::string_view right = ")",
+    std::string_view sep   = ", "
+) {
+    std::ostringstream oss;
+    oss << left;
+
+    bool isFirst = true;
+    for (const auto& e : elements) {
+        if (!isFirst) oss << sep;
+        oss << std::invoke(to_string, e);
+        isFirst = false;
+    }
+
+    oss << right;
+    return oss.str();
 }

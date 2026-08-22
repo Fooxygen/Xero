@@ -69,13 +69,15 @@ namespace rt {
             converts_[{ from, to }] = fn;
         }
 
-        static void Set(sema::Type* type, const TypeImpl& typeimpl) {
+        static void Set(sema::Type* type, const TypeImpl& type_impl) {
             if (!table_.contains(type)) {
-                auto impl = new TypeImpl(typeimpl);
+                auto impl = new TypeImpl(type_impl);
                 table_.emplace(type, impl);
                 type->ImplSet(impl);
             }
-            else throw LogErr(LogModule::Runtime, std::format("existing type '{}'", type->name_));
+            else throw LogErr(LogModule::Runtime, std::format(
+                "existing type '{}'", type->name_
+            ));
         }
     };
 }

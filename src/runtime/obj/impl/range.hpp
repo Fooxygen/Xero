@@ -26,11 +26,11 @@ namespace rt {
         Range(const Range& other);
         ~Range() { Clear(); }
 
-        Obj*  left()                    const { return l_; }
-        Obj*  right()                   const { return r_; }
-        Obj*  step()                    const { return s_; }
-        bool  isClosed()                const { return isClosed_; }
-        const sema::Type* iter_type()   const { return iter_type_; }
+        Obj*  left()                  const { return l_; }
+        Obj*  right()                 const { return r_; }
+        Obj*  step()                  const { return s_; }
+        bool  isClosed()              const { return isClosed_; }
+        const sema::Type* iter_type() const { return iter_type_; }
 
         bool  isSingle() const;
         Range ToClosed();

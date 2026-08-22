@@ -102,7 +102,9 @@ namespace rt {
                     // Range
                     if (node.rexpr_->type_ != AstType::RangeExpr) {
                         auto one = TypeImplTable::Convert(Obj::Make_i32(1), robj.type());
-                        robj = Obj::Make_range(new Range(robj, robj, one, true, robj.type()));
+                        robj = Obj::Make_range(new Range(
+                            robj, robj, one, true, robj.type()
+                        ));
                     }
 
                     auto obj = lobj.type()->impl()->pick_(lobj, robj);
@@ -193,50 +195,18 @@ namespace rt {
 
     Obj Xengine::Exec(RangeExpr& node) {
         
-        // Boundary
-        bool hasStep = node.step_ ? true : false;
+        // Type
+        auto iter_type = node.iter_type_;
 
-        auto lobj  = Exec(*node.lexpr_);
-        auto robj  = Exec(*node.rexpr_);
-        auto ltype = lobj.type();
-        auto rtype = robj.type();
-
-        // Step
-        Obj sobj = Obj();
-        const sema::Type* stype = nullptr;
-        if (hasStep) {
-            sobj  = Exec(*node.step_);
-            stype = sobj.type();
-        }
-
-        // Iterator
-        const sema::Type* iter_type = nullptr;
-        if (hasStep) {
-            iter_type = sema::TypeTable::Common({ ltype, rtype, stype });
-        }
-        else {
-            iter_type = sema::TypeTable::Common({ ltype, rtype });
-        }
-
-        if (!iter_type) {
-            if (hasStep) {
-                throw LogErr(LogModule::Runtime, std::format(
-                    "failed to generate valid range iterator with '{}', '{}' and '{}'",
-                    ltype->name_, rtype->name_, stype->name_
-                ), node.loc_);
-            }
-            else {
-                throw LogErr(LogModule::Runtime,std::format(
-                    "failed to generate valid range iterator with '{}' and '{}'",
-                    ltype->name_, rtype->name_
-                ), node.loc_);
-            }
-        }
+        // Obj
+        auto lobj = Exec(*node.lexpr_);
+        auto robj = Exec(*node.rexpr_);
+        auto sobj = node.step_ ? Exec(*node.step_) : Obj::Make_i32(1);
 
         return Obj::Make_range(new Range(
             TypeImplTable::Convert(lobj, iter_type),
             TypeImplTable::Convert(robj, iter_type),
-            hasStep ? sobj : Obj::Make_i32(1),
+            TypeImplTable::Convert(sobj, iter_type),
             node.isClosed_,
             iter_type
         ));
@@ -446,11 +416,28 @@ namespace rt {
 
         if (data.is("range")) {
             auto& range = data.Get_range_ref();
-            for (Obj o = *range.left(); ; o = range.iter_type()->impl()->plus_(o, *range.step())) {
-                if (!range.isClosed() &&
-                     range.iter_type()->impl()->ge_(o, *range.right()).Get_bool()) break;
-                if ( range.isClosed() &&
-                     range.iter_type()->impl()->gt_(o, *range.right()).Get_bool()) break;
+            auto  type_impl = range.iter_type()->impl();
+            bool  isIncreasing = type_impl->ge_(
+                *range.right(), *range.left()
+            ).Get_bool();
+
+            for (Obj o = *range.left(); ; o = type_impl->plus_(o, *range.step())) {
+
+                if (!range.isClosed()) {
+                    // a > b, x <= b
+                    if (!isIncreasing && type_impl->le_(o, *range.right()).Get_bool()) break;
+                    
+                    // a < b, x >= b
+                    if ( isIncreasing && type_impl->ge_(o, *range.right()).Get_bool()) break;
+                }
+
+                else {
+                    // a >= b, x < b
+                    if (!isIncreasing && type_impl->lt_(o, *range.right()).Get_bool()) break;
+                    
+                    // a <= b, x > b
+                    if ( isIncreasing && type_impl->gt_(o, *range.right()).Get_bool()) break;
+                }
 
                 try {
                     Exec(*node.block_, [&]() {

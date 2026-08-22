@@ -34,7 +34,7 @@ namespace sema {
         struct BaseInfo {
             size_t size_         = 0;           // Byte width
             bool   isHeapStored_ = false;       // Stored Data in Heap
-            size_t params_cnt_   = 0;
+            size_t params_cnt_   = 0;           // Number of Type Parameters
         };
 
         struct ParamInfo {

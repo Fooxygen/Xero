@@ -360,6 +360,8 @@ public:
     std::unique_ptr<Expr> step_  = nullptr;
     bool isClosed_ = false;
 
+    const sema::Type* iter_type_ = nullptr;
+
     RangeExpr(
         std::unique_ptr<Expr> lexpr,
         std::unique_ptr<Expr> rexpr,
@@ -406,7 +408,7 @@ class ArrayExpr         : public Expr {
 public:
     std::unique_ptr<Exprs> elements_;
 
-    const sema::Type*      elem_type_ = nullptr;
+    const sema::Type* elem_type_ = nullptr;
 
     ArrayExpr(std::unique_ptr<Exprs> elements)
     :   elements_(std::move(elements))

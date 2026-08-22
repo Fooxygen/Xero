@@ -1,4 +1,11 @@
 
-fn main() {
-    println(1);
-}
+a: range[=i32=] = 1..2..10;
+b: range[=i32=] = 1..=10;
+c: range[=i32=] = 10..-1..-10;
+
+println("Range a");
+for (x in a) { println(x); }
+println("Range b");
+for (x in b) { println(x); }
+println("Range c");
+for (x in c) { println(x); }

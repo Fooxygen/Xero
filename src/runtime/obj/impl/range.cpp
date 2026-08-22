@@ -15,11 +15,14 @@ namespace rt {
         l_ = nullptr;
         r_ = nullptr;
         s_ = nullptr;
-        isClosed_ = false;
+        isClosed_  = false;
         iter_type_ = nullptr;
     }
 
-    Range::Range(const Obj& l, const Obj& r, const Obj& s, bool isClosed, const sema::Type* iter_type) {
+    Range::Range(
+        const Obj& l, const Obj& r, const Obj& s, bool isClosed,
+        const sema::Type* iter_type)
+    {
         l_ = new Obj(l);
         r_ = new Obj(r);
         s_ = new Obj(s);
@@ -31,7 +34,7 @@ namespace rt {
         l_ = new Obj(*other.l_);
         r_ = new Obj(*other.r_);
         s_ = new Obj(*other.s_);
-        isClosed_ = other.isClosed_;
+        isClosed_  = other.isClosed_;
         iter_type_ = other.iter_type_;
     }
 
@@ -46,9 +49,7 @@ namespace rt {
         if (isClosed_) return *this;
 
         auto r = iter_type_->impl()->minus_(*r_, Obj::Make_i32(1));
-        return Range(
-            *l_, r, *s_, true, iter_type_
-        );
+        return Range(*l_, r, *s_, true, iter_type_);
     }
 
     Range& Range::operator =(const Range& other) {
@@ -58,7 +59,7 @@ namespace rt {
         l_ = new Obj(*other.l_);
         r_ = new Obj(*other.r_);
         s_ = new Obj(*other.s_);
-        isClosed_ = other.isClosed_;
+        isClosed_  = other.isClosed_;
         iter_type_ = other.iter_type_;
 
         return *this;

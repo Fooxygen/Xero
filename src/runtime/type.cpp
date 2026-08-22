@@ -319,7 +319,7 @@ namespace rt {
                         !range.iter_type()->is("i64"))
                     {
                         throw LogErr(LogModule::Runtime, std::format(
-                            "'iterator type of range' must be 'i32' or 'i64', not '{}'",
+                            "'step type of range' must be 'i32' or 'i64', not '{}'",
                             range.iter_type()->name_
                         ));
                     }
@@ -458,7 +458,7 @@ namespace rt {
                         !range.iter_type()->is("i64"))
                     {
                         throw LogErr(LogModule::Runtime, std::format(
-                            "'iterator type of range' must be 'i32' or 'i64', not '{}'",
+                            "'step type of range' must be 'i32' or 'i64', not '{}'",
                             range.iter_type()->name_
                         ));
                     }
@@ -541,7 +541,7 @@ namespace rt {
                         !range.iter_type()->is("i64"))
                     {
                         throw LogErr(LogModule::Runtime, std::format(
-                            "'iterator type of range' must be 'i32' or 'i64', not '{}'",
+                            "'step type of range' must be 'i32' or 'i64', not '{}'",
                             range.iter_type()->name_
                         ));
                     }
@@ -645,7 +645,7 @@ namespace rt {
                         !range.iter_type()->is("i64"))
                     {
                         throw LogErr(LogModule::Runtime, std::format(
-                            "'iterator type of range' must be 'i32' or 'i64', not '{}'",
+                            "'step type of range' must be 'i32' or 'i64', not '{}'",
                             range.iter_type()->name_
                         ));
                     }
@@ -700,7 +700,19 @@ namespace rt {
                             boundary
                         );
                     }
-                }
+                },
+                .assign_    = [](Obj* target, const Obj& value) {
+                    auto& dst = target->Get_range_ref();
+
+                    if (value.is("range")) {
+                        dst = value.Get_range_ref();
+                        return;
+                    }
+
+                    throw LogErr(LogModule::Runtime, std::format(
+                        "cannot make type '{}' compatible with 'range'", value.type()->name_
+                    ));
+                },
             });
 
             // function
@@ -723,13 +735,10 @@ namespace rt {
                         std::string res = "";
 
                         // Params
-                        res += '(';
-                        for (size_t i = 0; i < lang->params_->exprs_.size(); i++) {
-                            auto param = (DeclExpr*)lang->params_->exprs_[i].get();
-                            if (i != 0) res += ", ";
-                            res += param->bind_type_->resolved_type_->base()->name_;
-                        }
-                        res += ')';
+                        res += JoinWithBoundary(lang->params_->exprs_, [](const std::unique_ptr<Expr>& e) {
+                            auto param = (DeclExpr*)e.get();
+                            return param->bind_type_->resolved_type_->base()->name_;
+                        });
 
                         // Return Type
                         if (lang->ret_type_) {

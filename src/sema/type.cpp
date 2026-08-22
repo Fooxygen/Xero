@@ -36,15 +36,9 @@ namespace sema {
     
     std::string Type::ParamsPrint(const Type* base, const std::vector<const Type*>& params) {
         base->BaseTypeCheck();
-
-        std::string res(base->name_);
-        res += "[=";
-        for (size_t i = 0; i < params.size(); i++) {
-            if (i != 0) res += ", ";
-            res += params[i]->name_;
-        }
-        res += "=]";
-        return res;
+        return base->name_ + JoinWithBoundary(params, [](const Type* type) {
+            return type->name_;
+        }, "[=", "=]");
     }
 
     // TypeTable
@@ -64,7 +58,7 @@ namespace sema {
             TypeTable::Set(Type("stringview",   Type::BaseInfo{ .size_ = 0, .isHeapStored_ = true }));
             TypeTable::Set(Type("array",        Type::BaseInfo{ .size_ = 0, .isHeapStored_ = true, .params_cnt_ = 1 }));
             TypeTable::Set(Type("arrayview",    Type::BaseInfo{ .size_ = 0, .isHeapStored_ = true }));
-            TypeTable::Set(Type("range",        Type::BaseInfo{ .size_ = 0, .isHeapStored_ = true }));
+            TypeTable::Set(Type("range",        Type::BaseInfo{ .size_ = 0, .isHeapStored_ = true, .params_cnt_ = 1 }));
             TypeTable::Set(Type("function",     Type::BaseInfo{ .size_ = 0, .isHeapStored_ = true }));
         }
 

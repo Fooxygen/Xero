@@ -41,12 +41,10 @@ namespace sema {
     }
 
     std::string Sema::FnParamsPrint(const std::vector<const Type*>& params_type) {
-        std::string res = "(";
-        for (size_t i = 0; i < params_type.size(); i++) {
-            if (i != 0) res += ", ";
-            res += params_type[i]->name_;
-        }
-        return res.empty() ? "empty)" : res + ')';
+        if (params_type.empty()) return "(empty)";
+        return JoinWithBoundary(params_type, [](const Type* type) {
+            return type->name_;
+        });
     }
 
     std::string Sema::FnParamsPrint(const FnSymbol& fn) {
@@ -106,7 +104,12 @@ namespace sema {
     void Sema::Exec(TypeExpr& node) {
         auto base = TypeTable::Lookup(node.base_);
 
-        if (!node.params_) node.resolved_type_ = base;
+        // base
+        if (!node.params_) {
+            node.resolved_type_ = base;
+        }
+
+        // base[=param0, param1, ...=]
         else {
             std::vector<const Type*> params_type = {};
             for (auto& e : node.params_->exprs_) {
@@ -200,11 +203,31 @@ namespace sema {
     }
 
     void Sema::Exec(RangeExpr& node) {
-        node.resolved_type_ = TypeTable::Lookup("range");
 
+        // Boundary
         Exec(*node.lexpr_);
         Exec(*node.rexpr_);
-        if (node.step_) Exec(*node.step_);
+        auto boundary_type = TypeTable::Common({
+            node.lexpr_->resolved_type_, node.rexpr_->resolved_type_
+        });
+        if (!boundary_type) {
+            throw LogErr(LogModule::Sema, "'left bound type of range' must be compatible with 'right bound type of range'", node.loc_);
+        }
+
+        // Step
+        auto step_type = boundary_type;
+        if (node.step_) {
+            Exec(*node.step_);
+            step_type = node.step_->resolved_type_;
+            if (TypeTable::Common({ step_type, boundary_type }) != boundary_type) {
+                throw LogErr(LogModule::Sema, "'step type of range' must be compatible with 'boundary type of range'", node.loc_);
+            }
+        }
+
+        node.iter_type_ = boundary_type;
+        node.resolved_type_ = TypeTable::SetOrGetTypeParam(
+            TypeTable::Lookup("range"), { node.iter_type_ }, node.loc_
+        );
     }
 
     void Sema::Exec(ArrayExpr& node) {
@@ -431,23 +454,27 @@ namespace sema {
         
         Exec(*node.data_);
         auto data_type = node.data_->resolved_type_;
-        const sema::Type* elem_type = nullptr;
+        const sema::Type* iter_type = nullptr;
         
         if (data_type->is("array")) {
             auto params_type = data_type->params();
             if (params_type && !params_type->empty()) {
-                elem_type = (*params_type)[0];
+                iter_type = (*params_type)[0];
             }
         }
         if (data_type->is("string") || data_type->is("stringview")) {
-            elem_type = TypeTable::Lookup("char");
+            iter_type = TypeTable::Lookup("char");
         }
-
-        // TODO: range
+        if (data_type->is("range")) {
+            auto params_type = data_type->params();
+            if (params_type && !params_type->empty()) {
+                iter_type = (*params_type)[0];
+            }
+        }
 
         Exec(*node.block_, [&]() {
             symbol_table_.Declare(std::make_unique<VarSymbol>(
-                node.iter_->value_, node.iter_->loc_, elem_type)
+                node.iter_->value_, node.iter_->loc_, iter_type)
             );
         });
     }
