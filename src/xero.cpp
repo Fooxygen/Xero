@@ -108,9 +108,11 @@ int main(int argc, char* argv[]) {
             auto path_ir = path_project / "ir";
             std::filesystem::create_directories(path_ir);
 
-            compile::IRGen irgen(module_name);
-            irgen.Exec(*parser.root(), 
-                (path_ir / (module_name + ".ll")).string()
+            // IRGen
+            compile::IRGen irgen(
+                module_name,
+                (path_ir / (module_name + ".ll")).string(),
+                *parser.root()
             );
         }
 
