@@ -20,7 +20,7 @@
 #include "sema/type.hpp"
 #include "sema/method.hpp"
 #include "sema/sema.hpp"
-#include "compile/irgen.hpp"
+#include "compile/irgen/irgen.hpp"
 #include "runtime/type.hpp"
 #include "runtime/method.hpp"
 #include "runtime/xengine.hpp"

@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "common/log.hpp"
-#include "compile/irgen.hpp"
+#include "compile/irgen/irgen.hpp"
 
 namespace compile {
 
@@ -51,13 +51,46 @@ namespace compile {
         ));
     }
 
+    llvm::AllocaInst* IRGen::EntryBlockSlotCreate(llvm::Type* type, const std::string& name) {
+        llvm::IRBuilder<> builder_alloc(
+            &current_fn_->getEntryBlock(), current_fn_->getEntryBlock().begin()
+        );
+        return builder_alloc.CreateAlloca(type, nullptr, name);
+    }
+
     // Expr
 
-    llvm::Value* IRGen::Exec(BlockExpr& node) {
+    llvm::Value* IRGen::Exec(BlockExpr& node, std::function<void()> OnScopeReady) {
+        value_table_.ScopePush();
+        if (OnScopeReady) OnScopeReady();
+
         for (auto& child : node.children_) Exec(*child);
+
+        value_table_.ScopePop();
         return nullptr;
     }
     
+    llvm::Value* IRGen::Exec(IdExpr& node) {
+        auto slot = value_table_.Lookup(node.value_);
+        auto type = LlvmType(node.resolved_type_);
+        return builder_.CreateLoad(type, slot, node.value_);
+    }
+
+    llvm::Value* IRGen::Exec(DeclExpr& node) {
+
+        // Slot
+        auto type = LlvmType(node.resolved_type_);
+        auto slot = EntryBlockSlotCreate(type, node.id_);
+
+        // Value
+        if (node.value_) {
+            builder_.CreateStore(Exec(*node.value_), slot);
+        }
+        
+        value_table_.Declare(node.id_, slot);
+        return nullptr;
+    }
+
     llvm::Value* IRGen::Exec(FnExpr& node) {
 
         // Return Type
@@ -87,11 +120,29 @@ namespace compile {
         );
         auto block = llvm::BasicBlock::Create(context_, "entry", fn);
         builder_.SetInsertPoint(block);
+        current_fn_ = fn;
+
+        // Args Name
+        {
+            size_t i = 0;
+            for (auto& arg : fn->args()) {
+                auto p = (DeclExpr*)(node.params_->exprs_[i].get());
+                arg.setName(p->id_);
+                i++;
+            }
+        }
 
         // Block
-        Exec(*node.block_);
+        Exec(*node.block_, [&]() {
+            for (auto& arg : fn->args()) {
+                auto name = arg.getName().str();
+                auto slot = EntryBlockSlotCreate(arg.getType(), name);
+                builder_.CreateStore(&arg, slot);
+                value_table_.Declare(name, slot);
+            }
+        });
 
-        // Return Stmt Check
+        // Return Stmt
         // Each block requires a terminal symbol
         // including return value, the unreachable stmt...
         if (!builder_.GetInsertBlock()->getTerminator()) {
@@ -114,6 +165,11 @@ namespace compile {
     }
 
     // Stmt
+
+    llvm::Value* IRGen::Exec(ExprStmt& node) {
+        if (node.expr_) return Exec(*node.expr_);
+        return nullptr;
+    }
 
     llvm::Value* IRGen::Exec(ReturnSignalStmt& node) {
         if (node.value_) {

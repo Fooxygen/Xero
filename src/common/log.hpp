@@ -60,7 +60,7 @@ public:
             case Parser:    return "parser";
             case Sema:      return "sema";
             case Compile:   return "compile";
-            case Runtime:   return "rt";
+            case Runtime:   return "runtime";
             default:        return "Undefined";
         }
     }

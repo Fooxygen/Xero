@@ -14,6 +14,7 @@
 
 #include "common/ast.hpp"
 #include "sema/type.hpp"
+#include "compile/irgen/value.hpp"
 
 namespace compile {
 
@@ -22,14 +23,26 @@ namespace compile {
         llvm::LLVMContext             context_;
         std::unique_ptr<llvm::Module> module_;
         llvm::IRBuilder<>             builder_;
+        ValueTable                    value_table_;
+
+        // Cache
+        llvm::Function* current_fn_ = nullptr;
+
+    private:
+        llvm::Type* LlvmType(const sema::Type* type);
+
+        llvm::AllocaInst* EntryBlockSlotCreate(llvm::Type* type, const std::string& name);
 
         // Exec
 
-        llvm::Value* Exec(BlockExpr& node);
+        llvm::Value* Exec(BlockExpr& node, std::function<void()> OnScopeReady = nullptr);
+        llvm::Value* Exec(IdExpr& node);
+        llvm::Value* Exec(DeclExpr& node);
         llvm::Value* Exec(FnExpr& node);
 
         llvm::Value* Exec(NumConst& node);
 
+        llvm::Value* Exec(ExprStmt& node);
         llvm::Value* Exec(ReturnSignalStmt& node);
 
         llvm::Value* Exec(Program& node);
@@ -37,17 +50,18 @@ namespace compile {
     public:
         IRGen(std::string_view module_name, std::string path, AstNode& root);
 
-        llvm::Type* LlvmType(const sema::Type* type);
-
         // Exec
 
         llvm::Value* Exec(AstNode& node) {
             switch (node.type_) {
                 case AstType::BlockExpr:        return Exec((BlockExpr&)node);
+                case AstType::IdExpr:           return Exec((IdExpr&)node);
+                case AstType::DeclExpr:         return Exec((DeclExpr&)node);
                 case AstType::FnExpr:           return Exec((FnExpr&)node);
                 
                 case AstType::NumConst:         return Exec((NumConst&)node);
                 
+                case AstType::ExprStmt:         return Exec((ExprStmt&)node);
                 case AstType::ReturnSignalStmt: return Exec((ReturnSignalStmt&)node);
 
                 case AstType::Program:          return Exec((Program&)node);
