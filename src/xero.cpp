@@ -11,6 +11,7 @@
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <filesystem>
 
 #include "build.hpp"
 #include "common/log.hpp"
@@ -19,14 +20,17 @@
 #include "sema/type.hpp"
 #include "sema/method.hpp"
 #include "sema/sema.hpp"
+#include "compile/irgen.hpp"
 #include "runtime/type.hpp"
 #include "runtime/method.hpp"
 #include "runtime/xengine.hpp"
 
-struct BeginInfo {
-    std::string path_   = "";
-    bool isPrintToken_  = false;
-    bool isPrintAst_    = false;
+struct Args {
+    std::filesystem::path path_;
+    bool isPrintToken_ = false;
+    bool isPrintAst_   = false;
+    bool isCompile     = false;
+    bool isRuntime     = true;
 };
 
 std::string FileRead(const std::string& path) {
@@ -58,27 +62,28 @@ int main(int argc, char* argv[]) {
             throw LogErr(LogModule::File, "usage: xero.exe <file.xe> [--ast] [--tok]");
         }
 
-        // Begin
-        BeginInfo begininfo;
+        // Args
+        Args args;
         for (int i = 1; i < argc; i++) {
             std::string arg = argv[i];
-            if      (arg == "-a" || arg == "--ast") begininfo.isPrintAst_   = true;
-            else if (arg == "-t" || arg == "--tok") begininfo.isPrintToken_ = true;
-            else begininfo.path_ = arg;
+            if      (arg == "--ast"  || arg == "-a")  args.isPrintAst_   = true;
+            else if (arg == "--tok"  || arg == "-t")  args.isPrintToken_ = true;
+            else if (arg == "--comp" || arg == "-cp") args.isCompile     = true;
+            else if (arg == "--runt" || arg == "-rt") args.isRuntime     = true;
+            else                                      args.path_ = std::filesystem::path(arg);
         }
 
         // Code
-        std::string code = FileRead(begininfo.path_);
+        std::string code = FileRead(args.path_.string());
 
         // Lexer
         lexer::Lexer lexer(code);
-        lexer.TokensGen(begininfo.isPrintToken_);
+        lexer.TokensGen(args.isPrintToken_);
 
         // Parser
         parser::Parser parser(lexer.tokens());
         parser.Execute();
-
-        if (begininfo.isPrintAst_) {
+        if (args.isPrintAst_) {
             LogStart(LogModule::Parser, "output ast").Print();
             parser.root()->Print("", "", true);
             LogFinish(LogModule::Parser, "output ast").Print();
@@ -91,13 +96,33 @@ int main(int argc, char* argv[]) {
         sema::Sema sema;
         sema.Exec(*parser.root());
 
-        // Runtime
-        rt::TypeImplTable::Init();
-        rt::MethodImplTable::BuiltinImplRegister();
+        // Compile
+        if (args.isCompile) {
+            auto module_name = args.path_.stem().string();
 
-        rt::Xengine xengine;
-        xengine.Exec(*parser.root());
-        std::cerr << std::endl;
+            // Directories
+            auto path_project = std::filesystem::path(std::format(
+                "build/{}", module_name
+            ));
+
+            auto path_ir = path_project / "ir";
+            std::filesystem::create_directories(path_ir);
+
+            compile::IRGen irgen(module_name);
+            irgen.Exec(*parser.root(), 
+                (path_ir / (module_name + ".ll")).string()
+            );
+        }
+
+        // Runtime
+        if (args.isRuntime) {
+            rt::TypeImplTable::Init();
+            rt::MethodImplTable::BuiltinImplRegister();
+
+            rt::Xengine xengine;
+            xengine.Exec(*parser.root());
+            std::cerr << std::endl;
+        }
     }
     catch (const LogErr& log) {
         log.Print();
