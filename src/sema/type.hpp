@@ -16,6 +16,10 @@
 
 #include "common/log.hpp"
 
+namespace compile {
+    class TypeGen;
+}
+
 namespace rt {
     class TypeImpl;
 }
@@ -24,7 +28,8 @@ namespace sema {
 
     class Type {
     private:
-        const rt::TypeImpl* impl_ = nullptr;
+        const rt::TypeImpl*     impl_ = nullptr;
+        const compile::TypeGen* gen_  = nullptr;
     
     public:
         enum class UsingType {
@@ -62,21 +67,24 @@ namespace sema {
         bool is(std::string_view name) const;
         bool isHeapStored() const;
         
-        const Type*         base() const {
+        const Type*             base() const {
             switch(usingtype_) {
                 case UsingType::Base:  return this;
                 case UsingType::Param: return paraminfo().base_;
                 default: std::unreachable();
             }
         }
-        const rt::TypeImpl* impl() const {
+        const rt::TypeImpl*     impl() const {
             if (impl_) return impl_;
             return base()->impl();
         }
-
-        void ImplSet(const rt::TypeImpl* impl) {
-            impl_ = impl;
+        const compile::TypeGen* gen()  const {
+            return gen_;
         }
+
+        // Link
+        void ImplSet(const rt::TypeImpl* impl)   { impl_ = impl; }
+        void GenSet(const compile::TypeGen* gen) { gen_ = gen; }
     
         // Base
         void BaseTypeCheck() const;

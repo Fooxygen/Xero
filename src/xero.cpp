@@ -21,6 +21,7 @@
 #include "sema/method.hpp"
 #include "sema/sema.hpp"
 #include "compile/irgen/irgen.hpp"
+#include "compile/irgen/type.hpp"
 #include "runtime/type.hpp"
 #include "runtime/method.hpp"
 #include "runtime/xengine.hpp"
@@ -98,15 +99,18 @@ int main(int argc, char* argv[]) {
 
         // Compile
         if (args.isCompile) {
-            auto module_name = args.path_.stem().string();
-
+            
             // Directories
+            auto module_name = args.path_.stem().string();
             auto path_project = std::filesystem::path(std::format(
                 "build/{}", module_name
             ));
 
             auto path_ir = path_project / "ir";
             std::filesystem::create_directories(path_ir);
+
+            // TypeGen
+            compile::TypeGenTable::Init();
 
             // IRGen
             compile::IRGen irgen(
@@ -118,9 +122,14 @@ int main(int argc, char* argv[]) {
 
         // Runtime
         if (args.isRuntime) {
+            
+            // TypeImpl
             rt::TypeImplTable::Init();
+
+            // MethodImplTable
             rt::MethodImplTable::BuiltinImplRegister();
 
+            // Xengine
             rt::Xengine xengine;
             xengine.Exec(*parser.root());
             std::cerr << std::endl;

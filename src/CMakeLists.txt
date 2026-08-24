@@ -18,6 +18,7 @@ add_executable(xero
     sema/sema.cpp
     sema/builtin_register.cpp
     compile/irgen/irgen.cpp
+    compile/irgen/type.cpp
     runtime/type.cpp
     runtime/xengine.cpp
     runtime/builtin_impl_register.cpp

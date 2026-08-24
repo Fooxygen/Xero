@@ -7,7 +7,9 @@
 #include <vector>
 
 #include "common/log.hpp"
+#include "common/opertype.hpp"
 #include "compile/irgen/irgen.hpp"
+#include "compile/irgen/type.hpp"
 
 namespace compile {
 
@@ -64,7 +66,13 @@ namespace compile {
         value_table_.ScopePush();
         if (OnScopeReady) OnScopeReady();
 
-        for (auto& child : node.children_) Exec(*child);
+        try {
+            for (auto& child : node.children_) Exec(*child);
+        }
+        catch (...) {
+            value_table_.ScopePop();
+            throw;
+        }
 
         value_table_.ScopePop();
         return nullptr;
@@ -79,18 +87,75 @@ namespace compile {
     llvm::Value* IRGen::Exec(DeclExpr& node) {
 
         // Slot
-        auto type = LlvmType(node.resolved_type_);
-        auto slot = EntryBlockSlotCreate(type, node.id_);
+        auto var_type = node.resolved_type_;
+        auto slot     = EntryBlockSlotCreate(LlvmType(var_type), node.id_);
 
         // Value
         if (node.value_) {
-            builder_.CreateStore(Exec(*node.value_), slot);
+            auto val = Exec(*node.value_);
+            auto val_type = node.value_->resolved_type_;
+            builder_.CreateStore(
+                TypeGenTable::Cast(*this, val, val_type, var_type),
+                slot
+            );
         }
         
         value_table_.Declare(node.id_, slot);
         return nullptr;
     }
 
+    llvm::Value* IRGen::Exec(OperExpr& node) {
+        using enum OperType;
+
+        // Unary
+        auto lval = Exec(*node.lexpr_);
+        {
+            switch (node.oper_type_) {
+                case Neg:   return node.lexpr_->resolved_type_->gen()->neg_(*this, lval);
+                case Not:   return node.lexpr_->resolved_type_->gen()->not_(*this, lval);
+                default:    break;
+            }
+        }
+
+        // Binary
+
+        // Short Circuit Boolean Evaluation
+        // TODO
+
+        auto rval = Exec(*node.rexpr_);
+        {
+            auto ltype = node.lexpr_->resolved_type_;
+            auto rtype = node.rexpr_->resolved_type_;
+            auto common_type = sema::TypeTable::Common({ ltype, rtype });
+            if (!common_type) {
+                throw LogErr(LogModule::Compile, std::format(
+                    "cannot make type '{}' compatible with '{}'",
+                    ltype->name_, rtype->name_
+                ), node.loc_);
+            }
+            auto gen = common_type->gen();
+
+            lval = TypeGenTable::Cast(*this, lval, ltype, common_type);
+            rval = TypeGenTable::Cast(*this, rval, rtype, common_type);
+
+            switch (node.oper_type_) {
+                case Plus:  return gen->plus_ (*this, lval, rval);
+                case Minus: return gen->minus_(*this, lval, rval);
+                case Star:  return gen->star_ (*this, lval, rval);
+                case Slash: return gen->slash_(*this, lval, rval);
+                case ModT:  return gen->modt_ (*this, lval, rval);
+                case ModF:  return gen->modf_ (*this, lval, rval);
+                case Gt:    return gen->gt_   (*this, lval, rval);
+                case Lt:    return gen->lt_   (*this, lval, rval);
+                case Ge:    return gen->ge_   (*this, lval, rval);
+                case Le:    return gen->le_   (*this, lval, rval);
+                case Eq:    return gen->eq_   (*this, lval, rval);
+                case Neq:   return gen->neq_  (*this, lval, rval);
+                default:    return nullptr;
+            }
+        }
+    }
+    
     llvm::Value* IRGen::Exec(FnExpr& node) {
 
         // Return Type
@@ -168,6 +233,20 @@ namespace compile {
 
     llvm::Value* IRGen::Exec(ExprStmt& node) {
         if (node.expr_) return Exec(*node.expr_);
+        return nullptr;
+    }
+
+    llvm::Value* IRGen::Exec(AssignStmt& node) {
+        auto var      = (IdExpr*)(node.target_.get());
+        auto var_type = var->resolved_type_;
+        auto slot     = value_table_.Lookup(var->value_);
+        auto val      = Exec(*node.value_);
+        auto val_type = node.value_->resolved_type_;
+
+        builder_.CreateStore(
+            TypeGenTable::Cast(*this, val, val_type, var_type),
+            slot
+        );
         return nullptr;
     }
 

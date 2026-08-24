@@ -1,9 +1,8 @@
 
-fn look(x: i32) -> i32 {
-    return x;
-}
-
 fn main() {
     x: i32 = 3;
+    x = x + 2;
+    y: f64 = x * 1.5;
+    b: bool = x > 3;
     return 0;
 }

@@ -197,8 +197,6 @@ namespace sema {
                     node.rexpr_->resolved_type_->name_
                 ), node.loc_);
             }
-
-            return;
         }
     }
 

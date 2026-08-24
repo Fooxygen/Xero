@@ -38,17 +38,21 @@ namespace compile {
         llvm::Value* Exec(BlockExpr& node, std::function<void()> OnScopeReady = nullptr);
         llvm::Value* Exec(IdExpr& node);
         llvm::Value* Exec(DeclExpr& node);
+        llvm::Value* Exec(OperExpr& node);
         llvm::Value* Exec(FnExpr& node);
 
         llvm::Value* Exec(NumConst& node);
 
         llvm::Value* Exec(ExprStmt& node);
+        llvm::Value* Exec(AssignStmt& node);
         llvm::Value* Exec(ReturnSignalStmt& node);
 
         llvm::Value* Exec(Program& node);
 
     public:
         IRGen(std::string_view module_name, std::string path, AstNode& root);
+
+        llvm::IRBuilder<>& builder() { return builder_; }
 
         // Exec
 
@@ -57,11 +61,13 @@ namespace compile {
                 case AstType::BlockExpr:        return Exec((BlockExpr&)node);
                 case AstType::IdExpr:           return Exec((IdExpr&)node);
                 case AstType::DeclExpr:         return Exec((DeclExpr&)node);
+                case AstType::OperExpr:         return Exec((OperExpr&)node);
                 case AstType::FnExpr:           return Exec((FnExpr&)node);
                 
                 case AstType::NumConst:         return Exec((NumConst&)node);
                 
                 case AstType::ExprStmt:         return Exec((ExprStmt&)node);
+                case AstType::AssignStmt:       return Exec((AssignStmt&)node);
                 case AstType::ReturnSignalStmt: return Exec((ReturnSignalStmt&)node);
 
                 case AstType::Program:          return Exec((Program&)node);
