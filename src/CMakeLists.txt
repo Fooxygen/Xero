@@ -17,14 +17,14 @@ add_executable(xero
     sema/type.cpp
     sema/sema.cpp
     sema/builtin_register.cpp
-    compile/irgen/irgen.cpp
-    compile/irgen/type.cpp
-    runtime/type.cpp
-    runtime/xengine.cpp
-    runtime/builtin_impl_register.cpp
-    runtime/obj/impl/range.cpp
-    runtime/obj/impl/array.cpp
-    runtime/obj/impl/string.cpp
+    compiler/irgen/irgen.cpp
+    compiler/irgen/type.cpp
+    xengine/type.cpp
+    xengine/xengine.cpp
+    xengine/builtin_impl_register.cpp
+    xengine/obj/impl/range.cpp
+    xengine/obj/impl/array.cpp
+    xengine/obj/impl/string.cpp
 )
 
 target_include_directories(xero PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

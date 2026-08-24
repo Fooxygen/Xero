@@ -5,12 +5,12 @@
 
 #include <format>
 
-#include "compile/irgen/irgen.hpp"
-#include "compile/irgen/type.hpp"
+#include "compiler/irgen/irgen.hpp"
+#include "compiler/irgen/type.hpp"
 
 #include "common/log.hpp"
 
-namespace compile {
+namespace compiler {
 
     // TypeGenTable
     
@@ -309,7 +309,7 @@ namespace compile {
         auto it = casts_.find(std::pair{ from, to });
         if (it != casts_.end()) return it->second(gen, value);
         
-        throw LogErr(LogModule::Compile, std::format(
+        throw LogErr(LogModule::Compiler, std::format(
             "cannot make type '{}' compatible with '{}'",
             from->name_, to->name_
         ));

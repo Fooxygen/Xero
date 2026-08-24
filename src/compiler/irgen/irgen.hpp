@@ -14,9 +14,9 @@
 
 #include "common/ast.hpp"
 #include "sema/type.hpp"
-#include "compile/irgen/value.hpp"
+#include "compiler/irgen/value.hpp"
 
-namespace compile {
+namespace compiler {
 
     class IRGen {
     private:

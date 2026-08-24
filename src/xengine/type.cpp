@@ -6,10 +6,10 @@
 #include <cmath>
 
 #include "sema/type.hpp"
-#include "runtime/type.hpp"
-#include "runtime/obj/obj.hpp"
+#include "xengine/type.hpp"
+#include "xengine/obj/obj.hpp"
 
-namespace rt {
+namespace xengine {
 
     // TypeImplTable
 
@@ -34,7 +34,7 @@ namespace rt {
                         return;
                     }
 
-                    throw LogErr(LogModule::Runtime, std::format(
+                    throw LogErr(LogModule::Xengine, std::format(
                         "cannot make type '{}' compatible with 'bool'", value.type()->name_
                     ));
                 },
@@ -63,7 +63,7 @@ namespace rt {
                         return;
                     }
 
-                    throw LogErr(LogModule::Runtime, std::format(
+                    throw LogErr(LogModule::Xengine, std::format(
                         "cannot make type '{}' compatible with 'i32'", value.type()->name_
                     ));
                 },
@@ -72,19 +72,19 @@ namespace rt {
                 .star_      = [](const Obj& a, const Obj& b) { return Obj::Make_i32(a.Get_i32() * b.Get_i32()); },
                 .slash_     = [](const Obj& a, const Obj& b) {
                     int32_t xb = b.Get_i32();
-                    if (xb == 0) throw LogErr(LogModule::Runtime, "division by zero");
+                    if (xb == 0) throw LogErr(LogModule::Xengine, "division by zero");
                     return Obj::Make_i32(a.Get_i32() / xb);
                 },
                 .neg_       = [](const Obj& o) { return Obj::Make_i32(-o.Get_i32()); },
                 .modt_      = [](const Obj& a, const Obj& b) {
                     int32_t xa = a.Get_i32(), xb = b.Get_i32();
-                    if (xb == 0)  throw LogErr(LogModule::Runtime, "division by zero");
+                    if (xb == 0)  throw LogErr(LogModule::Xengine, "division by zero");
                     if (xb == -1) return Obj::Make_i32(0);
                     return Obj::Make_i32(xa % xb);
                 },
                 .modf_      = [](const Obj& a, const Obj& b) {
                     int32_t xa = a.Get_i32(), xb = b.Get_i32();
-                    if (xb == 0)  throw LogErr(LogModule::Runtime, "division by zero");
+                    if (xb == 0)  throw LogErr(LogModule::Xengine, "division by zero");
                     if (xb == -1) return Obj::Make_i32(0);
                     auto r = xa % xb;
                     if (r != 0 && ((r < 0) != (xb < 0))) r += xb;
@@ -116,7 +116,7 @@ namespace rt {
                         return;
                     }
 
-                    throw LogErr(LogModule::Runtime, std::format(
+                    throw LogErr(LogModule::Xengine, std::format(
                         "cannot make type '{}' compatible with 'i64'", value.type()->name_
                     ));
                 },
@@ -125,19 +125,19 @@ namespace rt {
                 .star_      = [](const Obj& a, const Obj& b) { return Obj::Make_i64(a.Get_i64() * b.Get_i64()); },
                 .slash_     = [](const Obj& a, const Obj& b) {
                     int64_t xb = b.Get_i64();
-                    if (xb == 0) throw LogErr(LogModule::Runtime, "division by zero");
+                    if (xb == 0) throw LogErr(LogModule::Xengine, "division by zero");
                     return Obj::Make_i64(a.Get_i64() / xb);
                 },
                 .neg_       = [](const Obj& o) { return Obj::Make_i64(-o.Get_i64()); },
                 .modt_      = [](const Obj& a, const Obj& b) {
                     int64_t xa = a.Get_i64(), xb = b.Get_i64();
-                    if (xb == 0)  throw LogErr(LogModule::Runtime, "division by zero");
+                    if (xb == 0)  throw LogErr(LogModule::Xengine, "division by zero");
                     if (xb == -1) return Obj::Make_i64(0);
                     return Obj::Make_i64(xa % xb);
                 },
                 .modf_      = [](const Obj& a, const Obj& b) {
                     int64_t xa = a.Get_i64(), xb = b.Get_i64();
-                    if (xb == 0)  throw LogErr(LogModule::Runtime, "division by zero");
+                    if (xb == 0)  throw LogErr(LogModule::Xengine, "division by zero");
                     if (xb == -1) return Obj::Make_i64(0);
                     auto r = xa % xb;
                     if (r != 0 && ((r < 0) != (xb < 0))) r += xb;
@@ -169,7 +169,7 @@ namespace rt {
                         return;
                     }
                     
-                    throw LogErr(LogModule::Runtime, std::format(
+                    throw LogErr(LogModule::Xengine, std::format(
                         "cannot make type '{}' compatible with 'f32'", value.type()->name_
                     ));
                 },
@@ -213,7 +213,7 @@ namespace rt {
                         return;
                     }
                     
-                    throw LogErr(LogModule::Runtime, std::format(
+                    throw LogErr(LogModule::Xengine, std::format(
                         "cannot make type '{}' compatible with 'f64'", value.type()->name_
                     ));
                 },
@@ -253,7 +253,7 @@ namespace rt {
                         return;
                     }
                     
-                    throw LogErr(LogModule::Runtime, std::format(
+                    throw LogErr(LogModule::Xengine, std::format(
                         "cannot make type '{}' compatible with 'char'", value.type()->name_
                     ));
                 },
@@ -286,7 +286,7 @@ namespace rt {
                         return;
                     }
                     
-                    throw LogErr(LogModule::Runtime, std::format(
+                    throw LogErr(LogModule::Xengine, std::format(
                         "cannot make type '{}' compatible with 'string'", value.type()->name_
                     ));
                 },
@@ -306,7 +306,7 @@ namespace rt {
                 },        
                 .pick_      = [](const Obj& target, const Obj& pick) {
                     if (!pick.is("range")) {
-                        throw LogErr(LogModule::Runtime, std::format(
+                        throw LogErr(LogModule::Xengine, std::format(
                             "'parameter of pick' must be 'range', not '{}'",
                             pick.type()->name_
                         ));
@@ -318,14 +318,14 @@ namespace rt {
                     if (!range.iter_type()->is("i32") &&
                         !range.iter_type()->is("i64"))
                     {
-                        throw LogErr(LogModule::Runtime, std::format(
+                        throw LogErr(LogModule::Xengine, std::format(
                             "'step type of range' must be 'i32' or 'i64', not '{}'",
                             range.iter_type()->name_
                         ));
                     }
 
                     if (range.step()->Get_i32() != 1) {
-                        throw LogErr(LogModule::Runtime, "assignment with step in '[]' not allowed");
+                        throw LogErr(LogModule::Xengine, "assignment with step in '[]' not allowed");
                     }
 
                     if (range.isSingle()) {
@@ -359,7 +359,7 @@ namespace rt {
                     auto& target_view = target->Get_stringview_ref();
                     auto  target_str  = target_view.org();
                     if (!target_str) {
-                        throw LogErr(LogModule::Runtime, "cannot assign to 'empty stringview'");
+                        throw LogErr(LogModule::Xengine, "cannot assign to 'empty stringview'");
                     }
 
                     auto assign_from_string = [&](const String& src) {
@@ -405,7 +405,7 @@ namespace rt {
                                     = Obj::Make_char(value_str.Get(0)->Get_char());
                                 return;
                             }
-                            throw LogErr(LogModule::Runtime, std::format(
+                            throw LogErr(LogModule::Xengine, std::format(
                                 "cannot make type '{}' compatible with 'char'", value.type()->name_
                             ));
                         }
@@ -417,7 +417,7 @@ namespace rt {
                                     = Obj::Make_char(value_str->Get(value_view.offset())->Get_char());
                                 return;
                             }
-                            throw LogErr(LogModule::Runtime, std::format(
+                            throw LogErr(LogModule::Xengine, std::format(
                                 "cannot make type '{}' compatible with 'char'", value.type()->name_
                             ));
                         }
@@ -439,13 +439,13 @@ namespace rt {
                         }
                     }
                     
-                    throw LogErr(LogModule::Runtime, std::format(
+                    throw LogErr(LogModule::Xengine, std::format(
                         "cannot make type '{}' compatible with 'stringview'", value.type()->name_
                     ));
                 },
                 .pick_      = [](const Obj& target, const Obj& pick) {
                     if (!pick.is("range")) {
-                        throw LogErr(LogModule::Runtime, std::format(
+                        throw LogErr(LogModule::Xengine, std::format(
                             "'parameter of pick' must be 'range', not '{}'",
                             pick.type()->name_
                         ));
@@ -457,14 +457,14 @@ namespace rt {
                     if (!range.iter_type()->is("i32") &&
                         !range.iter_type()->is("i64"))
                     {
-                        throw LogErr(LogModule::Runtime, std::format(
+                        throw LogErr(LogModule::Xengine, std::format(
                             "'step type of range' must be 'i32' or 'i64', not '{}'",
                             range.iter_type()->name_
                         ));
                     }
 
                     if (range.step()->Get_i32() != 1) {
-                        throw LogErr(LogModule::Runtime, "assignment with step in '[]' not allowed");
+                        throw LogErr(LogModule::Xengine, "assignment with step in '[]' not allowed");
                     }
 
                     if (range.isSingle()) {
@@ -528,7 +528,7 @@ namespace rt {
                 },
                 .pick_          = [](const Obj& target, const Obj& pick) {
                     if (!pick.is("range")) {
-                        throw LogErr(LogModule::Runtime, std::format(
+                        throw LogErr(LogModule::Xengine, std::format(
                             "'parameter of pick' must be 'range', not '{}'",
                             pick.type()->name_
                         ));
@@ -540,14 +540,14 @@ namespace rt {
                     if (!range.iter_type()->is("i32") &&
                         !range.iter_type()->is("i64"))
                     {
-                        throw LogErr(LogModule::Runtime, std::format(
+                        throw LogErr(LogModule::Xengine, std::format(
                             "'step type of range' must be 'i32' or 'i64', not '{}'",
                             range.iter_type()->name_
                         ));
                     }
 
                     if (range.step()->Get_i32() != 1) {
-                        throw LogErr(LogModule::Runtime, "assignment with step in '[]' not allowed");
+                        throw LogErr(LogModule::Xengine, "assignment with step in '[]' not allowed");
                     }
 
                     if (range.isSingle()) {
@@ -581,7 +581,7 @@ namespace rt {
                     auto& target_view = target->Get_arrayview_ref();
                     auto  target_arr  = target_view.org();
                     if (!target_arr) {
-                        throw LogErr(LogModule::Runtime, "cannot assign to 'empty arrayview'");
+                        throw LogErr(LogModule::Xengine, "cannot assign to 'empty arrayview'");
                     }
 
                     auto assign_from_array = [&](const Array& src) {
@@ -632,7 +632,7 @@ namespace rt {
                 },
                 .pick_      = [](const Obj& target, const Obj& pick) {
                     if (!pick.is("range")) {
-                        throw LogErr(LogModule::Runtime, std::format(
+                        throw LogErr(LogModule::Xengine, std::format(
                             "'parameter of pick' must be 'range', not '{}'",
                             pick.type()->name_
                         ));
@@ -644,14 +644,14 @@ namespace rt {
                     if (!range.iter_type()->is("i32") &&
                         !range.iter_type()->is("i64"))
                     {
-                        throw LogErr(LogModule::Runtime, std::format(
+                        throw LogErr(LogModule::Xengine, std::format(
                             "'step type of range' must be 'i32' or 'i64', not '{}'",
                             range.iter_type()->name_
                         ));
                     }
 
                     if (range.step()->Get_i32() != 1) {
-                        throw LogErr(LogModule::Runtime, "assignment with step in '[]' not allowed");
+                        throw LogErr(LogModule::Xengine, "assignment with step in '[]' not allowed");
                     }
 
                     if (range.isSingle()) {
@@ -709,7 +709,7 @@ namespace rt {
                         return;
                     }
 
-                    throw LogErr(LogModule::Runtime, std::format(
+                    throw LogErr(LogModule::Xengine, std::format(
                         "cannot make type '{}' compatible with 'range'", value.type()->name_
                     ));
                 },

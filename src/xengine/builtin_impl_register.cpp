@@ -5,12 +5,12 @@
 
 #include <cstdio>
 
-#include "runtime/method.hpp"
-#include "runtime/xengine.hpp"
-#include "runtime/obj/impl/string.hpp"
-#include "runtime/obj/impl/array.hpp"
+#include "xengine/method.hpp"
+#include "xengine/xengine.hpp"
+#include "xengine/obj/impl/string.hpp"
+#include "xengine/obj/impl/array.hpp"
 
-namespace rt {
+namespace xengine {
 
     void Xengine::BuiltinFnImplRegister() {
         using ARGS = std::vector<Obj>&;

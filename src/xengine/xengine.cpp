@@ -6,10 +6,10 @@
 #include "common/log.hpp"
 #include "common/opertype.hpp"
 #include "common/signal.hpp"
-#include "runtime/method.hpp"
-#include "runtime/xengine.hpp"
+#include "xengine/method.hpp"
+#include "xengine/xengine.hpp"
 
-namespace rt {
+namespace xengine {
     
     // Expr
 
@@ -49,7 +49,7 @@ namespace rt {
             // Try Convert Type
             auto value_convert = TypeImplTable::Convert(value, bind_type);
             if (value_convert.isNone()) {
-                throw LogErr(LogModule::Runtime, std::format(
+                throw LogErr(LogModule::Xengine, std::format(
                     "cannot make type '{}' compatible with '{}'",
                     value.type()->name_, bind_type->name_
                 ), node.loc_);
@@ -116,7 +116,7 @@ namespace rt {
             {
                 auto common_type = sema::TypeTable::Common({ lobj.type(), robj.type() });
                 if (!common_type) {
-                    throw LogErr(LogModule::Runtime, std::format(
+                    throw LogErr(LogModule::Xengine, std::format(
                         "cannot make type '{}' compatible with '{}'",
                         robj.type()->name_, lobj.type()->name_
                     ), node.loc_);
@@ -185,7 +185,7 @@ namespace rt {
         }
         
         // Failure
-        throw LogErr(LogModule::Runtime, std::format(
+        throw LogErr(LogModule::Xengine, std::format(
             "unsupported operator '{}' between '{}' and '{}'",
             OperTypeName(node.oper_type_),
             lobj.type()->name_,
@@ -251,7 +251,7 @@ namespace rt {
             else {
                 auto& lang = fn.lang();
                 if (!lang) {
-                    throw LogErr(LogModule::Runtime, std::format(
+                    throw LogErr(LogModule::Xengine, std::format(
                         "undefined function '{}'", node.callee_->value_
                     ), node.loc_);
                 }
@@ -278,10 +278,10 @@ namespace rt {
                 // - has return stmt:   value must be compatible with ret type
                 // - missing return:    exec() return 'none', which isn't compatible with ret type
                 if (!ret_type->isNone() && ret.type()->isNone()) {
-                    throw LogErr(LogModule::Runtime, "missing return in function", node.loc_);
+                    throw LogErr(LogModule::Xengine, "missing return in function", node.loc_);
                 }
                 if (!ret.type()->converts_.contains(ret_type)) {
-                    throw LogErr(LogModule::Runtime, std::format(
+                    throw LogErr(LogModule::Xengine, std::format(
                         "cannot make type '{}' compatible with '{}'",
                         ret.type()->name_, ret_type->name_
                     ), node.loc_);
@@ -291,7 +291,7 @@ namespace rt {
             }
         }
 
-        throw LogErr(LogModule::Runtime, std::format(
+        throw LogErr(LogModule::Xengine, std::format(
             "undefined function '{}'", node.callee_->value_
         ), node.loc_);
     }
@@ -309,7 +309,7 @@ namespace rt {
 
         auto fn = MethodImplTable::Lookup(target.type()->base(), callee.value_);
         if (!fn) {
-            throw LogErr(LogModule::Runtime, std::format(
+            throw LogErr(LogModule::Xengine, std::format(
                 "undefined method '{}' on type '{}'",
                 callee.value_, target.type()->name_
             ), node.loc_);
@@ -352,7 +352,7 @@ namespace rt {
         if (node.resolved_type_->is("f64")){
             return Obj::Make_f64((double)node.resolved_value_.floating_);
         }
-        throw LogErr(LogModule::Runtime, std::format(
+        throw LogErr(LogModule::Xengine, std::format(
             "number literal must be i32, i64, f32 or f64, not {}",
             node.resolved_type_->name_
         ), node.loc_);
@@ -479,7 +479,7 @@ namespace rt {
             at = [&](size_t i) { return *view.org()->Get(view.offset() + i); };
         }
         else {
-            throw LogErr(LogModule::Runtime, "unsupported 'data type' in 'for' statement", node.loc_);
+            throw LogErr(LogModule::Xengine, "unsupported 'data type' in 'for' statement", node.loc_);
         }
 
         for (size_t i = 0; i < len; i++) {
@@ -522,14 +522,14 @@ namespace rt {
         }
         catch (LoopSignal e) {
             if      (e == LoopSignal::Break) {
-                throw LogErr(LogModule::Runtime, "'break' outside of loop");
+                throw LogErr(LogModule::Xengine, "'break' outside of loop");
             }
             else if (e == LoopSignal::Continue) {
-                throw LogErr(LogModule::Runtime, "'continue' outside of loop");
+                throw LogErr(LogModule::Xengine, "'continue' outside of loop");
             }
         }
         catch (ReturnSignal e) {
-            throw LogErr(LogModule::Runtime, "'return' outside of function");
+            throw LogErr(LogModule::Xengine, "'return' outside of function");
         }
         
         return Obj();

@@ -9,9 +9,9 @@
 #include <unordered_map>
 
 #include "common/utils.hpp"
-#include "runtime/obj/obj.hpp"
+#include "xengine/obj/obj.hpp"
 
-namespace rt {
+namespace xengine {
 
     class Env {
     private:
@@ -24,12 +24,12 @@ namespace rt {
 
         void Declare(const std::string& name, const Obj& value) {
             if (name.empty()) {
-                throw LogErr(LogModule::Runtime, "empty declared name");
+                throw LogErr(LogModule::Xengine, "empty declared name");
             }
             auto& scope = ScopeGet();
             if (!scope.contains(name)) scope[name] = value;
             else {
-                throw LogErr(LogModule::Runtime, std::format(
+                throw LogErr(LogModule::Xengine, std::format(
                     "duplicate definition of '{}' in same scope",
                     name
                 ));
@@ -44,7 +44,7 @@ namespace rt {
                 if (oit != sit->end()) return &oit->second;
             }
 
-            throw LogErr(LogModule::Runtime, std::format("undefined obj '{}'", name), loc);
+            throw LogErr(LogModule::Xengine, std::format("undefined obj '{}'", name), loc);
         }
     };
 }

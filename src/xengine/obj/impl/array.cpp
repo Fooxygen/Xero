@@ -3,10 +3,10 @@
 //  Copyright (c) 2026 Fooxygen.
 //  Licensed under the MIT License.
 
-#include "runtime/obj/impl/array.hpp"
-#include "runtime/obj/obj.hpp"
+#include "xengine/obj/impl/array.hpp"
+#include "xengine/obj/obj.hpp"
 
-namespace rt {
+namespace xengine {
 
     Array::Array(const sema::Type* elem_type, size_t size) {
         data_ = new Obj*[size];
@@ -29,7 +29,7 @@ namespace rt {
     void Array::ElemTypeCheck(const sema::Type* type) {
         if (!elem_type_ || !type) return;
         else if (type != elem_type_) {
-            throw LogErr(LogModule::Runtime, std::format(
+            throw LogErr(LogModule::Xengine, std::format(
                 "cannot make type '{}' compatible with '{}'",
                 type->name_, elem_type_->name_
             ));

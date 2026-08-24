@@ -46,6 +46,19 @@ You can find more information about Xero on the [Wiki](https://github.com/Fooxyg
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
+## Architecture
+
+| Module | Task | Implementation | Version |
+| - | - | - | - |
+| Lexer | Lexical analysis | Xero | |
+| Parser | Syntax analysis | Xero | |
+| Sema | Semantic analysis | Xero | |
+| Compiler | IR generation, object file linking, executable generation | Xero | |
+| LLVM | IR optimization, object file generation | LLVM | 22.1.8 |
+| Xengine | Interpreter | Xero | |
+
+<p align="right"><a href="#readme-top">⭱ Back to top</a></p>
+
 ## Build & Run
 
 > The following steps assume a Visual Studio Code environment.
@@ -69,7 +82,8 @@ Use the `Run Xero` task to run the Release build:
     "label": "Run Xero",
     "type": "shell",
     "command": "${workspaceFolder}/build-release/bin/xero.exe",
-    "args": ["example/main.xe"]
+    "options": { "cwd": "${workspaceFolder}/build-release/bin" },
+    "args": ["${workspaceFolder}/example/main.xe", "-cp"]
 }
 ```
 
@@ -79,7 +93,8 @@ Use the `Run Xero with options` task to print the token stream and the abstract 
     "label": "Run Xero with options",
     "type": "shell",
     "command": "${workspaceFolder}/build-release/bin/xero.exe",
-    "args": ["example/main.xe", "--ast", "--tok"]
+    "options": { "cwd": "${workspaceFolder}/build-release/bin" },
+    "args": ["${workspaceFolder}/example/main.xe", "--ast", "--tok", "-cp"]
 }
 ```
 

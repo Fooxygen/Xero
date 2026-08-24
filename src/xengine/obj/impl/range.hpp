@@ -7,7 +7,7 @@
 
 #include "sema/type.hpp"
 
-namespace rt {
+namespace xengine {
     class Obj;
 
     class Range {

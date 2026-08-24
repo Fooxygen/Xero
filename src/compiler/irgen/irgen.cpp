@@ -8,10 +8,10 @@
 
 #include "common/log.hpp"
 #include "common/opertype.hpp"
-#include "compile/irgen/irgen.hpp"
-#include "compile/irgen/type.hpp"
+#include "compiler/irgen/irgen.hpp"
+#include "compiler/irgen/type.hpp"
 
-namespace compile {
+namespace compiler {
 
     IRGen::IRGen(std::string_view module_name, std::string path, AstNode& root)
     :   context_(),
@@ -26,7 +26,7 @@ namespace compile {
         std::error_code ec;
         llvm::raw_fd_ostream file(path, ec);
         if (ec) {
-            throw LogErr(LogModule::Compile, std::format(
+            throw LogErr(LogModule::Compiler, std::format(
                 "failed to open file '{}'", path
             ));
         }
@@ -48,7 +48,7 @@ namespace compile {
         if (type->is("f64"))    return llvm::Type::getDoubleTy(context_);
         if (type->is("char"))   return llvm::Type::getInt32Ty(context_);
 
-        throw LogErr(LogModule::Compile, std::format(
+        throw LogErr(LogModule::Compiler, std::format(
             "undefined type '{}'", type->name_
         ));
     }
@@ -128,7 +128,7 @@ namespace compile {
             auto rtype = node.rexpr_->resolved_type_;
             auto common_type = sema::TypeTable::Common({ ltype, rtype });
             if (!common_type) {
-                throw LogErr(LogModule::Compile, std::format(
+                throw LogErr(LogModule::Compiler, std::format(
                     "cannot make type '{}' compatible with '{}'",
                     ltype->name_, rtype->name_
                 ), node.loc_);

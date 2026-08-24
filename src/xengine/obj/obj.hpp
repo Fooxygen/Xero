@@ -10,14 +10,14 @@
 #include <utility>
 
 #include "sema/type.hpp"
-#include "runtime/type.hpp"
-#include "runtime/obj/impl/string.hpp"
-#include "runtime/obj/impl/array.hpp"
-#include "runtime/obj/impl/sliceview.hpp"
-#include "runtime/obj/impl/range.hpp"
-#include "runtime/obj/impl/function.hpp"
+#include "xengine/type.hpp"
+#include "xengine/obj/impl/string.hpp"
+#include "xengine/obj/impl/array.hpp"
+#include "xengine/obj/impl/sliceview.hpp"
+#include "xengine/obj/impl/range.hpp"
+#include "xengine/obj/impl/function.hpp"
 
-namespace rt {
+namespace xengine {
 
     class Obj {
     public:
@@ -200,7 +200,7 @@ namespace rt {
             if (name == "range")       return Make_range(new Range());
             if (name == "function")    return Make_function(new Function());
 
-            throw LogErr(LogModule::Runtime, std::format(
+            throw LogErr(LogModule::Xengine, std::format(
                 "cannot make empty value for type '{}'", name
             ));
         }

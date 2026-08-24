@@ -8,10 +8,10 @@
 #include <functional>
 
 #include "common/ast.hpp"
-#include "runtime/obj/obj.hpp"
-#include "runtime/env.hpp"
+#include "xengine/obj/obj.hpp"
+#include "xengine/env.hpp"
 
-namespace rt {
+namespace xengine {
 
     class Xengine {
     private:
@@ -48,7 +48,7 @@ namespace rt {
 
         template<typename Call, typename... Args>
         static decltype(auto) CallThrow(Call call, Args&&... args) {
-            if (!call) throw LogErr(LogModule::Runtime, "undefined function");
+            if (!call) throw LogErr(LogModule::Xengine, "undefined function");
             return call(std::forward<Args>(args)...);
         }
 

@@ -3,10 +3,10 @@
 //  Copyright (c) 2026 Fooxygen.
 //  Licensed under the MIT License.
 
-#include "runtime/obj/obj.hpp"
-#include "runtime/obj/impl/string.hpp"
+#include "xengine/obj/obj.hpp"
+#include "xengine/obj/impl/string.hpp"
 
-namespace rt {
+namespace xengine {
 
     String::String(const std::string& s)
     :   Array(sema::TypeTable::Lookup("char"))

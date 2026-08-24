@@ -9,7 +9,7 @@
 
 #include "sema/type.hpp"
 
-namespace compile {
+namespace compiler {
     class IRGen;
     
     class TypeGen {
@@ -57,7 +57,7 @@ namespace compile {
                 table_.emplace(type, gen);
                 type->GenSet(gen);
             }
-            else throw LogErr(LogModule::Compile, std::format(
+            else throw LogErr(LogModule::Compiler, std::format(
                 "existing type '{}'", type->name_
             ));
         }

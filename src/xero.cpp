@@ -20,18 +20,18 @@
 #include "sema/type.hpp"
 #include "sema/method.hpp"
 #include "sema/sema.hpp"
-#include "compile/irgen/irgen.hpp"
-#include "compile/irgen/type.hpp"
-#include "runtime/type.hpp"
-#include "runtime/method.hpp"
-#include "runtime/xengine.hpp"
+#include "compiler/irgen/irgen.hpp"
+#include "compiler/irgen/type.hpp"
+#include "xengine/type.hpp"
+#include "xengine/method.hpp"
+#include "xengine/xengine.hpp"
 
 struct Args {
     std::filesystem::path path_;
     bool isPrintToken_ = false;
     bool isPrintAst_   = false;
-    bool isCompile     = false;
-    bool isRuntime     = true;
+    bool isCompiler    = false;
+    bool isXengine     = true;
 };
 
 std::string FileRead(const std::string& path) {
@@ -69,8 +69,8 @@ int main(int argc, char* argv[]) {
             std::string arg = argv[i];
             if      (arg == "--ast"  || arg == "-a")  args.isPrintAst_   = true;
             else if (arg == "--tok"  || arg == "-t")  args.isPrintToken_ = true;
-            else if (arg == "--comp" || arg == "-cp") args.isCompile     = true;
-            else if (arg == "--runt" || arg == "-rt") args.isRuntime     = true;
+            else if (arg == "--comp" || arg == "-cp") args.isCompiler    = true;
+            else if (arg == "--xeng" || arg == "-xe") args.isXengine     = true;
             else                                      args.path_ = std::filesystem::path(arg);
         }
 
@@ -97,8 +97,8 @@ int main(int argc, char* argv[]) {
         sema::Sema sema;
         sema.Exec(*parser.root());
 
-        // Compile
-        if (args.isCompile) {
+        // Compiler
+        if (args.isCompiler) {
             
             // Directories
             auto module_name = args.path_.stem().string();
@@ -110,27 +110,27 @@ int main(int argc, char* argv[]) {
             std::filesystem::create_directories(path_ir);
 
             // TypeGen
-            compile::TypeGenTable::Init();
+            compiler::TypeGenTable::Init();
 
             // IRGen
-            compile::IRGen irgen(
+            compiler::IRGen irgen(
                 module_name,
                 (path_ir / (module_name + ".ll")).string(),
                 *parser.root()
             );
         }
 
-        // Runtime
-        if (args.isRuntime) {
+        // Xengine
+        if (args.isXengine) {
             
             // TypeImpl
-            rt::TypeImplTable::Init();
+            xengine::TypeImplTable::Init();
 
             // MethodImplTable
-            rt::MethodImplTable::BuiltinImplRegister();
+            xengine::MethodImplTable::BuiltinImplRegister();
 
-            // Xengine
-            rt::Xengine xengine;
+            // Run
+            xengine::Xengine xengine;
             xengine.Exec(*parser.root());
             std::cerr << std::endl;
         }

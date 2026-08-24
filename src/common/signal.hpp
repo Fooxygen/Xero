@@ -7,7 +7,7 @@
 
 #include <memory>
 
-namespace rt {
+namespace xengine {
     class Obj;
 }
 
@@ -16,5 +16,5 @@ enum class LoopSignal {
 };
 
 struct ReturnSignal {
-    std::shared_ptr<rt::Obj> value_;
+    std::shared_ptr<xengine::Obj> value_;
 };

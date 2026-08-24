@@ -43,7 +43,20 @@ Xero 是一门静态类型编程语言。你可以在 `example/main.xe` 找到�
 | 开发语言 | C++ | 23 |
 | 构建系统 | CMake | 3.21+ |
 | 构建工具 | Ninja | 1.13.2 |
-| 编译工具 | MinGW-w64 | 16.1.0 |
+| 编译工具链 | MinGW-w64 | 16.1.0 |
+
+<p align="right"><a href="#readme-top">⭱ Back to top</a></p>
+
+## 架构
+
+| 模块 | 任务 | 实现 | 版本 |
+| - | - | - | - |
+| Lexer | 词法分析 | Xero | |
+| Parser | 语法分析 | Xero | |
+| Sema | 语义分析 | Xero | |
+| Compiler | IR 生成、目标文件链接、可执行文件生成 | Xero | |
+| LLVM | IR 优化、目标文件生成 | LLVM | 22.1.8 |
+| Xengine | 解释器 | Xero | |
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
@@ -70,7 +83,8 @@ Release 版本使用任务 `Run Xero` 启动；
     "label": "Run Xero",
     "type": "shell",
     "command": "${workspaceFolder}/build-release/bin/xero.exe",
-    "args": ["example/main.xe"]
+    "options": { "cwd": "${workspaceFolder}/build-release/bin" },
+    "args": ["${workspaceFolder}/example/main.xe", "-cp"]
 }
 ```
 
@@ -80,7 +94,8 @@ Release 版本使用任务 `Run Xero` 启动；
     "label": "Run Xero with options",
     "type": "shell",
     "command": "${workspaceFolder}/build-release/bin/xero.exe",
-    "args": ["example/main.xe", "--ast", "--tok"]
+    "options": { "cwd": "${workspaceFolder}/build-release/bin" },
+    "args": ["${workspaceFolder}/example/main.xe", "--ast", "--tok", "-cp"]
 }
 ```
 

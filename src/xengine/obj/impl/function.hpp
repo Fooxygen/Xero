@@ -9,7 +9,7 @@
 
 #include "common/ast.hpp"
 
-namespace rt {
+namespace xengine {
     class Obj;
     using NativeFn = Obj(*)(std::vector<Obj>&);
     using LangFn   = std::shared_ptr<FnExpr>;

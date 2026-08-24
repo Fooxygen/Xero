@@ -9,9 +9,9 @@
 #include <cstring>
 #include <string>
 
-#include "runtime/obj/impl/array.hpp"
+#include "xengine/obj/impl/array.hpp"
 
-namespace rt {
+namespace xengine {
     class Obj;
 
     class String : public Array {

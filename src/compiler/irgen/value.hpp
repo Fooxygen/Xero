@@ -13,7 +13,7 @@
 
 #include "common/log.hpp"
 
-namespace compile {
+namespace compiler {
 
     class ValueTable {
     private:
@@ -32,7 +32,7 @@ namespace compile {
                 auto oit = it->find(name);
                 if (oit != it->end()) return oit->second;
             }
-            throw LogErr(LogModule::Compile, std::format(
+            throw LogErr(LogModule::Compiler, std::format(
                 "undefined variable '{}'", name
             ), loc);
         }

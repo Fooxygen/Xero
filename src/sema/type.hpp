@@ -16,11 +16,11 @@
 
 #include "common/log.hpp"
 
-namespace compile {
+namespace compiler {
     class TypeGen;
 }
 
-namespace rt {
+namespace xengine {
     class TypeImpl;
 }
 
@@ -28,8 +28,8 @@ namespace sema {
 
     class Type {
     private:
-        const rt::TypeImpl*     impl_ = nullptr;
-        const compile::TypeGen* gen_  = nullptr;
+        const xengine::TypeImpl*     impl_ = nullptr;
+        const compiler::TypeGen* gen_  = nullptr;
     
     public:
         enum class UsingType {
@@ -74,17 +74,17 @@ namespace sema {
                 default: std::unreachable();
             }
         }
-        const rt::TypeImpl*     impl() const {
+        const xengine::TypeImpl*     impl() const {
             if (impl_) return impl_;
             return base()->impl();
         }
-        const compile::TypeGen* gen()  const {
+        const compiler::TypeGen* gen()  const {
             return gen_;
         }
 
         // Link
-        void ImplSet(const rt::TypeImpl* impl)   { impl_ = impl; }
-        void GenSet(const compile::TypeGen* gen) { gen_ = gen; }
+        void ImplSet(const xengine::TypeImpl* impl)   { impl_ = impl; }
+        void GenSet(const compiler::TypeGen* gen) { gen_ = gen; }
     
         // Base
         void BaseTypeCheck() const;

@@ -9,9 +9,9 @@
 #include <unordered_map>
 
 #include "sema/type.hpp"
-#include "runtime/obj/impl/function.hpp"
+#include "xengine/obj/impl/function.hpp"
 
-namespace rt {
+namespace xengine {
 
     class MethodImplTable {
     private:

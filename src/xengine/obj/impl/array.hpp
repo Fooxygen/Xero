@@ -12,7 +12,7 @@
 #include "common/log.hpp"
 #include "sema/type.hpp"
 
-namespace rt {
+namespace xengine {
     class Obj;
     
     class Array {
@@ -26,12 +26,12 @@ namespace rt {
         void IndexCheck(size_t idx, bool hasRBoundary = false) const {
             if (!hasRBoundary) {
                 if (idx >= size_) {
-                    throw LogErr(LogModule::Runtime, "array index out of bounds");
+                    throw LogErr(LogModule::Xengine, "array index out of bounds");
                 }
             }
             else {
                 if (idx >= size_ + 1) {
-                    throw LogErr(LogModule::Runtime, "array index out of bounds");
+                    throw LogErr(LogModule::Xengine, "array index out of bounds");
                 }
             }
         }

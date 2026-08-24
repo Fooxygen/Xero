@@ -12,7 +12,7 @@
 #include "common/log.hpp"
 #include "sema/type.hpp"
 
-namespace rt {
+namespace xengine {
     class Obj;
 
     class TypeImpl {
@@ -75,7 +75,7 @@ namespace rt {
                 table_.emplace(type, impl);
                 type->ImplSet(impl);
             }
-            else throw LogErr(LogModule::Runtime, std::format(
+            else throw LogErr(LogModule::Xengine, std::format(
                 "existing type '{}'", type->name_
             ));
         }
