@@ -6,6 +6,13 @@
 #include <format>
 #include <vector>
 
+#include "llvm/TargetParser/Host.h"
+#include "llvm/Support/TargetSelect.h"
+#include "llvm/MC/TargetRegistry.h"
+#include "llvm/Target/TargetMachine.h"
+#include "llvm/TargetParser/SubtargetFeature.h"
+#include "llvm/IR/LegacyPassManager.h"
+
 #include "common/log.hpp"
 #include "common/opertype.hpp"
 #include "compiler/irgen/irgen.hpp"
@@ -13,11 +20,16 @@
 
 namespace compiler {
 
-    IRGen::IRGen(std::string_view module_name, std::string path, AstNode& root)
+    IRGen::IRGen(std::string_view module_name)
     :   context_(),
         module_(std::make_unique<llvm::Module>(module_name, context_)),
         builder_(context_)
-    {
+    {}
+
+    // Workflow
+
+    void IRGen::IROutput(const std::string& path) {
+
         // Open File
         if (path.empty()) {
             throw LogErr(LogModule::File, "empty file path");
@@ -31,13 +43,80 @@ namespace compiler {
             ));
         }
 
-        // Exec
-        Exec(root);
-
-        // Print
         module_->print(file, nullptr);
         file.flush();
     }
+
+    void IRGen::ObjectCodeOutput(const std::string& path) {
+
+        // Configure
+        
+        llvm::InitializeAllTargetInfos();
+        llvm::InitializeAllTargets();
+        llvm::InitializeAllTargetMCs();
+        llvm::InitializeAllAsmPrinters();
+
+        // └─ Target Triple
+        llvm::Triple target_triple(
+            llvm::sys::getDefaultTargetTriple()
+        );
+        
+        // └─ Target
+        std::string target_err = "";
+        auto target = llvm::TargetRegistry::lookupTarget(target_triple, target_err);
+        if (!target) {
+            throw LogErr(LogModule::Compiler, std::format(
+                "failed to lookup target: {}", target_err
+            ));
+        }
+
+        // └─ Target Machine
+        auto cpu            = llvm::sys::getHostCPUName();
+        auto features       = llvm::SubtargetFeatures(); {
+            for (const auto& feature : llvm::sys::getHostCPUFeatures()) {
+                features.AddFeature(feature.first(), feature.second);
+            }
+        }
+        auto target_machine = std::unique_ptr<llvm::TargetMachine>(
+            target->createTargetMachine(
+                target_triple, cpu, features.getString(),
+                llvm::TargetOptions{}, llvm::Reloc::PIC_
+            )
+        );
+
+        // └─ Module Binding
+        module_->setDataLayout(target_machine->createDataLayout());
+        module_->setTargetTriple(target_triple);
+
+        // └─ Open File
+        if (path.empty()) {
+            throw LogErr(LogModule::File, "empty file path");
+        }
+
+        std::error_code ec;
+        llvm::raw_fd_ostream file(path, ec);
+        if (ec) {
+            throw LogErr(LogModule::Compiler, std::format(
+                "failed to open file '{}'", path
+            ));
+        }
+
+        // Execute
+
+        // └─ Pass
+        llvm::legacy::PassManager pass;
+        if (target_machine->addPassesToEmitFile(
+            pass, file, nullptr, llvm::CodeGenFileType::ObjectFile
+        ))
+        {
+            throw LogErr(LogModule::Compiler, "failed to generate object code");
+        }
+
+        pass.run(*module_);
+        file.flush();
+    }
+
+    // Utility
 
     llvm::Type* IRGen::LlvmType(const sema::Type* type) {
         if (type->is("none"))   return llvm::Type::getVoidTy(context_);

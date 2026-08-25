@@ -29,6 +29,8 @@ namespace compiler {
         llvm::Function* current_fn_ = nullptr;
 
     private:
+        // Utility
+
         llvm::Type* LlvmType(const sema::Type* type);
 
         llvm::AllocaInst* EntryBlockSlotCreate(llvm::Type* type, const std::string& name);
@@ -50,9 +52,15 @@ namespace compiler {
         llvm::Value* Exec(Program& node);
 
     public:
-        IRGen(std::string_view module_name, std::string path, AstNode& root);
+        IRGen(std::string_view module_name);
 
+        llvm::Module*      module()  { return module_.get(); }
         llvm::IRBuilder<>& builder() { return builder_; }
+
+        // Workflow
+
+        void IROutput(const std::string& path);
+        void ObjectCodeOutput(const std::string& path);
 
         // Exec
 

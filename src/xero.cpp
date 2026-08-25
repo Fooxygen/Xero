@@ -13,6 +13,8 @@
 #include <fstream>
 #include <filesystem>
 
+#include "llvm/Support/Program.h"
+
 #include "build.hpp"
 #include "common/log.hpp"
 #include "lexer/lexer.hpp"
@@ -20,8 +22,9 @@
 #include "sema/type.hpp"
 #include "sema/method.hpp"
 #include "sema/sema.hpp"
-#include "compiler/irgen/irgen.hpp"
 #include "compiler/irgen/type.hpp"
+#include "compiler/irgen/irgen.hpp"
+#include "compiler/optimizer/optimizer.hpp"
 #include "xengine/type.hpp"
 #include "xengine/method.hpp"
 #include "xengine/xengine.hpp"
@@ -102,22 +105,45 @@ int main(int argc, char* argv[]) {
             
             // Directories
             auto module_name = args.path_.stem().string();
-            auto path_project = std::filesystem::path(std::format(
+            auto path = std::filesystem::path(std::format(
                 "build/{}", module_name
             ));
 
-            auto path_ir = path_project / "ir";
+            auto path_ir  = path / "ir";
+            auto path_obj = path / "obj";
             std::filesystem::create_directories(path_ir);
+            std::filesystem::create_directories(path_obj);
 
             // TypeGen
             compiler::TypeGenTable::Init();
 
-            // IRGen
-            compiler::IRGen irgen(
-                module_name,
-                (path_ir / (module_name + ".ll")).string(),
-                *parser.root()
-            );
+            // IR Gen and Output
+            compiler::IRGen irgen(module_name);
+            irgen.Exec(*parser.root());
+            irgen.IROutput((path_ir / (module_name + ".ll")).string());
+
+            // IR Optimize
+            compiler::Optimizer optimizer;
+            optimizer.Run(*irgen.module(), llvm::OptimizationLevel::O2);
+
+            // Object Code Gen and Output
+            irgen.ObjectCodeOutput((path_obj / (module_name + ".o")).string());
+
+            // Linker
+            auto gpp = llvm::sys::findProgramByName("g++");
+            if (!gpp) {
+                throw LogErr(LogModule::Compiler, "failed to find g++");
+            }
+            
+            auto link_status =  llvm::sys::ExecuteAndWait(*gpp, {
+                *gpp, (path_obj / (module_name + ".o")).string(),
+                "-o", (path / (module_name + ".exe")).string(),
+            });
+            if (link_status != 0) {
+                throw LogErr(LogModule::Compiler, std::format(
+                    "failed to link object file: {}", link_status
+                ));
+            }
         }
 
         // Xengine

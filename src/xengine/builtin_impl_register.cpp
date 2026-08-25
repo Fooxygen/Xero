@@ -17,7 +17,7 @@ namespace xengine {
         
         // IO
         {
-            // print AND println
+            // print and println
             {
                 static const auto impl = [](ARGS args) {
                     for (size_t i = 0; i < args.size(); i++) {
