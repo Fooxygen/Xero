@@ -49,14 +49,20 @@ Xero 是一门静态类型编程语言。你可以在 `example/main.xe` 找到�
 
 ## 架构
 
-| 模块 | 任务 | 实现 | 版本 |
-| - | - | - | - |
-| Lexer | 词法分析 | Xero | |
-| Parser | 语法分析 | Xero | |
-| Sema | 语义分析 | Xero | |
-| Compiler | IR 生成、目标文件链接、可执行文件生成 | Xero | |
-| LLVM | IR 优化、目标文件生成 | LLVM | 22.1.8 |
-| Xengine | 解释器 | Xero | |
+| 模块 | 任务 |
+| - | - |
+| Lexer | 词法分析 |
+| Parser | 语法分析 |
+| Sema | 语义分析 |
+| Xcompiler | 编译器：IR 生成、目标文件链接、可执行文件生成 |
+| Xengine | 解释器：执行 Xero Ast |
+
+<p align="right"><a href="#readme-top">⭱ Back to top</a></p>
+
+## 框架
+| 模块 | 任务 | 版本 |
+| - | - | - |
+| LLVM | IR 优化、目标文件生成 | 22.1.8 |
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 

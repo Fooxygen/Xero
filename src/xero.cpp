@@ -22,9 +22,9 @@
 #include "sema/type.hpp"
 #include "sema/method.hpp"
 #include "sema/sema.hpp"
-#include "compiler/irgen/type.hpp"
-#include "compiler/irgen/irgen.hpp"
-#include "compiler/optimizer/optimizer.hpp"
+#include "xcompiler/irgen/type.hpp"
+#include "xcompiler/irgen/irgen.hpp"
+#include "xcompiler/optimizer/optimizer.hpp"
 #include "xengine/type.hpp"
 #include "xengine/method.hpp"
 #include "xengine/xengine.hpp"
@@ -33,7 +33,7 @@ struct Args {
     std::filesystem::path path_;
     bool isPrintToken_ = false;
     bool isPrintAst_   = false;
-    bool isCompiler    = false;
+    bool isXcompiler    = false;
     bool isXengine     = true;
 };
 
@@ -72,9 +72,9 @@ int main(int argc, char* argv[]) {
             std::string arg = argv[i];
             if      (arg == "--ast"  || arg == "-a")  args.isPrintAst_   = true;
             else if (arg == "--tok"  || arg == "-t")  args.isPrintToken_ = true;
-            else if (arg == "--comp" || arg == "-cp") args.isCompiler    = true;
+            else if (arg == "--comp" || arg == "-cp") args.isXcompiler   = true;
             else if (arg == "--xeng" || arg == "-xe") args.isXengine     = true;
-            else                                      args.path_ = std::filesystem::path(arg);
+            else                                      args.path_         = std::filesystem::path(arg);
         }
 
         // Code
@@ -100,8 +100,8 @@ int main(int argc, char* argv[]) {
         sema::Sema sema;
         sema.Exec(*parser.root());
 
-        // Compiler
-        if (args.isCompiler) {
+        // Xcompiler
+        if (args.isXcompiler) {
             
             // Directories
             auto module_name = args.path_.stem().string();
@@ -115,15 +115,15 @@ int main(int argc, char* argv[]) {
             std::filesystem::create_directories(path_obj);
 
             // TypeGen
-            compiler::TypeGenTable::Init();
+            xcompiler::TypeGenTable::Init();
 
             // IR Gen and Output
-            compiler::IRGen irgen(module_name);
+            xcompiler::IRGen irgen(module_name);
             irgen.Exec(*parser.root());
             irgen.IROutput((path_ir / (module_name + ".ll")).string());
 
             // IR Optimize
-            compiler::Optimizer optimizer;
+            xcompiler::Optimizer optimizer;
             optimizer.Run(*irgen.module(), llvm::OptimizationLevel::O2);
 
             // Object Code Gen and Output
@@ -132,7 +132,7 @@ int main(int argc, char* argv[]) {
             // Linker
             auto gpp = llvm::sys::findProgramByName("g++");
             if (!gpp) {
-                throw LogErr(LogModule::Compiler, "failed to find g++");
+                throw LogErr(LogModule::Xcompiler, "failed to find g++");
             }
             
             auto link_status =  llvm::sys::ExecuteAndWait(*gpp, {
@@ -140,7 +140,7 @@ int main(int argc, char* argv[]) {
                 "-o", (path / (module_name + ".exe")).string(),
             });
             if (link_status != 0) {
-                throw LogErr(LogModule::Compiler, std::format(
+                throw LogErr(LogModule::Xcompiler, std::format(
                     "failed to link object file: {}", link_status
                 ));
             }

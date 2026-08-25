@@ -7,9 +7,9 @@
 #include "llvm/Analysis/LoopAnalysisManager.h"
 #include "llvm/Analysis/CGSCCPassManager.h"
 
-#include "compiler/optimizer/optimizer.hpp"
+#include "xcompiler/optimizer/optimizer.hpp"
 
-namespace compiler {
+namespace xcompiler {
     
     void Optimizer::Run(llvm::Module& module, llvm::OptimizationLevel level) {
 

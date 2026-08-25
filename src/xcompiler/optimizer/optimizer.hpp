@@ -8,7 +8,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Passes/OptimizationLevel.h"
 
-namespace compiler {
+namespace xcompiler {
 
     class Optimizer {
     public:
