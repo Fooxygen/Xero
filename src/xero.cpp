@@ -141,7 +141,7 @@ int main(int argc, char* argv[]) {
             });
             if (link_status != 0) {
                 throw LogErr(LogModule::Xcompiler, std::format(
-                    "failed to link object file: {}", link_status
+                    "failed to link object file"
                 ));
             }
         }

@@ -6,7 +6,7 @@
 
 <div align="center">
 
-  <!--<img src="Logo.png" width=150>-->
+  <img src="brand_xero.png" style="margin=0">
   <h3 align="center">Xero</h3>
   <p align="center">
     静态类型编程语言及其工具链

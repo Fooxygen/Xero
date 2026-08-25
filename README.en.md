@@ -6,10 +6,10 @@ English |
 
 <div align="center">
 
-  <!--<img src="Logo.png" width=150>-->
+  <img src="brand_xero.png" style="margin=0">
   <h3 align="center">Xero</h3>
   <p align="center">
-    A Statically Typed Programming Language & Toolchain
+    Statically typed programming language & toolchain
     <br /><br />
     <a href="https://github.com/Fooxygen/Xero">
       <strong>» Read Wiki</strong>
