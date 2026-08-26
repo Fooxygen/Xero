@@ -54,7 +54,7 @@ namespace xcompiler {
             TypeGenTable::Set(sema::TypeTable::Lookup("i32"), TypeGen{
                 .print_ = [](IRGen& gen, llvm::Value* v) -> llvm::Value* {
                     auto& builder = gen.builder();
-                    auto  str_fmt = builder.CreateGlobalString("%d", ".fmt");
+                    auto  str_fmt = builder.CreateGlobalString("%d", ".fmt.i32");
                     builder.CreateCall(libc_printf(gen), { str_fmt, v });
                     return nullptr;
                 },
@@ -118,7 +118,7 @@ namespace xcompiler {
             TypeGenTable::Set(sema::TypeTable::Lookup("i64"), TypeGen{
                 .print_ = [](IRGen& gen, llvm::Value* v) -> llvm::Value* {
                     auto& builder = gen.builder();
-                    auto  str_fmt = builder.CreateGlobalString("%lld", ".fmt");
+                    auto  str_fmt = builder.CreateGlobalString("%lld", ".fmt.i64");
                     builder.CreateCall(libc_printf(gen), { str_fmt, v });
                     return nullptr;
                 },
@@ -182,7 +182,7 @@ namespace xcompiler {
             TypeGenTable::Set(sema::TypeTable::Lookup("f32"), TypeGen{
                 .print_ = [](IRGen& gen, llvm::Value* v) -> llvm::Value* {
                     auto& builder = gen.builder();
-                    auto  str_fmt = builder.CreateGlobalString("%f", ".fmt");
+                    auto  str_fmt = builder.CreateGlobalString("%f", ".fmt.f64");
                     builder.CreateCall(libc_printf(gen), {
                         str_fmt,
                         builder.CreateFPExt(v, builder.getDoubleTy())
@@ -249,7 +249,7 @@ namespace xcompiler {
             TypeGenTable::Set(sema::TypeTable::Lookup("f64"), TypeGen{
                 .print_ = [](IRGen& gen, llvm::Value* v) -> llvm::Value* {
                     auto& builder = gen.builder();
-                    auto  str_fmt = builder.CreateGlobalString("%f", ".fmt");
+                    auto  str_fmt = builder.CreateGlobalString("%f", ".fmt.f64");
                     builder.CreateCall(libc_printf(gen), { str_fmt, v });
                     return nullptr;
                 },

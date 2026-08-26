@@ -1,7 +1,7 @@
 
 fn main() {
     x: i32  = 3;
-    y: bool = x > 1;
+    y: bool = true;
     z: f64  = 3.14;
     println(x, y, z);
     return 0;

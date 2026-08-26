@@ -28,7 +28,7 @@ namespace sema {
 
     class Type {
     private:
-        const xengine::TypeImpl*     impl_ = nullptr;
+        const xengine::TypeImpl*  impl_ = nullptr;
         const xcompiler::TypeGen* gen_  = nullptr;
     
     public:

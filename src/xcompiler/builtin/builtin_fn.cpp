@@ -45,7 +45,7 @@ namespace xcompiler {
                     if (i != 0) {
                         builder.CreateCall(
                             libc_printf(gen),
-                            { builder.CreateGlobalString(" ", ".sep") }
+                            { builder.CreateGlobalString(" ", ".ws") }
                         );
                     }
                     

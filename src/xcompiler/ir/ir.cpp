@@ -342,6 +342,12 @@ namespace xcompiler {
         std::unreachable();
     }
 
+    llvm::Value* IRGen::Exec(BoolConst& node) {
+        return node.value_
+            ? llvm::ConstantInt::getTrue(context_)
+            : llvm::ConstantInt::getFalse(context_);
+    }
+
     // Stmt
 
     llvm::Value* IRGen::Exec(ExprStmt& node) {
