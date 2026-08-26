@@ -19,8 +19,8 @@ add_executable(xero
     sema/type.cpp
     sema/sema.cpp
     sema/builtin_register.cpp
-    xcompiler/irgen/irgen.cpp
-    xcompiler/irgen/type.cpp
+    xcompiler/ir/ir.cpp
+    xcompiler/ir/type.cpp
     xcompiler/optimizer/optimizer.cpp
     xengine/type.cpp
     xengine/xengine.cpp

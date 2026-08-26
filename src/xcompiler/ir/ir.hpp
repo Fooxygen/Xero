@@ -14,7 +14,7 @@
 
 #include "common/ast.hpp"
 #include "sema/type.hpp"
-#include "xcompiler/irgen/value.hpp"
+#include "xcompiler/ir/value.hpp"
 
 namespace xcompiler {
 

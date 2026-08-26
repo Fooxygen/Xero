@@ -5,8 +5,8 @@
 
 #include <format>
 
-#include "xcompiler/irgen/irgen.hpp"
-#include "xcompiler/irgen/type.hpp"
+#include "xcompiler/ir/ir.hpp"
+#include "xcompiler/ir/type.hpp"
 
 #include "common/log.hpp"
 
