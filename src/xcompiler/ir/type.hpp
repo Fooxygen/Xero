@@ -14,6 +14,9 @@ namespace xcompiler {
     
     class TypeGen {
     public:
+        // Utility
+        llvm::Value* (*print_)  (IRGen&, llvm::Value*)               = nullptr;
+
         // Arith Oper
 
         llvm::Value* (*plus_)   (IRGen&, llvm::Value*, llvm::Value*) = nullptr; // +

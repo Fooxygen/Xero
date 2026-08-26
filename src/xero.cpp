@@ -22,6 +22,7 @@
 #include "sema/type.hpp"
 #include "sema/method.hpp"
 #include "sema/sema.hpp"
+#include "xcompiler/builtin/builtin_fn.hpp"
 #include "xcompiler/ir/type.hpp"
 #include "xcompiler/ir/ir.hpp"
 #include "xcompiler/optimizer/optimizer.hpp"
@@ -95,7 +96,7 @@ int main(int argc, char* argv[]) {
 
         // Sema
         sema::TypeTable::Init();
-        sema::MethodTable::BuiltinRegister();
+        sema::MethodTable::Register();
 
         sema::Sema sema;
         sema.Exec(*parser.root());
@@ -116,6 +117,9 @@ int main(int argc, char* argv[]) {
 
             // TypeGen
             xcompiler::TypeGenTable::Init();
+
+            // Builtin
+            xcompiler::BuiltinFnTable::Register();
 
             // IR Gen and Output
             xcompiler::IRGen irgen(module_name);
@@ -153,7 +157,7 @@ int main(int argc, char* argv[]) {
             xengine::TypeImplTable::Init();
 
             // MethodImplTable
-            xengine::MethodImplTable::BuiltinImplRegister();
+            xengine::MethodImplTable::BuiltinRegister();
 
             // Run
             xengine::Xengine xengine;

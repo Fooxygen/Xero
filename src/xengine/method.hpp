@@ -34,7 +34,7 @@ namespace xengine {
         static inline std::unordered_map<Key, Function, KeyHash> table_;
 
     public:
-        static void BuiltinImplRegister();
+        static void BuiltinRegister();
 
         static void      Set(const sema::Type* type, const std::string& name, Function fn) {
             table_.insert_or_assign(Key{type, name}, std::move(fn));

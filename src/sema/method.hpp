@@ -34,7 +34,7 @@ namespace sema {
         static inline std::unordered_map<Key, FnSymbol, KeyHash> table_;
 
     public:
-        static void BuiltinRegister();
+        static void Register();
 
         static void      Set(const Type* type, FnSymbol fn) {
             table_.insert_or_assign(Key{ type, fn.name_ }, std::move(fn));

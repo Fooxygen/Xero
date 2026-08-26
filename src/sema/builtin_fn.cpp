@@ -8,7 +8,7 @@
 
 namespace sema {
 
-    void Sema::BuiltinFnRegister() {
+    void Sema::BuiltinFnSymbolRegister() {
         // nullptr: any type
         using TS = std::vector<const Type*>;
         
@@ -33,7 +33,7 @@ namespace sema {
         }
     }
 
-    void MethodTable::BuiltinRegister() {
+    void MethodTable::Register() {
         using TS = std::vector<const Type*>;
 
         auto none_        = TypeTable::Lookup("none");

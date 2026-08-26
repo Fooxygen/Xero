@@ -15,8 +15,9 @@
 
 #include "common/log.hpp"
 #include "common/opertype.hpp"
-#include "xcompiler/ir/ir.hpp"
+#include "xcompiler/builtin/builtin_fn.hpp"
 #include "xcompiler/ir/type.hpp"
+#include "xcompiler/ir/ir.hpp"
 
 namespace xcompiler {
 
@@ -232,6 +233,39 @@ namespace xcompiler {
                 case Neq:   return gen->neq_  (*this, lval, rval);
                 default:    return nullptr;
             }
+        }
+    }
+    
+    llvm::Value* IRGen::Exec(FnCallExpr& node) {
+        auto name = node.callee_->value_;
+
+        // Builtin Fn
+        // Stored in BuiltinFnTable
+        // Execute the predefined code
+        {
+            if (auto fn = BuiltinFnTable::Lookup(name)) {
+                return (*fn)(*this, node);
+            }
+        }
+
+        // Custom Fn
+        // Stored in LLVM Module
+        // Generate 'Call' Instruction in IR
+        {
+            auto fn = module_->getFunction(name);
+            if (!fn) {
+                throw LogErr(LogModule::Xcompiler, std::format(
+                    "undefined function '{}'", name
+                ), node.loc_);
+            }
+
+            // Args
+            std::vector<llvm::Value*> args = {};
+            if (node.args_) {
+                for (auto& e : node.args_->exprs_) args.emplace_back(Exec(*e));
+            }
+
+            return builder_.CreateCall(fn, args);
         }
     }
     

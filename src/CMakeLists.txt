@@ -18,13 +18,14 @@ add_executable(xero
     parser/rule.cpp
     sema/type.cpp
     sema/sema.cpp
-    sema/builtin_register.cpp
+    sema/builtin_fn.cpp
+    xcompiler/builtin/builtin_fn.cpp
     xcompiler/ir/ir.cpp
     xcompiler/ir/type.cpp
     xcompiler/optimizer/optimizer.cpp
     xengine/type.cpp
     xengine/xengine.cpp
-    xengine/builtin_impl_register.cpp
+    xengine/builtin_fn.cpp
     xengine/obj/impl/range.cpp
     xengine/obj/impl/array.cpp
     xengine/obj/impl/string.cpp

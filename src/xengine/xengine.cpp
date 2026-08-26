@@ -517,7 +517,7 @@ namespace xengine {
     Obj Xengine::Exec(Program& node) {
         try {
             Exec((BlockExpr&)node, [&]() {
-                BuiltinFnImplRegister();
+                BuiltinFnRegister();
             });
         }
         catch (LoopSignal e) {

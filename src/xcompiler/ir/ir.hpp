@@ -41,6 +41,7 @@ namespace xcompiler {
         llvm::Value* Exec(IdExpr& node);
         llvm::Value* Exec(DeclExpr& node);
         llvm::Value* Exec(OperExpr& node);
+        llvm::Value* Exec(FnCallExpr& node);
         llvm::Value* Exec(FnExpr& node);
 
         llvm::Value* Exec(NumConst& node);
@@ -70,6 +71,7 @@ namespace xcompiler {
                 case AstType::IdExpr:           return Exec((IdExpr&)node);
                 case AstType::DeclExpr:         return Exec((DeclExpr&)node);
                 case AstType::OperExpr:         return Exec((OperExpr&)node);
+                case AstType::FnCallExpr:       return Exec((FnCallExpr&)node);
                 case AstType::FnExpr:           return Exec((FnExpr&)node);
                 
                 case AstType::NumConst:         return Exec((NumConst&)node);

@@ -12,7 +12,7 @@
 
 namespace xengine {
 
-    void Xengine::BuiltinFnImplRegister() {
+    void Xengine::BuiltinFnRegister() {
         using ARGS = std::vector<Obj>&;
         
         // IO
@@ -50,7 +50,7 @@ namespace xengine {
         }
     }
 
-    void MethodImplTable::BuiltinImplRegister() {
+    void MethodImplTable::BuiltinRegister() {
         using ARGS = std::vector<Obj>&;
         
         // string

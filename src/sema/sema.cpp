@@ -503,7 +503,7 @@ namespace sema {
         node.resolved_type_ = TypeTable::Lookup("none");
 
         Exec((BlockExpr&)node, [&]() {
-            BuiltinFnRegister();        // Global Builtin Functions
+            BuiltinFnSymbolRegister();      // Global Builtin Functions
         });
     }
 }

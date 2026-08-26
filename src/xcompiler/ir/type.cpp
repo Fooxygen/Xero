@@ -5,6 +5,7 @@
 
 #include <format>
 
+#include "xcompiler/builtin/builtin_fn.hpp"
 #include "xcompiler/ir/ir.hpp"
 #include "xcompiler/ir/type.hpp"
 
@@ -23,25 +24,40 @@ namespace xcompiler {
 
             // bool
             TypeGenTable::Set(sema::TypeTable::Lookup("bool"), TypeGen{
-                .eq_  = [](IRGen& gen, llvm::Value* l, llvm::Value* r) {
+                .print_ = [](IRGen& gen, llvm::Value* v) -> llvm::Value* {
+                    auto& builder   = gen.builder();
+                    auto  str_fmt   = builder.CreateGlobalString("%s", ".fmt");
+                    auto  str_true  = builder.CreateGlobalString("true", ".true");
+                    auto  str_false = builder.CreateGlobalString("false", ".false");
+                    auto  str       = builder.CreateSelect(v, str_true, str_false);
+                    builder.CreateCall(libc_printf(gen), { str_fmt, str });
+                    return nullptr;
+                },
+                .eq_    = [](IRGen& gen, llvm::Value* l, llvm::Value* r) {
                     return gen.builder().CreateICmpEQ(l, r);
                 },
-                .neq_ = [](IRGen& gen, llvm::Value* l, llvm::Value* r) {
+                .neq_   = [](IRGen& gen, llvm::Value* l, llvm::Value* r) {
                     return gen.builder().CreateICmpNE(l, r);
                 },
-                .and_ = [](IRGen& gen, llvm::Value* l, llvm::Value* r) {
+                .and_   = [](IRGen& gen, llvm::Value* l, llvm::Value* r) {
                     return gen.builder().CreateAnd(l, r);
                 },
-                .or_  = [](IRGen& gen, llvm::Value* l, llvm::Value* r) {
+                .or_    = [](IRGen& gen, llvm::Value* l, llvm::Value* r) {
                     return gen.builder().CreateOr(l, r);
                 },
-                .not_ = [](IRGen& gen, llvm::Value* v) {
+                .not_   = [](IRGen& gen, llvm::Value* v) {
                     return gen.builder().CreateNot(v);
                 },
             });
 
             // i32
             TypeGenTable::Set(sema::TypeTable::Lookup("i32"), TypeGen{
+                .print_ = [](IRGen& gen, llvm::Value* v) -> llvm::Value* {
+                    auto& builder = gen.builder();
+                    auto  str_fmt = builder.CreateGlobalString("%d", ".fmt");
+                    builder.CreateCall(libc_printf(gen), { str_fmt, v });
+                    return nullptr;
+                },
                 .plus_  = [](IRGen& gen, llvm::Value* l, llvm::Value* r) {
                     return gen.builder().CreateAdd(l, r);
                 },
@@ -100,6 +116,12 @@ namespace xcompiler {
 
             // i64
             TypeGenTable::Set(sema::TypeTable::Lookup("i64"), TypeGen{
+                .print_ = [](IRGen& gen, llvm::Value* v) -> llvm::Value* {
+                    auto& builder = gen.builder();
+                    auto  str_fmt = builder.CreateGlobalString("%lld", ".fmt");
+                    builder.CreateCall(libc_printf(gen), { str_fmt, v });
+                    return nullptr;
+                },
                 .plus_  = [](IRGen& gen, llvm::Value* l, llvm::Value* r) {
                     return gen.builder().CreateAdd(l, r);
                 },
@@ -158,6 +180,15 @@ namespace xcompiler {
 
             // f32
             TypeGenTable::Set(sema::TypeTable::Lookup("f32"), TypeGen{
+                .print_ = [](IRGen& gen, llvm::Value* v) -> llvm::Value* {
+                    auto& builder = gen.builder();
+                    auto  str_fmt = builder.CreateGlobalString("%f", ".fmt");
+                    builder.CreateCall(libc_printf(gen), {
+                        str_fmt,
+                        builder.CreateFPExt(v, builder.getDoubleTy())
+                    });
+                    return nullptr;
+                },
                 .plus_  = [](IRGen& gen, llvm::Value* l, llvm::Value* r) {
                     return gen.builder().CreateFAdd(l, r);
                 },
@@ -216,6 +247,12 @@ namespace xcompiler {
 
             // f64
             TypeGenTable::Set(sema::TypeTable::Lookup("f64"), TypeGen{
+                .print_ = [](IRGen& gen, llvm::Value* v) -> llvm::Value* {
+                    auto& builder = gen.builder();
+                    auto  str_fmt = builder.CreateGlobalString("%f", ".fmt");
+                    builder.CreateCall(libc_printf(gen), { str_fmt, v });
+                    return nullptr;
+                },
                 .plus_  = [](IRGen& gen, llvm::Value* l, llvm::Value* r) {
                     return gen.builder().CreateFAdd(l, r);
                 },

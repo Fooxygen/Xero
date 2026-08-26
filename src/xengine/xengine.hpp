@@ -65,7 +65,7 @@ namespace xengine {
       
         // Fn
 
-        void BuiltinFnImplRegister();
+        void BuiltinFnRegister();
 
         // Exec
         // Calculate the final obj
