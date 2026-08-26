@@ -58,7 +58,7 @@ You can find more information about Xero on the [Wiki](https://github.com/Fooxyg
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
-## Framwrowk
+## Framework
 
 | Module | Task | Version |
 | - | - | - |
