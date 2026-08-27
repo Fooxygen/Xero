@@ -51,11 +51,7 @@ namespace sema {
 
         // Fn
 
-        void BuiltinFnSymbolRegister();
-
-        void        FnCallCheck(const FnSymbol& fn, const std::vector<const Type*>& args, Loc loc);
-        std::string FnParamsPrint(const std::vector<const Type*>& params);
-        std::string FnParamsPrint(const FnSymbol& fn);
+        void BuiltinFnRegister();
 
         // Exec
 

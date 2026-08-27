@@ -6,7 +6,7 @@
 #include "llvm/IR/Function.h"
 
 #include "sema/type.hpp"
-#include "xcompiler/builtin/builtin_fn.hpp"
+#include "xcompiler/builtin/builtin.hpp"
 #include "xcompiler/ir/type.hpp"
 #include "xcompiler/ir/ir.hpp"
 
@@ -14,7 +14,7 @@ namespace xcompiler {
     
     // LibC
     
-    llvm::Function* libc_printf(IRGen& gen) {
+    llvm::Function* LibC_printf(IRGen& gen) {
         auto module = gen.module();
         if (auto fn = module->getFunction("printf")) return fn;
 
@@ -40,19 +40,24 @@ namespace xcompiler {
         {
             static auto impl = [](IRGen& gen, FnCallExpr& node) {
                 auto& builder = gen.builder();
-                auto& exprs  = node.args_->exprs_;
+                auto& exprs   = node.args_->exprs_;
+
                 for (size_t i = 0; i < exprs.size(); i++) {
+
+                    // Delimiter
                     if (i != 0) {
                         builder.CreateCall(
-                            libc_printf(gen),
-                            { builder.CreateGlobalString(" ", ".ws") }
+                            LibC_printf(gen),
+                            { builder.CreateGlobalString(" ", ".delim") }
                         );
                     }
                     
-                    auto& expr     = exprs[i];
-                    auto  arg_type = expr->resolved_type_;
-                    auto  arg      = gen.Exec(*expr);
-                    arg_type->gen()->print_(gen, arg);
+                    auto& expr        = exprs[i];
+                    auto  val         = gen.Exec(*expr);
+                    auto  type        = expr->resolved_type_;
+                    auto  type_impl   = TypeImplTable::Lookup(type);
+                    auto  type_method = type_impl->MethodGet("print");
+                    ((NativeMethodImpl*)(type_method->at(0).get()))->fn_(gen, { val });
                 }
             };
 
@@ -65,7 +70,7 @@ namespace xcompiler {
 
                 auto& builder = gen.builder();
                 builder.CreateCall(
-                    libc_printf(gen),
+                    LibC_printf(gen),
                     { builder.CreateGlobalString("\n", ".nl") }
                 );
 

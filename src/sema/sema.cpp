@@ -5,64 +5,8 @@
 
 #include "sema/sema.hpp"
 #include "sema/type.hpp"
-#include "sema/method.hpp"
 
 namespace sema {
-
-    // Fn
-
-    void Sema::FnCallCheck(const FnSymbol& fn, const std::vector<const Type*>& args_type, Loc loc) {
-        auto& params_fix = fn.params_fix_;
-        auto& param_inf  = fn.param_inf_;
-        
-        try {
-            // Fixed
-            if (args_type.size() < params_fix.size()) throw 0;
-            for (size_t i = 0; i < params_fix.size(); i++) {
-                if (params_fix[i] && !args_type[i]->converts_.contains(params_fix[i])) throw 0;
-            }
-
-            // Infinite
-            if (param_inf) {
-                for (size_t i = params_fix.size(); i < args_type.size(); i++) {
-                    if (*param_inf && !args_type[i]->converts_.contains(*param_inf)) throw 0;
-                }
-            }
-            else {
-                if (args_type.size() > params_fix.size()) throw 0;
-            }
-        }
-        catch (...) {
-            throw LogErr(LogModule::Sema, std::format(
-                "function '{}' expects {} type parameter(s), got {}",
-                fn.name_, FnParamsPrint(fn), FnParamsPrint(args_type)
-            ), loc);
-        }
-    }
-
-    std::string Sema::FnParamsPrint(const std::vector<const Type*>& params_type) {
-        if (params_type.empty()) return "(empty)";
-        return JoinWithBoundary(params_type, [](const Type* type) {
-            return type->name_;
-        });
-    }
-
-    std::string Sema::FnParamsPrint(const FnSymbol& fn) {
-        std::string res = "(";
-
-        for (size_t i = 0; i < fn.params_fix_.size(); i++) {
-            if (i != 0) res += ", ";
-            res += fn.params_fix_[i] ? fn.params_fix_[i]->name_ : "any";
-        }
-
-        if (!fn.params_fix_.empty() && fn.param_inf_) res += ", ";
-        if (fn.param_inf_) {
-            res += *fn.param_inf_ ? (*fn.param_inf_)->name_ : "any";
-            res += "...";
-        }
-
-        return res.empty() ? "empty)" : res + ')';
-    }
 
     // Expr
 
@@ -86,13 +30,13 @@ namespace sema {
     void Sema::Exec(IdExpr& node) {
 
         // Resolved Type
-        auto sym = symbol_table_.Lookup(node.value_, node.loc_);
+        auto sym = symbol_table_.Lookup(node.name_, node.loc_);
         if (sym->type_ == SymbolType::Var) {
-            node.resolved_type_ = ((VarSymbol*)sym)->var_type_;
+            node.resolved_type_ = ((VarSymbol*)sym)->ret_type_;
             return;
         }
         if (sym->type_ == SymbolType::Fn) {
-            node.resolved_type_ = ((FnSymbol*)sym)->ret_type_;
+            node.resolved_type_ = ((FnSymbol*)sym)->sign_->ret_type_;
             return;
         }
 
@@ -102,7 +46,7 @@ namespace sema {
     }
 
     void Sema::Exec(TypeExpr& node) {
-        auto base = TypeTable::Lookup(node.base_);
+        auto base = TypeTable::Lookup(node.base_type_);
 
         // base
         if (!node.params_) {
@@ -118,7 +62,7 @@ namespace sema {
                     params_type.emplace_back(e->resolved_type_);
                 }
                 else if (e->type_ == AstType::IdExpr) {
-                    params_type.emplace_back(TypeTable::Lookup(((IdExpr&)*e).value_));
+                    params_type.emplace_back(TypeTable::Lookup(((IdExpr&)*e).name_));
                 }
                 else {
                     throw LogErr(LogModule::Sema, std::format(
@@ -130,7 +74,7 @@ namespace sema {
             if (params_type.empty())
                 node.resolved_type_ = base;
             else
-                node.resolved_type_ = TypeTable::SetOrGetTypeParam(base, params_type);
+                node.resolved_type_ = TypeTable::ParamTypeGet(base, params_type);
         }
     }
 
@@ -223,13 +167,13 @@ namespace sema {
         }
 
         node.iter_type_ = boundary_type;
-        node.resolved_type_ = TypeTable::SetOrGetTypeParam(
+        node.resolved_type_ = TypeTable::ParamTypeGet(
             TypeTable::Lookup("range"), { node.iter_type_ }, node.loc_
         );
     }
 
     void Sema::Exec(ArrayExpr& node) {
-        auto& exprs = node.elements_->exprs_;
+        auto& exprs = node.elems_->exprs_;
         for (auto& e : exprs) Exec(*e);
         if (exprs.empty())
             node.elem_type_ = nullptr;
@@ -240,7 +184,7 @@ namespace sema {
         std::vector<const sema::Type*> params = {};
         if (node.elem_type_) params.emplace_back(node.elem_type_);
 
-        node.resolved_type_ = TypeTable::SetOrGetTypeParam(
+        node.resolved_type_ = TypeTable::ParamTypeGet(
             TypeTable::Lookup("array"), params
         );
     }
@@ -255,7 +199,8 @@ namespace sema {
         }
 
         // Callee
-        auto sym = symbol_table_.Lookup(node.callee_->value_, node.loc_);
+        auto callee = node.callee_->name_;
+        auto sym    = symbol_table_.Lookup(callee, node.loc_);
 
         // Stored in Variable
         if (sym->type_ == SymbolType::Var) {
@@ -263,32 +208,57 @@ namespace sema {
         }
 
         else {
-            auto fnsym = (const FnSymbol*)sym;
-            FnCallCheck(*fnsym, args_type, node.loc_);
-            node.resolved_type_ = fnsym->ret_type_;
+            auto& fnsign = ((const FnSymbol*)sym)->sign_;
+            if(!fnsign->CallCheck(args_type)) {
+                throw LogErr(LogModule::Sema, std::format(
+                    "function '{}' expects {} type parameter(s), got {}",
+                    callee,
+                    fnsign->ParamsPrint(),
+                    FnSign(nullptr, args_type, std::nullopt).ParamsPrint()
+                ), node.loc_);
+            }
+            node.resolved_type_ = fnsign->ret_type_;
         }
     }
 
     void Sema::Exec(MethodCallExpr& node) {
+        
+        // Target
         Exec(*node.target_);
         auto target_type = node.target_->resolved_type_;
 
+        // Args Type
         std::vector<const Type*> args_type = {};
         for (auto& e : node.args_->exprs_) {
             Exec(*e);
             args_type.emplace_back(e->resolved_type_);
         }
 
-        auto fn = MethodTable::Lookup(target_type->base(), node.callee_->value_);
-        if (!fn) {
+        // Callee
+        auto  callee  = node.callee_->name_;
+        auto& methods = ((const BasicType*)target_type->BasicTypeGet())->methods_;
+        auto  method  = methods.find(callee);
+        if (method == methods.end()) {
             throw LogErr(LogModule::Sema, std::format(
                 "undefined method '{}' on type '{}'",
-                node.callee_->value_, target_type->name_
+                callee, target_type->name_
             ), node.loc_);
         }
-
-        FnCallCheck(*fn, args_type, node.loc_);
-        node.resolved_type_ = fn->ret_type_;
+        
+        // Overload Selection
+        bool isOverloadFind = false;
+        for (auto& fnsign : method->second.fnsigns_) {
+            if (fnsign->CallCheck(args_type)) {
+                isOverloadFind = true;
+                node.resolved_type_ = fnsign->ret_type_;
+            }
+        }
+        if (!isOverloadFind) {
+            throw LogErr(LogModule::Sema, std::format(
+                "undefined overload of method '{}' on type '{}'",
+                callee, target_type->name_
+            ), node.loc_);
+        }
     }
 
     void Sema::Exec(FnExpr& node) {
@@ -313,13 +283,15 @@ namespace sema {
             params_type.emplace_back(expr->resolved_type_);
         }
 
-        // Symbol
+        // FnSymbol
         if (!node.name_.empty()) {
             symbol_table_.Declare(std::make_unique<FnSymbol>(
                 node.name_, node.loc_,
-                node.ret_resolved_type_, params_type
+                FnSign(node.ret_resolved_type_, params_type)
             ));
         }
+        
+        // VarSymbol for Args
         if (node.block_) {
             Exec(*node.block_, [&]() {
                 for (size_t i = 0; i < params_expr.size(); i++) {
@@ -460,24 +432,24 @@ namespace sema {
         const sema::Type* iter_type = nullptr;
         
         if (data_type->is("array")) {
-            auto params_type = data_type->params();
-            if (params_type && !params_type->empty()) {
-                iter_type = (*params_type)[0];
+            if (data_type->type_using_ == Type::Using::Param) {
+                auto params_type = ((ParametricType*)data_type)->params_type();
+                if (!params_type.empty()) iter_type = params_type[0];
             }
         }
         if (data_type->is("string") || data_type->is("stringview")) {
             iter_type = TypeTable::Lookup("char");
         }
         if (data_type->is("range")) {
-            auto params_type = data_type->params();
-            if (params_type && !params_type->empty()) {
-                iter_type = (*params_type)[0];
+            if (data_type->type_using_ == Type::Using::Param) {
+                auto params_type = ((ParametricType*)data_type)->params_type();
+                if (!params_type.empty()) iter_type = params_type[0];
             }
         }
 
         Exec(*node.block_, [&]() {
             symbol_table_.Declare(std::make_unique<VarSymbol>(
-                node.iter_->value_, node.iter_->loc_, iter_type)
+                node.iter_->name_, node.iter_->loc_, iter_type)
             );
         });
     }
@@ -503,7 +475,7 @@ namespace sema {
         node.resolved_type_ = TypeTable::Lookup("none");
 
         Exec((BlockExpr&)node, [&]() {
-            BuiltinFnSymbolRegister();      // Global Builtin Functions
+            BuiltinFnRegister();        // Global Builtin Functions
         });
     }
 }

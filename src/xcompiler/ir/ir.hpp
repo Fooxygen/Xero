@@ -14,7 +14,7 @@
 
 #include "common/ast.hpp"
 #include "sema/type.hpp"
-#include "xcompiler/ir/value.hpp"
+#include "xcompiler/ir/var.hpp"
 
 namespace xcompiler {
 
@@ -23,7 +23,7 @@ namespace xcompiler {
         llvm::LLVMContext             context_;
         std::unique_ptr<llvm::Module> module_;
         llvm::IRBuilder<>             builder_;
-        ValueTable                    value_table_;
+        VarTable                      var_table_;
 
         // Cache
         llvm::Function* current_fn_ = nullptr;
@@ -59,7 +59,7 @@ namespace xcompiler {
         llvm::Module*      module()  { return module_.get(); }
         llvm::IRBuilder<>& builder() { return builder_; }
 
-        // Workflow
+        // Output
 
         void IROutput(const std::string& path);
         void ObjectCodeOutput(const std::string& path);

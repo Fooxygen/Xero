@@ -15,7 +15,7 @@
 
 #include "common/log.hpp"
 #include "common/opertype.hpp"
-#include "xcompiler/builtin/builtin_fn.hpp"
+#include "xcompiler/builtin/builtin.hpp"
 #include "xcompiler/ir/type.hpp"
 #include "xcompiler/ir/ir.hpp"
 
@@ -27,7 +27,7 @@ namespace xcompiler {
         builder_(context_)
     {}
 
-    // Workflow
+    // Output
 
     void IRGen::IROutput(const std::string& path) {
 
@@ -143,56 +143,63 @@ namespace xcompiler {
     // Expr
 
     llvm::Value* IRGen::Exec(BlockExpr& node, std::function<void()> OnScopeReady) {
-        value_table_.ScopePush();
+        var_table_.ScopePush();
         if (OnScopeReady) OnScopeReady();
 
         try {
             for (auto& child : node.children_) Exec(*child);
         }
         catch (...) {
-            value_table_.ScopePop();
+            var_table_.ScopePop();
             throw;
         }
 
-        value_table_.ScopePop();
+        var_table_.ScopePop();
         return nullptr;
     }
     
     llvm::Value* IRGen::Exec(IdExpr& node) {
-        auto slot = value_table_.Lookup(node.value_);
+        auto var  = var_table_.Lookup(node.name_);
         auto type = LlvmType(node.resolved_type_);
-        return builder_.CreateLoad(type, slot, node.value_);
+        return builder_.CreateLoad(type, var, node.name_);
     }
 
     llvm::Value* IRGen::Exec(DeclExpr& node) {
 
-        // Slot
+        // Variable
         auto var_type = node.resolved_type_;
-        auto slot     = EntryBlockSlotCreate(LlvmType(var_type), node.id_);
+        auto var_slot = EntryBlockSlotCreate(LlvmType(var_type), node.id_);
 
         // Value
         if (node.value_) {
-            auto val = Exec(*node.value_);
+            auto val      = Exec(*node.value_);
             auto val_type = node.value_->resolved_type_;
             builder_.CreateStore(
-                TypeGenTable::Cast(*this, val, val_type, var_type),
-                slot
+                TypeImplTable::Cast(*this, val, val_type, var_type),
+                var_slot
             );
         }
         
-        value_table_.Declare(node.id_, slot);
+        var_table_.Declare(node.id_, var_slot);
         return nullptr;
     }
 
     llvm::Value* IRGen::Exec(OperExpr& node) {
         using enum OperType;
 
+        auto call = [](IRGen& gen, const sema::Type* type, const std::string& name, std::vector<llvm::Value*> args) {
+            auto impl   = TypeImplTable::Lookup(type);
+            auto method = impl->TryMethodGet(name);
+
+            return ((NativeMethodImpl*)(method->at(0).get()))->fn_(gen, args);
+        };
+
         // Unary
         auto lval = Exec(*node.lexpr_);
         {
             switch (node.oper_type_) {
-                case Neg:   return node.lexpr_->resolved_type_->gen()->neg_(*this, lval);
-                case Not:   return node.lexpr_->resolved_type_->gen()->not_(*this, lval);
+                case Neg:   return call(*this, node.lexpr_->resolved_type_, "neg", { lval });
+                case Not:   return call(*this, node.lexpr_->resolved_type_, "not", { lval });
                 default:    break;
             }
         }
@@ -213,37 +220,36 @@ namespace xcompiler {
                     ltype->name_, rtype->name_
                 ), node.loc_);
             }
-            auto gen = common_type->gen();
 
-            lval = TypeGenTable::Cast(*this, lval, ltype, common_type);
-            rval = TypeGenTable::Cast(*this, rval, rtype, common_type);
+            lval = TypeImplTable::Cast(*this, lval, ltype, common_type);
+            rval = TypeImplTable::Cast(*this, rval, rtype, common_type);
 
             switch (node.oper_type_) {
-                case Plus:  return gen->plus_ (*this, lval, rval);
-                case Minus: return gen->minus_(*this, lval, rval);
-                case Star:  return gen->star_ (*this, lval, rval);
-                case Slash: return gen->slash_(*this, lval, rval);
-                case ModT:  return gen->modt_ (*this, lval, rval);
-                case ModF:  return gen->modf_ (*this, lval, rval);
-                case Gt:    return gen->gt_   (*this, lval, rval);
-                case Lt:    return gen->lt_   (*this, lval, rval);
-                case Ge:    return gen->ge_   (*this, lval, rval);
-                case Le:    return gen->le_   (*this, lval, rval);
-                case Eq:    return gen->eq_   (*this, lval, rval);
-                case Neq:   return gen->neq_  (*this, lval, rval);
+                case Plus:  return call(*this, common_type, "plus",  { lval, rval });
+                case Minus: return call(*this, common_type, "minus", { lval, rval });
+                case Star:  return call(*this, common_type, "star",  { lval, rval });
+                case Slash: return call(*this, common_type, "slash", { lval, rval });
+                case ModT:  return call(*this, common_type, "modt",  { lval, rval });
+                case ModF:  return call(*this, common_type, "modf",  { lval, rval });
+                case Gt:    return call(*this, common_type, "gt",    { lval, rval });
+                case Lt:    return call(*this, common_type, "lt",    { lval, rval });
+                case Ge:    return call(*this, common_type, "ge",    { lval, rval });
+                case Le:    return call(*this, common_type, "le",    { lval, rval });
+                case Eq:    return call(*this, common_type, "eq",    { lval, rval });
+                case Neq:   return call(*this, common_type, "neq",   { lval, rval });
                 default:    return nullptr;
             }
         }
     }
     
     llvm::Value* IRGen::Exec(FnCallExpr& node) {
-        auto name = node.callee_->value_;
+        auto callee = node.callee_->name_;
 
         // Builtin Fn
         // Stored in BuiltinFnTable
         // Execute the predefined code
         {
-            if (auto fn = BuiltinFnTable::Lookup(name)) {
+            if (auto fn = BuiltinFnTable::LookupTry(callee)) {
                 return (*fn)(*this, node);
             }
         }
@@ -252,10 +258,10 @@ namespace xcompiler {
         // Stored in LLVM Module
         // Generate 'Call' Instruction in IR
         {
-            auto fn = module_->getFunction(name);
+            auto fn = module_->getFunction(callee);
             if (!fn) {
                 throw LogErr(LogModule::Xcompiler, std::format(
-                    "undefined function '{}'", name
+                    "undefined function '{}'", callee
                 ), node.loc_);
             }
 
@@ -312,11 +318,12 @@ namespace xcompiler {
 
         // Block
         Exec(*node.block_, [&]() {
+            // Args
             for (auto& arg : fn->args()) {
-                auto name = arg.getName().str();
-                auto slot = EntryBlockSlotCreate(arg.getType(), name);
-                builder_.CreateStore(&arg, slot);
-                value_table_.Declare(name, slot);
+                auto var_name = arg.getName().str();
+                auto var_slot = EntryBlockSlotCreate(arg.getType(), var_name);
+                builder_.CreateStore(&arg, var_slot);
+                var_table_.Declare(var_name, var_slot);
             }
         });
 
@@ -356,15 +363,15 @@ namespace xcompiler {
     }
 
     llvm::Value* IRGen::Exec(AssignStmt& node) {
-        auto var      = (IdExpr*)(node.target_.get());
-        auto var_type = var->resolved_type_;
-        auto slot     = value_table_.Lookup(var->value_);
+        auto target   = (IdExpr*)(node.target_.get());
+        auto var      = var_table_.Lookup(target->name_);
+        auto var_type = target->resolved_type_;
         auto val      = Exec(*node.value_);
         auto val_type = node.value_->resolved_type_;
 
         builder_.CreateStore(
-            TypeGenTable::Cast(*this, val, val_type, var_type),
-            slot
+            TypeImplTable::Cast(*this, val, val_type, var_type),
+            var
         );
         return nullptr;
     }

@@ -6,28 +6,28 @@
             "type": "shell",
             "command": "${workspaceFolder}/build-debug/bin/xero.exe",
             "options": { "cwd": "${workspaceFolder}/build-debug/bin" },
-            "args": ["${workspaceFolder}/example/main.xe", "-cp"]
+            "args": ["${workspaceFolder}/example/main.xe"]
         },
         {
             "label": "Debug Xero with options",
             "type": "shell",
             "command": "${workspaceFolder}/build-debug/bin/xero.exe",
             "options": { "cwd": "${workspaceFolder}/build-debug/bin" },
-            "args": ["${workspaceFolder}/example/main.xe", "--ast", "--tok", "-cp"]
+            "args": ["${workspaceFolder}/example/main.xe", "--ast", "--tok"]
         },
         {
             "label": "Run Xero",
             "type": "shell",
             "command": "${workspaceFolder}/build-release/bin/xero.exe",
             "options": { "cwd": "${workspaceFolder}/build-release/bin" },
-            "args": ["${workspaceFolder}/example/main.xe", "-cp"]
+            "args": ["${workspaceFolder}/example/main.xe"]
         },
         {
             "label": "Run Xero with options",
             "type": "shell",
             "command": "${workspaceFolder}/build-release/bin/xero.exe",
             "options": { "cwd": "${workspaceFolder}/build-release/bin" },
-            "args": ["${workspaceFolder}/example/main.xe", "--ast", "--tok", "-cp"]
+            "args": ["${workspaceFolder}/example/main.xe", "--ast", "--tok"]
         }
     ]
 }

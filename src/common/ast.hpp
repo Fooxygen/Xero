@@ -214,9 +214,9 @@ public:
 };
 class IdExpr            : public Expr {
 public:
-    std::string value_ = "";
+    std::string name_ = "";
 
-    IdExpr(const std::string& value) : value_(value) {
+    IdExpr(const std::string& name) : name_(name) {
         type_ = AstType::IdExpr;
     }
 
@@ -225,12 +225,12 @@ public:
     }
 
     void PrintImpl(std::string prefix) override {
-        PrintLabel("value", prefix);
-        std::cerr << COLOR_BLUE << value_ << COLOR_DEFAULT << std::endl;
+        PrintLabel("name", prefix);
+        std::cerr << COLOR_BLUE << name_ << COLOR_DEFAULT << std::endl;
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        auto node = std::make_unique<IdExpr>(value_);
+        auto node = std::make_unique<IdExpr>(name_);
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
@@ -238,14 +238,14 @@ public:
 };
 class TypeExpr          : public Expr {
 public:
-    std::string            base_   = "";
-    std::unique_ptr<Exprs> params_ = nullptr;
+    std::string            base_type_ = "";
+    std::unique_ptr<Exprs> params_    = nullptr;
 
     TypeExpr(
-        const std::string& base,
+        const std::string& base_type,
         std::unique_ptr<Exprs> params
     )
-    :   base_(base),
+    :   base_type_(base_type),
         params_(std::move(params))
     {
         type_ = AstType::TypeExpr;
@@ -256,14 +256,14 @@ public:
     }
 
     void PrintImpl(std::string prefix) override {
-        PrintLabel("base", prefix);
-        std::cerr << COLOR_BLUE << base_ << COLOR_DEFAULT << std::endl;
+        PrintLabel("base_type", prefix);
+        std::cerr << COLOR_BLUE << base_type_ << COLOR_DEFAULT << std::endl;
         if (params_) params_->Print(prefix, "params");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<TypeExpr>(
-            base_,
+            base_type_,
             params_ ? std::unique_ptr<Exprs>((Exprs*)(params_->Clone().release())) : nullptr
         );
         node->resolved_type_ = resolved_type_;
@@ -407,12 +407,12 @@ public:
 };
 class ArrayExpr         : public Expr {
 public:
-    std::unique_ptr<Exprs> elements_;
+    std::unique_ptr<Exprs> elems_;
 
     const sema::Type* elem_type_ = nullptr;
 
-    ArrayExpr(std::unique_ptr<Exprs> elements)
-    :   elements_(std::move(elements))
+    ArrayExpr(std::unique_ptr<Exprs> elems)
+    :   elems_(std::move(elems))
     {
         type_ = AstType::ArrayExpr;
     }
@@ -422,12 +422,12 @@ public:
     }
 
     void PrintImpl(std::string prefix) override {
-        elements_->Print(prefix, "elements");
+        elems_->Print(prefix, "elems");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<ArrayExpr>(
-            std::unique_ptr<Exprs>((Exprs*)(elements_->Clone().release()))
+            std::unique_ptr<Exprs>((Exprs*)(elems_->Clone().release()))
         );
         node->elem_type_ = elem_type_;
         node->resolved_type_ = resolved_type_;
@@ -461,7 +461,7 @@ public:
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<FnCallExpr>(
-            std::make_unique<IdExpr>(callee_->value_),
+            std::make_unique<IdExpr>(callee_->name_),
             std::unique_ptr<Exprs>((Exprs*)(args_->Clone().release()))
         );
         node->resolved_type_ = resolved_type_;
@@ -500,7 +500,7 @@ public:
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<MethodCallExpr>(
             std::unique_ptr<Expr>((Expr*)(target_->Clone().release())),
-            std::make_unique<IdExpr>(callee_->value_),
+            std::make_unique<IdExpr>(callee_->name_),
             std::unique_ptr<Exprs>((Exprs*)(args_->Clone().release()))
         );
         node->resolved_type_ = resolved_type_;
@@ -868,7 +868,7 @@ public:
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<ForStmt>(
-            std::make_unique<IdExpr>(iter_->value_),
+            std::make_unique<IdExpr>(iter_->name_),
             std::unique_ptr<Expr>((Expr*)(data_->Clone().release())),
             std::unique_ptr<BlockExpr>((BlockExpr*)(block_->Clone().release()))
         );

@@ -16,19 +16,14 @@ add_executable(xero
     lexer/lexer.cpp
     parser/parser.cpp
     parser/rule.cpp
+    sema/builtin.cpp
+    sema/sign.cpp
     sema/type.cpp
     sema/sema.cpp
-    sema/builtin_fn.cpp
-    xcompiler/builtin/builtin_fn.cpp
+    xcompiler/builtin/builtin.cpp
     xcompiler/ir/ir.cpp
     xcompiler/ir/type.cpp
     xcompiler/optimizer/optimizer.cpp
-    xengine/type.cpp
-    xengine/xengine.cpp
-    xengine/builtin_fn.cpp
-    xengine/obj/impl/range.cpp
-    xengine/obj/impl/array.cpp
-    xengine/obj/impl/string.cpp
 )
 
 target_include_directories(xero PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

@@ -15,112 +15,96 @@
 #include <utility>
 
 #include "common/log.hpp"
+#include "sema/sign.hpp"
 
 namespace xcompiler {
     class TypeGen;
 }
 
-namespace xengine {
-    class TypeImpl;
-}
-
 namespace sema {
 
     class Type {
-    private:
-        const xengine::TypeImpl*  impl_ = nullptr;
-        const xcompiler::TypeGen* gen_  = nullptr;
-    
     public:
-        enum class UsingType {
+        enum class Using {
             Base, Param
         };
+    
+        public:
+        std::string           name_       = "";
+        Using                 type_using_ = Using::Base;
+        std::set<const Type*> casts_;
 
-        struct BaseInfo {
-            size_t size_         = 0;           // Byte width
-            bool   isHeapStored_ = false;       // Stored Data in Heap
-            size_t params_cnt_   = 0;           // Number of Type Parameters
-        };
-
-        struct ParamInfo {
-            const Type*              base_   = nullptr;
-            std::vector<const Type*> params_ = {};
-        };
-
-        UsingType                         usingtype_ = UsingType::Base;
-        std::string                       name_      = "";
-        std::variant<BaseInfo, ParamInfo> info_{BaseInfo{}};
-        std::set<const Type*>             converts_  = {};              // List of convertible types
-
-    public:
-        Type(std::string_view name, BaseInfo base)
-        :   usingtype_(UsingType::Base), name_(name), info_(std::move(base)) {}
-        Type(std::string_view name, ParamInfo param)
-        :   usingtype_(UsingType::Param), name_(name), info_(std::move(param)) {}
-
-        const BaseInfo&  baseinfo()  const { return std::get<BaseInfo>(info_); }
-        const ParamInfo& paraminfo() const { return std::get<ParamInfo>(info_); }
-
-        // Common
-
+        Type(std::string name, Using type_using)
+        :   name_(name), type_using_(type_using) {}
+        
         bool isNone() const;
         bool is(std::string_view name) const;
-        bool isHeapStored() const;
-        
-        const Type*             base() const {
-            switch(usingtype_) {
-                case UsingType::Base:  return this;
-                case UsingType::Param: return paraminfo().base_;
-                default: std::unreachable();
-            }
-        }
-        const xengine::TypeImpl*     impl() const {
-            if (impl_) return impl_;
-            return base()->impl();
-        }
-        const xcompiler::TypeGen* gen()  const {
-            return gen_;
-        }
 
-        // Link
-        void ImplSet(const xengine::TypeImpl* impl)   { impl_ = impl; }
-        void GenSet(const xcompiler::TypeGen* gen) { gen_ = gen; }
+        virtual const Type* BasicTypeGet() const = 0;
+        void BasicTypeCheck() const;
+    };
+
+    // exp: array
+    class BasicType      : public Type {
+    public:
+        size_t params_cnt_ = 0;     // Number of Type Parameters
+        std::unordered_map<std::string, FnOverloads> methods_;
+
+        BasicType(std::string name, size_t params_cnt = 0)
+        :   Type(name, Using::Base),
+            params_cnt_(params_cnt)
+        {}
+
+        void MethodAdd(const std::string& name, const FnSign& fnsign) {
+            methods_[name].fnsigns_.emplace_back(std::make_unique<FnSign>(fnsign));
+        }
     
-        // Base
-        void BaseTypeCheck() const;
+        const Type* BasicTypeGet() const override { return this; }
+    };
 
-        // Param
+    // exp: array[=i32=]
+    class ParametricType : public Type {
+    public:
+        const Type*              base_type_   = nullptr;
+        std::vector<const Type*> params_type_ = {};
 
-        const std::vector<const Type*>* params() const {
-            switch(usingtype_) {
-                case UsingType::Base:  return nullptr;
-                case UsingType::Param: return &paraminfo().params_;
-                default: std::unreachable();
-            }
-        }
+        ParametricType(
+            std::string name,
+            const Type* base_type,
+            const std::vector<const Type*>& params_type
+        )
+        :   Type(name, Using::Param),
+            base_type_(base_type),
+            params_type_(params_type)
+        {}
 
-        // Print type name with params: "array[=i32, f64=]"
-        static std::string ParamsPrint(const Type* base, const std::vector<const Type*>& params);
+        std::vector<const Type*>& params_type() { return params_type_; }
+
+        static std::string ParamsPrint(const Type* basic_type, const std::vector<const Type*>& params_type);
+
+        const Type* BasicTypeGet() const override { return base_type_; }
     };
 
     class TypeTable {
     private:
         static inline std::unordered_map<std::string, Type*>        table_;
-        static inline std::multimap<const Type*, const Type*>       converts_;
+        static inline std::multimap<const Type*, const Type*>       casts_;
         static inline std::map<std::set<const Type*>, const Type*>  common_cache_;
 
     public:
         static void Init();
 
-        static Type* Set(const Type& t);
+        static Type* Set(const BasicType& t);
+        static Type* Set(const ParametricType& t);
         static Type* Lookup(std::string_view name, std::optional<Loc> loc = std::nullopt);
-        static Type* SetOrGetTypeParam(
-            const Type* base, const std::vector<const Type*>& params,
-            std::optional<Loc> loc = std::nullopt);
-
-        static void        ConvertSet(const Type* from, const Type* to);
-        static void        ConvertsRecompute();
+        static Type* LookupTry(std::string_view name);
         
+        static Type* ParamTypeGet(
+            const Type* type, const std::vector<const Type*>& params,
+            std::optional<Loc> loc = std::nullopt
+        );
+
+        static void        CastRecompute();
         static const Type* Common(std::set<const Type*> ts) {
             if (ts.size() == 1) return *ts.begin();
             
@@ -134,14 +118,14 @@ namespace sema {
                 for (auto t : ts) {
                     if (!isFirstAdd) {
                         isFirstAdd = true;
-                        common = t->converts_;
+                        common = t->casts_;
                         continue;
                     }
 
                     std::set<const Type*> temp;
                     std::set_intersection(
                         common.begin(), common.end(),
-                        t->converts_.begin(), t->converts_.end(),
+                        t->casts_.begin(), t->casts_.end(),
                         std::inserter(temp, temp.begin())
                     );
                     common = std::move(temp);
@@ -159,7 +143,7 @@ namespace sema {
 
                 for (auto& j : common) {
                     if (i == j) continue;
-                    if (j->converts_.contains(i)) {
+                    if (j->casts_.contains(i)) {
                         isFind = false;
                         break;
                     }

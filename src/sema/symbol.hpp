@@ -14,6 +14,7 @@
 #include "common/log.hpp"
 #include "common/utils.hpp"
 #include "sema/type.hpp"
+#include "sema/sign.hpp"
 
 namespace sema {
     
@@ -32,14 +33,16 @@ namespace sema {
     };
 
     class SymbolTable {
+    public:
+        using Scope = std::unordered_map<std::string, std::unique_ptr<Symbol>>;
+
     private:
-        std::vector<std::unordered_map<std::string, std::unique_ptr<Symbol>>> scopes_;
+        std::vector<Scope> scopes_;
 
     public:
-        void ScopePush() { scopes_.emplace_back(); }
-        void ScopePop()  { scopes_.pop_back(); }
-        std::unordered_map<std::string, std::unique_ptr<Symbol>>&
-             ScopeGet()  { return scopes_.back(); }
+        void   ScopePush() { scopes_.emplace_back(); }
+        void   ScopePop()  { scopes_.pop_back(); }
+        Scope& ScopeGet()  { return scopes_.back(); }
 
         void          Declare(std::unique_ptr<Symbol>&& symbol) {
             if (symbol->name_.empty()) {
@@ -66,31 +69,18 @@ namespace sema {
 
     class VarSymbol : public Symbol {
     public:
-        const Type* var_type_ = nullptr;
+        const Type* ret_type_ = nullptr;
 
-        VarSymbol(std::string name, Loc loc, const Type* var_type)
-        :   Symbol(name, SymbolType::Var, loc), var_type_(var_type) {}
+        VarSymbol(std::string name, Loc loc, const Type* ret_type)
+        :   Symbol(name, SymbolType::Var, loc), ret_type_(ret_type) {}
     };
     
     class FnSymbol  : public Symbol {
     public:
-        const Type* ret_type_ = nullptr;
+        std::unique_ptr<FnSign> sign_ = nullptr;
 
-        // Params:
-        // | params_fix_ | param_infinite_ ...
-        std::vector<const Type*>   params_fix_ = {};                // nullptr: any type
-        std::optional<const Type*> param_inf_  = std::nullopt;
-
-        FnSymbol(
-            std::string name, Loc loc,
-            const Type* ret_type,
-            const std::vector<const Type*>& params_fix = {},
-            std::optional<const Type*>      param_inf  = std::nullopt
-        )
-        :   Symbol(name, SymbolType::Fn, loc),
-            ret_type_(ret_type),
-            params_fix_(params_fix),
-            param_inf_(param_inf)
+        FnSymbol(std::string name, Loc loc, const FnSign& fn_sign)
+        :   Symbol(name, SymbolType::Fn, loc), sign_(std::make_unique<FnSign>(fn_sign))
         {}
     };
 }

@@ -5,75 +5,122 @@
 
 #pragma once
 
+#include <memory>
+#include <vector>
+#include <unordered_map>
+
 #include "llvm/IR/Value.h"
 
+#include "sema/sign.hpp"
 #include "sema/type.hpp"
 
 namespace xcompiler {
     class IRGen;
-    
-    class TypeGen {
+
+    class MethodImpl {
     public:
-        // Utility
-        llvm::Value* (*print_)  (IRGen&, llvm::Value*)               = nullptr;
+        const sema::FnSign* link_fnsign_ = nullptr;
 
-        // Arith Oper
+        MethodImpl(const sema::FnSign* link_fnsign)
+        :   link_fnsign_(link_fnsign) {}
 
-        llvm::Value* (*plus_)   (IRGen&, llvm::Value*, llvm::Value*) = nullptr; // +
-        llvm::Value* (*minus_)  (IRGen&, llvm::Value*, llvm::Value*) = nullptr; // - (binary)
-        llvm::Value* (*star_)   (IRGen&, llvm::Value*, llvm::Value*) = nullptr; // *
-        llvm::Value* (*slash_)  (IRGen&, llvm::Value*, llvm::Value*) = nullptr; // /
-        llvm::Value* (*neg_)    (IRGen&, llvm::Value*)               = nullptr; // - (unary)
-        llvm::Value* (*modt_)   (IRGen&, llvm::Value*, llvm::Value*) = nullptr; // %
-        llvm::Value* (*modf_)   (IRGen&, llvm::Value*, llvm::Value*) = nullptr; // %%
-        
-        // Relation Oper
-
-        llvm::Value* (*gt_)     (IRGen&, llvm::Value*, llvm::Value*)  = nullptr; // >
-        llvm::Value* (*lt_)     (IRGen&, llvm::Value*, llvm::Value*)  = nullptr; // <
-        llvm::Value* (*ge_)     (IRGen&, llvm::Value*, llvm::Value*)  = nullptr; // >=
-        llvm::Value* (*le_)     (IRGen&, llvm::Value*, llvm::Value*)  = nullptr; // <=
-        llvm::Value* (*eq_)     (IRGen&, llvm::Value*, llvm::Value*)  = nullptr; // ==
-        llvm::Value* (*neq_)    (IRGen&, llvm::Value*, llvm::Value*)  = nullptr; // !=
-
-        // Logical Oper
-
-        llvm::Value* (*and_)    (IRGen&, llvm::Value*, llvm::Value*)  = nullptr; // &&
-        llvm::Value* (*or_)     (IRGen&, llvm::Value*, llvm::Value*)  = nullptr; // ||
-        llvm::Value* (*not_)    (IRGen&, llvm::Value*)                = nullptr; // !
+        virtual ~MethodImpl() = default;
     };
 
-    class TypeGenTable {
+    class NativeMethodImpl : public MethodImpl {
+    public:
+        using NativeFn = llvm::Value* (*)(IRGen&, const std::vector<llvm::Value*>&);
+        NativeFn fn_   = nullptr;
+
+        NativeMethodImpl(const sema::FnSign* fnsign, NativeFn fn)
+        :   MethodImpl(fnsign), fn_(fn) {}
+    };
+
+    class LangMethodImpl   : public MethodImpl {
+    public:
+        llvm::Function* fn_ = nullptr;
+
+        LangMethodImpl(const sema::FnSign* fnsign,llvm::Function* fn)
+        :   MethodImpl(fnsign), fn_(fn) {}
+    };
+
+    class TypeImpl {
     private:
-        static inline std::unordered_map<const sema::Type*, TypeGen*> table_;
-        static inline std::map<
-            std::pair<const sema::Type*, const sema::Type*>,
-            llvm::Value*(*)(IRGen&, llvm::Value*)
-        > casts_;
+        const sema::Type* link_type_ = nullptr;
 
     public:
-        static void Init();
+        std::string name_ = "";
+        size_t      size_ = 0;
+        std::unordered_map<std::string, std::vector<std::unique_ptr<MethodImpl>>> methods_;
 
-        static void Set(sema::Type* type, const TypeGen& type_gen) {
-            if (!table_.contains(type)) {
-                auto gen = new TypeGen(type_gen);
-                table_.emplace(type, gen);
-                type->GenSet(gen);
+        TypeImpl(
+            const sema::Type* link_type,
+            size_t size
+        )
+        :   link_type_(link_type),
+            name_(link_type->name_),
+            size_(size)
+        {}
+
+        const sema::Type* link_type() const { return link_type_; } 
+
+        void MethodAdd(const std::string& name, NativeMethodImpl::NativeFn fn, const sema::FnSign& fnsign);
+        void MethodAdd(const std::string& name, llvm::Function* fn, const sema::FnSign& fnsign);
+        
+        std::vector<std::unique_ptr<MethodImpl>>* MethodGet(const std::string& method_name) {
+            auto it = methods_.find(method_name);
+            if (it == methods_.end()) {
+                throw LogErr(LogModule::Xcompiler, std::format(
+                    "undefined method '{}' on type '{}'",
+                    method_name, name_
+                ));
             }
-            else throw LogErr(LogModule::Xcompiler, std::format(
-                "existing type '{}'", type->name_
-            ));
+            return &it->second;
+        }
+        std::vector<std::unique_ptr<MethodImpl>>* TryMethodGet(const std::string& method_name) {
+            auto it = methods_.find(method_name);
+            return it == methods_.end() ? nullptr : &it->second;
+        }
+    };
+
+    class TypeImplTable {
+    private:
+        static inline std::unordered_map<const sema::Type*, std::unique_ptr<TypeImpl>> table_;
+        static inline std::unordered_map<TypeImpl*, const sema::Type*> table_reverse_;
+
+    public:
+        static void      Init();
+        static TypeImpl* Set(TypeImpl&& type_impl) {
+            auto type    = type_impl.link_type();
+            table_[type] = std::make_unique<TypeImpl>(std::move(type_impl));
+            auto impl    = table_[type].get();
+            table_reverse_[impl] = type;
+
+            return impl;
+        }
+        
+        static TypeImpl*         Lookup(const sema::Type* type) {
+            auto it = table_.find(type);
+            if (it == table_.end()) {
+                throw LogErr(LogModule::Xcompiler, std::format(
+                    "undefined implement on type '{}'", type->name_
+                ));
+            }
+            return it->second.get();
+        }
+        static const sema::Type* Lookup(TypeImpl* type_impl) {
+            auto it = table_reverse_.find(type_impl);
+            if (it == table_reverse_.end()) {
+                throw LogErr(LogModule::Xcompiler, std::format(
+                    "undefined type on implement '{}'", type_impl->name_
+                ));
+            }
+            return table_reverse_.find(type_impl)->second;
         }
     
         static llvm::Value* Cast(
-            IRGen& gen, llvm::Value* value,
+            IRGen& gen, llvm::Value* val,
             const sema::Type* from, const sema::Type* to
         );
-        static void         CastSet(
-            const sema::Type* from, const sema::Type* to,
-            llvm::Value*(*fn)(IRGen&, llvm::Value*))
-        {
-            casts_[{ from, to }] = fn;
-        }
     };
 }

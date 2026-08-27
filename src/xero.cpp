@@ -20,22 +20,16 @@
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
 #include "sema/type.hpp"
-#include "sema/method.hpp"
 #include "sema/sema.hpp"
-#include "xcompiler/builtin/builtin_fn.hpp"
+#include "xcompiler/builtin/builtin.hpp"
 #include "xcompiler/ir/type.hpp"
 #include "xcompiler/ir/ir.hpp"
 #include "xcompiler/optimizer/optimizer.hpp"
-#include "xengine/type.hpp"
-#include "xengine/method.hpp"
-#include "xengine/xengine.hpp"
 
 struct Args {
     std::filesystem::path path_;
     bool isPrintToken_ = false;
     bool isPrintAst_   = false;
-    bool isXcompiler    = false;
-    bool isXengine     = true;
 };
 
 std::string FileRead(const std::string& path) {
@@ -73,8 +67,6 @@ int main(int argc, char* argv[]) {
             std::string arg = argv[i];
             if      (arg == "--ast"  || arg == "-a")  args.isPrintAst_   = true;
             else if (arg == "--tok"  || arg == "-t")  args.isPrintToken_ = true;
-            else if (arg == "--comp" || arg == "-cp") args.isXcompiler   = true;
-            else if (arg == "--xeng" || arg == "-xe") args.isXengine     = true;
             else                                      args.path_         = std::filesystem::path(arg);
         }
 
@@ -96,73 +88,55 @@ int main(int argc, char* argv[]) {
 
         // Sema
         sema::TypeTable::Init();
-        sema::MethodTable::Register();
-
+        
         sema::Sema sema;
         sema.Exec(*parser.root());
 
         // Xcompiler
-        if (args.isXcompiler) {
-            
-            // Directories
-            auto module_name = args.path_.stem().string();
-            auto path = std::filesystem::path(std::format(
-                "build/{}", module_name
-            ));
+        
+        // └─ Directories
+        auto module_name = args.path_.stem().string();
+        auto path = std::filesystem::path(std::format(
+            "build/{}", module_name
+        ));
 
-            auto path_ir  = path / "ir";
-            auto path_obj = path / "obj";
-            std::filesystem::create_directories(path_ir);
-            std::filesystem::create_directories(path_obj);
+        auto path_ir  = path / "ir";
+        auto path_obj = path / "obj";
+        std::filesystem::create_directories(path_ir);
+        std::filesystem::create_directories(path_obj);
 
-            // TypeGen
-            xcompiler::TypeGenTable::Init();
+        // └─ TypeImpl
+        xcompiler::TypeImplTable::Init();
 
-            // Builtin
-            xcompiler::BuiltinFnTable::Register();
+        // └─ Builtin
+        xcompiler::BuiltinFnTable::Register();
 
-            // IR Gen and Output
-            xcompiler::IRGen irgen(module_name);
-            irgen.Exec(*parser.root());
-            irgen.IROutput((path_ir / (module_name + ".ll")).string());
+        // └─ IR Gen and Output
+        xcompiler::IRGen irgen(module_name);
+        irgen.Exec(*parser.root());
+        irgen.IROutput((path_ir / (module_name + ".ll")).string());
 
-            // IR Optimize
-            xcompiler::Optimizer optimizer;
-            optimizer.Run(*irgen.module(), llvm::OptimizationLevel::O2);
+        // └─ IR Optimize
+        xcompiler::Optimizer optimizer;
+        optimizer.Run(*irgen.module(), llvm::OptimizationLevel::O2);
 
-            // Object Code Gen and Output
-            irgen.ObjectCodeOutput((path_obj / (module_name + ".o")).string());
+        // └─ Object Code Gen and Output
+        irgen.ObjectCodeOutput((path_obj / (module_name + ".o")).string());
 
-            // Linker
-            auto gpp = llvm::sys::findProgramByName("g++");
-            if (!gpp) {
-                throw LogErr(LogModule::Xcompiler, "failed to find g++");
-            }
-            
-            auto link_status =  llvm::sys::ExecuteAndWait(*gpp, {
-                *gpp, (path_obj / (module_name + ".o")).string(),
-                "-o", (path / (module_name + ".exe")).string(),
-            });
-            if (link_status != 0) {
-                throw LogErr(LogModule::Xcompiler, std::format(
-                    "failed to link object file"
-                ));
-            }
+        // └─ Linker
+        auto gpp = llvm::sys::findProgramByName("g++");
+        if (!gpp) {
+            throw LogErr(LogModule::Xcompiler, "failed to find g++");
         }
-
-        // Xengine
-        if (args.isXengine) {
-            
-            // TypeImpl
-            xengine::TypeImplTable::Init();
-
-            // MethodImplTable
-            xengine::MethodImplTable::BuiltinRegister();
-
-            // Run
-            xengine::Xengine xengine;
-            xengine.Exec(*parser.root());
-            std::cerr << std::endl;
+        
+        auto link_status =  llvm::sys::ExecuteAndWait(*gpp, {
+            *gpp, (path_obj / (module_name + ".o")).string(),
+            "-o", (path / (module_name + ".exe")).string(),
+        });
+        if (link_status != 0) {
+            throw LogErr(LogModule::Xcompiler, std::format(
+                "failed to link object file"
+            ));
         }
     }
     catch (const LogErr& log) {

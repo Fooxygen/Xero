@@ -7,14 +7,6 @@
 
 #include <memory>
 
-namespace xengine {
-    class Obj;
-}
-
 enum class LoopSignal {
     Break, Continue
-};
-
-struct ReturnSignal {
-    std::shared_ptr<xengine::Obj> value_;
 };

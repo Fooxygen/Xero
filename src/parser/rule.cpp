@@ -175,7 +175,7 @@ namespace parser {
                 },
                 [](SS& symbols, auto) {
                     return std::make_unique<TypeExpr>(
-                        Rule::Move<IdExpr>(symbols, 1)->value_,
+                        Rule::Move<IdExpr>(symbols, 1)->name_,
                         Pack2Exprs(symbols, 3)
                     );
                 }
@@ -191,9 +191,9 @@ namespace parser {
                 },
                 [](SS& symbols, auto) {
                     return std::make_unique<DeclExpr>(
-                        Rule::Move<IdExpr>(symbols, 1)->value_,
+                        Rule::Move<IdExpr>(symbols, 1)->name_,
                         std::make_unique<TypeExpr>(
-                            Rule::Move<IdExpr>(symbols, 3)->value_,
+                            Rule::Move<IdExpr>(symbols, 3)->name_,
                             nullptr
                         ),
                         nullptr
@@ -213,7 +213,7 @@ namespace parser {
                 },
                 [](SS& symbols, auto) {
                     return std::make_unique<DeclExpr>(
-                        Rule::Move<IdExpr>(symbols, 1)->value_,
+                        Rule::Move<IdExpr>(symbols, 1)->name_,
                         Rule::Move<TypeExpr>(symbols, 3),
                         nullptr
                     );
@@ -334,13 +334,13 @@ namespace parser {
                 [](SS& symbols, auto) -> ASTNODE {
                     std::string name = "";
                     if (!Rule::isOptPatternEmpty(2))
-                        name = Rule::Move<IdExpr>(symbols, 2)->value_;
+                        name = Rule::Move<IdExpr>(symbols, 2)->name_;
 
                     if (Rule::is(symbols, 7, AT::IdExpr)) {
                         return std::make_unique<FnExpr>(
                             name,
                             std::make_unique<TypeExpr>(
-                                Rule::Move<IdExpr>(symbols, 7)->value_,
+                                Rule::Move<IdExpr>(symbols, 7)->name_,
                                 nullptr
                             ),
                             Pack2Exprs(symbols, 4),
@@ -373,7 +373,7 @@ namespace parser {
                 },
                 [](SS& symbols, auto) {
                     std::string name = "";
-                    if (!Rule::isOptPatternEmpty(2)) name = Rule::Move<IdExpr>(symbols, 2)->value_;
+                    if (!Rule::isOptPatternEmpty(2)) name = Rule::Move<IdExpr>(symbols, 2)->name_;
 
                     return std::make_unique<FnExpr>(
                         name,

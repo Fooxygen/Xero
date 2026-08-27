@@ -15,7 +15,7 @@
 
 namespace xcompiler {
 
-    class ValueTable {
+    class VarTable {
     private:
         std::vector<std::unordered_map<std::string, llvm::Value*>> scopes_;
 
@@ -23,14 +23,12 @@ namespace xcompiler {
         void ScopePush() { scopes_.emplace_back(); }
         void ScopePop()  { scopes_.pop_back(); }
 
-        void Declare(const std::string& name, llvm::Value* value) {
-            scopes_.back()[name] = value;
-        }
+        void Declare(const std::string& name, llvm::Value* value) { scopes_.back()[name] = value; }
 
         llvm::Value* Lookup(const std::string& name, std::optional<Loc> loc = std::nullopt) {
-            for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {
-                auto oit = it->find(name);
-                if (oit != it->end()) return oit->second;
+            for (auto scp_it = scopes_.rbegin(); scp_it != scopes_.rend(); ++scp_it) {
+                auto val_it = scp_it->find(name);
+                if (val_it != scp_it->end()) return val_it->second;
             }
             throw LogErr(LogModule::Xcompiler, std::format(
                 "undefined variable '{}'", name
