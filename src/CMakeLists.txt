@@ -16,13 +16,13 @@ add_executable(xero
     lexer/lexer.cpp
     parser/parser.cpp
     parser/rule.cpp
-    sema/builtin.cpp
-    sema/sign.cpp
-    sema/type.cpp
-    sema/sema.cpp
-    xcompiler/builtin/builtin.cpp
+    sema/defs/fn.cpp
+    sema/defs/type.cpp
+    sema/analyzer.cpp
+    xcompiler/defs/fn.cpp
+    xcompiler/defs/type.cpp
     xcompiler/ir/ir.cpp
-    xcompiler/ir/type.cpp
+    xcompiler/builtin.cpp
     xcompiler/optimizer/optimizer.cpp
 )
 

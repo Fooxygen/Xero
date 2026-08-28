@@ -11,39 +11,21 @@
 
 #include "llvm/IR/Value.h"
 
-#include "sema/sign.hpp"
-#include "sema/type.hpp"
+#include "sema/defs/fn.hpp"
+#include "sema/defs/type.hpp"
+#include "xcompiler/defs/fn.hpp"
 
 namespace xcompiler {
     class IRGen;
-
-    class MethodImpl {
-    public:
-        virtual ~MethodImpl() = default;
-    };
-
-    class NativeMethodImpl : public MethodImpl {
-    public:
-        using Impl  = llvm::Value* (*)(IRGen&, const std::vector<llvm::Value*>&);
-        Impl  impl_ = nullptr;
-
-        NativeMethodImpl(Impl impl) : impl_(impl) {}
-    };
-
-    class LangMethodImpl   : public MethodImpl {
-    public:
-        using Impl  = llvm::Function*;
-        Impl  impl_ = nullptr;
-
-        LangMethodImpl(Impl impl) : impl_(impl) {}
-    };
 
     class TypeImpl {
     private:
         sema::Type* link_type_ = nullptr;
         std::string name_      = "";
         size_t      size_      = 0;
-        std::unordered_map<const sema::FnSign*, std::unique_ptr<MethodImpl>> methods_;
+
+        // FnSign: Registed in Sema Stage, Linked to the unique implementation
+        std::unordered_map<const sema::FnSign*, std::unique_ptr<FnImpl>> methods_;
 
     public:
         TypeImpl(sema::Type* link_type, size_t size)
@@ -53,43 +35,42 @@ namespace xcompiler {
         std::string name()      const { return name_; }
         size_t      size()      const { return size_; }
 
-        void MethodAdd(const std::string& name, NativeMethodImpl::Impl impl, const sema::FnSign& sign);
-        void MethodAdd(const std::string& name, LangMethodImpl::Impl   impl, const sema::FnSign& sign);
-       
-        MethodImpl* MethodGet(const sema::FnSign* sign);
-        MethodImpl* MethodGetTry(const sema::FnSign* sign);
+    public:
+        void    MethodAdd(const std::string& name, NativeFnImpl::Impl impl, const sema::FnSign& sign);
+        void    MethodAdd(const std::string& name, LangFnImpl::Impl   impl, const sema::FnSign& sign);
+        FnImpl* MethodGet(const sema::FnSign* sign);
+        FnImpl* MethodGetTry(const sema::FnSign* sign);
     };
 
     class TypeImplTable {
     private:
         static inline std::unordered_map<sema::Type*, std::unique_ptr<TypeImpl>> table_;
-        static inline std::unordered_map<TypeImpl*, sema::Type*> table_reverse_;
+        static inline std::unordered_map<TypeImpl*, sema::Type*>                 table_reverse_;
 
     public:
-        static void      Init();
-        static TypeImpl* Set(TypeImpl&& type_impl) {
+        static void         Init();
+        static TypeImpl*    Set(TypeImpl&& type_impl) {
             auto type    = type_impl.link_type();
             table_[type] = std::make_unique<TypeImpl>(std::move(type_impl));
             auto impl    = table_[type].get();
             table_reverse_[impl] = type;
-
             return impl;
         }
         
-        static TypeImpl*   Lookup(sema::Type* type) {
+        static TypeImpl*    Lookup(sema::Type* type) {
             auto it = table_.find(type);
             if (it == table_.end()) {
                 throw LogErr(LogModule::Xcompiler, std::format(
-                    "undefined implement on type '{}'", type->name()
+                    "undefined implementation on type '{}'", type->name()
                 ));
             }
             return it->second.get();
         }
-        static sema::Type* Lookup(TypeImpl* type_impl) {
+        static sema::Type*  Lookup(TypeImpl* type_impl) {
             auto it = table_reverse_.find(type_impl);
             if (it == table_reverse_.end()) {
                 throw LogErr(LogModule::Xcompiler, std::format(
-                    "undefined type on implement '{}'", type_impl->name()
+                    "undefined type on implementation '{}'", type_impl->name()
                 ));
             }
             return table_reverse_.find(type_impl)->second;

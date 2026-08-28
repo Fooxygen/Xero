@@ -5,8 +5,6 @@
 
 #pragma once
 
-#include <memory>
-
 enum class LoopSignal {
     Break, Continue
 };

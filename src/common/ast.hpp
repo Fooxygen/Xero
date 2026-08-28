@@ -112,6 +112,7 @@ public:
     Loc         loc_;
     sema::Type* resolved_type_ = nullptr;
 
+public:
     virtual const std::string TypeName() const {
         return "Undefined";
     }
@@ -154,6 +155,7 @@ class Exprs             : public AstNode {
 public:
     std::vector<std::unique_ptr<Expr>> exprs_;
 
+public:
     Exprs(std::vector<std::unique_ptr<Expr>>& exprs) : exprs_(std::move(exprs)) {
         type_ = AstType::Exprs;
     }
@@ -185,6 +187,7 @@ class BlockExpr         : public Expr {
 public:
     std::vector<std::unique_ptr<AstNode>> children_;
 
+public:
     BlockExpr(std::vector<std::unique_ptr<AstNode>>& children)
     :   children_(std::move(children))
     {
@@ -217,6 +220,7 @@ class IdExpr            : public Expr {
 public:
     std::string name_ = "";
 
+public:
     IdExpr(const std::string& name) : name_(name) {
         type_ = AstType::IdExpr;
     }
@@ -239,14 +243,15 @@ public:
 };
 class TypeExpr          : public Expr {
 public:
-    std::string            base_type_ = "";
-    std::unique_ptr<Exprs> params_    = nullptr;
+    std::string            basic_type_ = "";
+    std::unique_ptr<Exprs> params_     = nullptr;
 
+public:
     TypeExpr(
-        const std::string& base_type,
+        const std::string& type_basic,
         std::unique_ptr<Exprs> params
     )
-    :   base_type_(base_type),
+    :   basic_type_(type_basic),
         params_(std::move(params))
     {
         type_ = AstType::TypeExpr;
@@ -257,14 +262,14 @@ public:
     }
 
     void PrintImpl(std::string prefix) override {
-        PrintLabel("base_type", prefix);
-        std::cerr << COLOR_BLUE << base_type_ << COLOR_DEFAULT << std::endl;
+        PrintLabel("type_basic", prefix);
+        std::cerr << COLOR_BLUE << basic_type_ << COLOR_DEFAULT << std::endl;
         if (params_) params_->Print(prefix, "params");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<TypeExpr>(
-            base_type_,
+            basic_type_,
             params_ ? std::unique_ptr<Exprs>((Exprs*)(params_->Clone().release())) : nullptr
         );
         node->resolved_type_ = resolved_type_;
@@ -278,6 +283,7 @@ public:
     std::unique_ptr<TypeExpr> bind_type_ = nullptr;
     std::unique_ptr<Expr>     value_     = nullptr;
 
+public:
     DeclExpr(
         const std::string&        id,
         std::unique_ptr<TypeExpr> bind_type,
@@ -318,6 +324,7 @@ public:
     std::unique_ptr<Expr> lexpr_ = nullptr;
     std::unique_ptr<Expr> rexpr_ = nullptr;
 
+public:
     OperExpr(
         OperType oper_type,
         std::unique_ptr<Expr> lexpr,
@@ -361,8 +368,10 @@ public:
     std::unique_ptr<Expr> step_  = nullptr;
     bool isClosed_ = false;
 
+public:
     sema::Type* iter_type_ = nullptr;
 
+public:
     RangeExpr(
         std::unique_ptr<Expr> lexpr,
         std::unique_ptr<Expr> rexpr,
@@ -410,8 +419,10 @@ class ArrayExpr         : public Expr {
 public:
     std::unique_ptr<Exprs> elems_;
 
+public:
     sema::Type* elem_type_ = nullptr;
 
+public:
     ArrayExpr(std::unique_ptr<Exprs> elems)
     :   elems_(std::move(elems))
     {
@@ -441,6 +452,10 @@ public:
     std::unique_ptr<IdExpr> callee_ = nullptr;
     std::unique_ptr<Exprs>  args_   = nullptr;
 
+public:
+    const sema::FnSign* callee_fnsign_ = nullptr;
+
+public:
     FnCallExpr(
         std::unique_ptr<IdExpr> callee,
         std::unique_ptr<Exprs>  args
@@ -465,6 +480,7 @@ public:
             std::make_unique<IdExpr>(callee_->name_),
             std::unique_ptr<Exprs>((Exprs*)(args_->Clone().release()))
         );
+        node->callee_fnsign_ = callee_fnsign_;
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
@@ -476,8 +492,10 @@ public:
     std::unique_ptr<IdExpr> callee_ = nullptr;
     std::unique_ptr<Exprs>  args_   = nullptr;
 
-    const sema::FnSign* matched_fnsign_ = nullptr;
+public:
+    const sema::FnSign* callee_fnsign_ = nullptr;
 
+public:
     MethodCallExpr(
         std::unique_ptr<Expr>   target,
         std::unique_ptr<IdExpr> callee,
@@ -506,7 +524,7 @@ public:
             std::make_unique<IdExpr>(callee_->name_),
             std::unique_ptr<Exprs>((Exprs*)(args_->Clone().release()))
         );
-        node->matched_fnsign_ = matched_fnsign_;
+        node->callee_fnsign_ = callee_fnsign_;
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
@@ -519,8 +537,11 @@ public:
     std::unique_ptr<Exprs>     params_   = nullptr;
     std::unique_ptr<BlockExpr> block_    = nullptr;
 
-    sema::Type* ret_resolved_type_ = nullptr;
+public:
+    sema::Type*         ret_resolved_type_ = nullptr;
+    const sema::FnSign* fnsign_            = nullptr;
 
+public:
     FnExpr(
         std::string                name,
         std::unique_ptr<TypeExpr>  ret_type,
@@ -554,8 +575,11 @@ public:
             params_ ? std::unique_ptr<Exprs>((Exprs*)(params_->Clone().release())) : nullptr,
             block_  ? std::unique_ptr<BlockExpr>((BlockExpr*)(block_->Clone().release())) : nullptr
         );
+
         node->ret_resolved_type_ = ret_resolved_type_;
-        node->resolved_type_ = resolved_type_;
+        node->fnsign_            = fnsign_;
+
+        node->resolved_type_     = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -567,11 +591,13 @@ class NumConst          : public Const {
 public:
     std::string value_ = "";
     
+public:
     union {
         int64_t integer_;
         double  floating_;
     } resolved_value_ = {};
 
+public:
     NumConst(const std::string& value)
     :   value_(value)
     {
@@ -599,6 +625,7 @@ class BoolConst         : public Const {
 public:
     bool value_ = false;
 
+public:
     BoolConst(bool value)
     :   value_(value)
     {
@@ -628,6 +655,7 @@ class CharConst         : public Const {
 public:
     std::string value_ = "";
 
+public:
     CharConst(const std::string& value)
     :   value_(value)
     {
@@ -656,6 +684,7 @@ class StringConst       : public Const {
 public:
     std::string value_ = "";
 
+public:
     StringConst(const std::string& value)
     :   value_(value)
     {
@@ -687,6 +716,7 @@ class ExprStmt          : public Stmt {
 public:
     std::unique_ptr<Expr> expr_ = nullptr;
 
+public:
     ExprStmt(std::unique_ptr<Expr> expr)
     :   expr_(std::move(expr))
     {
@@ -715,6 +745,7 @@ public:
     std::unique_ptr<Expr> target_ = nullptr;
     std::unique_ptr<Expr> value_  = nullptr;
 
+public:
     AssignStmt(
         std::unique_ptr<Expr> target,
         std::unique_ptr<Expr> value
@@ -750,6 +781,7 @@ public:
     std::unique_ptr<BlockExpr> block_ = nullptr;
     std::unique_ptr<CondStmt>  sub_   = nullptr;
 
+public:
     CondStmt(
         std::unique_ptr<Expr>      cond,
         std::unique_ptr<BlockExpr> block,
@@ -787,6 +819,7 @@ class LoopSignalStmt    : public Stmt {
 public:
     LoopSignal signal_;
 
+public:
     LoopSignalStmt(LoopSignal signal)
     :   signal_(signal)
     {
@@ -819,6 +852,7 @@ class ReturnSignalStmt  : public Stmt {
 public:
     std::unique_ptr<Expr> value_;
 
+public:
     ReturnSignalStmt(std::unique_ptr<Expr> value)
     :   value_(std::move(value))
     {
@@ -848,6 +882,7 @@ public:
     std::unique_ptr<Expr>       data_;
     std::unique_ptr<BlockExpr>  block_;
 
+public:
     ForStmt(
         std::unique_ptr<IdExpr>     iter,
         std::unique_ptr<Expr>       data,
@@ -886,6 +921,7 @@ public:
     std::unique_ptr<Expr>       cond_;
     std::unique_ptr<BlockExpr>  block_;
 
+public:
     WhileStmt(
         std::unique_ptr<Expr>       cond,
         std::unique_ptr<BlockExpr>  block
@@ -926,6 +962,7 @@ public:
         type_ = AstType::Program;
     }
 
+public:
     const std::string TypeName() const {
         return "Program";
     }

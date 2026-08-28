@@ -9,7 +9,6 @@
 #include <sstream>
 #include <string>
 #include <ranges>
-#include <concepts>
 #include <functional>
 
 // Row and column of Token

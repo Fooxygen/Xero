@@ -15,8 +15,9 @@
 
 #include "common/log.hpp"
 #include "common/opertype.hpp"
-#include "xcompiler/builtin/builtin.hpp"
-#include "xcompiler/ir/type.hpp"
+#include "xcompiler/builtin.hpp"
+#include "xcompiler/defs/type.hpp"
+#include "xcompiler/defs/fn.hpp"
 #include "xcompiler/ir/ir.hpp"
 
 namespace xcompiler {
@@ -119,7 +120,7 @@ namespace xcompiler {
 
     // Utility
 
-    llvm::Type* IRGen::LlvmType(sema::Type* type) {
+    llvm::Type*       IRGen::LlvmType(sema::Type* type) {
         if (type->is("none"))   return llvm::Type::getVoidTy(context_);
         if (type->is("bool"))   return llvm::Type::getInt1Ty(context_);
         if (type->is("i32"))    return llvm::Type::getInt32Ty(context_);
@@ -187,16 +188,22 @@ namespace xcompiler {
     llvm::Value* IRGen::Exec(OperExpr& node) {
         using enum OperType;
 
+        
         auto call = [](IRGen& gen, sema::Type* type, const std::string& name, std::vector<llvm::Value*> args) {
-            auto  type_basic  = (sema::BasicType*)type->BasicTypeGet();
-            auto& method      = type_basic->methods().Lookup(name);
-            
-            std::vector<sema::Type*> args_type(args.size(), type);
-            auto method_sign = method.SignLookup(args_type);
 
-            auto type_impl = TypeImplTable::Lookup(type);
-            auto impl      = type_impl->MethodGet(method_sign);
-            return ((NativeMethodImpl*)impl)->impl_(gen, args);
+            // TypeImpl
+            auto type_basic = (sema::BasicType*)type->BasicTypeGet();
+            auto type_impl  = TypeImplTable::Lookup(type);
+
+            // Args Type
+            // Due to implicit type conversion, all args type are consistent
+            std::vector<sema::Type*> args_type(args.size(), type);
+
+            // Method
+            auto& method      = type_basic->method_table().Lookup(name);
+            auto  method_sign = method.SignLookup(args_type);
+            auto  method_impl = type_impl->MethodGet(method_sign);
+            return ((NativeFnImpl*)method_impl)->impl()(gen, args, args_type);
         };
 
         // Unary
@@ -218,66 +225,61 @@ namespace xcompiler {
         {
             auto ltype = node.lexpr_->resolved_type_;
             auto rtype = node.rexpr_->resolved_type_;
-            auto common_type = sema::TypeTable::Common({ ltype, rtype });
-            if (!common_type) {
+            auto com_type = sema::TypeTable::Common({ ltype, rtype });
+            if (!com_type) {
                 throw LogErr(LogModule::Xcompiler, std::format(
                     "cannot make type '{}' compatible with '{}'",
                     ltype->name(), rtype->name()
                 ), node.loc_);
             }
 
-            lval = TypeImplTable::Cast(*this, lval, ltype, common_type);
-            rval = TypeImplTable::Cast(*this, rval, rtype, common_type);
+            lval = TypeImplTable::Cast(*this, lval, ltype, com_type);
+            rval = TypeImplTable::Cast(*this, rval, rtype, com_type);
 
             switch (node.oper_type_) {
-                case Plus:  return call(*this, common_type, "plus",  { lval, rval });
-                case Minus: return call(*this, common_type, "minus", { lval, rval });
-                case Star:  return call(*this, common_type, "star",  { lval, rval });
-                case Slash: return call(*this, common_type, "slash", { lval, rval });
-                case ModT:  return call(*this, common_type, "modt",  { lval, rval });
-                case ModF:  return call(*this, common_type, "modf",  { lval, rval });
-                case Gt:    return call(*this, common_type, "gt",    { lval, rval });
-                case Lt:    return call(*this, common_type, "lt",    { lval, rval });
-                case Ge:    return call(*this, common_type, "ge",    { lval, rval });
-                case Le:    return call(*this, common_type, "le",    { lval, rval });
-                case Eq:    return call(*this, common_type, "eq",    { lval, rval });
-                case Neq:   return call(*this, common_type, "neq",   { lval, rval });
+                case Plus:  return call(*this, com_type, "plus",  { lval, rval });
+                case Minus: return call(*this, com_type, "minus", { lval, rval });
+                case Star:  return call(*this, com_type, "star",  { lval, rval });
+                case Slash: return call(*this, com_type, "slash", { lval, rval });
+                case ModT:  return call(*this, com_type, "modt",  { lval, rval });
+                case ModF:  return call(*this, com_type, "modf",  { lval, rval });
+                case Gt:    return call(*this, com_type, "gt",    { lval, rval });
+                case Lt:    return call(*this, com_type, "lt",    { lval, rval });
+                case Ge:    return call(*this, com_type, "ge",    { lval, rval });
+                case Le:    return call(*this, com_type, "le",    { lval, rval });
+                case Eq:    return call(*this, com_type, "eq",    { lval, rval });
+                case Neq:   return call(*this, com_type, "neq",   { lval, rval });
                 default:    return nullptr;
             }
         }
     }
     
     llvm::Value* IRGen::Exec(FnCallExpr& node) {
-        auto callee = node.callee_->name_;
+        auto fnsign = node.callee_fnsign_;
 
-        // Builtin Fn
-        // Stored in BuiltinFnTable
-        // Execute the predefined code
-        {
-            if (auto fn = BuiltinFnTable::LookupTry(callee)) {
-                return (*fn)(*this, node);
+        // Args
+        std::vector<llvm::Value*> args      = {};
+        std::vector<sema::Type*>  args_type = {};
+        if (node.args_) {
+            for (auto& e : node.args_->exprs_) {
+                args.emplace_back(Exec(*e));
+                args_type.emplace_back(e->resolved_type_);
             }
         }
 
-        // Custom Fn
-        // Stored in LLVM Module
-        // Generate 'Call' Instruction in IR
-        {
-            auto fn = module_->getFunction(callee);
-            if (!fn) {
-                throw LogErr(LogModule::Xcompiler, std::format(
-                    "undefined function '{}'", callee
-                ), node.loc_);
+        // Stored in FnTable
+        if (auto impl = FnImplTable::LookupTry(fnsign)) {
+            if (auto native = dynamic_cast<NativeFnImpl*>(impl)) {
+                return native->impl()(*this, args, args_type);
             }
-
-            // Args
-            std::vector<llvm::Value*> args = {};
-            if (node.args_) {
-                for (auto& e : node.args_->exprs_) args.emplace_back(Exec(*e));
+            if (auto lang   = dynamic_cast<LangFnImpl*>(impl)) {
+                return builder_.CreateCall(lang->impl(), args);
             }
-
-            return builder_.CreateCall(fn, args);
         }
+
+        throw LogErr(LogModule::Xcompiler, std::format(
+            "undefined function '{}'", node.callee_->name_
+        ), node.loc_);
     }
     
     llvm::Value* IRGen::Exec(MethodCallExpr& node) {
@@ -315,9 +317,9 @@ namespace xcompiler {
             }
         }
 
-        // Function
+        // Fn
         auto fntype = llvm::FunctionType::get(
-            ret_type, params_type, false        // No variable parameters
+            ret_type, params_type, false        // No variable params
         );
         auto fn = llvm::Function::Create(
             fntype,
@@ -358,6 +360,10 @@ namespace xcompiler {
             else builder_.CreateRet(llvm::ConstantInt::get(ret_type, 0));
         }
 
+        if (node.name_ != "main") {
+            FnImplTable::Add(node.fnsign_, std::make_unique<LangFnImpl>(fn));
+        }
+
         return nullptr;
     }
 
@@ -367,7 +373,7 @@ namespace xcompiler {
         auto type = node.resolved_type_;
         if (type->is("i32")) return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context_), node.resolved_value_.integer_);
         if (type->is("i64")) return llvm::ConstantInt::get(llvm::Type::getInt64Ty(context_), node.resolved_value_.integer_);
-        if (type->is("f32")) return llvm::ConstantFP::get(llvm::Type::getFloatTy(context_), node.resolved_value_.floating_);
+        if (type->is("f32")) return llvm::ConstantFP::get(llvm::Type::getFloatTy(context_),  node.resolved_value_.floating_);
         if (type->is("f64")) return llvm::ConstantFP::get(llvm::Type::getDoubleTy(context_), node.resolved_value_.floating_);
         std::unreachable();
     }
@@ -400,12 +406,8 @@ namespace xcompiler {
     }
 
     llvm::Value* IRGen::Exec(ReturnSignalStmt& node) {
-        if (node.value_) {
-            builder_.CreateRet(Exec(*node.value_));
-        }
-        else {
-            builder_.CreateRetVoid();
-        }
+        if (node.value_) builder_.CreateRet(Exec(*node.value_));
+        else             builder_.CreateRetVoid();
         return nullptr;
     }
 

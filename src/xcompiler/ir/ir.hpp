@@ -13,8 +13,8 @@
 #include "llvm/IR/IRBuilder.h"
 
 #include "common/ast.hpp"
-#include "sema/type.hpp"
-#include "xcompiler/ir/var.hpp"
+#include "sema/defs/type.hpp"
+#include "xcompiler/defs/var.hpp"
 
 namespace xcompiler {
 
@@ -28,10 +28,9 @@ namespace xcompiler {
         // Cache
         llvm::Function* current_fn_ = nullptr;
 
-    private:
         // Utility
 
-        llvm::Type* LlvmType(sema::Type* type);
+        llvm::Type*       LlvmType(sema::Type* type);
 
         llvm::AllocaInst* EntryBlockSlotCreate(llvm::Type* type, const std::string& name);
 
@@ -60,6 +59,7 @@ namespace xcompiler {
         llvm::Module*      module()  { return module_.get(); }
         llvm::IRBuilder<>& builder() { return builder_; }
 
+    public:
         // Output
 
         void IROutput(const std::string& path);

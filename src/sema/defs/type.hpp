@@ -11,25 +11,26 @@
 #include <set>
 #include <map>
 #include <unordered_map>
-#include <variant>
 #include <utility>
 
 #include "common/log.hpp"
-#include "sema/sign.hpp"
+#include "sema/defs/fn.hpp"
 
 namespace sema {
 
     class Type {
     public:
         enum class Using {
-            Basic,      // -> array
-            Parametric  // -> array[=i32=]
+            Basic,          // -> array
+            Parametric      // -> array[=i32=]
         };
     
     private:
         std::string     name_       = "";
         Using           type_using_ = Using::Basic;
-        std::set<Type*> casts_;
+
+        std::set<Type*>                          casts_;
+        std::unordered_map<Type*, const FnSign*> casts_fnsign_;     // signature of cast method
 
     public:
         Type(std::string name, Using type_using)
@@ -37,7 +38,9 @@ namespace sema {
         
         std::string      name()       const { return name_; }
         Using            type_using() const { return type_using_; }
-        std::set<Type*>& casts()            { return casts_; }
+
+        std::set<Type*>& casts() { return casts_; }
+        std::unordered_map<Type*, const FnSign*>& casts_fnsign() { return casts_fnsign_; }
 
     public:
         bool isNone();
@@ -47,11 +50,10 @@ namespace sema {
         void          BasicTypeCheck() const;
     };
 
-    // exp: array
     class BasicType      : public Type {
     private:
         size_t  params_cnt_ = 0;     // Number of Type Parameters
-        FnTable methods_;
+        FnTable method_table_;
 
     public:
         BasicType(std::string name, size_t params_cnt = 0)
@@ -60,34 +62,31 @@ namespace sema {
         {}
 
         size_t   params_cnt() const { return params_cnt_; }
-        FnTable& methods()          { return methods_; }
+        FnTable& method_table()     { return method_table_; }
     
+    public:
         Type* BasicTypeGet() override { return this; }
     };
 
-    // exp: array[=i32=]
     class ParametricType : public Type {
     private:
-        Type*              base_type_   = nullptr;
+        Type*              basic_type_  = nullptr;
         std::vector<Type*> params_type_ = {};
 
     public:
-        ParametricType(
-            std::string               name,
-            Type*                     base_type,
-            const std::vector<Type*>& params_type
-        )
+        ParametricType(std::string name, Type* type_basic, const std::vector<Type*>& params_type)
         :   Type(name, Using::Parametric),
-            base_type_(base_type),
+            basic_type_(type_basic),
             params_type_(params_type)
         {}
 
-        Type*               base_type() const { return base_type_; }
-        std::vector<Type*>& params_type()     { return params_type_; }
+        Type*               type_basic() const { return basic_type_; }
+        std::vector<Type*>& params_type()      { return params_type_; }
 
-        static std::string ParamsPrint(Type* basic_type, const std::vector<Type*>& params_type);
+    public:
+        static std::string ParamsPrint(Type* type_basic, const std::vector<Type*>& params_type);
 
-        Type* BasicTypeGet() override { return base_type_; }
+        Type* BasicTypeGet() override { return basic_type_; }
     };
 
     class TypeTable {

@@ -11,7 +11,6 @@
 #include <string>
 #include <sstream>
 #include <fstream>
-#include <filesystem>
 
 #include "llvm/Support/Program.h"
 
@@ -19,12 +18,8 @@
 #include "common/log.hpp"
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
-#include "sema/type.hpp"
 #include "sema/sema.hpp"
-#include "xcompiler/builtin/builtin.hpp"
-#include "xcompiler/ir/type.hpp"
-#include "xcompiler/ir/ir.hpp"
-#include "xcompiler/optimizer/optimizer.hpp"
+#include "xcompiler/xcompiler.hpp"
 
 struct Args {
     std::filesystem::path path_;
@@ -87,57 +82,16 @@ int main(int argc, char* argv[]) {
         }
 
         // Sema
-        sema::TypeTable::Init();
-        
         sema::Sema sema;
-        sema.Exec(*parser.root());
+        sema.Run(*parser.root());
 
         // Xcompiler
-        
-        // └─ Directories
-        auto module_name = args.path_.stem().string();
-        auto path = std::filesystem::path(std::format(
-            "build/{}", module_name
-        ));
-
-        auto path_ir  = path / "ir";
-        auto path_obj = path / "obj";
-        std::filesystem::create_directories(path_ir);
-        std::filesystem::create_directories(path_obj);
-
-        // └─ TypeImpl
-        xcompiler::TypeImplTable::Init();
-
-        // └─ Builtin
-        xcompiler::BuiltinFnTable::Register();
-
-        // └─ IR Gen and Output
-        xcompiler::IRGen irgen(module_name);
-        irgen.Exec(*parser.root());
-        irgen.IROutput((path_ir / (module_name + ".ll")).string());
-
-        // └─ IR Optimize
-        xcompiler::Optimizer optimizer;
-        optimizer.Run(*irgen.module(), llvm::OptimizationLevel::O2);
-
-        // └─ Object Code Gen and Output
-        irgen.ObjectCodeOutput((path_obj / (module_name + ".o")).string());
-
-        // └─ Linker
-        auto gpp = llvm::sys::findProgramByName("g++");
-        if (!gpp) {
-            throw LogErr(LogModule::Xcompiler, "failed to find g++");
-        }
-        
-        auto link_status =  llvm::sys::ExecuteAndWait(*gpp, {
-            *gpp, (path_obj / (module_name + ".o")).string(),
-            "-o", (path / (module_name + ".exe")).string(),
-        });
-        if (link_status != 0) {
-            throw LogErr(LogModule::Xcompiler, std::format(
-                "failed to link object file"
-            ));
-        }
+        xcompiler::Xcompiler xcompiler;
+        xcompiler.Run(
+            args.path_.stem().string(),
+            *parser.root(),
+            sema.analyzer().fn_table()
+        );
     }
     catch (const LogErr& log) {
         log.Print();
