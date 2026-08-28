@@ -15,18 +15,50 @@ namespace xcompiler {
 
     // TypeImpl
 
-    void TypeImpl::MethodAdd(const std::string& name, NativeMethodImpl::NativeFn fn, const sema::FnSign& fnsign) {
-        auto& overloads = ((sema::BasicType*)link_type_)->methods_.find(name)->second;
-        methods_[name].emplace_back(
-            std::make_unique<NativeMethodImpl>(overloads.Match(fnsign), fn)
-        );
+    void TypeImpl::MethodAdd(const std::string& name, NativeMethodImpl::Impl impl, const sema::FnSign& sign) {
+        auto  type        = (sema::BasicType*)link_type_;
+        auto& method      = type->methods().Lookup(name);
+        auto  method_sign = method.SignLookup(sign);
+
+        auto it = methods_.find(method_sign);
+        if (it != methods_.end()) {
+            throw LogErr(LogModule::Xcompiler, std::format(
+                "redefinition implement of method {} for type '{}'",
+                sign.ParamsPrint(), type->name()
+            ));
+        }
+        methods_[method_sign] = std::make_unique<NativeMethodImpl>(impl);
     }
     
-    void TypeImpl::MethodAdd(const std::string& name, llvm::Function* fn, const sema::FnSign& fnsign) {
-        auto& overloads = ((sema::BasicType*)link_type_)->methods_.find(name)->second;
-        methods_[name].emplace_back(
-            std::make_unique<LangMethodImpl>(overloads.Match(fnsign), fn)
-        );
+    void TypeImpl::MethodAdd(const std::string& name, LangMethodImpl::Impl impl, const sema::FnSign& sign) {
+        auto  type        = (sema::BasicType*)link_type_;
+        auto& method      = type->methods().Lookup(name);
+        auto  method_sign = method.SignLookup(sign);
+
+        auto it = methods_.find(method_sign);
+        if (it != methods_.end()) {
+            throw LogErr(LogModule::Xcompiler, std::format(
+                "redefinition implement of method {} for type '{}'",
+                sign.ParamsPrint(), type->name()
+            ));
+        }
+        methods_[method_sign] = std::make_unique<LangMethodImpl>(impl);
+    }
+
+    MethodImpl* TypeImpl::MethodGet(const sema::FnSign* sign) {
+        auto it = methods_.find(sign);
+        if (it == methods_.end()) {
+            throw LogErr(LogModule::Xcompiler, std::format(
+                "undefined implement of method {} for type '{}'",
+                sign->ParamsPrint(), link_type_->name()
+            ));
+        }
+        return it->second.get();
+    }
+
+    MethodImpl* TypeImpl::MethodGetTry(const sema::FnSign* sign) {
+        auto it = methods_.find(sign);
+        return it == methods_.end() ? nullptr : it->second.get();
     }
 
     // TypeImplTable
@@ -323,23 +355,23 @@ namespace xcompiler {
         }
     }
 
-    llvm::Value* TypeImplTable::Cast(
-        IRGen& gen, llvm::Value* val,
-        const sema::Type* from, const sema::Type* to)
-    {
+    llvm::Value* TypeImplTable::Cast(IRGen& gen, llvm::Value* val, sema::Type* from, sema::Type* to) {
         if (from == to) return val;
 
-        auto impl = TypeImplTable::Lookup(from);
-        for (auto& [name, overloads] : impl->methods_) {
-            for (auto& method : overloads) {
-                auto fnsign = method->link_fnsign_;
-                if (fnsign && fnsign->modifier_.hasCast_ && fnsign->ret_type_ == to) {
-                    return ((NativeMethodImpl*)method.get())->fn_(gen, { val });
+        auto  from_basic = (sema::BasicType*)from->BasicTypeGet();
+        auto& methods    = from_basic->methods();
+
+        for (auto& [name, method] : methods.table()) {
+            for (auto& s : method.signs()) {
+                if (s->modifier().hasCast_ && s->ret_type() == to) {
+                    auto impl = TypeImplTable::Lookup(from)->MethodGet(s.get());
+                    return ((NativeMethodImpl*)impl)->impl_(gen, { val });
                 }
             }
         }
+        
         throw LogErr(LogModule::Xcompiler, std::format(
-            "cannot cast type from '{}' to '{}'", from->name_, to->name_
+            "cannot cast type from '{}' to '{}'", from->name(), to->name()
         ));
     }
 }

@@ -119,7 +119,7 @@ namespace xcompiler {
 
     // Utility
 
-    llvm::Type* IRGen::LlvmType(const sema::Type* type) {
+    llvm::Type* IRGen::LlvmType(sema::Type* type) {
         if (type->is("none"))   return llvm::Type::getVoidTy(context_);
         if (type->is("bool"))   return llvm::Type::getInt1Ty(context_);
         if (type->is("i32"))    return llvm::Type::getInt32Ty(context_);
@@ -129,7 +129,7 @@ namespace xcompiler {
         if (type->is("char"))   return llvm::Type::getInt32Ty(context_);
 
         throw LogErr(LogModule::Xcompiler, std::format(
-            "undefined type '{}'", type->name_
+            "undefined type '{}'", type->name()
         ));
     }
 
@@ -187,11 +187,16 @@ namespace xcompiler {
     llvm::Value* IRGen::Exec(OperExpr& node) {
         using enum OperType;
 
-        auto call = [](IRGen& gen, const sema::Type* type, const std::string& name, std::vector<llvm::Value*> args) {
-            auto impl   = TypeImplTable::Lookup(type);
-            auto method = impl->TryMethodGet(name);
+        auto call = [](IRGen& gen, sema::Type* type, const std::string& name, std::vector<llvm::Value*> args) {
+            auto  type_basic  = (sema::BasicType*)type->BasicTypeGet();
+            auto& method      = type_basic->methods().Lookup(name);
+            
+            std::vector<sema::Type*> args_type(args.size(), type);
+            auto method_sign = method.SignLookup(args_type);
 
-            return ((NativeMethodImpl*)(method->at(0).get()))->fn_(gen, args);
+            auto type_impl = TypeImplTable::Lookup(type);
+            auto impl      = type_impl->MethodGet(method_sign);
+            return ((NativeMethodImpl*)impl)->impl_(gen, args);
         };
 
         // Unary
@@ -217,7 +222,7 @@ namespace xcompiler {
             if (!common_type) {
                 throw LogErr(LogModule::Xcompiler, std::format(
                     "cannot make type '{}' compatible with '{}'",
-                    ltype->name_, rtype->name_
+                    ltype->name(), rtype->name()
                 ), node.loc_);
             }
 
@@ -275,6 +280,24 @@ namespace xcompiler {
         }
     }
     
+    llvm::Value* IRGen::Exec(MethodCallExpr& node) {
+        
+        // Args
+        std::vector<llvm::Value*> args      = {};
+        std::vector<sema::Type*>  args_type = {};
+        if (node.args_) {
+            for (auto& e : node.args_->exprs_) {
+                args.emplace_back(Exec(*e));
+                args_type.emplace_back(e->resolved_type_);
+            }
+        }
+        for (size_t i = 0; i < args.size(); i++) {
+
+        }
+
+        return nullptr;
+    }
+
     llvm::Value* IRGen::Exec(FnExpr& node) {
 
         // Return Type

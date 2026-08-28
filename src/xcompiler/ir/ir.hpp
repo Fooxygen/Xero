@@ -31,7 +31,7 @@ namespace xcompiler {
     private:
         // Utility
 
-        llvm::Type* LlvmType(const sema::Type* type);
+        llvm::Type* LlvmType(sema::Type* type);
 
         llvm::AllocaInst* EntryBlockSlotCreate(llvm::Type* type, const std::string& name);
 
@@ -42,6 +42,7 @@ namespace xcompiler {
         llvm::Value* Exec(DeclExpr& node);
         llvm::Value* Exec(OperExpr& node);
         llvm::Value* Exec(FnCallExpr& node);
+        llvm::Value* Exec(MethodCallExpr& node);
         llvm::Value* Exec(FnExpr& node);
 
         llvm::Value* Exec(NumConst& node);
@@ -73,6 +74,7 @@ namespace xcompiler {
                 case AstType::DeclExpr:         return Exec((DeclExpr&)node);
                 case AstType::OperExpr:         return Exec((OperExpr&)node);
                 case AstType::FnCallExpr:       return Exec((FnCallExpr&)node);
+                case AstType::MethodCallExpr:   return Exec((MethodCallExpr&)node);
                 case AstType::FnExpr:           return Exec((FnExpr&)node);
                 
                 case AstType::NumConst:         return Exec((NumConst&)node);

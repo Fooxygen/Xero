@@ -19,74 +19,51 @@ namespace xcompiler {
 
     class MethodImpl {
     public:
-        const sema::FnSign* link_fnsign_ = nullptr;
-
-        MethodImpl(const sema::FnSign* link_fnsign)
-        :   link_fnsign_(link_fnsign) {}
-
         virtual ~MethodImpl() = default;
     };
 
     class NativeMethodImpl : public MethodImpl {
     public:
-        using NativeFn = llvm::Value* (*)(IRGen&, const std::vector<llvm::Value*>&);
-        NativeFn fn_   = nullptr;
+        using Impl  = llvm::Value* (*)(IRGen&, const std::vector<llvm::Value*>&);
+        Impl  impl_ = nullptr;
 
-        NativeMethodImpl(const sema::FnSign* fnsign, NativeFn fn)
-        :   MethodImpl(fnsign), fn_(fn) {}
+        NativeMethodImpl(Impl impl) : impl_(impl) {}
     };
 
     class LangMethodImpl   : public MethodImpl {
     public:
-        llvm::Function* fn_ = nullptr;
+        using Impl  = llvm::Function*;
+        Impl  impl_ = nullptr;
 
-        LangMethodImpl(const sema::FnSign* fnsign,llvm::Function* fn)
-        :   MethodImpl(fnsign), fn_(fn) {}
+        LangMethodImpl(Impl impl) : impl_(impl) {}
     };
 
     class TypeImpl {
     private:
-        const sema::Type* link_type_ = nullptr;
+        sema::Type* link_type_ = nullptr;
+        std::string name_      = "";
+        size_t      size_      = 0;
+        std::unordered_map<const sema::FnSign*, std::unique_ptr<MethodImpl>> methods_;
 
     public:
-        std::string name_ = "";
-        size_t      size_ = 0;
-        std::unordered_map<std::string, std::vector<std::unique_ptr<MethodImpl>>> methods_;
+        TypeImpl(sema::Type* link_type, size_t size)
+        :   link_type_(link_type), name_(link_type->name()), size_(size) {}
 
-        TypeImpl(
-            const sema::Type* link_type,
-            size_t size
-        )
-        :   link_type_(link_type),
-            name_(link_type->name_),
-            size_(size)
-        {}
+        sema::Type* link_type() const { return link_type_; }
+        std::string name()      const { return name_; }
+        size_t      size()      const { return size_; }
 
-        const sema::Type* link_type() const { return link_type_; } 
-
-        void MethodAdd(const std::string& name, NativeMethodImpl::NativeFn fn, const sema::FnSign& fnsign);
-        void MethodAdd(const std::string& name, llvm::Function* fn, const sema::FnSign& fnsign);
-        
-        std::vector<std::unique_ptr<MethodImpl>>* MethodGet(const std::string& method_name) {
-            auto it = methods_.find(method_name);
-            if (it == methods_.end()) {
-                throw LogErr(LogModule::Xcompiler, std::format(
-                    "undefined method '{}' on type '{}'",
-                    method_name, name_
-                ));
-            }
-            return &it->second;
-        }
-        std::vector<std::unique_ptr<MethodImpl>>* TryMethodGet(const std::string& method_name) {
-            auto it = methods_.find(method_name);
-            return it == methods_.end() ? nullptr : &it->second;
-        }
+        void MethodAdd(const std::string& name, NativeMethodImpl::Impl impl, const sema::FnSign& sign);
+        void MethodAdd(const std::string& name, LangMethodImpl::Impl   impl, const sema::FnSign& sign);
+       
+        MethodImpl* MethodGet(const sema::FnSign* sign);
+        MethodImpl* MethodGetTry(const sema::FnSign* sign);
     };
 
     class TypeImplTable {
     private:
-        static inline std::unordered_map<const sema::Type*, std::unique_ptr<TypeImpl>> table_;
-        static inline std::unordered_map<TypeImpl*, const sema::Type*> table_reverse_;
+        static inline std::unordered_map<sema::Type*, std::unique_ptr<TypeImpl>> table_;
+        static inline std::unordered_map<TypeImpl*, sema::Type*> table_reverse_;
 
     public:
         static void      Init();
@@ -99,28 +76,25 @@ namespace xcompiler {
             return impl;
         }
         
-        static TypeImpl*         Lookup(const sema::Type* type) {
+        static TypeImpl*   Lookup(sema::Type* type) {
             auto it = table_.find(type);
             if (it == table_.end()) {
                 throw LogErr(LogModule::Xcompiler, std::format(
-                    "undefined implement on type '{}'", type->name_
+                    "undefined implement on type '{}'", type->name()
                 ));
             }
             return it->second.get();
         }
-        static const sema::Type* Lookup(TypeImpl* type_impl) {
+        static sema::Type* Lookup(TypeImpl* type_impl) {
             auto it = table_reverse_.find(type_impl);
             if (it == table_reverse_.end()) {
                 throw LogErr(LogModule::Xcompiler, std::format(
-                    "undefined type on implement '{}'", type_impl->name_
+                    "undefined type on implement '{}'", type_impl->name()
                 ));
             }
             return table_reverse_.find(type_impl)->second;
         }
     
-        static llvm::Value* Cast(
-            IRGen& gen, llvm::Value* val,
-            const sema::Type* from, const sema::Type* to
-        );
+        static llvm::Value* Cast(IRGen& gen, llvm::Value* val, sema::Type* from, sema::Type* to);
     };
 }

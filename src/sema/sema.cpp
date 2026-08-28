@@ -36,7 +36,7 @@ namespace sema {
             return;
         }
         if (sym->type_ == SymbolType::Fn) {
-            node.resolved_type_ = ((FnSymbol*)sym)->sign_->ret_type_;
+            node.resolved_type_ = ((FnSymbol*)sym)->sign_->ret_type();
             return;
         }
 
@@ -55,7 +55,7 @@ namespace sema {
 
         // base[=param0, param1, ...=]
         else {
-            std::vector<const Type*> params_type = {};
+            std::vector<Type*> params_type = {};
             for (auto& e : node.params_->exprs_) {
                 if      (e->type_ == AstType::TypeExpr) {
                     Exec(*e);
@@ -74,7 +74,7 @@ namespace sema {
             if (params_type.empty())
                 node.resolved_type_ = base;
             else
-                node.resolved_type_ = TypeTable::ParamTypeGet(base, params_type);
+                node.resolved_type_ = TypeTable::ParametricTypeGet(base, params_type);
         }
     }
 
@@ -137,8 +137,8 @@ namespace sema {
             if (!node.resolved_type_) {
                 throw LogErr(LogModule::Sema, std::format(
                     "cannot make type '{}' compatible with '{}'",
-                    node.lexpr_->resolved_type_->name_,
-                    node.rexpr_->resolved_type_->name_
+                    node.lexpr_->resolved_type_->name(),
+                    node.rexpr_->resolved_type_->name()
                 ), node.loc_);
             }
         }
@@ -167,7 +167,7 @@ namespace sema {
         }
 
         node.iter_type_ = boundary_type;
-        node.resolved_type_ = TypeTable::ParamTypeGet(
+        node.resolved_type_ = TypeTable::ParametricTypeGet(
             TypeTable::Lookup("range"), { node.iter_type_ }, node.loc_
         );
     }
@@ -181,10 +181,10 @@ namespace sema {
             node.elem_type_ = exprs[0]->resolved_type_;
 
         // Empty ArrayExpr
-        std::vector<const sema::Type*> params = {};
+        std::vector<Type*> params = {};
         if (node.elem_type_) params.emplace_back(node.elem_type_);
 
-        node.resolved_type_ = TypeTable::ParamTypeGet(
+        node.resolved_type_ = TypeTable::ParametricTypeGet(
             TypeTable::Lookup("array"), params
         );
     }
@@ -192,7 +192,7 @@ namespace sema {
     void Sema::Exec(FnCallExpr& node) {
 
         // Args Type
-        std::vector<const Type*> args_type = {};
+        std::vector<Type*> args_type = {};
         for (auto& e : node.args_->exprs_) {
             Exec(*e);
             args_type.emplace_back(e->resolved_type_);
@@ -207,9 +207,10 @@ namespace sema {
             node.resolved_type_ = TypeTable::Lookup("none");
         }
 
+        // Stored in SymbolTable
         else {
             auto& fnsign = ((const FnSymbol*)sym)->sign_;
-            if(!fnsign->CallCheck(args_type)) {
+            if(!fnsign->isCallMatch(args_type)) {
                 throw LogErr(LogModule::Sema, std::format(
                     "function '{}' expects {} type parameter(s), got {}",
                     callee,
@@ -217,7 +218,7 @@ namespace sema {
                     FnSign(nullptr, args_type, std::nullopt).ParamsPrint()
                 ), node.loc_);
             }
-            node.resolved_type_ = fnsign->ret_type_;
+            node.resolved_type_ = fnsign->ret_type();
         }
     }
 
@@ -228,36 +229,21 @@ namespace sema {
         auto target_type = node.target_->resolved_type_;
 
         // Args Type
-        std::vector<const Type*> args_type = {};
+        std::vector<Type*> args_type = {};
         for (auto& e : node.args_->exprs_) {
             Exec(*e);
             args_type.emplace_back(e->resolved_type_);
         }
 
         // Callee
-        auto  callee  = node.callee_->name_;
-        auto& methods = ((const BasicType*)target_type->BasicTypeGet())->methods_;
-        auto  method  = methods.find(callee);
-        if (method == methods.end()) {
-            throw LogErr(LogModule::Sema, std::format(
-                "undefined method '{}' on type '{}'",
-                callee, target_type->name_
-            ), node.loc_);
-        }
+        auto  callee       = node.callee_->name_;
+        auto& method_table = ((BasicType*)target_type->BasicTypeGet())->methods();
+        auto& method       = method_table.Lookup(callee);
         
-        // Overload Selection
-        bool isOverloadFind = false;
-        for (auto& fnsign : method->second.fnsigns_) {
-            if (fnsign->CallCheck(args_type)) {
-                isOverloadFind = true;
-                node.resolved_type_ = fnsign->ret_type_;
-            }
-        }
-        if (!isOverloadFind) {
-            throw LogErr(LogModule::Sema, std::format(
-                "undefined overload of method '{}' on type '{}'",
-                callee, target_type->name_
-            ), node.loc_);
+        // Overload
+        if (auto s = method.SignLookup(args_type)) {
+            node.resolved_type_  = s->ret_type();
+            node.matched_fnsign_ = s;
         }
     }
 
@@ -275,7 +261,7 @@ namespace sema {
 
         // Params
         auto& params_expr = node.params_->exprs_;
-        std::vector<const Type*> params_type = {};
+        std::vector<Type*> params_type = {};
         for (auto& e : params_expr) {
             auto expr = (DeclExpr*)e.get();
             Exec(*expr->bind_type_);
@@ -409,7 +395,7 @@ namespace sema {
             if (node.cond_->resolved_type_ && !node.cond_->resolved_type_->is("bool")) {
                 throw LogErr(LogModule::Sema, std::format(
                     "'condition' must be 'bool', not '{}'",
-                    node.cond_->resolved_type_->name_
+                    node.cond_->resolved_type_->name()
                 ), node.loc_);
             }
         }
@@ -429,10 +415,10 @@ namespace sema {
         
         Exec(*node.data_);
         auto data_type = node.data_->resolved_type_;
-        const sema::Type* iter_type = nullptr;
+        sema::Type* iter_type = nullptr;
         
         if (data_type->is("array")) {
-            if (data_type->type_using_ == Type::Using::Param) {
+            if (data_type->type_using() == Type::Using::Parametric) {
                 auto params_type = ((ParametricType*)data_type)->params_type();
                 if (!params_type.empty()) iter_type = params_type[0];
             }
@@ -441,7 +427,7 @@ namespace sema {
             iter_type = TypeTable::Lookup("char");
         }
         if (data_type->is("range")) {
-            if (data_type->type_using_ == Type::Using::Param) {
+            if (data_type->type_using() == Type::Using::Parametric) {
                 auto params_type = ((ParametricType*)data_type)->params_type();
                 if (!params_type.empty()) iter_type = params_type[0];
             }
@@ -462,7 +448,7 @@ namespace sema {
             if (node.cond_->resolved_type_ && !node.cond_->resolved_type_->is("bool")) {
                 throw LogErr(LogModule::Sema, std::format(
                     "'condition' must be 'bool', not '{}'",
-                    node.cond_->resolved_type_->name_
+                    node.cond_->resolved_type_->name()
                 ), node.loc_);
             }
         }

@@ -54,10 +54,14 @@ namespace xcompiler {
                     
                     auto& expr        = exprs[i];
                     auto  val         = gen.Exec(*expr);
+
                     auto  type        = expr->resolved_type_;
                     auto  type_impl   = TypeImplTable::Lookup(type);
-                    auto  type_method = type_impl->MethodGet("print");
-                    ((NativeMethodImpl*)(type_method->at(0).get()))->fn_(gen, { val });
+                    auto  type_basic  = (sema::BasicType*)type->BasicTypeGet();
+                    auto& method      = type_basic->methods().Lookup("print");
+                    auto  method_sign = method.SignLookup({ type });
+                    auto  impl        = type_impl->MethodGet(method_sign);
+                    ((NativeMethodImpl*)impl)->impl_(gen, { val });
                 }
             };
 

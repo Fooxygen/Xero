@@ -17,6 +17,7 @@
 
 namespace sema {
     class Type;
+    class FnSign;
 }
 
 // Type of Abstract Syntax Tree's Node
@@ -107,9 +108,9 @@ inline static bool    isAstTypeCompatible(AstType expected, AstType actual) {
 // Node of Abstract Syntax Tree
 class AstNode {
 public:
-    AstType           type_          = AstType::Undefined;
-    Loc               loc_;
-    const sema::Type* resolved_type_ = nullptr;
+    AstType     type_          = AstType::Undefined;
+    Loc         loc_;
+    sema::Type* resolved_type_ = nullptr;
 
     virtual const std::string TypeName() const {
         return "Undefined";
@@ -360,7 +361,7 @@ public:
     std::unique_ptr<Expr> step_  = nullptr;
     bool isClosed_ = false;
 
-    const sema::Type* iter_type_ = nullptr;
+    sema::Type* iter_type_ = nullptr;
 
     RangeExpr(
         std::unique_ptr<Expr> lexpr,
@@ -409,7 +410,7 @@ class ArrayExpr         : public Expr {
 public:
     std::unique_ptr<Exprs> elems_;
 
-    const sema::Type* elem_type_ = nullptr;
+    sema::Type* elem_type_ = nullptr;
 
     ArrayExpr(std::unique_ptr<Exprs> elems)
     :   elems_(std::move(elems))
@@ -475,6 +476,8 @@ public:
     std::unique_ptr<IdExpr> callee_ = nullptr;
     std::unique_ptr<Exprs>  args_   = nullptr;
 
+    const sema::FnSign* matched_fnsign_ = nullptr;
+
     MethodCallExpr(
         std::unique_ptr<Expr>   target,
         std::unique_ptr<IdExpr> callee,
@@ -503,6 +506,7 @@ public:
             std::make_unique<IdExpr>(callee_->name_),
             std::unique_ptr<Exprs>((Exprs*)(args_->Clone().release()))
         );
+        node->matched_fnsign_ = matched_fnsign_;
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
@@ -515,7 +519,7 @@ public:
     std::unique_ptr<Exprs>     params_   = nullptr;
     std::unique_ptr<BlockExpr> block_    = nullptr;
 
-    const sema::Type* ret_resolved_type_ = nullptr;
+    sema::Type* ret_resolved_type_ = nullptr;
 
     FnExpr(
         std::string                name,

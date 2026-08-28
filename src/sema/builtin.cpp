@@ -11,18 +11,16 @@ namespace sema {
     // Fn
 
     void Sema::BuiltinFnRegister() {
-        // nullptr: any type
-        using TS = std::vector<const Type*>;
         
         auto none_ = TypeTable::Lookup("none");
 
         // IO
         {
             symbol_table_.Declare(std::make_unique<FnSymbol>(
-                "print", Loc(), FnSign(none_, TS{}, nullptr)
+                "print", Loc(), FnSign(none_, {}, nullptr)
             ));
             symbol_table_.Declare(std::make_unique<FnSymbol>(
-                "println", Loc(), FnSign(none_, TS{}, nullptr)
+                "println", Loc(), FnSign(none_, {}, nullptr)
             ));
         }
     }

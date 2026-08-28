@@ -11,8 +11,8 @@
 #include "sema/symbol.hpp"
 
 namespace sema {
-    using AT      = AstType;
-    using OT      = OperType;
+    using AT = AstType;
+    using OT = OperType;
 
     class Sema {
     private:
@@ -48,7 +48,6 @@ namespace sema {
         void Exec(Program& node);
 
     public:
-
         // Fn
 
         void BuiltinFnRegister();
