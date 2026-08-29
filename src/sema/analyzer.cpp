@@ -400,8 +400,8 @@ namespace sema {
             }
         }
 
-        Exec(*node.block_);
-        if (node.sub_) Exec(*node.sub_);
+        Exec(*node.then_);
+        if (node.next_) Exec(*node.next_);
     }
 
     void Analyzer::Exec(ReturnSignalStmt& node) {

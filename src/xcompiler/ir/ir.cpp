@@ -141,6 +141,12 @@ namespace xcompiler {
         return builder_alloc.CreateAlloca(type, nullptr, name);
     }
 
+    void IRGen::BlockTermCreate(llvm::BasicBlock* term) {
+        if (!builder_.GetInsertBlock()->getTerminator()) {
+            builder_.CreateBr(term);
+        }
+    }
+
     // Expr
 
     llvm::Value* IRGen::Exec(BlockExpr& node, std::function<void()> OnScopeReady) {
@@ -220,6 +226,7 @@ namespace xcompiler {
         // Short Circuit Boolean Evaluation
         if (node.oper_type_ == OperType::And || node.oper_type_ == OperType::Or) {
 
+            // Blocks
             auto fn = builder_.GetInsertBlock()->getParent();
             auto block_lval = builder_.GetInsertBlock();
             auto block_rval = llvm::BasicBlock::Create(context_, ".sc.rval", fn);
@@ -238,7 +245,7 @@ namespace xcompiler {
             // Rval Block
             builder_.SetInsertPoint(block_rval);    // write in rval block
             auto rval = Exec(*node.rexpr_);
-            builder_.CreateBr(block_end);
+            BlockTermCreate(block_end);
 
             // End Block
             builder_.SetInsertPoint(block_end);
@@ -464,6 +471,47 @@ namespace xcompiler {
         return nullptr;
     }
 
+    llvm::Value* IRGen::Exec(CondStmt& node) {
+        auto fn = builder_.GetInsertBlock()->getParent();
+        auto block_end = llvm::BasicBlock::Create(context_, ".cond.end", fn);
+
+        std::function<void(CondStmt&)> emit = [&](CondStmt& node_sub) {
+
+            // Cond
+            if (!node_sub.cond_) {
+                Exec(*node_sub.then_);
+                BlockTermCreate(block_end);
+                return;
+            }
+            auto cond_val = Exec(*node_sub.cond_);
+
+            // Blocks
+            auto fn_sub = builder_.GetInsertBlock()->getParent();
+            auto block_then = llvm::BasicBlock::Create(context_, ".cond.then", fn_sub);
+            auto block_else = llvm::BasicBlock::Create(context_, ".cond.else", fn_sub);
+
+            // Cond Block
+            builder_.CreateCondBr(cond_val, block_then, block_else);
+
+            // Then Block
+            builder_.SetInsertPoint(block_then);
+            Exec(*node_sub.then_);
+            BlockTermCreate(block_end);
+
+            // Else Block
+            builder_.SetInsertPoint(block_else);
+            if (node_sub.next_)
+                emit(*node_sub.next_);
+            else
+                BlockTermCreate(block_end);
+        };
+
+        emit(node);
+        builder_.SetInsertPoint(block_end);
+
+        return nullptr;
+    }
+        
     llvm::Value* IRGen::Exec(ReturnSignalStmt& node) {
         if (node.value_) {
             auto val = Exec(*node.value_);

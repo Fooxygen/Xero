@@ -29,11 +29,14 @@ namespace xcompiler {
         llvm::Function* procfn_          = nullptr;
         sema::Type*     procfn_ret_type_ = nullptr;
 
+    private:
         // Utility
 
         llvm::Type*       LlvmType(sema::Type* type);
 
         llvm::AllocaInst* EntryBlockSlotCreate(llvm::Type* type, const std::string& name);
+
+        void BlockTermCreate(llvm::BasicBlock* term);
 
         // Exec
 
@@ -50,6 +53,7 @@ namespace xcompiler {
 
         llvm::Value* Exec(ExprStmt& node);
         llvm::Value* Exec(AssignStmt& node);
+        llvm::Value* Exec(CondStmt& node);
         llvm::Value* Exec(ReturnSignalStmt& node);
 
         llvm::Value* Exec(Program& node);
@@ -83,6 +87,7 @@ namespace xcompiler {
                 
                 case AstType::ExprStmt:         return Exec((ExprStmt&)node);
                 case AstType::AssignStmt:       return Exec((AssignStmt&)node);
+                case AstType::CondStmt:         return Exec((CondStmt&)node);
                 case AstType::ReturnSignalStmt: return Exec((ReturnSignalStmt&)node);
 
                 case AstType::Program:          return Exec((Program&)node);

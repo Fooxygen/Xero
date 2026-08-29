@@ -705,9 +705,9 @@ namespace parser {
                     auto stmt = Rule::Move<CondStmt>(symbols, 1);
 
                     CondStmt* tail = stmt.get();
-                    while (tail->sub_) tail = tail->sub_.get();
+                    while (tail->next_) tail = tail->next_.get();
 
-                    tail->sub_ = std::make_unique<CondStmt>(
+                    tail->next_ = std::make_unique<CondStmt>(
                         Rule::Move<Expr>(symbols, 4),
                         Pack2BlockExpr(Rule::Move<AstNode>(symbols, 6)),
                         nullptr
@@ -729,9 +729,9 @@ namespace parser {
                     auto stmt = Rule::Move<CondStmt>(symbols, 1);
 
                     CondStmt* tail = stmt.get();
-                    while (tail->sub_) tail = tail->sub_.get();
+                    while (tail->next_) tail = tail->next_.get();
 
-                    tail->sub_ = std::make_unique<CondStmt>(
+                    tail->next_ = std::make_unique<CondStmt>(
                         nullptr,
                         Pack2BlockExpr(Rule::Move<AstNode>(symbols, 3)),
                         nullptr

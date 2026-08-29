@@ -777,19 +777,19 @@ public:
 };
 class CondStmt          : public Stmt {
 public:
-    std::unique_ptr<Expr>      cond_  = nullptr;
-    std::unique_ptr<BlockExpr> block_ = nullptr;
-    std::unique_ptr<CondStmt>  sub_   = nullptr;
+    std::unique_ptr<Expr>      cond_ = nullptr;
+    std::unique_ptr<BlockExpr> then_ = nullptr;
+    std::unique_ptr<CondStmt>  next_ = nullptr;
 
 public:
     CondStmt(
         std::unique_ptr<Expr>      cond,
-        std::unique_ptr<BlockExpr> block,
-        std::unique_ptr<CondStmt>  sub
+        std::unique_ptr<BlockExpr> then,
+        std::unique_ptr<CondStmt>  next
     )
     :   cond_(std::move(cond)),
-        block_(std::move(block)),
-        sub_(std::move(sub))
+        then_(std::move(then)),
+        next_(std::move(next))
     {
         type_ = AstType::CondStmt;
     }
@@ -800,15 +800,15 @@ public:
 
     void PrintImpl(std::string prefix) override {
         if (cond_) cond_->Print(prefix, "cond");
-        block_->Print(prefix, "block");
-        if (sub_) sub_->Print(prefix, "sub");
+        then_->Print(prefix, "then");
+        if (next_) next_->Print(prefix, "next");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<CondStmt>(
             cond_ ? std::unique_ptr<Expr>((Expr*)(cond_->Clone().release())) : nullptr,
-            std::unique_ptr<BlockExpr>((BlockExpr*)(block_->Clone().release())),
-            sub_ ? std::unique_ptr<CondStmt>((CondStmt*)(sub_->Clone().release())) : nullptr
+            std::unique_ptr<BlockExpr>((BlockExpr*)(then_->Clone().release())),
+            next_ ? std::unique_ptr<CondStmt>((CondStmt*)(next_->Clone().release())) : nullptr
         );
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
