@@ -918,16 +918,16 @@ public:
 };
 class WhileStmt         : public Stmt {
 public:
-    std::unique_ptr<Expr>       cond_;
-    std::unique_ptr<BlockExpr>  block_;
+    std::unique_ptr<Expr>      cond_;
+    std::unique_ptr<BlockExpr> then_;
 
 public:
     WhileStmt(
-        std::unique_ptr<Expr>       cond,
-        std::unique_ptr<BlockExpr>  block
+        std::unique_ptr<Expr>      cond,
+        std::unique_ptr<BlockExpr> then
     )
     :   cond_(std::move(cond)),
-        block_(std::move(block))
+        then_(std::move(then))
     {
         type_ = AstType::WhileStmt;
     }
@@ -938,13 +938,13 @@ public:
 
     void PrintImpl(std::string prefix) override {
         cond_->Print(prefix, "cond");
-        block_->Print(prefix, "block");
+        then_->Print(prefix, "then");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<WhileStmt>(
             std::unique_ptr<Expr>((Expr*)(cond_->Clone().release())),
-            std::unique_ptr<BlockExpr>((BlockExpr*)(block_->Clone().release()))
+            std::unique_ptr<BlockExpr>((BlockExpr*)(then_->Clone().release()))
         );
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;

@@ -452,7 +452,7 @@ namespace sema {
                 ), node.loc_);
             }
         }
-        Exec(*node.block_);
+        Exec(*node.then_);
     }
 
     // Common

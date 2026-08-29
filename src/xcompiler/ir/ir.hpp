@@ -55,6 +55,7 @@ namespace xcompiler {
         llvm::Value* Exec(AssignStmt& node);
         llvm::Value* Exec(CondStmt& node);
         llvm::Value* Exec(ReturnSignalStmt& node);
+        llvm::Value* Exec(WhileStmt& node);
 
         llvm::Value* Exec(Program& node);
 
@@ -89,6 +90,7 @@ namespace xcompiler {
                 case AstType::AssignStmt:       return Exec((AssignStmt&)node);
                 case AstType::CondStmt:         return Exec((CondStmt&)node);
                 case AstType::ReturnSignalStmt: return Exec((ReturnSignalStmt&)node);
+                case AstType::WhileStmt:        return Exec((WhileStmt&)node);
 
                 case AstType::Program:          return Exec((Program&)node);
 

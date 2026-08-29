@@ -490,7 +490,7 @@ namespace xcompiler {
             auto block_then = llvm::BasicBlock::Create(context_, ".cond.then", fn_sub);
             auto block_else = llvm::BasicBlock::Create(context_, ".cond.else", fn_sub);
 
-            // Cond Block
+            // This Block
             builder_.CreateCondBr(cond_val, block_then, block_else);
 
             // Then Block
@@ -508,7 +508,6 @@ namespace xcompiler {
 
         emit(node);
         builder_.SetInsertPoint(block_end);
-
         return nullptr;
     }
         
@@ -523,6 +522,31 @@ namespace xcompiler {
         return nullptr;
     }
 
+    llvm::Value* IRGen::Exec(WhileStmt& node) {
+
+        // Blocks
+        auto fn = builder_.GetInsertBlock()->getParent();
+        auto block_cond = llvm::BasicBlock::Create(context_, ".while.cond", fn);
+        auto block_then = llvm::BasicBlock::Create(context_, ".while.then", fn);
+        auto block_end  = llvm::BasicBlock::Create(context_, ".while.end", fn);
+    
+        // This Block
+        builder_.CreateBr(block_cond);
+
+        // Cond Block
+        builder_.SetInsertPoint(block_cond);
+        auto cond_val = Exec(*node.cond_);
+        builder_.CreateCondBr(cond_val, block_then, block_end);
+
+        // Then Block
+        builder_.SetInsertPoint(block_then);
+        Exec(*node.then_);
+        BlockTermCreate(block_cond);
+
+        builder_.SetInsertPoint(block_end);
+        return nullptr;
+    }
+    
     // Common
 
     llvm::Value* IRGen::Exec(Program& node) {

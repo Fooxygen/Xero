@@ -1,33 +1,9 @@
 
-fn grade(score: i32) -> i32 {
-    if   (score >= 90) return 1;
-    elif (score >= 75) return 2;
-    elif (score >= 60) return 3;
-    else return 4;
-}
-
 fn main() {
-    println(grade(95));             # expect: 1
-    println(grade(80));             # expect: 2
-    println(grade(65));             # expect: 3
-    println(grade(30));             # expect: 4
-
-    a: i32 = 8;
-    b: i32 = 20;
-    if (a > 5) {
-        if (b > 10) {
-            println(a + b);         # expect: 28
-        }
-        else {
-            println(a);
-        }
+    
+    x: i32 = 10;
+    while (x > 0) {
+        println(x);
+        x = x - 1;
     }
-    else {
-        println(b);
-    }
-
-    c: i32 = 3;
-    if (c == 1) println(100);
-    else println(200);              # expect: 200
-    println(c);                     # expect: 3
 }
