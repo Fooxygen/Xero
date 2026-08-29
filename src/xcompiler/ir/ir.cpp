@@ -218,7 +218,47 @@ namespace xcompiler {
         // Binary
 
         // Short Circuit Boolean Evaluation
-        // TODO
+        if (node.oper_type_ == OperType::And || node.oper_type_ == OperType::Or) {
+
+            auto fn = builder_.GetInsertBlock()->getParent();
+            auto block_lval = builder_.GetInsertBlock();
+            auto block_rval = llvm::BasicBlock::Create(context_, ".sc.rval", fn);
+            auto block_end  = llvm::BasicBlock::Create(context_, ".sc.end", fn);
+
+            // Lval Block: Add Jump Instruction
+            if (node.oper_type_ == OperType::And) {
+                // true && -> rval block
+                // false   -> end  block
+                builder_.CreateCondBr(lval, block_rval, block_end);
+            }
+            else {
+                builder_.CreateCondBr(lval, block_end, block_rval);
+            }
+
+            // Rval Block
+            builder_.SetInsertPoint(block_rval);    // write in rval block
+            auto rval = Exec(*node.rexpr_);
+            builder_.CreateBr(block_end);
+
+            // End Block
+            builder_.SetInsertPoint(block_end);
+            auto phi = builder_.CreatePHI(builder_.getInt1Ty(), 2); // double branch
+            
+            if (node.oper_type_ == OperType::And) {
+                // false &&
+                phi->addIncoming(builder_.getFalse(), block_lval);
+                // true &&
+                phi->addIncoming(rval, block_rval);
+            }
+            else {
+                // true ||
+                phi->addIncoming(builder_.getTrue(), block_lval);
+                // false ||
+                phi->addIncoming(rval, block_rval);
+            }
+
+            return phi;
+        }
 
         auto rval = Exec(*node.rexpr_);
         {

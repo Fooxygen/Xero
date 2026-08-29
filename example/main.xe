@@ -111,4 +111,7 @@ fn main() {
     println((true).and(false));             # expect: false
     println((true).or(false));              # expect: true
     println((true).not());                  # expect: false
+
+    println(false && (10 / 0 == 0));        # expect: false (no zero division warning)
+    println(true  || (10 / 0 == 0));        # expect: true
 }
