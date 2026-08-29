@@ -61,7 +61,7 @@ namespace xcompiler {
             auto it = table_.find(type);
             if (it == table_.end()) {
                 throw LogErr(LogModule::Xcompiler, std::format(
-                    "undefined implementation on type '{}'", type->name()
+                    "undefined implementation of type '{}'", type->name()
                 ));
             }
             return it->second.get();
@@ -70,7 +70,7 @@ namespace xcompiler {
             auto it = table_reverse_.find(type_impl);
             if (it == table_reverse_.end()) {
                 throw LogErr(LogModule::Xcompiler, std::format(
-                    "undefined type on implementation '{}'", type_impl->name()
+                    "undefined type with implementation '{}'", type_impl->name()
                 ));
             }
             return table_reverse_.find(type_impl)->second;

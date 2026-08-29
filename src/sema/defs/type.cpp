@@ -26,7 +26,7 @@ namespace sema {
     void Type::BasicTypeCheck() const {
         if (type_using_ != Using::Basic) {
             throw LogErr(LogModule::Sema, std::format(
-                "invalid base type '{}'", name_
+                "invalid basic type '{}'", name_
             ));
         }
     }
@@ -213,7 +213,7 @@ namespace sema {
             );
             return set.first->second;
         }
-        else throw LogErr(LogModule::Sema, std::format("existing type '{}'", type.name()));
+        else throw LogErr(LogModule::Sema, std::format("redefinition of type '{}'", type.name()));
     }
 
     Type* TypeTable::Set(const ParametricType& type) {
@@ -224,7 +224,7 @@ namespace sema {
             );
             return set.first->second;
         }
-        else throw LogErr(LogModule::Sema, std::format("existing type '{}'", type.name()));
+        else throw LogErr(LogModule::Sema, std::format("redefinition of type '{}'", type.name()));
     }
     
     Type* TypeTable::Lookup(std::string_view name, std::optional<Loc> loc) {

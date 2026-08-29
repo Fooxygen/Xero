@@ -50,7 +50,7 @@ namespace sema {
             }
             else {
                 throw LogErr(LogModule::Sema, std::format(
-                    "redefinition of '{}' in same scope",
+                    "redefinition of variable '{}' in same scope",
                     var->name_
                 ));
             }
@@ -61,7 +61,7 @@ namespace sema {
                 auto oit = sit->find(name);
                 if (oit != sit->end()) return &(*oit->second);
             }
-            throw LogErr(LogModule::Sema, std::format("undefined symbol '{}'", name), loc);
+            throw LogErr(LogModule::Sema, std::format("undefined variable '{}'", name), loc);
         }
         const Var* LookupTry(const std::string& name) {
             for (auto sit = scopes_.rbegin(); sit != scopes_.rend(); sit++) {

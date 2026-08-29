@@ -59,9 +59,7 @@ namespace xcompiler {
                 "-o", (path / (module_name + ".exe")).string(),
             });
             if (link_status != 0) {
-                throw LogErr(LogModule::Xcompiler, std::format(
-                    "failed to link object file"
-                ));
+                throw LogErr(LogModule::Xcompiler, "failed to link object file");
             }
         }
     };

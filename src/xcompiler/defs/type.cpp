@@ -23,8 +23,8 @@ namespace xcompiler {
         auto it = methods_.find(method_sign);
         if (it != methods_.end()) {
             throw LogErr(LogModule::Xcompiler, std::format(
-                "redefinition implementation of method {} for type '{}'",
-                sign.ParamsPrint(), type_basic->name()
+                "redefinition implementation of method {} for type '{}', signature is {}",
+                name, type_basic->name(), sign.ParamsPrint()
             ));
         }
         methods_[method_sign] = std::make_unique<NativeFnImpl>(impl);
@@ -38,8 +38,8 @@ namespace xcompiler {
         auto it = methods_.find(method_sign);
         if (it != methods_.end()) {
             throw LogErr(LogModule::Xcompiler, std::format(
-                "redefinition implementation of method {} for type '{}'",
-                sign.ParamsPrint(), type_basic->name()
+                "redefinition implementation of method {} for type '{}', signature is {}",
+                name, type_basic->name(), sign.ParamsPrint()
             ));
         }
         methods_[method_sign] = std::make_unique<LangFnImpl>(impl);
@@ -49,8 +49,8 @@ namespace xcompiler {
         auto it = methods_.find(sign);
         if (it == methods_.end()) {
             throw LogErr(LogModule::Xcompiler, std::format(
-                "undefined implementation of method {} for type '{}'",
-                sign->ParamsPrint(), link_type_->name()
+                "undefined implementation of method {} for type '{}', signature it attempts to obtain is {}",
+                sign->name(), link_type_->name(), sign->ParamsPrint()
             ));
         }
         return it->second.get();

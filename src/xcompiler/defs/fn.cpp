@@ -9,12 +9,12 @@ namespace xcompiler {
     
     // FnImplTable
 
-    void    FnImplTable::Add(const sema::FnSign* sign, std::unique_ptr<FnImpl>&& impl) {
+    void    FnImplTable::Add(const std::string& name, const sema::FnSign* sign, std::unique_ptr<FnImpl>&& impl) {
         auto it = table_.find(sign);
         if (it != table_.end()) {
             throw LogErr(LogModule::Xcompiler, std::format(
-                "redefinition implementation of function, signature is {}",
-                sign->ParamsPrint()
+                "redefinition implementation of function '{}', signature is {}",
+                name, sign->ParamsPrint()
             ));
         }
         table_[sign] = std::move(impl);
@@ -28,7 +28,8 @@ namespace xcompiler {
     FnImpl* FnImplTable::Lookup(const sema::FnSign* sign) {
         auto impl = LookupTry(sign);
         if (!impl) throw LogErr(LogModule::Xcompiler, std::format(
-            "undefined implementation {} of function", sign->ParamsPrint()
+            "undefined implementation of function '{}', signature it attempts to obtain is {}",
+            sign->name(), sign->ParamsPrint()
         ));
         return impl;
     }

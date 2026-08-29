@@ -32,26 +32,32 @@ namespace sema {
         std::vector<Type*>   params_type_fix_ = {};
         std::optional<Type*> params_type_var_ = std::nullopt;
         FnModifier           modifier_        = FnModifier{};
+        std::string          name_            = "";
 
     public:
         FnSign(
             Type*                     ret_type,
             const std::vector<Type*>& params_type_fix = {},
             std::optional<Type*>      params_type_var = std::nullopt,
-            FnModifier                modifier        = FnModifier{}
+            FnModifier                modifier        = FnModifier{},
+            const std::string&        name            = ""
         )
         :   ret_type_(ret_type),
             params_type_fix_(params_type_fix),
             params_type_var_(params_type_var),
-            modifier_(modifier)
+            modifier_(modifier),
+            name_(name)
         {}
 
         Type*                       ret_type()        const { return ret_type_; }
         const std::vector<Type*>&   params_type_fix() const { return params_type_fix_; }
         const std::optional<Type*>& params_type_var() const { return params_type_var_; }
         const FnModifier&           modifier()        const { return modifier_; }
+        std::string                 name()            const { return name_; }
 
     public:
+        void NameSet(const std::string& name) { name_ = name; }
+
         std::string ParamsPrint() const;
 
         bool isSignEqual(const FnSign& sign);
@@ -75,7 +81,7 @@ namespace sema {
         const FnSign* SignLookupTry(const FnSign& sign) const;
         const FnSign* SignLookupTry(const std::vector<Type*>& args_type);
 
-        const FnSign* SignAdd(const FnSign& fnsign);
+        const FnSign* SignAdd(const std::string& name, const FnSign& sign);
     };
 
     // Global Fn Table
@@ -103,7 +109,7 @@ namespace sema {
         
         const FnSign* Add(const std::string& name, const FnSign& sign) {
             auto& fn = table_.try_emplace(name, name).first->second;
-            return fn.SignAdd(sign);
+            return fn.SignAdd(name, sign);
         }
     };
 }

@@ -110,9 +110,11 @@ namespace sema {
         return nullptr;
     }
 
-    const FnSign* Fn::SignAdd(const FnSign& fnsign) {
-        if (auto s = SignLookupTry(fnsign)) return s;
-        signs_.emplace_back(std::make_unique<FnSign>(fnsign));
-        return signs_[signs_.size() - 1].get();
+    const FnSign* Fn::SignAdd(const std::string& name, const FnSign& sign) {
+        if (auto s = SignLookupTry(sign)) return s;
+
+        auto sign_add = signs_.emplace_back(std::make_unique<FnSign>(sign)).get();
+        sign_add->NameSet(name);
+        return sign_add;
     }
 }

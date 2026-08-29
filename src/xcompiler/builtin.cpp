@@ -79,10 +79,10 @@ namespace xcompiler {
                 return nullptr;
             };
 
-            auto sign_print   = fn_table.Lookup("print").SignLookup(sema::FnSign(none_, {}, nullptr));
-            auto sign_println = fn_table.Lookup("println").SignLookup(sema::FnSign(none_, {}, nullptr));
-            FnImplTable::Add(sign_print,   std::make_unique<NativeFnImpl>(impl_print));
-            FnImplTable::Add(sign_println, std::make_unique<NativeFnImpl>(impl_println));
+            auto sign_print   = fn_table.Lookup("print").SignLookup(sema::FnSign(none_, {}, nullptr, {}, "print"));
+            auto sign_println = fn_table.Lookup("println").SignLookup(sema::FnSign(none_, {}, nullptr, {}, "println"));
+            FnImplTable::Add("print", sign_print,   std::make_unique<NativeFnImpl>(impl_print));
+            FnImplTable::Add("println", sign_println, std::make_unique<NativeFnImpl>(impl_println));
         }
     }
 }

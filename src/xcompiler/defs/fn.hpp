@@ -53,7 +53,7 @@ namespace xcompiler {
         static inline std::unordered_map<const sema::FnSign*, std::unique_ptr<FnImpl>> table_;
 
     public:
-        static void    Add(const sema::FnSign* sign, std::unique_ptr<FnImpl>&& impl);
+        static void    Add(const std::string& name, const sema::FnSign* sign, std::unique_ptr<FnImpl>&& impl);
         static FnImpl* Lookup(const sema::FnSign* sign);
         static FnImpl* LookupTry(const sema::FnSign* sign);
     };

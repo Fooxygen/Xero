@@ -34,7 +34,7 @@ namespace xcompiler {
 
         // Open File
         if (path.empty()) {
-            throw LogErr(LogModule::File, "empty file path");
+            throw LogErr(LogModule::Xcompiler, "empty file path");
         }
 
         std::error_code ec;
@@ -92,7 +92,7 @@ namespace xcompiler {
 
         // └─ Open File
         if (path.empty()) {
-            throw LogErr(LogModule::File, "empty file path");
+            throw LogErr(LogModule::Xcompiler, "empty file path");
         }
 
         std::error_code ec;
@@ -361,7 +361,7 @@ namespace xcompiler {
         }
 
         if (node.name_ != "main") {
-            FnImplTable::Add(node.fnsign_, std::make_unique<LangFnImpl>(fn));
+            FnImplTable::Add(node.name_, node.fnsign_, std::make_unique<LangFnImpl>(fn));
         }
 
         return nullptr;
