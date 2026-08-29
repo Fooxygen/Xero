@@ -25,8 +25,9 @@ namespace xcompiler {
         llvm::IRBuilder<>             builder_;
         VarTable                      var_table_;
 
-        // Cache
-        llvm::Function* current_fn_ = nullptr;
+        // Processing Fn
+        llvm::Function* procfn_          = nullptr;
+        sema::Type*     procfn_ret_type_ = nullptr;
 
         // Utility
 

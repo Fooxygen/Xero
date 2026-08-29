@@ -136,7 +136,7 @@ namespace xcompiler {
 
     llvm::AllocaInst* IRGen::EntryBlockSlotCreate(llvm::Type* type, const std::string& name) {
         llvm::IRBuilder<> builder_alloc(
-            &current_fn_->getEntryBlock(), current_fn_->getEntryBlock().begin()
+            &procfn_->getEntryBlock(), procfn_->getEntryBlock().begin()
         );
         return builder_alloc.CreateAlloca(type, nullptr, name);
     }
@@ -329,7 +329,10 @@ namespace xcompiler {
         );
         auto block = llvm::BasicBlock::Create(context_, "entry", fn);
         builder_.SetInsertPoint(block);
-        current_fn_ = fn;
+
+        // Processing Fn
+        procfn_ = fn;
+        procfn_ret_type_ = node.ret_resolved_type_;
 
         // Args Name
         {
@@ -406,8 +409,13 @@ namespace xcompiler {
     }
 
     llvm::Value* IRGen::Exec(ReturnSignalStmt& node) {
-        if (node.value_) builder_.CreateRet(Exec(*node.value_));
-        else             builder_.CreateRetVoid();
+        if (node.value_) {
+            auto val = Exec(*node.value_);
+            builder_.CreateRet(
+                TypeImplTable::Cast(*this, val, node.value_->resolved_type_, procfn_ret_type_)
+            );
+        }
+        else builder_.CreateRetVoid();
         return nullptr;
     }
 
