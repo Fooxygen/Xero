@@ -234,7 +234,7 @@ namespace sema {
         auto target_type = node.target_->resolved_type_;
 
         // Args Type
-        std::vector<Type*> args_type = {};
+        std::vector<Type*> args_type = { target_type };     // the first parameter is target
         for (auto& e : node.args_->exprs_) {
             Exec(*e);
             args_type.emplace_back(e->resolved_type_);

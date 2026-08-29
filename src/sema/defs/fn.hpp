@@ -53,7 +53,7 @@ namespace sema {
         const std::vector<Type*>&   params_type_fix() const { return params_type_fix_; }
         const std::optional<Type*>& params_type_var() const { return params_type_var_; }
         const FnModifier&           modifier()        const { return modifier_; }
-        std::string                 name()            const { return name_; }
+        const std::string           name()            const { return name_; }
 
     public:
         void NameSet(const std::string& name) { name_ = name; }

@@ -285,20 +285,35 @@ namespace xcompiler {
     
     llvm::Value* IRGen::Exec(MethodCallExpr& node) {
         
+        // Target
+        auto target_val   = Exec(*node.target_);
+        auto target_type  = node.target_->resolved_type_;
+        auto target_basic = target_type->BasicTypeGet();
+        auto target_impl  = TypeImplTable::Lookup(target_basic);
+
         // Args
-        std::vector<llvm::Value*> args      = {};
-        std::vector<sema::Type*>  args_type = {};
+        std::vector<llvm::Value*> args      = { target_val };
+        std::vector<sema::Type*>  args_type = { target_type };
         if (node.args_) {
             for (auto& e : node.args_->exprs_) {
                 args.emplace_back(Exec(*e));
                 args_type.emplace_back(e->resolved_type_);
             }
         }
-        for (size_t i = 0; i < args.size(); i++) {
 
+        // Method
+        auto method_impl = target_impl->MethodGet(node.callee_fnsign_);
+
+        if (auto native = dynamic_cast<NativeFnImpl*>(method_impl)) {
+            return native->impl()(*this, args, args_type);
+        }
+        if (auto lang = dynamic_cast<LangFnImpl*>(method_impl)) {
+            return builder_.CreateCall(lang->impl(), args);
         }
 
-        return nullptr;
+        throw LogErr(LogModule::Xcompiler, std::format(
+            "unsupported method '{}'", node.callee_->name_
+        ), node.loc_);
     }
 
     llvm::Value* IRGen::Exec(FnExpr& node) {

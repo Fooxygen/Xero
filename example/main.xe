@@ -78,7 +78,7 @@ fn main() {
     println(div(10, 5));                    # expect: 2
     println(is_even(4));                    # expect: true
     println(is_even(7));                    # expect: false
-    
+
     no_ret();                               # expect: 0
     println(add(add(1, 2), add(3, 4)));     # expect: 10
 
@@ -91,4 +91,24 @@ fn main() {
 
     println(to_f64(123));                   # expect: 123.000000
     println(to_i64(7));                     # expect: 7
+
+    println((10).plus(5));                  # expect: 15
+    println((10).minus(5));                 # expect: 5
+    println((10).star(5));                  # expect: 50
+    println((10).slash(5));                 # expect: 2
+    println((10).modt(3));                  # expect: 1
+    println((10).modf(3));                  # expect: 1
+    println((10).neg());                    # expect: -10
+    println(((10).plus(5)).star(2));        # expect: 30
+
+    println((10).gt(5));                    # expect: true
+    println((10).lt(5));                    # expect: false
+    println((10).ge(10));                   # expect: true
+    println((10).le(9));                    # expect: false
+    println((10).eq(10));                   # expect: true
+    println((10).neq(5));                   # expect: true
+
+    println((true).and(false));             # expect: false
+    println((true).or(false));              # expect: true
+    println((true).not());                  # expect: false
 }

@@ -81,7 +81,7 @@ namespace sema {
             if (s->isSignEqual(sign)) return s.get();
         }
         throw LogErr(LogModule::Sema, std::format(
-            "undefined overload {} for function '{}'",
+            "undefined signature {} for function '{}'",
             sign.ParamsPrint(), name_
         ));
     }
@@ -91,7 +91,7 @@ namespace sema {
             if (s->isSignMatch(args_type)) return s.get();
         }
         throw LogErr(LogModule::Sema, std::format(
-            "undefined overload {} for function '{}'",
+            "undefined signature {} for function '{}'",
             FnSign(nullptr, args_type).ParamsPrint(), name_
         ));
     }

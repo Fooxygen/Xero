@@ -103,10 +103,7 @@ namespace sema {
         static Type* Lookup(std::string_view name, std::optional<Loc> loc = std::nullopt);
         static Type* LookupTry(std::string_view name);
         
-        static Type* ParametricTypeGet(
-            Type* type, const std::vector<Type*>& params,
-            std::optional<Loc> loc = std::nullopt
-        );
+        static Type* ParametricTypeGet(Type* type, const std::vector<Type*>& params, std::optional<Loc> loc = std::nullopt);
 
         static void  CastRecompute();
         static Type* Common(std::set<Type*> ts) {
