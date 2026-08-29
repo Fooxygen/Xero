@@ -188,8 +188,7 @@ namespace xcompiler {
     llvm::Value* IRGen::Exec(OperExpr& node) {
         using enum OperType;
 
-        
-        auto call = [](IRGen& gen, sema::Type* type, const std::string& name, std::vector<llvm::Value*> args) {
+        auto call = [&](sema::Type* type, const std::string& name, std::vector<llvm::Value*> args) {
 
             // TypeImpl
             auto type_basic = (sema::BasicType*)type->BasicTypeGet();
@@ -203,16 +202,16 @@ namespace xcompiler {
             auto& method      = type_basic->method_table().Lookup(name);
             auto  method_sign = method.SignLookup(args_type);
             auto  method_impl = type_impl->MethodGet(method_sign);
-            return ((NativeFnImpl*)method_impl)->impl()(gen, args, args_type);
+            return ((NativeFnImpl*)method_impl)->impl()(*this, args, args_type);
         };
 
         // Unary
         auto lval = Exec(*node.lexpr_);
         {
             switch (node.oper_type_) {
-                case Neg:   return call(*this, node.lexpr_->resolved_type_, "neg", { lval });
-                case Not:   return call(*this, node.lexpr_->resolved_type_, "not", { lval });
-                default:    break;
+                case Neg: return call(node.lexpr_->resolved_type_, "neg", { lval });
+                case Not: return call(node.lexpr_->resolved_type_, "not", { lval });
+                default:  break;
             }
         }
 
@@ -237,18 +236,20 @@ namespace xcompiler {
             rval = TypeImplTable::Cast(*this, rval, rtype, com_type);
 
             switch (node.oper_type_) {
-                case Plus:  return call(*this, com_type, "plus",  { lval, rval });
-                case Minus: return call(*this, com_type, "minus", { lval, rval });
-                case Star:  return call(*this, com_type, "star",  { lval, rval });
-                case Slash: return call(*this, com_type, "slash", { lval, rval });
-                case ModT:  return call(*this, com_type, "modt",  { lval, rval });
-                case ModF:  return call(*this, com_type, "modf",  { lval, rval });
-                case Gt:    return call(*this, com_type, "gt",    { lval, rval });
-                case Lt:    return call(*this, com_type, "lt",    { lval, rval });
-                case Ge:    return call(*this, com_type, "ge",    { lval, rval });
-                case Le:    return call(*this, com_type, "le",    { lval, rval });
-                case Eq:    return call(*this, com_type, "eq",    { lval, rval });
-                case Neq:   return call(*this, com_type, "neq",   { lval, rval });
+                case Plus:  return call(com_type, "plus",  { lval, rval });
+                case Minus: return call(com_type, "minus", { lval, rval });
+                case Star:  return call(com_type, "star",  { lval, rval });
+                case Slash: return call(com_type, "slash", { lval, rval });
+                case ModT:  return call(com_type, "modt",  { lval, rval });
+                case ModF:  return call(com_type, "modf",  { lval, rval });
+                case Gt:    return call(com_type, "gt",    { lval, rval });
+                case Lt:    return call(com_type, "lt",    { lval, rval });
+                case Ge:    return call(com_type, "ge",    { lval, rval });
+                case Le:    return call(com_type, "le",    { lval, rval });
+                case Eq:    return call(com_type, "eq",    { lval, rval });
+                case Neq:   return call(com_type, "neq",   { lval, rval });
+                case And:   return call(com_type, "and",   { lval, rval });
+                case Or:    return call(com_type, "or",    { lval, rval });
                 default:    return nullptr;
             }
         }

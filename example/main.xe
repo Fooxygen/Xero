@@ -1,8 +1,94 @@
 
-fn add(x: i32, y: i32) -> f64 {
-    return x + y;
-}
+fn add(a: i32, b: i32) -> i32 { return a + b; }
+fn sub(a: i32, b: i32) -> i32 { return a - b; }
+fn mul(a: i32, b: i32) -> i32 { return a * b; }
+fn div(a: i32, b: i32) -> i32 { return a / b; }
+fn is_even(a: i32) -> bool    { return a % 2 == 0; }
+fn no_ret()                   { println(0); }
+fn to_f64(x: i32) -> f64      { return x; }
+fn to_i64(x: i32) -> i64      { return x; }
 
 fn main() {
-    println(add(1, 2));
+    x: i32 = 10;
+    y: f64 = 3.5;
+    z: i32;
+    z = 42;
+
+    a: i64 = 100;
+    b: f64 = 7;
+    c: f32 = 7;
+
+    m: i32 = 17;
+    n: i32 = 5;
+    p: i32 = -17;
+
+    i: i32 = 5;
+    l: i64 = 100;
+    f: f32 = 2.5;
+    d: f64 = 1.25;
+
+    b1: bool = true;
+    b2: bool = false;
+
+    cnt: i32 = 10;
+
+    println(x);                             # expect: 10
+    println(y);                             # expect: 3.500000
+    println(z);                             # expect: 42
+    println(a);                             # expect: 100
+    println(b);                             # expect: 7.000000
+    println(c);                             # expect: 7.000000
+
+    println(m + n);                         # expect: 22
+    println(m - n);                         # expect: 12
+    println(m * n);                         # expect: 85
+    println(m / n);                         # expect: 3
+    println(m % n);                         # expect: 2
+    println(m %% n);                        # expect: 2
+    println(p %% n);                        # expect: 3
+    println(p % n);                         # expect: -2
+    println(-x);                            # expect: -10
+
+    println(i + l);                         # expect: 105
+    println(i + f);                         # expect: 7.500000
+    println(i + d);                         # expect: 6.250000
+    println(l + f);                         # expect: 102.500000
+    println(l + d);                         # expect: 101.250000
+    println(f + d);                         # expect: 3.750000
+
+    println(x > 5);                         # expect: true
+    println(x < 5);                         # expect: false
+    println(x >= 10);                       # expect: true
+    println(x <= 9);                        # expect: false
+    println(x == 10);                       # expect: true
+    println(x != 10);                       # expect: false
+
+    println(b1 && b2);                      # expect: false
+    println(b1 || b2);                      # expect: true
+    println(!b1);                           # expect: false
+    println(!b2);                           # expect: true
+
+    println(2 + 3 * 4);                     # expect: 14
+    println((2 + 3) * 4);                   # expect: 20
+    println(1 + 2 > 2 && 3 < 4);            # expect: true
+
+    println(add(10, 5));                    # expect: 15
+    println(sub(10, 5));                    # expect: 5
+    println(mul(10, 5));                    # expect: 50
+    println(div(10, 5));                    # expect: 2
+    println(is_even(4));                    # expect: true
+    println(is_even(7));                    # expect: false
+    
+    no_ret();                               # expect: 0
+    println(add(add(1, 2), add(3, 4)));     # expect: 10
+
+    cnt += 5;  println(cnt);                # expect: 15
+    cnt -= 3;  println(cnt);                # expect: 12
+    cnt *= 2;  println(cnt);                # expect: 24
+    cnt /= 4;  println(cnt);                # expect: 6
+    cnt %= 4;  println(cnt);                # expect: 2
+    cnt %%= 2; println(cnt);                # expect: 0
+
+    println(to_f64(123));                   # expect: 123.000000
+    println(to_i64(7));                     # expect: 7
 }
