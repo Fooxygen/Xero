@@ -20,23 +20,46 @@ namespace xcompiler {
 
     class IRGen {
     private:
-        llvm::LLVMContext             context_;
-        std::unique_ptr<llvm::Module> module_;
-        llvm::IRBuilder<>             builder_;
-        VarTable                      var_table_;
+        class  LlvmCore {
+        public:
+            llvm::LLVMContext             context_;
+            std::unique_ptr<llvm::Module> module_;
+            llvm::IRBuilder<>             builder_;
 
-        // Processing Fn
-        llvm::Function* procfn_          = nullptr;
-        sema::Type*     procfn_ret_type_ = nullptr;
+            LlvmCore(std::string_view module_name)
+            :   context_(),
+                module_(std::make_unique<llvm::Module>(module_name, context_)),
+                builder_(context_)
+            {}
+        };
+
+        struct State {
+            struct LoopNextBlock {
+                llvm::BasicBlock* continue_ = nullptr;
+                llvm::BasicBlock* break_    = nullptr;
+            };
+
+            llvm::Function* fn_             = nullptr;
+            sema::Type*     fn_return_type_ = nullptr;
+
+            std::vector<LoopNextBlock> loop_nextblocks_ = {};
+        };
+    
+    private:
+        LlvmCore llvmcore_;
+        State    state_;
+
+        VarTable var_table_;
 
     private:
         // Utility
 
-        llvm::Type*       LlvmType(sema::Type* type);
+        llvm::Type*       LLVMType(sema::Type* type);
 
         llvm::AllocaInst* EntryBlockSlotCreate(llvm::Type* type, const std::string& name);
-
-        void BlockTermCreate(llvm::BasicBlock* term);
+        bool              hasBlockTerm();
+        void              BlockTermCreate(llvm::BasicBlock* term);
+        void              BlockTermCreate(std::function<void()> callback);
 
         // Exec
 
@@ -54,18 +77,19 @@ namespace xcompiler {
         llvm::Value* Exec(ExprStmt& node);
         llvm::Value* Exec(AssignStmt& node);
         llvm::Value* Exec(CondStmt& node);
+        llvm::Value* Exec(LoopSignalStmt& node);
         llvm::Value* Exec(ReturnSignalStmt& node);
         llvm::Value* Exec(WhileStmt& node);
 
         llvm::Value* Exec(Program& node);
 
     public:
-        IRGen(std::string_view module_name);
+        IRGen(std::string_view module_name)
+        :   llvmcore_(module_name) {}
 
-        llvm::Module*      module()  { return module_.get(); }
-        llvm::IRBuilder<>& builder() { return builder_; }
+        llvm::Module*      llvm_module()  { return llvmcore_.module_.get(); }
+        llvm::IRBuilder<>& llvm_builder() { return llvmcore_.builder_; }
 
-    public:
         // Output
 
         void IROutput(const std::string& path);
@@ -89,6 +113,7 @@ namespace xcompiler {
                 case AstType::ExprStmt:         return Exec((ExprStmt&)node);
                 case AstType::AssignStmt:       return Exec((AssignStmt&)node);
                 case AstType::CondStmt:         return Exec((CondStmt&)node);
+                case AstType::LoopSignalStmt:   return Exec((LoopSignalStmt&)node);
                 case AstType::ReturnSignalStmt: return Exec((ReturnSignalStmt&)node);
                 case AstType::WhileStmt:        return Exec((WhileStmt&)node);
 

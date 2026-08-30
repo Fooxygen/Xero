@@ -5,5 +5,7 @@ fn main() {
     while (x > 0) {
         println(x);
         x = x - 1;
+        if (x < 5) break;
+        println(-10);
     }
 }

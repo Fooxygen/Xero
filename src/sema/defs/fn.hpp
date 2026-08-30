@@ -28,7 +28,7 @@ namespace sema {
     // Signature of Fn
     class  FnSign {
     private:
-        Type*                ret_type_        = nullptr;
+        Type*                return_type_        = nullptr;
         std::vector<Type*>   params_type_fix_ = {};
         std::optional<Type*> params_type_var_ = std::nullopt;
         FnModifier           modifier_        = FnModifier{};
@@ -42,14 +42,14 @@ namespace sema {
             FnModifier                modifier        = FnModifier{},
             const std::string&        name            = ""
         )
-        :   ret_type_(ret_type),
+        :   return_type_(ret_type),
             params_type_fix_(params_type_fix),
             params_type_var_(params_type_var),
             modifier_(modifier),
             name_(name)
         {}
 
-        Type*                       ret_type()        const { return ret_type_; }
+        Type*                       ret_type()        const { return return_type_; }
         const std::vector<Type*>&   params_type_fix() const { return params_type_fix_; }
         const std::optional<Type*>& params_type_var() const { return params_type_var_; }
         const FnModifier&           modifier()        const { return modifier_; }

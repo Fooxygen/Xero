@@ -43,7 +43,7 @@ namespace xcompiler {
 
             // IR Optimize
             Optimizer optimizer;
-            optimizer.Run(*irgen.module(), llvm::OptimizationLevel::O2);
+            optimizer.Run(*irgen.llvm_module(), llvm::OptimizationLevel::O2);
 
             // Object Code Gen and Output
             irgen.ObjectCodeOutput((path_obj / (module_name + ".o")).string());

@@ -22,12 +22,6 @@
 
 namespace xcompiler {
 
-    IRGen::IRGen(std::string_view module_name)
-    :   context_(),
-        module_(std::make_unique<llvm::Module>(module_name, context_)),
-        builder_(context_)
-    {}
-
     // Output
 
     void IRGen::IROutput(const std::string& path) {
@@ -45,7 +39,7 @@ namespace xcompiler {
             ));
         }
 
-        module_->print(file, nullptr);
+        llvmcore_.module_->print(file, nullptr);
         file.flush();
     }
 
@@ -87,8 +81,8 @@ namespace xcompiler {
         );
 
         // └─ Module Binding
-        module_->setDataLayout(target_machine->createDataLayout());
-        module_->setTargetTriple(target_triple);
+        llvmcore_.module_->setDataLayout(target_machine->createDataLayout());
+        llvmcore_.module_->setTargetTriple(target_triple);
 
         // └─ Open File
         if (path.empty()) {
@@ -114,20 +108,20 @@ namespace xcompiler {
             throw LogErr(LogModule::Xcompiler, "failed to generate object code");
         }
 
-        pass.run(*module_);
+        pass.run(*llvmcore_.module_);
         file.flush();
     }
 
     // Utility
 
-    llvm::Type*       IRGen::LlvmType(sema::Type* type) {
-        if (type->is("none"))   return llvm::Type::getVoidTy(context_);
-        if (type->is("bool"))   return llvm::Type::getInt1Ty(context_);
-        if (type->is("i32"))    return llvm::Type::getInt32Ty(context_);
-        if (type->is("i64"))    return llvm::Type::getInt64Ty(context_);
-        if (type->is("f32"))    return llvm::Type::getFloatTy(context_);
-        if (type->is("f64"))    return llvm::Type::getDoubleTy(context_);
-        if (type->is("char"))   return llvm::Type::getInt32Ty(context_);
+    llvm::Type*       IRGen::LLVMType(sema::Type* type) {
+        if (type->is("none"))   return llvm::Type::getVoidTy(llvmcore_.context_);
+        if (type->is("bool"))   return llvm::Type::getInt1Ty(llvmcore_.context_);
+        if (type->is("i32"))    return llvm::Type::getInt32Ty(llvmcore_.context_);
+        if (type->is("i64"))    return llvm::Type::getInt64Ty(llvmcore_.context_);
+        if (type->is("f32"))    return llvm::Type::getFloatTy(llvmcore_.context_);
+        if (type->is("f64"))    return llvm::Type::getDoubleTy(llvmcore_.context_);
+        if (type->is("char"))   return llvm::Type::getInt32Ty(llvmcore_.context_);
 
         throw LogErr(LogModule::Xcompiler, std::format(
             "undefined type '{}'", type->name()
@@ -136,15 +130,23 @@ namespace xcompiler {
 
     llvm::AllocaInst* IRGen::EntryBlockSlotCreate(llvm::Type* type, const std::string& name) {
         llvm::IRBuilder<> builder_alloc(
-            &procfn_->getEntryBlock(), procfn_->getEntryBlock().begin()
+            &state_.fn_->getEntryBlock(), state_.fn_->getEntryBlock().begin()
         );
         return builder_alloc.CreateAlloca(type, nullptr, name);
     }
 
-    void IRGen::BlockTermCreate(llvm::BasicBlock* term) {
-        if (!builder_.GetInsertBlock()->getTerminator()) {
-            builder_.CreateBr(term);
-        }
+    bool              IRGen::hasBlockTerm() {
+        // Program is a top-level node and has no BasicBlock
+        auto block = llvmcore_.builder_.GetInsertBlock();
+        return block && block->getTerminator() != nullptr;
+    }
+
+    void              IRGen::BlockTermCreate(llvm::BasicBlock* term) {
+        if (!hasBlockTerm()) llvmcore_.builder_.CreateBr(term);
+    }
+
+    void              IRGen::BlockTermCreate(std::function<void()> callback) {
+        if (!hasBlockTerm()) callback();
     }
 
     // Expr
@@ -154,7 +156,10 @@ namespace xcompiler {
         if (OnScopeReady) OnScopeReady();
 
         try {
-            for (auto& child : node.children_) Exec(*child);
+            for (auto& child : node.children_) {
+                if (hasBlockTerm()) continue;   // invalid stmts come after term
+                Exec(*child);
+            }
         }
         catch (...) {
             var_table_.ScopePop();
@@ -167,21 +172,21 @@ namespace xcompiler {
     
     llvm::Value* IRGen::Exec(IdExpr& node) {
         auto var  = var_table_.Lookup(node.name_);
-        auto type = LlvmType(node.resolved_type_);
-        return builder_.CreateLoad(type, var, node.name_);
+        auto type = LLVMType(node.resolved_type_);
+        return llvmcore_.builder_.CreateLoad(type, var, node.name_);
     }
 
     llvm::Value* IRGen::Exec(DeclExpr& node) {
 
         // Variable
         auto var_type = node.resolved_type_;
-        auto var_slot = EntryBlockSlotCreate(LlvmType(var_type), node.id_);
+        auto var_slot = EntryBlockSlotCreate(LLVMType(var_type), node.id_);
 
         // Value
         if (node.value_) {
             auto val      = Exec(*node.value_);
             auto val_type = node.value_->resolved_type_;
-            builder_.CreateStore(
+            llvmcore_.builder_.CreateStore(
                 TypeImplTable::Cast(*this, val, val_type, var_type),
                 var_slot
             );
@@ -227,39 +232,41 @@ namespace xcompiler {
         if (node.oper_type_ == OperType::And || node.oper_type_ == OperType::Or) {
 
             // Blocks
-            auto fn = builder_.GetInsertBlock()->getParent();
-            auto block_lval = builder_.GetInsertBlock();
-            auto block_rval = llvm::BasicBlock::Create(context_, ".sc.rval", fn);
-            auto block_end  = llvm::BasicBlock::Create(context_, ".sc.end", fn);
+            auto fn = llvmcore_.builder_.GetInsertBlock()->getParent();
+            auto block_lval = llvmcore_.builder_.GetInsertBlock();
+            auto block_rval = llvm::BasicBlock::Create(llvmcore_.context_, ".sc.rval", fn);
+            auto block_end  = llvm::BasicBlock::Create(llvmcore_.context_, ".sc.end", fn);
 
             // Lval Block: Add Jump Instruction
             if (node.oper_type_ == OperType::And) {
                 // true && -> rval block
                 // false   -> end  block
-                builder_.CreateCondBr(lval, block_rval, block_end);
+                llvmcore_.builder_.CreateCondBr(lval, block_rval, block_end);
             }
             else {
-                builder_.CreateCondBr(lval, block_end, block_rval);
+                llvmcore_.builder_.CreateCondBr(lval, block_end, block_rval);
             }
 
             // Rval Block
-            builder_.SetInsertPoint(block_rval);    // write in rval block
+            llvmcore_.builder_.SetInsertPoint(block_rval);  // write in rval block
             auto rval = Exec(*node.rexpr_);
             BlockTermCreate(block_end);
 
             // End Block
-            builder_.SetInsertPoint(block_end);
-            auto phi = builder_.CreatePHI(builder_.getInt1Ty(), 2); // double branch
+            llvmcore_.builder_.SetInsertPoint(block_end);
+            auto phi = llvmcore_.builder_.CreatePHI(
+                llvmcore_.builder_.getInt1Ty(), 2
+            );
             
             if (node.oper_type_ == OperType::And) {
                 // false &&
-                phi->addIncoming(builder_.getFalse(), block_lval);
+                phi->addIncoming(llvmcore_.builder_.getFalse(), block_lval);
                 // true &&
                 phi->addIncoming(rval, block_rval);
             }
             else {
                 // true ||
-                phi->addIncoming(builder_.getTrue(), block_lval);
+                phi->addIncoming(llvmcore_.builder_.getTrue(), block_lval);
                 // false ||
                 phi->addIncoming(rval, block_rval);
             }
@@ -321,7 +328,7 @@ namespace xcompiler {
                 return native->impl()(*this, args, args_type);
             }
             if (auto lang   = dynamic_cast<LangFnImpl*>(impl)) {
-                return builder_.CreateCall(lang->impl(), args);
+                return llvmcore_.builder_.CreateCall(lang->impl(), args);
             }
         }
 
@@ -355,7 +362,7 @@ namespace xcompiler {
             return native->impl()(*this, args, args_type);
         }
         if (auto lang = dynamic_cast<LangFnImpl*>(method_impl)) {
-            return builder_.CreateCall(lang->impl(), args);
+            return llvmcore_.builder_.CreateCall(lang->impl(), args);
         }
 
         throw LogErr(LogModule::Xcompiler, std::format(
@@ -366,9 +373,9 @@ namespace xcompiler {
     llvm::Value* IRGen::Exec(FnExpr& node) {
 
         // Return Type
-        auto ret_type = LlvmType(node.ret_resolved_type_);
+        auto ret_type = LLVMType(node.ret_resolved_type_);
         if (node.name_ == "main") {
-            ret_type = llvm::Type::getInt32Ty(context_);
+            ret_type = llvm::Type::getInt32Ty(llvmcore_.context_);
         }
 
         // Params Type
@@ -376,7 +383,7 @@ namespace xcompiler {
         if (node.params_) {
             for (auto& e : node.params_->exprs_) {
                 auto param = (DeclExpr*)(e.get());
-                params_type.emplace_back(LlvmType(param->resolved_type_));
+                params_type.emplace_back(LLVMType(param->resolved_type_));
             }
         }
 
@@ -388,14 +395,14 @@ namespace xcompiler {
             fntype,
             llvm::Function::ExternalLinkage,
             node.name_,
-            module_.get()
+            llvmcore_.module_.get()
         );
-        auto block = llvm::BasicBlock::Create(context_, "entry", fn);
-        builder_.SetInsertPoint(block);
+        auto block = llvm::BasicBlock::Create(llvmcore_.context_, "entry", fn);
+        llvmcore_.builder_.SetInsertPoint(block);
 
         // Processing Fn
-        procfn_ = fn;
-        procfn_ret_type_ = node.ret_resolved_type_;
+        state_.fn_ = fn;
+        state_.fn_return_type_ = node.ret_resolved_type_;
 
         // Args Name
         {
@@ -413,7 +420,7 @@ namespace xcompiler {
             for (auto& arg : fn->args()) {
                 auto var_name = arg.getName().str();
                 auto var_slot = EntryBlockSlotCreate(arg.getType(), var_name);
-                builder_.CreateStore(&arg, var_slot);
+                llvmcore_.builder_.CreateStore(&arg, var_slot);
                 var_table_.Declare(var_name, var_slot);
             }
         });
@@ -421,10 +428,12 @@ namespace xcompiler {
         // Return Stmt
         // Each block requires a terminal symbol
         // including return value, the unreachable stmt...
-        if (!builder_.GetInsertBlock()->getTerminator()) {
-            if (ret_type->isVoidTy()) builder_.CreateRetVoid();
-            else builder_.CreateRet(llvm::ConstantInt::get(ret_type, 0));
-        }
+        BlockTermCreate([&]() {
+            if (ret_type->isVoidTy())
+                llvmcore_.builder_.CreateRetVoid();
+            else
+                llvmcore_.builder_.CreateRet(llvm::ConstantInt::get(ret_type, 0));
+        });
 
         if (node.name_ != "main") {
             FnImplTable::Add(node.name_, node.fnsign_, std::make_unique<LangFnImpl>(fn));
@@ -437,17 +446,17 @@ namespace xcompiler {
 
     llvm::Value* IRGen::Exec(NumConst& node) {
         auto type = node.resolved_type_;
-        if (type->is("i32")) return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context_), node.resolved_value_.integer_);
-        if (type->is("i64")) return llvm::ConstantInt::get(llvm::Type::getInt64Ty(context_), node.resolved_value_.integer_);
-        if (type->is("f32")) return llvm::ConstantFP::get(llvm::Type::getFloatTy(context_),  node.resolved_value_.floating_);
-        if (type->is("f64")) return llvm::ConstantFP::get(llvm::Type::getDoubleTy(context_), node.resolved_value_.floating_);
+        if (type->is("i32")) return llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvmcore_.context_), node.resolved_value_.integer_);
+        if (type->is("i64")) return llvm::ConstantInt::get(llvm::Type::getInt64Ty(llvmcore_.context_), node.resolved_value_.integer_);
+        if (type->is("f32")) return llvm::ConstantFP::get(llvm::Type::getFloatTy(llvmcore_.context_),  node.resolved_value_.floating_);
+        if (type->is("f64")) return llvm::ConstantFP::get(llvm::Type::getDoubleTy(llvmcore_.context_), node.resolved_value_.floating_);
         std::unreachable();
     }
 
     llvm::Value* IRGen::Exec(BoolConst& node) {
         return node.value_
-            ? llvm::ConstantInt::getTrue(context_)
-            : llvm::ConstantInt::getFalse(context_);
+            ? llvm::ConstantInt::getTrue(llvmcore_.context_)
+            : llvm::ConstantInt::getFalse(llvmcore_.context_);
     }
 
     // Stmt
@@ -464,7 +473,7 @@ namespace xcompiler {
         auto val      = Exec(*node.value_);
         auto val_type = node.value_->resolved_type_;
 
-        builder_.CreateStore(
+        llvmcore_.builder_.CreateStore(
             TypeImplTable::Cast(*this, val, val_type, var_type),
             var
         );
@@ -472,8 +481,8 @@ namespace xcompiler {
     }
 
     llvm::Value* IRGen::Exec(CondStmt& node) {
-        auto fn = builder_.GetInsertBlock()->getParent();
-        auto block_end = llvm::BasicBlock::Create(context_, ".cond.end", fn);
+        auto fn = llvmcore_.builder_.GetInsertBlock()->getParent();
+        auto block_end = llvm::BasicBlock::Create(llvmcore_.context_, ".cond.end", fn);
 
         std::function<void(CondStmt&)> emit = [&](CondStmt& node_sub) {
 
@@ -486,20 +495,20 @@ namespace xcompiler {
             auto cond_val = Exec(*node_sub.cond_);
 
             // Blocks
-            auto fn_sub = builder_.GetInsertBlock()->getParent();
-            auto block_then = llvm::BasicBlock::Create(context_, ".cond.then", fn_sub);
-            auto block_else = llvm::BasicBlock::Create(context_, ".cond.else", fn_sub);
+            auto fn_sub = llvmcore_.builder_.GetInsertBlock()->getParent();
+            auto block_then = llvm::BasicBlock::Create(llvmcore_.context_, ".cond.then", fn_sub);
+            auto block_else = llvm::BasicBlock::Create(llvmcore_.context_, ".cond.else", fn_sub);
 
             // This Block
-            builder_.CreateCondBr(cond_val, block_then, block_else);
+            llvmcore_.builder_.CreateCondBr(cond_val, block_then, block_else);
 
             // Then Block
-            builder_.SetInsertPoint(block_then);
+            llvmcore_.builder_.SetInsertPoint(block_then);
             Exec(*node_sub.then_);
             BlockTermCreate(block_end);
 
             // Else Block
-            builder_.SetInsertPoint(block_else);
+            llvmcore_.builder_.SetInsertPoint(block_else);
             if (node_sub.next_)
                 emit(*node_sub.next_);
             else
@@ -507,43 +516,57 @@ namespace xcompiler {
         };
 
         emit(node);
-        builder_.SetInsertPoint(block_end);
+        llvmcore_.builder_.SetInsertPoint(block_end);
         return nullptr;
     }
         
+    llvm::Value* IRGen::Exec(LoopSignalStmt& node) {
+        auto& nextblock = state_.loop_nextblocks_.back();
+        llvmcore_.builder_.CreateBr(
+            node.signal_ == LoopSignal::Continue ?
+                nextblock.continue_ : nextblock.break_
+        );
+        return nullptr;
+    }
+
     llvm::Value* IRGen::Exec(ReturnSignalStmt& node) {
         if (node.value_) {
             auto val = Exec(*node.value_);
-            builder_.CreateRet(
-                TypeImplTable::Cast(*this, val, node.value_->resolved_type_, procfn_ret_type_)
+            llvmcore_.builder_.CreateRet(
+                TypeImplTable::Cast(*this, val, node.value_->resolved_type_, state_.fn_return_type_)
             );
         }
-        else builder_.CreateRetVoid();
+        else llvmcore_.builder_.CreateRetVoid();
         return nullptr;
     }
 
     llvm::Value* IRGen::Exec(WhileStmt& node) {
 
         // Blocks
-        auto fn = builder_.GetInsertBlock()->getParent();
-        auto block_cond = llvm::BasicBlock::Create(context_, ".while.cond", fn);
-        auto block_then = llvm::BasicBlock::Create(context_, ".while.then", fn);
-        auto block_end  = llvm::BasicBlock::Create(context_, ".while.end", fn);
+        auto fn = llvmcore_.builder_.GetInsertBlock()->getParent();
+        auto block_cond = llvm::BasicBlock::Create(llvmcore_.context_, ".while.cond", fn);
+        auto block_then = llvm::BasicBlock::Create(llvmcore_.context_, ".while.then", fn);
+        auto block_end  = llvm::BasicBlock::Create(llvmcore_.context_, ".while.end", fn);
     
         // This Block
-        builder_.CreateBr(block_cond);
+        llvmcore_.builder_.CreateBr(block_cond);
 
         // Cond Block
-        builder_.SetInsertPoint(block_cond);
+        llvmcore_.builder_.SetInsertPoint(block_cond);
         auto cond_val = Exec(*node.cond_);
-        builder_.CreateCondBr(cond_val, block_then, block_end);
+        llvmcore_.builder_.CreateCondBr(cond_val, block_then, block_end);
 
         // Then Block
-        builder_.SetInsertPoint(block_then);
+        llvmcore_.builder_.SetInsertPoint(block_then);
+        state_.loop_nextblocks_.emplace_back(State::LoopNextBlock{
+           .continue_ = block_cond,
+           .break_    = block_end
+        });
         Exec(*node.then_);
+        state_.loop_nextblocks_.pop_back();
         BlockTermCreate(block_cond);
 
-        builder_.SetInsertPoint(block_end);
+        llvmcore_.builder_.SetInsertPoint(block_end);
         return nullptr;
     }
     

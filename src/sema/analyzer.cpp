@@ -253,9 +253,9 @@ namespace sema {
         node.resolved_type_ = TypeTable::Lookup("function");
 
         // Return Type
-        if (node.ret_type_) {
-            Exec(*node.ret_type_);
-            node.ret_resolved_type_ = node.ret_type_->resolved_type_;
+        if (node.return_type_) {
+            Exec(*node.return_type_);
+            node.ret_resolved_type_ = node.return_type_->resolved_type_;
         }
         else {
             node.ret_resolved_type_ = TypeTable::Lookup("none");

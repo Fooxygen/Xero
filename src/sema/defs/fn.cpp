@@ -31,7 +31,7 @@ namespace sema {
     bool FnSign::isSignEqual(const FnSign& sign) {
 
         // Return Type
-        if (sign.ret_type_ != ret_type_) return false;
+        if (sign.return_type_ != return_type_) return false;
 
         // Params Fixed Type
         if (sign.params_type_fix_.size() != params_type_fix_.size()) return false;

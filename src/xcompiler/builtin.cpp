@@ -16,7 +16,7 @@ namespace xcompiler {
     // LibC
     
     llvm::Function* LibC_printf(IRGen& gen) {
-        auto module = gen.module();
+        auto module = gen.llvm_module();
         if (auto fn = module->getFunction("printf")) return fn;
 
         auto context = &module->getContext();
@@ -52,7 +52,7 @@ namespace xcompiler {
                 const std::vector<llvm::Value*>& vals,
                 const std::vector<sema::Type*>&  types) -> llvm::Value*
             {
-                auto& builder = gen.builder();
+                auto& builder = gen.llvm_builder();
                 for (size_t i = 0; i < vals.size(); i++) {
                     if (i != 0) builder.CreateCall(LibC_printf(gen), {
                         builder.CreateGlobalString(" ", ".delim")
@@ -68,7 +68,7 @@ namespace xcompiler {
                 const std::vector<llvm::Value*>& vals,
                 const std::vector<sema::Type*>&  types) -> llvm::Value*
             {
-                auto& builder = gen.builder();
+                auto& builder = gen.llvm_builder();
                 impl_print(gen, vals, types);
 
                 // Line Break
