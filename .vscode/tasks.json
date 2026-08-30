@@ -4,30 +4,74 @@
         {
             "label": "Debug Xero",
             "type": "shell",
-            "command": "${workspaceFolder}/build-debug/bin/xero.exe",
-            "options": { "cwd": "${workspaceFolder}/build-debug/bin" },
-            "args": ["${workspaceFolder}/example/main.xe"]
+            "command": [
+                "${workspaceFolder}/build-debug/bin/xero.exe",
+                "${workspaceFolder}/example/main.xe",
+                "&&",
+                "${workspaceFolder}/build-debug/bin/build/main/main.exe"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/build-debug/bin",
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": ["/d", "/c"]
+                }
+            }
         },
         {
-            "label": "Debug Xero with options",
+            "label": "Debug Xero (Token and Ast)",
             "type": "shell",
-            "command": "${workspaceFolder}/build-debug/bin/xero.exe",
-            "options": { "cwd": "${workspaceFolder}/build-debug/bin" },
-            "args": ["${workspaceFolder}/example/main.xe", "--ast", "--tok"]
+            "command": [
+                "${workspaceFolder}/build-debug/bin/xero.exe",
+                "${workspaceFolder}/example/main.xe",
+                "--tok",
+                "--ast",
+                "&&",
+                "${workspaceFolder}/build-debug/bin/build/main/main.exe"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/build-debug/bin",
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": ["/d", "/c"]
+                }
+            }
         },
         {
-            "label": "Run Xero",
+            "label": "Release Xero",
             "type": "shell",
-            "command": "${workspaceFolder}/build-release/bin/xero.exe",
-            "options": { "cwd": "${workspaceFolder}/build-release/bin" },
-            "args": ["${workspaceFolder}/example/main.xe"]
+            "command": [
+                "${workspaceFolder}/build-release/bin/xero.exe",
+                "${workspaceFolder}/example/main.xe",
+                "&&",
+                "${workspaceFolder}/build-release/bin/build/main/main.exe"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/build-release/bin",
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": ["/d", "/c"]
+                }
+            }
         },
         {
-            "label": "Run Xero with options",
+            "label": "Release Xero (Token and Ast)",
             "type": "shell",
-            "command": "${workspaceFolder}/build-release/bin/xero.exe",
-            "options": { "cwd": "${workspaceFolder}/build-release/bin" },
-            "args": ["${workspaceFolder}/example/main.xe", "--ast", "--tok"]
+            "command": [
+                "${workspaceFolder}/build-release/bin/xero.exe",
+                "${workspaceFolder}/example/main.xe",
+                "--tok",
+                "--ast",
+                "&&",
+                "${workspaceFolder}/build-release/bin/build/main/main.exe"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/build-release/bin",
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": ["/d", "/c"]
+                }
+            }
         }
     ]
 }
