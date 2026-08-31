@@ -19,9 +19,6 @@ namespace lexer {
     }
 
     void  Lexer::TokensGen(bool isPrint) {
-        if (isPrint) {
-            LogStart(LogModule::Lexer, "output tokens").Print();
-        }
         while (!isScanEnd()) {
             auto next_opt = TokenNext();
             if (!next_opt.has_value()) break;
@@ -29,12 +26,8 @@ namespace lexer {
             auto next = next_opt.value();
             if (next.type_ != TT::Undefined) {
                 auto& token = tokens_.emplace_back(next);
-
                 if (isPrint && token.type_ != TT::Undefined) token.MetaPrint();
             }
-        }
-        if (isPrint) {
-            LogFinish(LogModule::Lexer, "output tokens").Print();
         }
     }
 

@@ -199,9 +199,7 @@ public:
     }
 
     void PrintImpl(std::string prefix) override {
-        for (auto& child : children_) {
-            child->Print(prefix);
-        }
+        for (auto& child : children_) child->Print(prefix);
     }
 
     std::unique_ptr<AstNode> Clone() const override {
@@ -243,7 +241,7 @@ public:
 };
 class TypeExpr          : public Expr {
 public:
-    std::string            basic_type_ = "";
+    std::string            type_basic_ = "";
     std::unique_ptr<Exprs> params_     = nullptr;
 
 public:
@@ -251,7 +249,7 @@ public:
         const std::string& type_basic,
         std::unique_ptr<Exprs> params
     )
-    :   basic_type_(type_basic),
+    :   type_basic_(type_basic),
         params_(std::move(params))
     {
         type_ = AstType::TypeExpr;
@@ -262,14 +260,16 @@ public:
     }
 
     void PrintImpl(std::string prefix) override {
-        PrintLabel("type_basic", prefix);
-        std::cerr << COLOR_BLUE << basic_type_ << COLOR_DEFAULT << std::endl;
+        PrintLabel("type_basic", prefix); {
+            std::cerr << COLOR_BLUE << type_basic_ << COLOR_DEFAULT << std::endl;
+        }
+        
         if (params_) params_->Print(prefix, "params");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<TypeExpr>(
-            basic_type_,
+            type_basic_,
             params_ ? std::unique_ptr<Exprs>((Exprs*)(params_->Clone().release())) : nullptr
         );
         node->resolved_type_ = resolved_type_;
@@ -301,10 +301,12 @@ public:
     }
 
     void PrintImpl(std::string prefix) override {
-        PrintLabel("id", prefix);
-        std::cerr << COLOR_BLUE << id_ << COLOR_DEFAULT << std::endl;
+        PrintLabel("id", prefix); {
+            std::cerr << COLOR_BLUE << id_ << COLOR_DEFAULT << std::endl;
+        }
+        
         if (bind_type_) bind_type_->Print(prefix, "bind_type");
-        if (value_) value_->Print(prefix, "value");
+        if (value_)     value_->Print(prefix, "value");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
@@ -342,11 +344,13 @@ public:
     }
     
     void PrintImpl(std::string prefix) override {
-        PrintLabel("type", prefix);
-        std::cerr << COLOR_MAGENTA;
-        std::cerr << OperTypeName(oper_type_);
-        std::cerr << COLOR_DEFAULT << std::endl;
-        lexpr_->Print(prefix, "lexpr");
+        PrintLabel("type", prefix); {
+            std::cerr << COLOR_MAGENTA;
+            std::cerr << OperTypeName(oper_type_);
+            std::cerr << COLOR_DEFAULT << std::endl;
+        }
+
+        if (rexpr_) lexpr_->Print(prefix, "lexpr");
         if (rexpr_) rexpr_->Print(prefix, "rexpr");
     }
 
@@ -391,15 +395,16 @@ public:
     }
 
     void PrintImpl(std::string prefix) override {
-        PrintLabel("type", prefix);
-        std::cerr << COLOR_MAGENTA;
-        if (isClosed_)  Token::TypePrint(Token::Type::DotDotEq);
-        else            Token::TypePrint(Token::Type::DotDot);
-        std::cerr << COLOR_DEFAULT << std::endl;
+        PrintLabel("type", prefix); {
+            std::cerr << COLOR_MAGENTA;
+            if (isClosed_)  Token::TypePrint(Token::Type::DotDotEq);
+            else            Token::TypePrint(Token::Type::DotDot);
+            std::cerr << COLOR_DEFAULT << std::endl;
+        }
 
-        lexpr_->Print(prefix, "lexpr");
-        rexpr_->Print(prefix, "rexpr");
-        if (step_) step_->Print(prefix, "step");
+        if (lexpr_) lexpr_->Print(prefix, "lexpr");
+        if (rexpr_) rexpr_->Print(prefix, "rexpr");
+        if (step_)  step_->Print(prefix, "step");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
@@ -434,7 +439,7 @@ public:
     }
 
     void PrintImpl(std::string prefix) override {
-        elems_->Print(prefix, "elems");
+        if (elems_) elems_->Print(prefix, "elems");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
@@ -471,8 +476,8 @@ public:
     }
 
     void PrintImpl(std::string prefix) override {
-        callee_->Print(prefix, "callee");
-        args_->Print(prefix, "args");
+        if (callee_) callee_->Print(prefix, "callee");
+        if (args_)   args_->Print(prefix, "args");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
@@ -513,9 +518,9 @@ public:
     }
 
     void PrintImpl(std::string prefix) override {
-        target_->Print(prefix, "target");
-        callee_->Print(prefix, "callee");
-        args_->Print(prefix, "args");
+        if (target_) target_->Print(prefix, "target");
+        if (callee_) callee_->Print(prefix, "callee");
+        if (args_)   args_->Print(prefix, "args");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
@@ -561,11 +566,16 @@ public:
     }
 
     void PrintImpl(std::string prefix) override {
-        PrintLabel("name", prefix);
-        std::cerr << COLOR_BLUE << name_ << COLOR_DEFAULT << std::endl;
-        if (return_type_) return_type_->Print(prefix, "ret_type");
-        if (params_) params_->Print(prefix, "params");
-        if (block_)  block_->Print(prefix, "block");
+        PrintLabel("name", prefix); {
+            std::cerr << COLOR_BLUE << name_ << COLOR_DEFAULT << std::endl;
+        }
+        
+        if (return_type_)
+            return_type_->Print(prefix, "ret_type");
+        if (params_ && !params_->exprs_.empty())
+            params_->Print(prefix, "params");
+        if (block_)
+            block_->Print(prefix, "block");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
@@ -761,8 +771,8 @@ public:
     }
 
     void PrintImpl(std::string prefix) override {
-        target_->Print(prefix, "target");
-        value_->Print(prefix, "value");
+        if (target_) target_->Print(prefix, "target");
+        if (value_)  value_->Print(prefix, "value");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
@@ -800,7 +810,7 @@ public:
 
     void PrintImpl(std::string prefix) override {
         if (cond_) cond_->Print(prefix, "cond");
-        then_->Print(prefix, "then");
+        if (then_) then_->Print(prefix, "then");
         if (next_) next_->Print(prefix, "next");
     }
 
@@ -900,9 +910,9 @@ public:
     }
 
     void PrintImpl(std::string prefix) override {
-        iter_->Print(prefix, "iter");
-        data_->Print(prefix, "data");
-        block_->Print(prefix, "block");
+        if (iter_)  iter_->Print(prefix, "iter");
+        if (data_)  data_->Print(prefix, "data");
+        if (block_) block_->Print(prefix, "block");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
@@ -937,8 +947,8 @@ public:
     }
 
     void PrintImpl(std::string prefix) override {
-        cond_->Print(prefix, "cond");
-        then_->Print(prefix, "then");
+        if (cond_) cond_->Print(prefix, "cond");
+        if (then_) then_->Print(prefix, "then");
     }
 
     std::unique_ptr<AstNode> Clone() const override {

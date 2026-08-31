@@ -71,19 +71,18 @@ int main(int argc, char* argv[]) {
         // Lexer
         lexer::Lexer lexer(code);
         lexer.TokensGen(args.isPrintToken_);
+        LogDone(LogModule::Lexer).Print();
 
         // Parser
         parser::Parser parser(lexer.tokens());
         parser.Execute();
-        if (args.isPrintAst_) {
-            LogStart(LogModule::Parser, "output ast").Print();
-            parser.root()->Print("", "", true);
-            LogFinish(LogModule::Parser, "output ast").Print();
-        }
+        if (args.isPrintAst_) parser.root()->Print("", "", true);
+        LogDone(LogModule::Parser).Print();
 
         // Sema
         sema::Sema sema;
         sema.Run(*parser.root());
+        LogDone(LogModule::Sema).Print();
 
         // Xcompiler
         xcompiler::Xcompiler xcompiler;
@@ -92,6 +91,7 @@ int main(int argc, char* argv[]) {
             *parser.root(),
             sema.analyzer().fn_table()
         );
+        LogDone(LogModule::Xcompiler).Print();
     }
     catch (const LogErr& log) {
         log.Print();

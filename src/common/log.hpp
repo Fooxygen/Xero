@@ -97,14 +97,8 @@ public:
     :   Log(module, std::format("[err] {}", msg), COLOR_RED, loc) {}
 };
 
-class LogStart : public Log {
+class LogDone : public Log {
 public:
-    LogStart(LogModule module, std::string_view msg)
-    :   Log(module, std::format("[start] {}", msg), COLOR_BLUE) {}
-};
-
-class LogFinish : public Log {
-public:
-    LogFinish(LogModule module, std::string_view msg)
-    :   Log(module, std::format("[finish] {}", msg), COLOR_GREEN) {}
+    LogDone(LogModule module)
+    :   Log(module, " done", COLOR_GREEN) {}
 };

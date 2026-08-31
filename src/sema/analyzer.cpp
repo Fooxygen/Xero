@@ -51,7 +51,7 @@ namespace sema {
     }
 
     void Analyzer::Exec(TypeExpr& node) {
-        auto type_basic = TypeTable::Lookup(node.basic_type_);
+        auto type_basic = TypeTable::Lookup(node.type_basic_);
 
         // Basic
         if (!node.params_) {
