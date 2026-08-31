@@ -55,7 +55,7 @@ namespace sema {
         /*auto stringview_    = (BasicType*)*/TypeTable::Set(BasicType("stringview"));
         /*auto array_         = (BasicType*)*/TypeTable::Set(BasicType("array", 1));
         /*auto arrayview_     = (BasicType*)*/TypeTable::Set(BasicType("arrayview"));
-        /*auto range_         = (BasicType*)*/TypeTable::Set(BasicType("range", 1));
+        auto range_         = (BasicType*)TypeTable::Set(BasicType("range", 1));
         /*auto function_      = (BasicType*)*/TypeTable::Set(BasicType("function"));
 
         // Info
@@ -177,12 +177,14 @@ namespace sema {
                 arrayview_->method_table().Add("len",        FnSign(i32_));
                 arrayview_->method_table().Add("to_array",   FnSign(array_));
             }
+            */
 
             // range
             {
-                
+                range_->method_table().Add("print", FnSign(none_, { range_ }));
             }
 
+            /*
             // function
             {
                 

@@ -38,8 +38,14 @@ namespace xcompiler {
     public:
         void    MethodAdd(const std::string& name, NativeFnImpl::Impl impl, const sema::FnSign& sign);
         void    MethodAdd(const std::string& name, LangFnImpl::Impl   impl, const sema::FnSign& sign);
+        
         FnImpl* MethodGet(const sema::FnSign* sign);
         FnImpl* MethodGetTry(const sema::FnSign* sign);
+    
+        llvm::Value* MethodCall(
+            IRGen& gen, const std::string& name,
+            const std::vector<llvm::Value*>& args, const std::vector<sema::Type*>& args_type
+        );
     };
 
     class TypeImplTable {
@@ -58,7 +64,7 @@ namespace xcompiler {
         }
         
         static TypeImpl*    Lookup(sema::Type* type) {
-            auto it = table_.find(type);
+            auto it = table_.find(type->BasicTypeGet());
             if (it == table_.end()) {
                 throw LogErr(LogModule::Xcompiler, std::format(
                     "undefined implementation of type '{}'", type->name()

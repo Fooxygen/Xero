@@ -54,13 +54,21 @@ namespace sema {
             // Fixed Params
             if (args_type.size() < params_type_fix_.size()) throw 0;
             for (size_t i = 0; i < params_type_fix_.size(); i++) {
-                if (params_type_fix_[i] && !args_type[i]->casts().contains(params_type_fix_[i])) throw 0;
+                if (params_type_fix_[i]) {
+                    bool isStrictMatch = args_type[i]->casts().contains(params_type_fix_[i]);
+                    if (!isStrictMatch && args_type[i]->BasicTypeGet() == params_type_fix_[i]) isStrictMatch = true;
+                    if (!isStrictMatch) throw 0;
+                }
             }
 
             // Variable Params
             if (params_type_var_) {
                 for (size_t i = params_type_fix_.size(); i < args_type.size(); i++) {
-                    if (*params_type_var_ && !args_type[i]->casts().contains(*params_type_var_)) throw 0;
+                    if (*params_type_var_) {
+                        bool isStrictMatch = args_type[i]->casts().contains(*params_type_var_);
+                        if (!isStrictMatch && args_type[i]->BasicTypeGet() == *params_type_var_) isStrictMatch = true;
+                        if (!isStrictMatch) throw 0;
+                    }
                 }
             }
             else {

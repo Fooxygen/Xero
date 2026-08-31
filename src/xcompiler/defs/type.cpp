@@ -61,19 +61,43 @@ namespace xcompiler {
         return it == methods_.end() ? nullptr : it->second.get();
     }
 
+    llvm::Value* TypeImpl::MethodCall(
+        IRGen& gen, const std::string& name,
+        const std::vector<llvm::Value*>& args, const std::vector<sema::Type*>& args_type)
+    {
+        auto  type_basic  = (sema::BasicType*)link_type_->BasicTypeGet();
+        auto& method      = type_basic->method_table().Lookup(name);
+        auto  method_sign = method.SignLookup(args_type);
+        auto  method_impl = MethodGet(method_sign);
+
+        if (auto native = dynamic_cast<NativeFnImpl*>(method_impl)) {
+            return native->impl()(gen, args, args_type);
+        }
+        if (auto lang = dynamic_cast<LangFnImpl*>(method_impl)) {
+            return gen.llvm_builder().CreateCall(lang->impl(), args);
+        }
+
+        throw LogErr(LogModule::Xcompiler, std::format(
+            "unsupported method '{}'", name
+        ));
+    }
+
     // TypeImplTable
 
     void TypeImplTable::Init() {
-        using ARGS  = const std::vector<llvm::Value*>;
+        using ARGS      = const std::vector<llvm::Value*>;
+        using ARGS_TYPE = const std::vector<sema::Type*>;
 
-        auto none_ = sema::TypeTable::Lookup("none");
-        auto bool_ = sema::TypeTable::Lookup("bool");
-        auto i32_  = sema::TypeTable::Lookup("i32");
-        auto i64_  = sema::TypeTable::Lookup("i64");
-        auto f32_  = sema::TypeTable::Lookup("f32");
-        auto f64_  = sema::TypeTable::Lookup("f64");
+        auto none_  = sema::TypeTable::Lookup("none");
+        auto bool_  = sema::TypeTable::Lookup("bool");
+        auto i32_   = sema::TypeTable::Lookup("i32");
+        auto i64_   = sema::TypeTable::Lookup("i64");
+        auto f32_   = sema::TypeTable::Lookup("f32");
+        auto f64_   = sema::TypeTable::Lookup("f64");
+        auto range_ = sema::TypeTable::Lookup("range");
 
         // Impl
+        // TODO Make the size of the type useful
         {
             // bool
             {
@@ -352,6 +376,41 @@ namespace xcompiler {
                 impl->MethodAdd("neq", [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateFCmpONE(args[0], args[1]);
                 }, sema::FnSign(bool_, { f64_, f64_ }));
+            }
+        
+            // range
+            {
+                auto impl = TypeImplTable::Set(TypeImpl(range_, 0));
+
+                impl->MethodAdd("print", [](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) -> llvm::Value* {
+                    auto& builder = gen.llvm_builder();
+
+                    auto  range_val      = args[0];
+                    auto  range_type     = (sema::ParametricType*)args_type[0];
+                    auto  iter_type      = range_type->params_type()[0];
+                    auto  iter_type_impl = TypeImplTable::Lookup(iter_type);
+                    auto  left_val       = builder.CreateExtractValue(range_val, 0);
+                    auto  right_val      = builder.CreateExtractValue(range_val, 1);
+                    auto  step_val       = builder.CreateExtractValue(range_val, 2);
+                    auto  isClosed_val   = builder.CreateExtractValue(range_val, 3);
+
+                    builder.CreateCall(LibC_printf(gen), { builder.CreateGlobalString("[", ".range.lb") });
+                    iter_type_impl->MethodCall(gen, "print", { left_val }, { iter_type });
+                    builder.CreateCall(LibC_printf(gen), { builder.CreateGlobalString(" : ", ".range.sep") });
+                    iter_type_impl->MethodCall(gen, "print", { step_val }, { iter_type });
+                    builder.CreateCall(LibC_printf(gen), { builder.CreateGlobalString(" : ", ".range.sep") });
+                    iter_type_impl->MethodCall(gen, "print", { right_val }, { iter_type });
+                    
+                    // Right Boundary
+                    auto rb = builder.CreateGlobalString("]", ".rb");   // RBrace
+                    auto rp = builder.CreateGlobalString(")", ".rp");   // RParen
+                    builder.CreateCall(LibC_printf(gen), {
+                        builder.CreateGlobalString("%s", ".fmt.str"),
+                        builder.CreateSelect(isClosed_val, rb, rp)
+                    });
+
+                    return nullptr;
+                }, sema::FnSign(none_, { range_ }));
             }
         }
     }

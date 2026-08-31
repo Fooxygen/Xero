@@ -537,10 +537,10 @@ public:
 };
 class FnExpr            : public Expr {
 public:
-    std::string                name_     = "";
+    std::string                name_        = "";
     std::unique_ptr<TypeExpr>  return_type_ = nullptr;
-    std::unique_ptr<Exprs>     params_   = nullptr;
-    std::unique_ptr<BlockExpr> block_    = nullptr;
+    std::unique_ptr<Exprs>     params_      = nullptr;
+    std::unique_ptr<BlockExpr> body_        = nullptr;
 
 public:
     sema::Type*         ret_resolved_type_ = nullptr;
@@ -551,12 +551,12 @@ public:
         std::string                name,
         std::unique_ptr<TypeExpr>  ret_type,
         std::unique_ptr<Exprs>     params,
-        std::unique_ptr<BlockExpr> block
+        std::unique_ptr<BlockExpr> body
     )
     :   name_(name),
         return_type_(std::move(ret_type)),
         params_(std::move(params)),
-        block_(std::move(block))
+        body_(std::move(body))
     {
         type_ = AstType::FnExpr;
     }
@@ -574,8 +574,8 @@ public:
             return_type_->Print(prefix, "ret_type");
         if (params_ && !params_->exprs_.empty())
             params_->Print(prefix, "params");
-        if (block_)
-            block_->Print(prefix, "block");
+        if (body_)
+            body_->Print(prefix, "body");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
@@ -583,7 +583,7 @@ public:
             name_,
             return_type_ ? std::unique_ptr<TypeExpr>((TypeExpr*)(return_type_->Clone().release())) : nullptr,
             params_ ? std::unique_ptr<Exprs>((Exprs*)(params_->Clone().release())) : nullptr,
-            block_  ? std::unique_ptr<BlockExpr>((BlockExpr*)(block_->Clone().release())) : nullptr
+            body_ ? std::unique_ptr<BlockExpr>((BlockExpr*)(body_->Clone().release())) : nullptr
         );
 
         node->ret_resolved_type_ = ret_resolved_type_;
@@ -890,17 +890,17 @@ class ForStmt           : public Stmt {
 public:
     std::unique_ptr<IdExpr>     iter_;
     std::unique_ptr<Expr>       data_;
-    std::unique_ptr<BlockExpr>  block_;
+    std::unique_ptr<BlockExpr>  body_;
 
 public:
     ForStmt(
         std::unique_ptr<IdExpr>     iter,
         std::unique_ptr<Expr>       data,
-        std::unique_ptr<BlockExpr>  block
+        std::unique_ptr<BlockExpr>  body
     )
     :   iter_(std::move(iter)),
         data_(std::move(data)),
-        block_(std::move(block))
+        body_(std::move(body))
     {
         type_ = AstType::ForStmt;
     }
@@ -910,16 +910,16 @@ public:
     }
 
     void PrintImpl(std::string prefix) override {
-        if (iter_)  iter_->Print(prefix, "iter");
-        if (data_)  data_->Print(prefix, "data");
-        if (block_) block_->Print(prefix, "block");
+        if (iter_) iter_->Print(prefix, "iter");
+        if (data_) data_->Print(prefix, "data");
+        if (body_) body_->Print(prefix, "body");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<ForStmt>(
             std::make_unique<IdExpr>(iter_->name_),
             std::unique_ptr<Expr>((Expr*)(data_->Clone().release())),
-            std::unique_ptr<BlockExpr>((BlockExpr*)(block_->Clone().release()))
+            std::unique_ptr<BlockExpr>((BlockExpr*)(body_->Clone().release()))
         );
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
@@ -929,15 +929,15 @@ public:
 class WhileStmt         : public Stmt {
 public:
     std::unique_ptr<Expr>      cond_;
-    std::unique_ptr<BlockExpr> then_;
+    std::unique_ptr<BlockExpr> body_;
 
 public:
     WhileStmt(
         std::unique_ptr<Expr>      cond,
-        std::unique_ptr<BlockExpr> then
+        std::unique_ptr<BlockExpr> body
     )
     :   cond_(std::move(cond)),
-        then_(std::move(then))
+        body_(std::move(body))
     {
         type_ = AstType::WhileStmt;
     }
@@ -948,13 +948,13 @@ public:
 
     void PrintImpl(std::string prefix) override {
         if (cond_) cond_->Print(prefix, "cond");
-        if (then_) then_->Print(prefix, "then");
+        if (body_) body_->Print(prefix, "body");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<WhileStmt>(
             std::unique_ptr<Expr>((Expr*)(cond_->Clone().release())),
-            std::unique_ptr<BlockExpr>((BlockExpr*)(then_->Clone().release()))
+            std::unique_ptr<BlockExpr>((BlockExpr*)(body_->Clone().release()))
         );
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;

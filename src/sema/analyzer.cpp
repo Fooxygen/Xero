@@ -118,7 +118,6 @@ namespace sema {
             }
 
             // Boolean
-            // TODO: Consider overloading–boolean constraint conflict
             switch (node.oper_type_) {
                 case Gt:
                 case Lt:
@@ -279,8 +278,8 @@ namespace sema {
         }
         
         // Stored in VarTable
-        if (node.block_) {
-            Exec(*node.block_, [&]() {
+        if (node.body_) {
+            Exec(*node.body_, [&]() {
                 // Args
                 for (size_t i = 0; i < params_expr.size(); i++) {
                     auto expr = (DeclExpr*)(params_expr[i].get());
@@ -433,7 +432,7 @@ namespace sema {
             }
         }
 
-        Exec(*node.block_, [&]() {
+        Exec(*node.body_, [&]() {
             var_table_.Declare(std::make_unique<Var>(
                 node.iter_->name_, iter_type, node.iter_->loc_)
             );
@@ -452,7 +451,7 @@ namespace sema {
                 ), node.loc_);
             }
         }
-        Exec(*node.then_);
+        Exec(*node.body_);
     }
 
     // Common

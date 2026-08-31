@@ -56,7 +56,7 @@ namespace xcompiler {
 
         llvm::Type*       LLVMType(sema::Type* type);
 
-        llvm::AllocaInst* EntryBlockSlotCreate(llvm::Type* type, const std::string& name);
+        llvm::AllocaInst* SlotCreate(llvm::Type* type, const std::string& name);
         bool              hasBlockTerm();
         void              BlockTermCreate(llvm::BasicBlock* term);
         void              BlockTermCreate(std::function<void()> callback);
@@ -67,6 +67,7 @@ namespace xcompiler {
         llvm::Value* Exec(IdExpr& node);
         llvm::Value* Exec(DeclExpr& node);
         llvm::Value* Exec(OperExpr& node);
+        llvm::Value* Exec(RangeExpr& node);
         llvm::Value* Exec(FnCallExpr& node);
         llvm::Value* Exec(MethodCallExpr& node);
         llvm::Value* Exec(FnExpr& node);
@@ -79,6 +80,7 @@ namespace xcompiler {
         llvm::Value* Exec(CondStmt& node);
         llvm::Value* Exec(LoopSignalStmt& node);
         llvm::Value* Exec(ReturnSignalStmt& node);
+        llvm::Value* Exec(ForStmt& node);
         llvm::Value* Exec(WhileStmt& node);
 
         llvm::Value* Exec(Program& node);
@@ -87,6 +89,7 @@ namespace xcompiler {
         IRGen(std::string_view module_name)
         :   llvmcore_(module_name) {}
 
+        llvm::LLVMContext& llvm_context() { return llvmcore_.context_; }
         llvm::Module*      llvm_module()  { return llvmcore_.module_.get(); }
         llvm::IRBuilder<>& llvm_builder() { return llvmcore_.builder_; }
 
@@ -103,6 +106,7 @@ namespace xcompiler {
                 case AstType::IdExpr:           return Exec((IdExpr&)node);
                 case AstType::DeclExpr:         return Exec((DeclExpr&)node);
                 case AstType::OperExpr:         return Exec((OperExpr&)node);
+                case AstType::RangeExpr:        return Exec((RangeExpr&)node);
                 case AstType::FnCallExpr:       return Exec((FnCallExpr&)node);
                 case AstType::MethodCallExpr:   return Exec((MethodCallExpr&)node);
                 case AstType::FnExpr:           return Exec((FnExpr&)node);
@@ -115,6 +119,7 @@ namespace xcompiler {
                 case AstType::CondStmt:         return Exec((CondStmt&)node);
                 case AstType::LoopSignalStmt:   return Exec((LoopSignalStmt&)node);
                 case AstType::ReturnSignalStmt: return Exec((ReturnSignalStmt&)node);
+                case AstType::ForStmt:          return Exec((ForStmt&)node);
                 case AstType::WhileStmt:        return Exec((WhileStmt&)node);
 
                 case AstType::Program:          return Exec((Program&)node);
