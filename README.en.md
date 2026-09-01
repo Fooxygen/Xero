@@ -54,7 +54,6 @@ You can find more information about Xero on the [Wiki](https://github.com/Fooxyg
 | Parser | Syntax analysis |
 | Sema | Semantic analysis |
 | Xcompiler | Compiler: IR generation, object file linking, executable generation |
-| Xengine | Interpreter: Execute Xero Ast |
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 

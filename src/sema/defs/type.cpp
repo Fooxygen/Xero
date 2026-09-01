@@ -5,6 +5,7 @@
 
 #include <vector>
 
+#include "common/utils/format.hpp"
 #include "sema/defs/fn.hpp"
 #include "sema/defs/type.hpp"
 

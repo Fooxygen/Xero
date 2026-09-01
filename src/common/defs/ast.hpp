@@ -10,10 +10,11 @@
 #include <vector>
 #include <utility>
 
-#include "common/utils.hpp"
-#include "common/token.hpp"
-#include "common/opertype.hpp"
-#include "common/signal.hpp"
+#include "common/utils/loc.hpp"
+#include "common/utils/format.hpp"
+#include "common/defs/token.hpp"
+#include "common/defs/opertype.hpp"
+#include "common/defs/signal.hpp"
 
 namespace sema {
     class Type;

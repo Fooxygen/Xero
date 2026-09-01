@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "common/ast.hpp"
+#include "common/defs/ast.hpp"
 #include "sema/defs/type.hpp"
 #include "sema/analyzer.hpp"
 

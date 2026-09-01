@@ -12,7 +12,7 @@
 #include <optional>
 
 #include "common/log.hpp"
-#include "common/utils.hpp"
+#include "common/utils/loc.hpp"
 #include "sema/defs/type.hpp"
 
 namespace sema {

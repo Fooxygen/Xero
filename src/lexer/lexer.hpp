@@ -7,8 +7,8 @@
 
 #include <vector>
 
-#include "common/utils.hpp"
-#include "common/token.hpp"
+#include "common/utils/loc.hpp"
+#include "common/defs/token.hpp"
 
 namespace lexer {
     using TT = Token::Type;

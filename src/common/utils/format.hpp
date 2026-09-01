@@ -5,21 +5,10 @@
 
 #pragma once
 
-#include <cstddef>
 #include <sstream>
 #include <string>
 #include <ranges>
 #include <functional>
-
-// Row and column of Token
-class Loc {
-public:
-    size_t line_ = 1;
-    size_t col_  = 1;
-
-    void NextChar() { col_++; }
-    void NextLine() { line_++; col_ = 1; }
-};
 
 // Visualized Escape Char in String
 inline std::string ContainedEscapePrint(const std::string& s) {

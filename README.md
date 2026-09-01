@@ -55,7 +55,6 @@ Xero 是一门静态类型编程语言。你可以在 `example/main.xe` 找到�
 | Parser | 语法分析 |
 | Sema | 语义分析 |
 | Xcompiler | 编译器：IR 生成、目标文件链接、可执行文件生成 |
-| Xengine | 解释器：执行 Xero Ast |
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 

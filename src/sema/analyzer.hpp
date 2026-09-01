@@ -7,7 +7,7 @@
 
 #include <functional>
 
-#include "common/ast.hpp"
+#include "common/defs/ast.hpp"
 #include "sema/defs/var.hpp"
 #include "sema/defs/fn.hpp"
 

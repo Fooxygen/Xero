@@ -7,7 +7,7 @@
 
 #include <filesystem>
 
-#include "common/ast.hpp"
+#include "common/defs/ast.hpp"
 #include "sema/defs/fn.hpp"
 #include "xcompiler/builtin.hpp"
 #include "xcompiler/defs/type.hpp"

@@ -12,7 +12,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/IRBuilder.h"
 
-#include "common/ast.hpp"
+#include "common/defs/ast.hpp"
 #include "sema/defs/type.hpp"
 #include "xcompiler/defs/var.hpp"
 

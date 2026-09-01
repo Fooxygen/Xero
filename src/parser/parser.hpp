@@ -10,8 +10,8 @@
 #include <variant>
 #include <algorithm>
 
-#include "common/token.hpp"
-#include "common/ast.hpp"
+#include "common/defs/token.hpp"
+#include "common/defs/ast.hpp"
 
 namespace parser {
     using TT        = Token::Type;

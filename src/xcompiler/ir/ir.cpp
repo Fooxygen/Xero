@@ -14,7 +14,7 @@
 #include "llvm/IR/LegacyPassManager.h"
 
 #include "common/log.hpp"
-#include "common/opertype.hpp"
+#include "common/defs/opertype.hpp"
 #include "xcompiler/builtin.hpp"
 #include "xcompiler/defs/type.hpp"
 #include "xcompiler/defs/fn.hpp"

@@ -24,6 +24,7 @@ add_executable(xero
     xcompiler/ir/ir.cpp
     xcompiler/builtin.cpp
     xcompiler/optimizer/optimizer.cpp
+    common/utils/format.hpp
 )
 
 target_include_directories(xero PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
