@@ -682,6 +682,7 @@ namespace xcompiler {
     // Common
 
     llvm::Value* IRGen::Exec(Program& node) {
-        return Exec((BlockExpr&)node);
+        for (auto& child : node.children_) Exec(*child);
+        return nullptr;
     }
 }
