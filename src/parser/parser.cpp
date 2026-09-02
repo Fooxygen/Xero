@@ -3,6 +3,8 @@
 //  Copyright (c) 2026 Fooxygen.
 //  Licensed under the MIT License.
 
+#include "common/log.hpp"
+#include "common/utils/utf8.hpp"
 #include "parser.hpp"
 
 namespace parser {
@@ -148,7 +150,14 @@ namespace parser {
                 break;
             }
             case Char: {
-                sym = Symbol(std::make_unique<CharConst>(token.lexeme_), token.loc_);
+                uint32_t codepoint = 0;
+                UTF8::Decode(
+                    (const uint8_t*)token.lexeme_.data(),
+                    token.lexeme_.length(),
+                    codepoint,
+                    LogModule::Parser
+                );
+                sym = Symbol(std::make_unique<CharConst>(codepoint, token.lexeme_), token.loc_);
                 break;
             }
             case String: {

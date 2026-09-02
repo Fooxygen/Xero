@@ -735,7 +735,7 @@ namespace xengine {
                         std::string res = "";
 
                         // Params
-                        res += JoinWithBoundary(lang->params_->exprs_, [](const std::unique_ptr<Expr>& e) {
+                        res += format::JoinWithBoundary(lang->params_->exprs_, [](const std::unique_ptr<Expr>& e) {
                             auto param = (DeclExpr*)e.get();
                             return param->bind_type_->resolved_type_->base()->name_;
                         });

@@ -273,7 +273,7 @@ public:
         <<  COLOR_ORANGE
         <<  TypeName(type_)
         <<  COLOR_DEFAULT
-        <<  std::format("({})", ContainedEscapePrint(lexeme_)) <<
+        <<  std::format("({})", format::ContainedEscapePrint(lexeme_)) <<
         std::endl;
     }
 };

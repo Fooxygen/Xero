@@ -147,6 +147,10 @@ namespace xcompiler {
         return block && block->getTerminator() != nullptr;
     }
 
+    llvm::BasicBlock* IRGen::BlockCreate(const std::string& name, llvm::Function* fn) {
+        return llvm::BasicBlock::Create(llvm_context(), name, fn);
+    }
+
     void              IRGen::BlockTermCreate(llvm::BasicBlock* term) {
         if (!hasBlockTerm()) llvm_builder().CreateBr(term);
     }
@@ -228,8 +232,8 @@ namespace xcompiler {
             // Blocks
             auto fn = llvm_builder().GetInsertBlock()->getParent();
             auto block_lval = llvm_builder().GetInsertBlock();
-            auto block_rval = llvm::BasicBlock::Create(llvm_context(), ".sc.rval", fn);
-            auto block_end  = llvm::BasicBlock::Create(llvm_context(), ".sc.end", fn);
+            auto block_rval = BlockCreate(".sc.rval", fn);
+            auto block_end  = BlockCreate(".sc.end", fn);
 
             // Lval Block: Add Jump Instruction
             if (node.oper_type_ == OperType::And) {
@@ -420,7 +424,7 @@ namespace xcompiler {
             node.name_,
             llvm_module()
         );
-        auto block = llvm::BasicBlock::Create(llvm_context(), "entry", fn);
+        auto block = BlockCreate("entry", fn);
         llvm_builder().SetInsertPoint(block);
 
         // Processing Fn
@@ -482,6 +486,10 @@ namespace xcompiler {
             : llvm::ConstantInt::getFalse(llvm_context());
     }
 
+    llvm::Value* IRGen::Exec(CharConst& node) {
+        return llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_context()), node.codepoint_);
+    }
+
     // Stmt
 
     llvm::Value* IRGen::Exec(ExprStmt& node) {
@@ -505,7 +513,7 @@ namespace xcompiler {
 
     llvm::Value* IRGen::Exec(CondStmt& node) {
         auto fn = llvm_builder().GetInsertBlock()->getParent();
-        auto block_end = llvm::BasicBlock::Create(llvm_context(), ".cond.end", fn);
+        auto block_end = BlockCreate(".cond.end", fn);
 
         std::function<void(CondStmt&)> emit = [&](CondStmt& node_sub) {
 
@@ -519,8 +527,8 @@ namespace xcompiler {
 
             // Blocks
             auto fn_sub = llvm_builder().GetInsertBlock()->getParent();
-            auto block_then = llvm::BasicBlock::Create(llvm_context(), ".cond.then", fn_sub);
-            auto block_else = llvm::BasicBlock::Create(llvm_context(), ".cond.else", fn_sub);
+            auto block_then = BlockCreate(".cond.then", fn_sub);
+            auto block_else = BlockCreate(".cond.else", fn_sub);
 
             // This Block
             llvm_builder().CreateCondBr(cond_val, block_then, block_else);
@@ -584,10 +592,10 @@ namespace xcompiler {
 
             // Blocks
             auto fn = llvm_builder().GetInsertBlock()->getParent();
-            auto block_cond = llvm::BasicBlock::Create(llvm_context(), ".for.cond", fn);
-            auto block_body = llvm::BasicBlock::Create(llvm_context(), ".for.body", fn);
-            auto block_step = llvm::BasicBlock::Create(llvm_context(), ".for.step", fn);
-            auto block_end  = llvm::BasicBlock::Create(llvm_context(), ".for.end", fn);
+            auto block_cond = BlockCreate(".for.cond", fn);
+            auto block_body = BlockCreate(".for.body", fn);
+            auto block_step = BlockCreate(".for.step", fn);
+            auto block_end  = BlockCreate(".for.end", fn);
 
             // Cond Block
             llvm_builder().CreateBr(block_cond);
@@ -645,9 +653,9 @@ namespace xcompiler {
 
         // Blocks
         auto fn = llvm_builder().GetInsertBlock()->getParent();
-        auto block_cond = llvm::BasicBlock::Create(llvm_context(), ".while.cond", fn);
-        auto block_body = llvm::BasicBlock::Create(llvm_context(), ".while.body", fn);
-        auto block_end  = llvm::BasicBlock::Create(llvm_context(), ".while.end", fn);
+        auto block_cond = BlockCreate(".while.cond", fn);
+        auto block_body = BlockCreate(".while.body", fn);
+        auto block_end  = BlockCreate(".while.end", fn);
     
         // This Block
         llvm_builder().CreateBr(block_cond);

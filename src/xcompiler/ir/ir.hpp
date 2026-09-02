@@ -74,6 +74,7 @@ namespace xcompiler {
 
         llvm::Value* Exec(NumConst& node);
         llvm::Value* Exec(BoolConst& node);
+        llvm::Value* Exec(CharConst& node);
 
         llvm::Value* Exec(ExprStmt& node);
         llvm::Value* Exec(AssignStmt& node);
@@ -93,6 +94,11 @@ namespace xcompiler {
         llvm::Module*      llvm_module()  { return llvmcore_.module_.get(); }
         llvm::IRBuilder<>& llvm_builder() { return llvmcore_.builder_; }
 
+    public:
+        // Block
+        
+        llvm::BasicBlock* BlockCreate(const std::string& name, llvm::Function* fn);
+    
         // Output
 
         void IROutput(const std::string& path);
@@ -113,6 +119,7 @@ namespace xcompiler {
                 
                 case AstType::NumConst:         return Exec((NumConst&)node);
                 case AstType::BoolConst:        return Exec((BoolConst&)node);
+                case AstType::CharConst:        return Exec((CharConst&)node);
                 
                 case AstType::ExprStmt:         return Exec((ExprStmt&)node);
                 case AstType::AssignStmt:       return Exec((AssignStmt&)node);

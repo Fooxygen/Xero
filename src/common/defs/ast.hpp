@@ -664,11 +664,12 @@ public:
 };
 class CharConst         : public Const {
 public:
-    std::string value_ = "";
+    uint32_t    codepoint_ = 0;
+    std::string format_    = "";
 
 public:
-    CharConst(const std::string& value)
-    :   value_(value)
+    CharConst(uint32_t codepoint, const std::string& format)
+    :   codepoint_(codepoint), format_(format)
     {
         type_ = AstType::CharConst;
     }
@@ -678,14 +679,14 @@ public:
     }
 
     void PrintImpl(std::string prefix) override {
-        PrintLabel("value", prefix);
+        PrintLabel("format", prefix);
         std::cerr << COLOR_GREEN << "'" <<
-            ContainedEscapePrint(value_)
+            format::ContainedEscapePrint(format_)
         << "'" << COLOR_DEFAULT << std::endl;
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        auto node = std::make_unique<CharConst>(value_);
+        auto node = std::make_unique<CharConst>(codepoint_, format_);
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
@@ -709,7 +710,7 @@ public:
     void PrintImpl(std::string prefix) override {
         PrintLabel("value", prefix);
         std::cerr << COLOR_GREEN << "\"" <<
-            ContainedEscapePrint(value_)
+            format::ContainedEscapePrint(value_)
         << "\"" << COLOR_DEFAULT << std::endl;
     }
 

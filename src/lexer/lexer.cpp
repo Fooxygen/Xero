@@ -6,6 +6,7 @@
 #include <format>
 
 #include "common/log.hpp"
+#include "common/utils/utf8.hpp"
 #include "lexer/lexer.hpp"
 
 namespace lexer {
@@ -233,49 +234,46 @@ namespace lexer {
     }
 
     Token Lexer::TokenScanChar() {
-        std::string lexeme = "";
+        std::string bytes = "";
         CharNext();
+        if (isScanEnd())
+            throw LogErr(LogModule::Lexer, "unclosed single quotes of char", loc_scan_);
 
-        while (!isScanEnd()) {
-            char c = code_[pos_];
-
-            if (c == '\'') {
-                CharNext();
-                if (lexeme.length() != 1) {
-                    throw LogErr(LogModule::Lexer, "char literal must contain exactly one character", loc_scan_);
-                }
-                return TokenGen(TT::Char, lexeme);
-            }
-
-            if (c == '\n')
+        // Escape Char
+        if (code_[pos_] == '\\') {
+            CharNext();
+            if (isScanEnd())
                 throw LogErr(LogModule::Lexer, "unclosed single quotes of char", loc_scan_);
 
-            if (c == '\\') {
-                CharNext();
-                
+            switch (code_[pos_]) {
+                case 'n':  bytes += '\n'; break;
+                case 't':  bytes += '\t'; break;
+                case 'r':  bytes += '\r'; break;
+                case '\'': bytes += '\'';  break;
+                case '\\': bytes += '\\'; break;
+                default:
+                    throw LogErr(LogModule::Lexer, std::format(
+                        "unknown escape '{}'", code_[pos_]
+                    ), loc_scan_);
+            }
+            CharNext();
+        }
+
+        // UTF8
+        else {
+            size_t bytes_get = UTF8::CharBytesGet((uint8_t)code_[pos_], LogModule::Lexer);
+            for (size_t i = 0; i < bytes_get; i++) {
                 if (isScanEnd())
                     throw LogErr(LogModule::Lexer, "unclosed single quotes of char", loc_scan_);
-
-                switch (code_[pos_]) {
-                    case 'n':  lexeme += '\n'; break;
-                    case 't':  lexeme += '\t'; break;
-                    case 'r':  lexeme += '\r'; break;
-                    case '\'': lexeme += '\'';  break;
-                    case '\\': lexeme += '\\'; break;
-                    default:
-                        throw LogErr(LogModule::Lexer, std::format(
-                            "unknown escape '{}'", code_[pos_]
-                        ), loc_scan_);
-                }
+                bytes += code_[pos_];
                 CharNext();
-                continue;
             }
+        }
 
-            lexeme += c;
-            CharNext();
-        }     
-        
-        throw LogErr(LogModule::Lexer, "unclosed single quotes of char", loc_scan_);
+        if (isScanEnd() || code_[pos_] != '\'')
+            throw LogErr(LogModule::Lexer, "unclosed single quotes of char", loc_scan_);
+        CharNext();
+        return TokenGen(TT::Char, bytes);
     }
 
     Token Lexer::TokenScanString() {

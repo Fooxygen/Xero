@@ -94,6 +94,7 @@ namespace xcompiler {
         auto i64_   = sema::TypeTable::Lookup("i64");
         auto f32_   = sema::TypeTable::Lookup("f32");
         auto f64_   = sema::TypeTable::Lookup("f64");
+        auto char_  = sema::TypeTable::Lookup("char");
         auto range_ = sema::TypeTable::Lookup("range");
 
         // Impl
@@ -112,6 +113,7 @@ namespace xcompiler {
                     builder.CreateCall(LibC_printf(gen), { str_fmt, str_output });
                     return nullptr;
                 }, sema::FnSign(none_, { bool_ }));
+                
                 impl->MethodAdd("eq",   [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateICmpEQ(args[0], args[1]);
                 }, sema::FnSign(bool_, { bool_, bool_ }));
@@ -139,6 +141,7 @@ namespace xcompiler {
                     builder.CreateCall(LibC_printf(gen), { str_fmt, args[0] });
                     return nullptr;
                 }, sema::FnSign(none_, { i32_ }));
+                
                 impl->MethodAdd("plus",  [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateAdd(args[0], args[1]);
                 }, sema::FnSign(i32_,  { i32_, i32_ }));
@@ -166,6 +169,7 @@ namespace xcompiler {
                     auto  hasRevise     = builder.CreateAnd(isModTNeqZero, isDiffSign);
                     return builder.CreateAdd(modt, builder.CreateSelect(hasRevise, args[1], zero));
                 }, sema::FnSign(i32_,  { i32_, i32_ }));
+                
                 impl->MethodAdd("gt",  [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateICmpSGT(args[0], args[1]);
                 }, sema::FnSign(bool_, { i32_, i32_ }));
@@ -184,6 +188,7 @@ namespace xcompiler {
                 impl->MethodAdd("neq", [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateICmpNE(args[0], args[1]);
                 }, sema::FnSign(bool_, { i32_, i32_ }));
+                
                 impl->MethodAdd("cast",[](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateSExt(args[0], gen.llvm_builder().getInt64Ty());
                 }, sema::FnSign(i64_, { i32_ }, std::nullopt, sema::FnModifier{ .hasCast_ = true }));
@@ -205,6 +210,7 @@ namespace xcompiler {
                     builder.CreateCall(LibC_printf(gen), { str_fmt, args[0] });
                     return nullptr;
                 }, sema::FnSign(none_, { i64_ }));
+                
                 impl->MethodAdd("plus",  [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateAdd(args[0], args[1]);
                 }, sema::FnSign(i64_,  { i64_, i64_ }));
@@ -232,6 +238,7 @@ namespace xcompiler {
                     auto  hasRevise     = builder.CreateAnd(isModTNeqZero, isDiffSign);
                     return builder.CreateAdd(modt, builder.CreateSelect(hasRevise, args[1], zero));
                 }, sema::FnSign(i64_,  { i64_, i64_ }));
+                
                 impl->MethodAdd("gt",  [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateICmpSGT(args[0], args[1]);
                 }, sema::FnSign(bool_, { i64_, i64_ }));
@@ -250,6 +257,7 @@ namespace xcompiler {
                 impl->MethodAdd("neq", [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateICmpNE(args[0], args[1]);
                 }, sema::FnSign(bool_, { i64_, i64_ }));
+                
                 impl->MethodAdd("cast", [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateSIToFP(args[0], gen.llvm_builder().getFloatTy());
                 }, sema::FnSign(f32_, { i64_ }, std::nullopt, sema::FnModifier{ .hasCast_ = true }));
@@ -271,6 +279,7 @@ namespace xcompiler {
                     });
                     return nullptr;
                 }, sema::FnSign(none_, { f32_ }));
+                
                 impl->MethodAdd("plus",  [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateFAdd(args[0], args[1]);
                 }, sema::FnSign(f32_,  { f32_, f32_ }));
@@ -298,6 +307,7 @@ namespace xcompiler {
                     auto  hasRevise     = builder.CreateAnd(isModTNeqZero, isDiffSign);
                     return builder.CreateFAdd(modt, builder.CreateSelect(hasRevise, args[1], zero));
                 }, sema::FnSign(f32_,  { f32_, f32_ }));
+                
                 impl->MethodAdd("gt",  [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateFCmpOGT(args[0], args[1]);
                 }, sema::FnSign(bool_, { f32_, f32_ }));
@@ -316,6 +326,7 @@ namespace xcompiler {
                 impl->MethodAdd("neq", [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateFCmpONE(args[0], args[1]);
                 }, sema::FnSign(bool_, { f32_, f32_ }));
+                
                 impl->MethodAdd("cast", [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateFPExt(args[0], gen.llvm_builder().getDoubleTy());
                 }, sema::FnSign(f64_, { f32_ }, std::nullopt, sema::FnModifier{ .hasCast_ = true }));
@@ -331,6 +342,7 @@ namespace xcompiler {
                     builder.CreateCall(LibC_printf(gen), { str_fmt, args[0] });
                     return nullptr;
                 }, sema::FnSign(none_, { f64_ }));
+                
                 impl->MethodAdd("plus",  [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateFAdd(args[0], args[1]);
                 }, sema::FnSign(f64_,  { f64_, f64_ }));
@@ -358,6 +370,7 @@ namespace xcompiler {
                     auto  hasRevise     = builder.CreateAnd(isModTNeqZero, isDiffSign);
                     return builder.CreateFAdd(modt, builder.CreateSelect(hasRevise, args[1], zero));
                 }, sema::FnSign(f64_,  { f64_, f64_ }));
+                
                 impl->MethodAdd("gt",  [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateFCmpOGT(args[0], args[1]);
                 }, sema::FnSign(bool_, { f64_, f64_ }));
@@ -378,6 +391,118 @@ namespace xcompiler {
                 }, sema::FnSign(bool_, { f64_, f64_ }));
             }
         
+            // char
+            {
+                auto impl = TypeImplTable::Set(TypeImpl(char_, 4));
+
+                impl->MethodAdd("print", [](IRGen& gen, ARGS& args, auto) -> llvm::Value* {
+                    auto& builder   = gen.llvm_builder();
+                    auto  codepoint = args[0];
+
+                    // Buffer
+                    auto buf = builder.CreateAlloca(
+                        llvm::ArrayType::get(builder.getInt8Ty(), 5), nullptr, ".char.buf"
+                    );
+
+                    // Store
+                    auto store_byte = [&](llvm::Value* val, uint32_t idx) {
+                        auto ptr = builder.CreateGEP(builder.getInt8Ty(), buf, { builder.getInt32(idx) });
+                        builder.CreateStore(builder.CreateTrunc(val, builder.getInt8Ty()), ptr);
+                    };
+                    auto store_null = [&](uint32_t idx) {
+                        auto ptr = builder.CreateGEP(builder.getInt8Ty(), buf, { builder.getInt32(idx) });
+                        builder.CreateStore(builder.getInt8(0), ptr);
+                    };
+
+                    // Blocks
+                    auto fn = builder.GetInsertBlock()->getParent();
+                    auto block_write1    = gen.BlockCreate(".char.write1", fn);
+                    auto block_write2    = gen.BlockCreate(".char.write2", fn);
+                    auto block_write3    = gen.BlockCreate(".char.write3", fn);
+                    auto block_write4    = gen.BlockCreate(".char.write4", fn);
+                    auto block_or2or3or4 = gen.BlockCreate(".char.or2or3or4", fn);
+                    auto block_or3or4    = gen.BlockCreate(".char.or3or4", fn);
+                    auto block_end       = gen.BlockCreate(".char.end", fn);
+
+                    // 1 Byte Block
+                    builder.CreateCondBr(builder.CreateICmpULT(codepoint, builder.getInt32(0x80)), block_write1, block_or2or3or4);
+                    builder.SetInsertPoint(block_write1);
+                    {
+                        store_byte(codepoint, 0);
+                        store_null(1);
+                        builder.CreateBr(block_end);
+                    }
+
+                    // 2 Bytes Block
+                    builder.SetInsertPoint(block_or2or3or4);
+                    builder.CreateCondBr(builder.CreateICmpULT(codepoint, builder.getInt32(0x800)), block_write2, block_or3or4);
+                    builder.SetInsertPoint(block_write2);
+                    {
+                        store_byte(builder.CreateOr(builder.getInt32(0xc0), builder.CreateLShr(codepoint, builder.getInt32(6))), 0);
+                        store_byte(builder.CreateOr(builder.getInt32(0x80), builder.CreateAnd(codepoint, builder.getInt32(0x3f))), 1);
+                        store_null(2);
+                        builder.CreateBr(block_end);
+                    }
+
+                    // 3 Bytes Block
+                    builder.SetInsertPoint(block_or3or4);
+                    builder.CreateCondBr(builder.CreateICmpULT(codepoint, builder.getInt32(0x10000)), block_write3, block_write4);
+                    builder.SetInsertPoint(block_write3);
+                    {
+                        store_byte(builder.CreateOr(builder.getInt32(0xe0), builder.CreateLShr(codepoint, builder.getInt32(12))), 0);
+                        store_byte(builder.CreateOr(builder.getInt32(0x80),
+                            builder.CreateAnd(builder.CreateLShr(codepoint, builder.getInt32(6)), builder.getInt32(0x3f))
+                        ), 1);
+                        store_byte(builder.CreateOr(builder.getInt32(0x80), builder.CreateAnd(codepoint, builder.getInt32(0x3f))), 2);
+                        store_null(3);
+                        builder.CreateBr(block_end);
+                    }
+
+                    // 4 Bytes Block
+                    builder.SetInsertPoint(block_write4);
+                    {
+                        store_byte(builder.CreateOr(builder.getInt32(0xf0), builder.CreateLShr(codepoint, builder.getInt32(18))), 0);
+                        store_byte(builder.CreateOr(builder.getInt32(0x80),
+                            builder.CreateAnd(builder.CreateLShr(codepoint, builder.getInt32(12)), builder.getInt32(0x3f))
+                        ), 1);
+                        store_byte(builder.CreateOr(builder.getInt32(0x80),
+                            builder.CreateAnd(builder.CreateLShr(codepoint, builder.getInt32(6)), builder.getInt32(0x3f))
+                        ), 2);
+                        store_byte(builder.CreateOr(builder.getInt32(0x80), builder.CreateAnd(codepoint, builder.getInt32(0x3f))), 3);
+                        store_null(4);
+                        builder.CreateBr(block_end);
+                    }
+
+                    // End Block
+                    builder.SetInsertPoint(block_end);
+                    {
+                        auto str_fmt = builder.CreateGlobalString("%s", ".fmt.str");
+                        builder.CreateCall(LibC_printf(gen), { str_fmt, buf });
+                    }
+
+                    return nullptr;                    
+                }, sema::FnSign(none_, { char_ }));
+                
+                impl->MethodAdd("gt",  [](IRGen& gen, ARGS& args, auto) {
+                    return gen.llvm_builder().CreateICmpSGT(args[0], args[1]);
+                }, sema::FnSign(bool_, { char_, char_ }));
+                impl->MethodAdd("lt",  [](IRGen& gen, ARGS& args, auto) {
+                    return gen.llvm_builder().CreateICmpSLT(args[0], args[1]);
+                }, sema::FnSign(bool_, { char_, char_ }));
+                impl->MethodAdd("ge",  [](IRGen& gen, ARGS& args, auto) {
+                    return gen.llvm_builder().CreateICmpSGE(args[0], args[1]);
+                }, sema::FnSign(bool_, { char_, char_ }));
+                impl->MethodAdd("le",  [](IRGen& gen, ARGS& args, auto) {
+                    return gen.llvm_builder().CreateICmpSLE(args[0], args[1]);
+                }, sema::FnSign(bool_, { char_, char_ }));
+                impl->MethodAdd("eq",  [](IRGen& gen, ARGS& args, auto) {
+                    return gen.llvm_builder().CreateICmpEQ(args[0], args[1]);
+                }, sema::FnSign(bool_, { char_, char_ }));
+                impl->MethodAdd("neq", [](IRGen& gen, ARGS& args, auto) {
+                    return gen.llvm_builder().CreateICmpNE(args[0], args[1]);
+                }, sema::FnSign(bool_, { char_, char_ }));
+            }
+
             // range
             {
                 auto impl = TypeImplTable::Set(TypeImpl(range_, 0));

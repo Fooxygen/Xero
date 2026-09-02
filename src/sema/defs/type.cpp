@@ -36,7 +36,7 @@ namespace sema {
 
     std::string ParametricType::ParamsPrint(Type* base, const std::vector<Type*>& params_type) {
         base->BasicTypeCheck();
-        return base->name() + JoinWithBoundary(params_type, [](Type* type) {
+        return base->name() + format::JoinWithBoundary(params_type, [](Type* type) {
             return type->name();
         }, "[=", "=]");
     }
@@ -51,7 +51,7 @@ namespace sema {
         auto i64_           = (BasicType*)TypeTable::Set(BasicType("i64"));
         auto f32_           = (BasicType*)TypeTable::Set(BasicType("f32"));
         auto f64_           = (BasicType*)TypeTable::Set(BasicType("f64"));
-        /*auto char_          = (BasicType*)*/TypeTable::Set(BasicType("char"));
+        auto char_          = (BasicType*)TypeTable::Set(BasicType("char"));
         /*auto string_        = (BasicType*)*/TypeTable::Set(BasicType("string"));
         /*auto stringview_    = (BasicType*)*/TypeTable::Set(BasicType("stringview"));
         /*auto array_         = (BasicType*)*/TypeTable::Set(BasicType("array", 1));
@@ -143,12 +143,18 @@ namespace sema {
                 f64_->method_table().Add("neq",   FnSign(bool_, { f64_, f64_ }));
             }
 
-            /*
             // char
             {
-
+                char_->method_table().Add("print", FnSign(none_, { char_ }));
+                char_->method_table().Add("gt",    FnSign(bool_, { char_, char_ }));
+                char_->method_table().Add("lt",    FnSign(bool_, { char_, char_ }));
+                char_->method_table().Add("ge",    FnSign(bool_, { char_, char_ }));
+                char_->method_table().Add("le",    FnSign(bool_, { char_, char_ }));
+                char_->method_table().Add("eq",    FnSign(bool_, { char_, char_ }));
+                char_->method_table().Add("neq",   FnSign(bool_, { char_, char_ }));
             }
-
+            
+            /*
             // string
             {
                 string_->method_table().Add("len",   FnSign(i32_));

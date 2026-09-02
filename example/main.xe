@@ -1,23 +1,36 @@
 
 fn main() {
+    # 1 Byte
+    println('A');               # expect: A
+    println('z');               # expect: z
 
-    for (x in 0..5) { println(x); }        # expect: 0 1 2 3 4
+    # 2 Bytes
+    println('é');               # expect: é
+    println('¢');               # expect: ¢
 
-    for (x in 0..=5) { println(x); }       # expect: 0 1 2 3 4 5
+    # 3 Bytes
+    println('你');              # expect: 你
+    println('好');              # expect: 好
 
-    for (x in 0..2..8) { println(x); }     # expect: 0 2 4 6
+    # 4 Bytes
+    println('🥰');              # expect: 🥰
 
-    for (x in 1..2..=9) {
-        if (x == 3 || x == 7) { continue; }
-        println(x);                        # expect: 1 5 9
-    }
+    # Variable
+    c: char = '文';
+    println(c);                 # expect: 文
+    d: char = 'x';
+    println(d);                 # expect: x
 
-    for (i in 0..10) {
-        if (i == 4) { break; }
-        println(i);                        # expect: 0 1 2 3
-    }
+    # Logical Operator
+    println('a'  < 'b');        # expect: true
+    println('中' > '文');       # expect: false
+    println('A' == 'A');        # expect: true
+    println('A' != 'a');        # expect: true
 
-    r: range[=i32=] = 0..2..=30;
-    println(r);
-    for (x in r) { println(x); }
+    # Escape Char
+    print('X');
+    print('\t');              
+    println('e');               # expect: X    e
+    println('\\');              # expect: \
+    println('\'');              # expect: '
 }
