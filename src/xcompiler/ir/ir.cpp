@@ -218,8 +218,8 @@ namespace xcompiler {
         auto lval = Exec(*node.lexpr_);
         {
             switch (node.oper_type_) {
-                case Neg: return call(node.lexpr_->resolved_type_, "neg", { lval });
-                case Not: return call(node.lexpr_->resolved_type_, "not", { lval });
+                case Neg: return call(node.lexpr_->resolved_type_, "@neg", { lval });
+                case Not: return call(node.lexpr_->resolved_type_, "@not", { lval });
                 default:  break;
             }
         }
@@ -288,20 +288,20 @@ namespace xcompiler {
             rval = TypeImplTable::Cast(*this, rval, rtype, com_type);
 
             switch (node.oper_type_) {
-                case Plus:  return call(com_type, "plus",  { lval, rval });
-                case Minus: return call(com_type, "minus", { lval, rval });
-                case Star:  return call(com_type, "star",  { lval, rval });
-                case Slash: return call(com_type, "slash", { lval, rval });
-                case ModT:  return call(com_type, "modt",  { lval, rval });
-                case ModF:  return call(com_type, "modf",  { lval, rval });
-                case Gt:    return call(com_type, "gt",    { lval, rval });
-                case Lt:    return call(com_type, "lt",    { lval, rval });
-                case Ge:    return call(com_type, "ge",    { lval, rval });
-                case Le:    return call(com_type, "le",    { lval, rval });
-                case Eq:    return call(com_type, "eq",    { lval, rval });
-                case Neq:   return call(com_type, "neq",   { lval, rval });
-                case And:   return call(com_type, "and",   { lval, rval });
-                case Or:    return call(com_type, "or",    { lval, rval });
+                case Plus:  return call(com_type, "@plus",  { lval, rval });
+                case Minus: return call(com_type, "@minus", { lval, rval });
+                case Star:  return call(com_type, "@star",  { lval, rval });
+                case Slash: return call(com_type, "@slash", { lval, rval });
+                case ModT:  return call(com_type, "@modt",  { lval, rval });
+                case ModF:  return call(com_type, "@modf",  { lval, rval });
+                case Gt:    return call(com_type, "@gt",    { lval, rval });
+                case Lt:    return call(com_type, "@lt",    { lval, rval });
+                case Ge:    return call(com_type, "@ge",    { lval, rval });
+                case Le:    return call(com_type, "@le",    { lval, rval });
+                case Eq:    return call(com_type, "@eq",    { lval, rval });
+                case Neq:   return call(com_type, "@neq",   { lval, rval });
+                case And:   return call(com_type, "@and",   { lval, rval });
+                case Or:    return call(com_type, "@or",    { lval, rval });
                 default:    return nullptr;
             }
         }
@@ -603,13 +603,13 @@ namespace xcompiler {
             {
                 auto iter_val = llvm_builder().CreateLoad(LLVMType(iter_type), iter_slot);
                 auto isIncreasing = iter_type_impl->MethodCall(
-                    *this, "ge", { right_val, left_val }, cmp_args_type
+                    *this, "@ge", { right_val, left_val }, cmp_args_type
                 );
 
-                auto ge = iter_type_impl->MethodCall(*this, "ge", { iter_val, right_val }, cmp_args_type);
-                auto gt = iter_type_impl->MethodCall(*this, "gt", { iter_val, right_val }, cmp_args_type);
-                auto le = iter_type_impl->MethodCall(*this, "le", { iter_val, right_val }, cmp_args_type);
-                auto lt = iter_type_impl->MethodCall(*this, "lt", { iter_val, right_val }, cmp_args_type);
+                auto ge = iter_type_impl->MethodCall(*this, "@ge", { iter_val, right_val }, cmp_args_type);
+                auto gt = iter_type_impl->MethodCall(*this, "@gt", { iter_val, right_val }, cmp_args_type);
+                auto le = iter_type_impl->MethodCall(*this, "@le", { iter_val, right_val }, cmp_args_type);
+                auto lt = iter_type_impl->MethodCall(*this, "@lt", { iter_val, right_val }, cmp_args_type);
 
                 auto overstep_inc = llvm_builder().CreateSelect(isClosed_val, gt, ge);
                 auto overstep_dec = llvm_builder().CreateSelect(isClosed_val, lt, le);
@@ -636,7 +636,7 @@ namespace xcompiler {
             {
                 auto iter_val      = llvm_builder().CreateLoad(LLVMType(iter_type), iter_slot);
                 auto iter_val_next = iter_type_impl->MethodCall(
-                    *this, "plus", { iter_val, step_val }, cmp_args_type
+                    *this, "@plus", { iter_val, step_val }, cmp_args_type
                 );
                 llvm_builder().CreateStore(iter_val_next, iter_slot);
                 llvm_builder().CreateBr(block_cond);

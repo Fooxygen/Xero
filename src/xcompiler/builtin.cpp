@@ -41,7 +41,7 @@ namespace xcompiler {
         // print and println
         {
             auto impl_print_one = [](IRGen& gen, llvm::Value* val, sema::Type* type) {
-                auto& method      = ((sema::BasicType*)type->BasicTypeGet())->method_table().Lookup("print");
+                auto& method      = ((sema::BasicType*)type->BasicTypeGet())->method_table().Lookup("@print");
                 auto  method_sign = method.SignLookup({ type });
                 auto  method_impl = TypeImplTable::Lookup(type)->MethodGet(method_sign);
                 ((NativeFnImpl*)method_impl)->impl()(gen, { val }, { type });

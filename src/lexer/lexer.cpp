@@ -40,10 +40,10 @@ namespace lexer {
         char c = code_[pos_];
 
         // Indef Length
-        if (isAlpha(c))  return TokenScanWord();            // a...
-        if (isNumber(c)) return TokenScanNumber();          // 1...
-        if (c == '"')    return TokenScanString();          // "..."
-        if (c == '\'')   return TokenScanChar();            // '.'
+        if (isIdBegin(c))   return TokenScanWord();     // a... | _... | @...
+        if (isNumber(c))    return TokenScanNumber();   // 1...
+        if (c == '"')       return TokenScanString();   // "..."
+        if (c == '\'')      return TokenScanChar();     // '.'
         
         // Fixed Length
         CharNext();
@@ -193,7 +193,7 @@ namespace lexer {
 
     Token Lexer::TokenScanWord() {
         size_t pbeg = pos_;
-        while (pos_ + 1 < code_.length() && isIdentifierChar(code_[pos_ + 1])) {
+        while (pos_ + 1 < code_.length() && isIdContinue(code_[pos_ + 1])) {
             CharNext();
         }
         CharNext();

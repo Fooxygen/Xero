@@ -1,22 +1,21 @@
-fn abs(x: i32) -> i32 {
-    if (x < 0) return -x;
-    return x;
-}
 
 fn main() {
-    r: i32 = 3;
+    x: i32 = 3;
+    println(x.@plus(4));    # 7
+    println(x.@minus(4));   # -1
+    println(x.@star(4));    # 12
+    println(x.@slash(4));   # 0
+    println(x.@gt(4));      # false
+    println(x.@lt(4));      # true
+    println(x.@ge(4));      # false
+    println(x.@le(4));      # true
+    println(x.@eq(4));      # false
+    println(x.@neq(4));     # true
 
-    for (x in -r..=r) {
-        s: i32 = r - abs(x);
-        
-        for (y in 0..s) print(' ');
-        print('O');
-
-        if (x != 0) {
-            for (y in 0..(2 * r + 1 - 2 * s - 2)) print(' ');
-            print('O');
-        }
-
-        print('\n');
-    }
+    c: char = '🥰';         # U+1F970
+    println(c);
+    println(c.@ge('🥱'));   # false (U+1F971)
+    println(c.@le('🥱'));   # true
+    println(c.@gt('🥱'));   # false
+    println(c.@lt('🥱'));   # true
 }

@@ -36,8 +36,12 @@ namespace lexer {
         static constexpr bool isDot(char c) {
             return c == '.';
         }
-        static constexpr bool isIdentifierChar(char c) {
-            return isAlpha(c) || isNumber(c) || c == '_';
+        static constexpr bool isIdBegin(char c) {
+            return isAlpha(c) || c == '_'   || c == '@';
+        }
+        static constexpr bool isIdContinue(char c) {
+            return isAlpha(c) || isNumber(c) ||
+                   c == '_'   || c == '@';
         }
         
         void  WhitespaceSkip() {

@@ -18,13 +18,14 @@ add_executable(xero
     parser/rule.cpp
     sema/defs/fn.cpp
     sema/defs/type.cpp
+    sema/defs/type_init.cpp
     sema/analyzer.cpp
     xcompiler/defs/fn.cpp
     xcompiler/defs/type.cpp
+    xcompiler/defs/type_init.cpp
     xcompiler/ir/ir.cpp
     xcompiler/builtin.cpp
     xcompiler/optimizer/optimizer.cpp
-    common/utils/format.hpp
 )
 
 target_include_directories(xero PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
