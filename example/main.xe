@@ -1,21 +1,6 @@
 
 fn main() {
     x: i32 = 3;
-    println(x.@plus(4));    # 7
-    println(x.@minus(4));   # -1
-    println(x.@star(4));    # 12
-    println(x.@slash(4));   # 0
-    println(x.@gt(4));      # false
-    println(x.@lt(4));      # true
-    println(x.@ge(4));      # false
-    println(x.@le(4));      # true
-    println(x.@eq(4));      # false
-    println(x.@neq(4));     # true
-
-    c: char = '🥰';         # U+1F970
-    println(c);
-    println(c.@ge('🥱'));   # false (U+1F971)
-    println(c.@le('🥱'));   # true
-    println(c.@gt('🥱'));   # false
-    println(c.@lt('🥱'));   # true
+    y: i32 = x.@deepcopy();
+    println(y);
 }

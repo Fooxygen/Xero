@@ -42,6 +42,10 @@ namespace xcompiler {
                     builder.CreateCall(LibC_printf(gen), { str_fmt, str_output });
                     return nullptr;
                 }, sema::FnSign(none_, { bool_ }));
+
+                impl->MethodAdd("@deepcopy", [](auto&, ARGS& args, auto) -> llvm::Value* {
+                    return args[0];
+                }, sema::FnSign(bool_, { bool_ }));
                 
                 impl->MethodAdd("@eq",   [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateICmpEQ(args[0], args[1]);
@@ -70,6 +74,10 @@ namespace xcompiler {
                     builder.CreateCall(LibC_printf(gen), { str_fmt, args[0] });
                     return nullptr;
                 }, sema::FnSign(none_, { i32_ }));
+                
+                impl->MethodAdd("@deepcopy", [](auto&, ARGS& args, auto) -> llvm::Value* {
+                    return args[0];
+                }, sema::FnSign(i32_, { i32_ }));
                 
                 impl->MethodAdd("@plus",  [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateAdd(args[0], args[1]);
@@ -140,6 +148,10 @@ namespace xcompiler {
                     return nullptr;
                 }, sema::FnSign(none_, { i64_ }));
                 
+                impl->MethodAdd("@deepcopy", [](auto&, ARGS& args, auto) -> llvm::Value* {
+                    return args[0];
+                }, sema::FnSign(i64_, { i64_ }));
+                
                 impl->MethodAdd("@plus",  [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateAdd(args[0], args[1]);
                 }, sema::FnSign(i64_,  { i64_, i64_ }));
@@ -209,6 +221,10 @@ namespace xcompiler {
                     return nullptr;
                 }, sema::FnSign(none_, { f32_ }));
                 
+                impl->MethodAdd("@deepcopy", [](auto&, ARGS& args, auto) -> llvm::Value* {
+                    return args[0];
+                }, sema::FnSign(f32_, { f32_ }));
+
                 impl->MethodAdd("@plus",  [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateFAdd(args[0], args[1]);
                 }, sema::FnSign(f32_,  { f32_, f32_ }));
@@ -272,6 +288,10 @@ namespace xcompiler {
                     return nullptr;
                 }, sema::FnSign(none_, { f64_ }));
                 
+                impl->MethodAdd("@deepcopy", [](auto&, ARGS& args, auto) -> llvm::Value* {
+                    return args[0];
+                }, sema::FnSign(f64_, { f64_ }));
+
                 impl->MethodAdd("@plus",  [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateFAdd(args[0], args[1]);
                 }, sema::FnSign(f64_,  { f64_, f64_ }));
@@ -412,6 +432,10 @@ namespace xcompiler {
                     return nullptr;                    
                 }, sema::FnSign(none_, { char_ }));
                 
+                impl->MethodAdd("@deepcopy", [](auto&, ARGS& args, auto) -> llvm::Value* {
+                    return args[0];
+                }, sema::FnSign(char_, { char_ }));
+
                 impl->MethodAdd("@gt",  [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateICmpSGT(args[0], args[1]);
                 }, sema::FnSign(bool_, { char_, char_ }));

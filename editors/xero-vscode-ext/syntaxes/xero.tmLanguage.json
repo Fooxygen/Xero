@@ -3,7 +3,8 @@
     "name": "Xero",
     "patterns": [
         { "include": "#comments" },
-        { "name": "punctuation.bracket.generic.xero", "match": "\\[=|=\\]" },
+        { "include": "#special" },
+        { "include": "#brackets" },
         { "include": "#numbers" },
         { "include": "#booleans" },
         { "include": "#chars" },
@@ -29,6 +30,14 @@
         "lineComment": {
             "name": "comment.line.number-sign.xero",
             "match": "#.*"
+        },
+        "special": {
+            "name": "keyword.other.special.xero",
+            "match": "@\\w+"
+        },
+        "brackets": {
+            "name": "punctuation.bracket.generic.xero",
+            "match": "\\[=|=\\]"
         },
         "numbers": {
             "name": "constant.numeric.xero",
