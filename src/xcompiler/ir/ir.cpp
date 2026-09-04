@@ -122,6 +122,7 @@ namespace xcompiler {
         if (type->is("f32"))    return llvm::Type::getFloatTy(llvm_context());
         if (type->is("f64"))    return llvm::Type::getDoubleTy(llvm_context());
         if (type->is("char"))   return llvm::Type::getInt32Ty(llvm_context());
+        if (type->is("array"))  return llvm::PointerType::get(llvm_context(), 0);   // AddresSpace: normal memory, 0
         if (type->is("range")) {
             auto type_param = (sema::ParametricType*)type;
             auto elem_type  = LLVMType(type_param->params_type()[0]);
@@ -343,6 +344,10 @@ namespace xcompiler {
         range_val = llvm_builder().CreateInsertValue(range_val, isClosed_val, 3);
         
         return range_val;
+    }
+
+    llvm::Value* IRGen::Exec(ArrayExpr& node) {
+        
     }
 
     llvm::Value* IRGen::Exec(FnCallExpr& node) {

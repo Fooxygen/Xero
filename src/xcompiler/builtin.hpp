@@ -14,6 +14,7 @@ namespace xcompiler {
 
     // LibC
 
+    llvm::Function* LibCCreate(IRGen& gen, const std::string& name, llvm::FunctionType* fntype);
     llvm::Function* LibC_printf(IRGen& gen);
 
     // Built-in Fn

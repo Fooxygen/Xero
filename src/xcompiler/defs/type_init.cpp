@@ -23,7 +23,7 @@ namespace xcompiler {
         auto f32_   = sema::TypeTable::Lookup("f32");
         auto f64_   = sema::TypeTable::Lookup("f64");
         auto char_  = sema::TypeTable::Lookup("char");
-        //auto array_ = sema::TypeTable::Lookup("array");
+        auto array_ = sema::TypeTable::Lookup("array");
         auto range_ = sema::TypeTable::Lookup("range");
 
         // Impl
@@ -458,7 +458,7 @@ namespace xcompiler {
 
             // array
             {
-                //auto impl = TypeImplTable::Set(TypeImpl(array_, 0));
+                auto impl = TypeImplTable::Set(TypeImpl(array_, 0));
             }
 
             // range

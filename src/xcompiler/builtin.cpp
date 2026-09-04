@@ -14,23 +14,36 @@
 namespace xcompiler {
     
     // LibC
-    
-    llvm::Function* LibC_printf(IRGen& gen) {
+
+    llvm::Function* LibCCreate(IRGen& gen, const std::string& name, llvm::FunctionType* fntype) {
         auto module = gen.llvm_module();
-        if (auto fn = module->getFunction("printf")) return fn;
+        if (auto fn = module->getFunction(name)) return fn;
 
         auto context = &module->getContext();
-        auto fntype  = llvm::FunctionType::get(
-            llvm::Type::getInt32Ty(*context),
-            { llvm::PointerType::getUnqual(*context) },
-            true // variable parameters
-        );
         return llvm::Function::Create(
             fntype,
             llvm::Function::ExternalLinkage,
-            "printf",
+            name,
             module
         );
+    }
+    
+    llvm::Function* LibC_printf(IRGen& gen) {
+        auto context = &gen.llvm_module()->getContext();
+        return LibCCreate(gen, "printf", llvm::FunctionType::get(
+            llvm::Type::getInt32Ty(*context),
+            { llvm::PointerType::getUnqual(*context) },
+            true    // variable parameters
+        ));
+    }
+
+    llvm::Function* LibC_malloc(IRGen& gen) {
+        auto context = &gen.llvm_module()->getContext();
+        return LibCCreate(gen, "malloc", llvm::FunctionType::get(
+            llvm::PointerType::getUnqual(*context),
+            { llvm::Type::getInt64Ty(*context) },
+            false
+        ));
     }
 
     // Built-in Fn
