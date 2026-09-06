@@ -139,6 +139,9 @@ namespace xcompiler {
         ));
     }
 
+    // e.g. x: i32 = 3; z: i32& = x;
+    //      IdResolve(x): getting address of x
+    //      IdResolve(z): getting address of x actually
     llvm::Value*      IRGen::IdResolve(IdExpr& node) {
         auto var = var_table_.Lookup(node.name_);
         if (node.isReferred_) {
@@ -383,9 +386,21 @@ namespace xcompiler {
         std::vector<llvm::Value*> args      = {};
         std::vector<sema::Type*>  args_type = {};
         if (node.args_) {
-            for (auto& e : node.args_->exprs_) {
-                args.emplace_back(Exec(*e));
-                args_type.emplace_back(e->resolved_type_);
+            for (size_t i = 0; i < node.args_->exprs_.size(); i++) {
+                auto& expr       = node.args_->exprs_[i];
+                auto& params_fix = node.callee_fnsign_->params_type_fix();
+
+                // Reference
+                // e.g. fn call(a: i32&) { ... }
+                //      x: i32 = 3; z: i32& = x;
+                //      call(z);
+                if (i < params_fix.size() && dynamic_cast<sema::ReferenceType*>(params_fix[i])) {
+                    args.emplace_back(IdResolve(*(IdExpr*)expr.get()));     // getting address of x actually
+                }
+                else
+                    args.emplace_back(Exec(*expr));
+
+                args_type.emplace_back(expr->resolved_type_);
             }
         }
 
@@ -530,7 +545,7 @@ namespace xcompiler {
 
     llvm::Value* IRGen::Exec(AssignStmt& node) {
         auto target   = (IdExpr*)(node.target_.get());
-        auto var      = var_table_.Lookup(target->name_);
+        auto var      = IdResolve(*target);
         auto var_type = target->resolved_type_;
         auto val      = Exec(*node.value_);
         auto val_type = node.value_->resolved_type_;

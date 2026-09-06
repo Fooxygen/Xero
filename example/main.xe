@@ -1,6 +1,15 @@
 
+fn set(v: i32&) {
+    v *= 3;
+}
+
 fn main() {
     x: i32  = 3;
     y: i32& = x;
     println(x, y);
+
+    z: i32  = 4;
+    w: i32& = z;
+    set(w);
+    println(z);
 }
