@@ -20,6 +20,7 @@ add_executable(xero
     sema/defs/type.cpp
     sema/defs/type_init.cpp
     sema/analyzer.cpp
+    sema/builtin.cpp
     xcompiler/defs/fn.cpp
     xcompiler/defs/type.cpp
     xcompiler/defs/type_init.cpp

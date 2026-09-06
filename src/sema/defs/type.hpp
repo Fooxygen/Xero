@@ -21,8 +21,9 @@ namespace sema {
     class Type {
     public:
         enum class Using {
-            Basic,          // -> array
-            Parametric      // -> array[=i32=]
+            Basic,          // array
+            Parametric,     // array[=i32=]
+            Reference       // array&
         };
     
     private:
@@ -70,23 +71,39 @@ namespace sema {
 
     class ParametricType : public Type {
     private:
-        Type*              basic_type_  = nullptr;
+        Type*              type_basic_  = nullptr;
         std::vector<Type*> params_type_ = {};
 
     public:
         ParametricType(std::string name, Type* type_basic, const std::vector<Type*>& params_type)
         :   Type(name, Using::Parametric),
-            basic_type_(type_basic),
+            type_basic_(type_basic),
             params_type_(params_type)
         {}
 
-        Type*               type_basic() const { return basic_type_; }
+        Type*               type_basic() const { return type_basic_; }
         std::vector<Type*>& params_type()      { return params_type_; }
 
     public:
         static std::string ParamsPrint(Type* type_basic, const std::vector<Type*>& params_type);
 
-        Type* BasicTypeGet() override { return basic_type_; }
+        Type* BasicTypeGet() override { return type_basic_; }
+    };
+
+    class ReferenceType  : public Type {
+    private:
+        Type* type_referred_  = nullptr;
+
+    public:
+        ReferenceType(std::string name, Type* type_referred)
+        :   Type(name, Using::Reference),
+            type_referred_(type_referred)
+        {}
+
+        Type* type_referred() const { return type_referred_; }
+
+    public:
+        Type* BasicTypeGet() override { return type_referred_->BasicTypeGet(); }
     };
 
     class TypeTable {
@@ -100,10 +117,12 @@ namespace sema {
 
         static Type* Set(const BasicType& t);
         static Type* Set(const ParametricType& t);
+        static Type* Set(const ReferenceType& t);
         static Type* Lookup(std::string_view name, std::optional<Loc> loc = std::nullopt);
         static Type* LookupTry(std::string_view name);
         
         static Type* ParametricTypeGet(Type* type, const std::vector<Type*>& params, std::optional<Loc> loc = std::nullopt);
+        static Type* ReferenceTypeGet(Type* type);
 
         static void  CastRecompute();
         static Type* Common(std::set<Type*> ts) {

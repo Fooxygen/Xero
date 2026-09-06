@@ -37,6 +37,7 @@ public:
         Quote,              //  "
         QuoteSingle,        //  '
         Arrow,              //  ->
+        Amper,              //  &
 
         // Semantic
         // └─ Literal
@@ -128,6 +129,7 @@ public:
             case Quote:
             case QuoteSingle:
             case Arrow:
+            case Amper:
                 return Unsemantic;
 
             case Id:
@@ -212,6 +214,7 @@ public:
             case Quote:         return "Quote";
             case QuoteSingle:   return "QuoteSingle";
             case Arrow:         return "Arrow";
+            case Amper:         return "Amper";
 
             case Id:            return "Id";
             case Number:        return "Number";

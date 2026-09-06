@@ -19,7 +19,6 @@ namespace xcompiler {
         auto module = gen.llvm_module();
         if (auto fn = module->getFunction(name)) return fn;
 
-        auto context = &module->getContext();
         return llvm::Function::Create(
             fntype,
             llvm::Function::ExternalLinkage,

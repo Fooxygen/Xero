@@ -137,7 +137,7 @@ namespace lexer {
                     CharNext();
                     return TokenGen(TT::And, "&&");
                 }
-                break;
+                return TokenGen(TT::Amper, "&");
             }
             case '|': {
                 if (cn == '|') {

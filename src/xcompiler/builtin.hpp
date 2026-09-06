@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "llvm/IR/Value.h"
+#include "llvm/IR/Function.h"
 
 #include "sema/defs/fn.hpp"
 

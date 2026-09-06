@@ -164,6 +164,22 @@ namespace parser {
 
         // Type, Declare and Assign
         
+        // └─ id & -> typeexpr
+        {
+            RuleAdd(
+                PATS_INIT{
+                    AT::IdExpr,
+                    TT::Amper
+                },
+                [](SS& symbols, auto) {
+                    return std::make_unique<TypeExpr>(
+                        Rule::Move<IdExpr>(symbols, 1)->name_,
+                        nullptr,
+                        true
+                    );
+                }
+            );
+        }
         // └─ id [= exprs =] -> typeexpr
         {
             RuleAdd(
@@ -176,7 +192,27 @@ namespace parser {
                 [](SS& symbols, auto) {
                     return std::make_unique<TypeExpr>(
                         Rule::Move<IdExpr>(symbols, 1)->name_,
-                        Pack2Exprs(symbols, 3)
+                        Pack2Exprs(symbols, 3),
+                        false
+                    );
+                }
+            );
+        }
+        // └─ id [= exprs =] & -> typeexpr
+        {
+            RuleAdd(
+                PATS_INIT{
+                    AT::IdExpr,
+                    TT::LEBkt,
+                    SymbolPattern::Opt({ AT::Expr, AT::Exprs }),
+                    TT::REBkt,
+                    TT::Amper
+                },
+                [](SS& symbols, auto) {
+                    return std::make_unique<TypeExpr>(
+                        Rule::Move<IdExpr>(symbols, 1)->name_,
+                        Pack2Exprs(symbols, 3),
+                        true
                     );
                 }
             );
@@ -194,13 +230,14 @@ namespace parser {
                         Rule::Move<IdExpr>(symbols, 1)->name_,
                         std::make_unique<TypeExpr>(
                             Rule::Move<IdExpr>(symbols, 3)->name_,
-                            nullptr
+                            nullptr,
+                            false
                         ),
                         nullptr
                     );
                 },
                 {}, {},
-                TTS_INIT{ TT::LEBkt }
+                TTS_INIT{ TT::LEBkt, TT::Amper }
             );
         }
         // └─ id: typeexpr -> declareexpr
@@ -341,7 +378,8 @@ namespace parser {
                             name,
                             std::make_unique<TypeExpr>(
                                 Rule::Move<IdExpr>(symbols, 7)->name_,
-                                nullptr
+                                nullptr,
+                                false
                             ),
                             Pack2Exprs(symbols, 4),
                             Rule::Move<BlockExpr>(symbols, 8)

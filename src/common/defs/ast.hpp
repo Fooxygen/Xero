@@ -220,6 +220,9 @@ public:
     std::string name_ = "";
 
 public:
+    bool isReferred_ = false;
+
+public:
     IdExpr(const std::string& name) : name_(name) {
         type_ = AstType::IdExpr;
     }
@@ -244,14 +247,17 @@ class TypeExpr          : public Expr {
 public:
     std::string            type_basic_ = "";
     std::unique_ptr<Exprs> params_     = nullptr;
+    bool                   isReferred_ = false;
 
 public:
     TypeExpr(
-        const std::string& type_basic,
-        std::unique_ptr<Exprs> params
+        const std::string&     type_basic,
+        std::unique_ptr<Exprs> params,
+        bool                   isReferred
     )
     :   type_basic_(type_basic),
-        params_(std::move(params))
+        params_(std::move(params)),
+        isReferred_(isReferred)
     {
         type_ = AstType::TypeExpr;
     }
@@ -266,12 +272,19 @@ public:
         }
         
         if (params_) params_->Print(prefix, "params");
+
+        PrintLabel("isReferred", prefix);
+        if (isReferred_)
+            std::cerr << COLOR_GREEN << "true" << COLOR_DEFAULT << std::endl;
+        else
+            std::cerr << COLOR_RED << "false" << COLOR_DEFAULT << std::endl;
     }
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<TypeExpr>(
             type_basic_,
-            params_ ? std::unique_ptr<Exprs>((Exprs*)(params_->Clone().release())) : nullptr
+            params_ ? std::unique_ptr<Exprs>((Exprs*)(params_->Clone().release())) : nullptr,
+            isReferred_
         );
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;

@@ -115,6 +115,10 @@ namespace xcompiler {
     // Utility
 
     llvm::Type*       IRGen::LLVMType(sema::Type* type) {
+        if (dynamic_cast<sema::ReferenceType*>(type)) {
+            return llvm::PointerType::get(llvm_context(), 0);
+        }
+
         if (type->is("none"))   return llvm::Type::getVoidTy(llvm_context());
         if (type->is("bool"))   return llvm::Type::getInt1Ty(llvm_context());
         if (type->is("i32"))    return llvm::Type::getInt32Ty(llvm_context());
@@ -122,7 +126,7 @@ namespace xcompiler {
         if (type->is("f32"))    return llvm::Type::getFloatTy(llvm_context());
         if (type->is("f64"))    return llvm::Type::getDoubleTy(llvm_context());
         if (type->is("char"))   return llvm::Type::getInt32Ty(llvm_context());
-        if (type->is("array"))  return llvm::PointerType::get(llvm_context(), 0);   // AddresSpace: normal memory, 0
+        //if (type->is("array"))  return llvm::PointerType::get(llvm_context(), 0);   // AddresSpace: normal memory, 0
         if (type->is("range")) {
             auto type_param = (sema::ParametricType*)type;
             auto elem_type  = LLVMType(type_param->params_type()[0]);
@@ -133,6 +137,17 @@ namespace xcompiler {
         throw LogErr(LogModule::Xcompiler, std::format(
             "undefined type '{}'", type->name()
         ));
+    }
+
+    llvm::Value*      IRGen::IdResolve(IdExpr& node) {
+        auto var = var_table_.Lookup(node.name_);
+        if (node.isReferred_) {
+            var = llvm_builder().CreateLoad(
+                llvm::PointerType::get(llvm_context(), 0), var,
+                std::format(".{}.ref", node.name_)
+            );
+        }
+        return var;
     }
 
     llvm::AllocaInst* IRGen::SlotCreate(llvm::Type* type, const std::string& name) {
@@ -182,7 +197,7 @@ namespace xcompiler {
     }
     
     llvm::Value* IRGen::Exec(IdExpr& node) {
-        auto var       = var_table_.Lookup(node.name_);
+        auto var       = IdResolve(node);
         auto type_llvm = LLVMType(node.resolved_type_);
         return llvm_builder().CreateLoad(type_llvm, var, node.name_);
     }
@@ -192,19 +207,30 @@ namespace xcompiler {
         // Variable
         auto var_type = node.resolved_type_;
         auto var_slot = SlotCreate(LLVMType(var_type), node.id_);
+        
+        // Reference
+        if (dynamic_cast<sema::ReferenceType*>(node.resolved_type_)) {
+            auto idexpr = (IdExpr*)(node.value_.get());
+            auto addr   = IdResolve(*idexpr);
+            llvm_builder().CreateStore(addr, var_slot);
+            var_table_.Declare(node.id_, var_slot);
+            return nullptr;
+        }
 
         // Value
-        if (node.value_) {
-            auto val      = Exec(*node.value_);
-            auto val_type = node.value_->resolved_type_;
-            llvm_builder().CreateStore(
-                TypeImplTable::Cast(*this, val, val_type, var_type),
-                var_slot
-            );
+        else {
+            if (node.value_) {
+                auto val      = Exec(*node.value_);
+                auto val_type = node.value_->resolved_type_;
+                llvm_builder().CreateStore(
+                    TypeImplTable::Cast(*this, val, val_type, var_type),
+                    var_slot
+                );
+            }
+            
+            var_table_.Declare(node.id_, var_slot);
+            return nullptr;
         }
-        
-        var_table_.Declare(node.id_, var_slot);
-        return nullptr;
     }
 
     llvm::Value* IRGen::Exec(OperExpr& node) {
@@ -346,9 +372,9 @@ namespace xcompiler {
         return range_val;
     }
 
-    llvm::Value* IRGen::Exec(ArrayExpr& node) {
+    //llvm::Value* IRGen::Exec(ArrayExpr& node) {
         
-    }
+    //}
 
     llvm::Value* IRGen::Exec(FnCallExpr& node) {
         auto fnsign = node.callee_fnsign_;

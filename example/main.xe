@@ -1,6 +1,6 @@
 
 fn main() {
-    x: i32 = 3;
-    y: i32 = x.@deepcopy();
-    println(y);
+    x: i32  = 3;
+    y: i32& = x;
+    println(x, y);
 }

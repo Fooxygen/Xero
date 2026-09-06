@@ -62,6 +62,17 @@ namespace sema {
         }
         else throw LogErr(LogModule::Sema, std::format("redefinition of type '{}'", type.name()));
     }
+
+    Type* TypeTable::Set(const ReferenceType& type) {
+        if (!table_.contains(std::string(type.name()))) {
+            auto set = table_.emplace(
+                type.name(),
+                new ReferenceType(type)
+            );
+            return set.first->second;
+        }
+        else throw LogErr(LogModule::Sema, std::format("redefinition of type '{}'", type.name()));
+    }
     
     Type* TypeTable::Lookup(std::string_view name, std::optional<Loc> loc) {
         auto it = table_.find(std::string(name));
@@ -81,7 +92,6 @@ namespace sema {
         if (params_type.empty()) return Lookup(type->name(), loc);
 
         auto base_type = (BasicType*)type;
-
         if (base_type->params_cnt() != params_type.size()) {
             throw LogErr(LogModule::Sema, std::format(
                 "type '{}' expects {} type parameter(s), got {}",
@@ -98,6 +108,13 @@ namespace sema {
         ));
         CastRecompute();
         return parametric_type;
+    }
+
+    Type* TypeTable::ReferenceTypeGet(Type* type) {
+        auto name = type->name() + '&';
+        auto it   = table_.find(name);
+        if (it != table_.end()) return it->second;
+        return Set(ReferenceType(name, type));
     }
 
     void  TypeTable::CastRecompute() {

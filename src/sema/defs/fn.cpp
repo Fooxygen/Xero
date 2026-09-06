@@ -54,20 +54,32 @@ namespace sema {
             // Fixed Params
             if (args_type.size() < params_type_fix_.size()) throw 0;
             for (size_t i = 0; i < params_type_fix_.size(); i++) {
-                if (params_type_fix_[i]) {
-                    bool isStrictMatch = args_type[i]->casts().contains(params_type_fix_[i]);
-                    if (!isStrictMatch && args_type[i]->BasicTypeGet() == params_type_fix_[i]) isStrictMatch = true;
-                    if (!isStrictMatch) throw 0;
+                auto param = params_type_fix_[i];
+                auto arg   = args_type[i];
+                if (param) {
+
+                    // Reference
+                    if (dynamic_cast<ReferenceType*>(param)) {
+                        if (arg != param) throw 0;
+                    }
+
+                    else {
+                        bool isMatch = arg->casts().contains(param);
+                        if (!isMatch && arg->BasicTypeGet() == param) isMatch = true;   // XXX: Useless logic
+                        if (!isMatch) throw 0;
+                    }
                 }
             }
 
             // Variable Params
             if (params_type_var_) {
                 for (size_t i = params_type_fix_.size(); i < args_type.size(); i++) {
-                    if (*params_type_var_) {
-                        bool isStrictMatch = args_type[i]->casts().contains(*params_type_var_);
-                        if (!isStrictMatch && args_type[i]->BasicTypeGet() == *params_type_var_) isStrictMatch = true;
-                        if (!isStrictMatch) throw 0;
+                    auto param = *params_type_var_;
+                    auto arg   = args_type[i];
+                    if (param) {
+                        bool isMatch = arg->casts().contains(param);
+                        if (!isMatch && arg->BasicTypeGet() == param) isMatch = true;   // XXX: Useless logic
+                        if (!isMatch) throw 0;
                     }
                 }
             }
