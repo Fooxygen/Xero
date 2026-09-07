@@ -67,6 +67,7 @@ namespace xcompiler {
 
         llvm::Value* Exec(BlockExpr& node, std::function<void()> OnScopeReady = nullptr);
         llvm::Value* Exec(IdExpr& node);
+        llvm::Value* Exec(RefExpr& node);
         llvm::Value* Exec(DeclExpr& node);
         llvm::Value* Exec(OperExpr& node);
         llvm::Value* Exec(RangeExpr& node);
@@ -113,6 +114,7 @@ namespace xcompiler {
             switch (node.type_) {
                 case AstType::BlockExpr:        return Exec((BlockExpr&)node);
                 case AstType::IdExpr:           return Exec((IdExpr&)node);
+                case AstType::RefExpr:          return Exec((RefExpr&)node);
                 case AstType::DeclExpr:         return Exec((DeclExpr&)node);
                 case AstType::OperExpr:         return Exec((OperExpr&)node);
                 case AstType::RangeExpr:        return Exec((RangeExpr&)node);

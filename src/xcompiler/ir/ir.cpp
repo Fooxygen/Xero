@@ -205,6 +205,10 @@ namespace xcompiler {
         return llvm_builder().CreateLoad(type_llvm, var, node.name_);
     }
 
+    llvm::Value* IRGen::Exec(RefExpr& node) {
+        return IdResolve(*(IdExpr*)node.target_.get());
+    }
+
     llvm::Value* IRGen::Exec(DeclExpr& node) {
 
         // Variable
@@ -395,7 +399,16 @@ namespace xcompiler {
                 //      x: i32 = 3; z: i32& = x;
                 //      call(z);
                 if (i < params_fix.size() && dynamic_cast<sema::ReferenceType*>(params_fix[i])) {
-                    args.emplace_back(IdResolve(*(IdExpr*)expr.get()));     // getting address of x actually
+
+                    // RefVar
+                    if (auto idexpr = dynamic_cast<IdExpr*>(expr.get())) {
+                        args.emplace_back(IdResolve(*idexpr));      // getting address of x actually
+                    }
+
+                    // RefExpr
+                    else {
+                        args.emplace_back(Exec(*expr));
+                    }
                 }
                 else
                     args.emplace_back(Exec(*expr));

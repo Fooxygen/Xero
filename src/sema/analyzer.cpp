@@ -47,6 +47,14 @@ namespace sema {
         ), node.loc_);
     }
 
+    void Analyzer::Exec(RefExpr& node) {
+        Exec(*node.target_);
+        if (!dynamic_cast<IdExpr*>(node.target_.get())) {
+            throw LogErr(LogModule::Sema, "cannot reference a non-referenceable value", node.loc_);
+        }
+        node.resolved_type_ = TypeTable::ReferenceTypeGet(node.target_->resolved_type_);
+    }
+
     void Analyzer::Exec(TypeExpr& node) {
         auto  type_basic    = TypeTable::Lookup(node.type_basic_);
         Type* type_resolved = nullptr;
@@ -220,6 +228,7 @@ namespace sema {
         std::vector<Type*> args_type = {};
         for (auto& e : node.args_->exprs_) {
             Exec(*e);
+            
             auto idexpr = dynamic_cast<IdExpr*>(e.get());
             auto isReferred = idexpr && idexpr->isReferred_;
 

@@ -12,4 +12,6 @@ fn main() {
     w: i32& = z;
     set(w);
     println(z);
+    set(&z);
+    println(z);
 }

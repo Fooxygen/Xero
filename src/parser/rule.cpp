@@ -440,6 +440,20 @@ namespace parser {
 
         // Expr
         
+        // └─ &expr -> refexpr
+        {
+            RuleAdd(
+                PATS_INIT{
+                    TT::Amper,
+                    AT::Expr
+                },
+                [](std::vector<Symbol>& symbols, auto) -> ASTNODE {
+                    return std::make_unique<RefExpr>(
+                        Rule::Move<Expr>(symbols, 2)
+                    );
+                }
+            );
+        }
         // └─ (expr) -> expr
         {
             RuleAdd(

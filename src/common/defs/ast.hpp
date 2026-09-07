@@ -39,6 +39,7 @@ enum class AstType {
     Expr,               //  Base ------
     BlockExpr,          //  Packaged Astnode
     IdExpr,             //  Identity
+    RefExpr,            //  Get Reference to Var
     TypeExpr,           //  Type
     DeclExpr,           //  Declaration
     OperExpr,           //  Operation
@@ -75,6 +76,7 @@ inline static AstType BaseOfAstType(AstType type) {
 
         case BlockExpr:
         case IdExpr:
+        case RefExpr:
         case TypeExpr:
         case DeclExpr:
         case OperExpr:
@@ -238,6 +240,32 @@ public:
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<IdExpr>(name_);
+        node->resolved_type_ = resolved_type_;
+        node->loc_ = loc_;
+        return node;
+    }
+};
+class RefExpr           : public Expr {
+public:
+    std::unique_ptr<Expr> target_ = nullptr;
+
+public:
+    RefExpr(std::unique_ptr<Expr> target) : target_(std::move(target)) {
+        type_ = AstType::RefExpr;
+    }
+
+    const std::string TypeName() const {
+        return "RefExpr";
+    }
+
+    void PrintImpl(std::string prefix) override {
+        if (target_) target_->Print(prefix, "target");
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        auto node = std::make_unique<RefExpr>(
+            std::unique_ptr<Expr>((Expr*)(target_->Clone().release()))
+        );
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
