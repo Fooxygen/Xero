@@ -56,7 +56,7 @@ namespace sema {
     }
 
     void Analyzer::Exec(TypeExpr& node) {
-        auto  type_basic    = TypeTable::Lookup(node.type_basic_);
+        auto  type_basic    = TypeTable::Lookup(node.type_basic_, node.loc_);
         Type* type_resolved = nullptr;
 
         // Basic
@@ -73,7 +73,7 @@ namespace sema {
                     params_type.emplace_back(typeexpr->resolved_type_);
                 }
                 else if (auto idexpr = dynamic_cast<IdExpr*>(e.get())) {
-                    params_type.emplace_back(TypeTable::Lookup(idexpr->name_));
+                    params_type.emplace_back(TypeTable::Lookup(idexpr->name_, idexpr->loc_));
                 }
                 else {
                     throw LogErr(LogModule::Sema, std::format(
@@ -85,7 +85,7 @@ namespace sema {
             if (params_type.empty())
                 type_resolved = type_basic;
             else
-                type_resolved = TypeTable::ParametricTypeGet(type_basic, params_type);
+                type_resolved = TypeTable::ParametricTypeGet(type_basic, params_type, node.loc_);
         }
 
         // Reference
@@ -102,7 +102,7 @@ namespace sema {
         // Reference
         if (node.bind_type_->isReferred_) {
             if (!node.value_) {
-                throw LogErr(LogModule::Sema, "reference type must be initialized with a value");
+                throw LogErr(LogModule::Sema, "reference type must be initialized with a value", node.loc_);
             }
 
             if (!dynamic_cast<IdExpr*>(node.value_.get())) {
@@ -218,7 +218,7 @@ namespace sema {
         if (node.elem_type_) params.emplace_back(node.elem_type_);
 
         node.resolved_type_ = TypeTable::ParametricTypeGet(
-            TypeTable::Lookup("array"), params
+            TypeTable::Lookup("array", node.loc_), params
         );
     }
 
@@ -243,7 +243,7 @@ namespace sema {
         {
             // Stored in FnTable
             if (auto fn = fn_table_.LookupTry(callee)) {
-                auto sign = fn->SignLookup(args_type);
+                auto sign = fn->SignLookup(args_type, node.callee_->loc_);
                 node.resolved_type_ = sign->ret_type();
                 node.callee_fnsign_ = sign;
                 return;
@@ -282,8 +282,8 @@ namespace sema {
 
         // Callee
         auto  callee = node.callee_->name_;
-        auto& method = ((BasicType*)target_type->BasicTypeGet())->method_table().Lookup(callee);
-        if (auto sign = method.SignLookup(args_type)) {
+        auto& method = ((BasicType*)target_type->BasicTypeGet())->method_table().Lookup(callee, node.callee_->loc_);
+        if (auto sign = method.SignLookup(args_type, node.callee_->loc_)) {
             node.resolved_type_ = sign->ret_type();
             node.callee_fnsign_ = sign;
         }

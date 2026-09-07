@@ -96,24 +96,24 @@ namespace sema {
 
     // Fn
 
-    const FnSign* Fn::SignLookup(const FnSign& sign) const {
+    const FnSign* Fn::SignLookup(const FnSign& sign, std::optional<Loc> loc) const {
         for (auto& s : signs_) {
             if (s->isSignEqual(sign)) return s.get();
         }
         throw LogErr(LogModule::Sema, std::format(
             "undefined signature {} for function '{}'",
             sign.ParamsPrint(), name_
-        ));
+        ), loc);
     }
     
-    const FnSign* Fn::SignLookup(const std::vector<Type*>& args_type) {
+    const FnSign* Fn::SignLookup(const std::vector<Type*>& args_type, std::optional<Loc> loc) {
         for (auto& s : signs_) {
             if (s->isSignMatch(args_type)) return s.get();
         }
         throw LogErr(LogModule::Sema, std::format(
             "undefined signature {} for function '{}'",
             FnSign(nullptr, args_type).ParamsPrint(), name_
-        ));
+        ), loc);
     }
     
     const FnSign* Fn::SignLookupTry(const FnSign& sign) const {

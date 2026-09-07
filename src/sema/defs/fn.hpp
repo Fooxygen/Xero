@@ -76,8 +76,8 @@ namespace sema {
         std::vector<std::unique_ptr<FnSign>>& signs() { return signs_; }
 
     public:
-        const FnSign* SignLookup(const FnSign& sign) const;
-        const FnSign* SignLookup(const std::vector<Type*>& args_type);
+        const FnSign* SignLookup(const FnSign& sign, std::optional<Loc> loc = std::nullopt) const;
+        const FnSign* SignLookup(const std::vector<Type*>& args_type, std::optional<Loc> loc = std::nullopt);
         const FnSign* SignLookupTry(const FnSign& sign) const;
         const FnSign* SignLookupTry(const std::vector<Type*>& args_type);
 
@@ -93,12 +93,12 @@ namespace sema {
         std::unordered_map<std::string, Fn>& table() { return table_; }
 
     public:
-        Fn&  Lookup(const std::string& name) {
+        Fn&  Lookup(const std::string& name, std::optional<Loc> loc = std::nullopt) {
             auto it = table_.find(name);
             if (it == table_.end()) {
                 throw LogErr(LogModule::Sema, std::format(
                     "undefined function '{}'", name
-                ));
+                ), loc);
             }
             return it->second;
         }

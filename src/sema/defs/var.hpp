@@ -52,7 +52,7 @@ namespace sema {
                 throw LogErr(LogModule::Sema, std::format(
                     "redefinition of variable '{}' in same scope",
                     var->name_
-                ));
+                ), var->loc_);
             }
         }
         
