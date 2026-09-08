@@ -23,7 +23,7 @@ namespace xcompiler {
         auto f32_   = sema::TypeTable::Lookup("f32");
         auto f64_   = sema::TypeTable::Lookup("f64");
         auto char_  = sema::TypeTable::Lookup("char");
-        //auto array_ = sema::TypeTable::Lookup("array");
+        auto array_ = sema::TypeTable::Lookup("array");
         auto range_ = sema::TypeTable::Lookup("range");
 
         // Impl
@@ -458,7 +458,88 @@ namespace xcompiler {
 
             // array
             {
-                //auto impl = TypeImplTable::Set(TypeImpl(array_, 0));
+                auto impl = TypeImplTable::Set(TypeImpl(array_, 0));
+
+                impl->MethodAdd("@print", [](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) -> llvm::Value* {
+                    auto& builder = gen.llvm_builder();
+
+                    auto array_val = args[0];
+                    auto data      = builder.CreateExtractValue(array_val, 0);
+                    auto len       = builder.CreateExtractValue(array_val, 1);
+                    
+                    auto array_type     = (sema::ParametricType*)args_type[0];
+                    auto elem_type      = array_type->params_type()[0];
+                    auto elem_type_impl = TypeImplTable::Lookup(elem_type);
+                    auto elem_size      = elem_type_impl->size();
+
+                    // Blocks
+                    auto fn = builder.GetInsertBlock()->getParent();
+                    auto block_entry = builder.GetInsertBlock();
+                    auto block_cond  = gen.BlockCreate(".array.cond",  fn);
+                    auto block_cont  = gen.BlockCreate(".array.cont",  fn);     // continue
+                    auto block_sep   = gen.BlockCreate(".array.sep",   fn);
+                    auto block_nosep = gen.BlockCreate(".array.nosep", fn);
+                    auto block_body  = gen.BlockCreate(".array.body",  fn);
+                    auto block_end   = gen.BlockCreate(".array.end",   fn);
+
+                    builder.CreateCall(LibC_printf(gen), { builder.CreateGlobalString("[", ".array.lb") });
+
+                    // Cond Block
+                    builder.CreateBr(block_cond);
+                    builder.SetInsertPoint(block_cond);
+                    auto counter = builder.CreatePHI(builder.getInt64Ty(), 2);
+                    {
+                        counter->addIncoming(builder.getInt64(0), block_entry);         // init
+                        counter->addIncoming(
+                            builder.CreateAdd(counter, builder.getInt64(1)), block_body // after body
+                        );
+                        builder.CreateCondBr(
+                            builder.CreateICmpSLT(counter, len), block_cont, block_end
+                        );
+                    }
+
+                    // Cont Block
+                    builder.SetInsertPoint(block_cont);
+                    {
+                        builder.CreateCondBr(
+                            builder.CreateICmpEQ(counter, builder.getInt64(0)), block_nosep, block_sep
+                        );
+                    }
+
+                    // NoSep Block
+                    builder.SetInsertPoint(block_nosep);
+                    {
+                        builder.CreateBr(block_body);
+                    }
+
+                    // Sep Block
+                    builder.SetInsertPoint(block_sep);
+                    {
+                        builder.CreateCall(LibC_printf(gen), { builder.CreateGlobalString(", ", ".array.sep") });
+                        builder.CreateBr(block_body);
+                    }
+
+                    // Body Block
+                    builder.SetInsertPoint(block_body);
+                    {
+                        auto addr = builder.CreateInBoundsGEP(
+                            builder.getInt8Ty(), data, {
+                                builder.CreateMul(counter, builder.getInt64((int64_t)elem_size))
+                            }
+                        );
+                        auto elem_val = builder.CreateLoad(gen.LLVMType(elem_type), addr);
+                        elem_type_impl->MethodCall(gen, "@print", { elem_val }, { elem_type });
+                        builder.CreateBr(block_cond);
+                    }
+
+                    // End Block
+                    builder.SetInsertPoint(block_end);
+                    {
+                        builder.CreateCall(LibC_printf(gen), { builder.CreateGlobalString("]", ".array.rb") });
+                    }
+                    
+                    return nullptr;
+                }, sema::FnSign(none_, { array_ }));
             }
 
             // range

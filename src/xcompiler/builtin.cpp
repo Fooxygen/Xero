@@ -45,6 +45,15 @@ namespace xcompiler {
         ));
     }
 
+    llvm::Function* LibC_free(IRGen& gen) {
+        auto context = &gen.llvm_module()->getContext();
+        return LibCCreate(gen, "free", llvm::FunctionType::get(
+            llvm::Type::getVoidTy(*context),
+            { llvm::PointerType::getUnqual(*context) },
+            false
+        ));
+    }
+
     // Built-in Fn
 
     void BuiltinFnRegister(sema::FnTable& fn_table) {

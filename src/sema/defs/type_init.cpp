@@ -20,7 +20,7 @@ namespace sema {
         auto char_          = (BasicType*)TypeTable::Set(BasicType("char"));
         /*auto string_        = (BasicType*)*/TypeTable::Set(BasicType("string"));
         /*auto stringview_    = (BasicType*)*/TypeTable::Set(BasicType("stringview"));
-        //auto array_         = (BasicType*)TypeTable::Set(BasicType("array", 1));
+        auto array_         = (BasicType*)TypeTable::Set(BasicType("array", 1));
         /*auto arrayview_     = (BasicType*)*/TypeTable::Set(BasicType("arrayview"));
         auto range_         = (BasicType*)TypeTable::Set(BasicType("range", 1));
         /*auto function_      = (BasicType*)*/TypeTable::Set(BasicType("function"));
@@ -47,7 +47,7 @@ namespace sema {
             f32_->method_table().Add("@deepcopy",   FnSign(f32_,    { f32_ }));
             f64_->method_table().Add("@deepcopy",   FnSign(f64_,    { f64_ }));
             char_->method_table().Add("@deepcopy",  FnSign(char_,   { char_ }));
-            //array_->method_table().Add("@deepcopy", FnSign(array_,  { array_ }));
+            array_->method_table().Add("@deepcopy", FnSign(array_,  { array_ }));
             range_->method_table().Add("@deepcopy", FnSign(range_,  { range_ }));
         }
 
@@ -158,21 +158,22 @@ namespace sema {
                 stringview_->method_table().Add("len",       FnSign(i32_));
                 stringview_->method_table().Add("to_string", FnSign(string_));
             }
+            */
             
-
             // array
             {
-                array_->method_table().Add("@len",          FnSign(i32_,  { array_ }));
+                array_->method_table().Add("@print",        FnSign(none_, { array_ }));
+                array_->method_table().Add("@len",          FnSign(i64_,  { array_ }));
                 array_->method_table().Add("@clear",        FnSign(none_, { array_ }));
-                array_->method_table().Add("@insert",       FnSign(none_, { array_, i32_, nullptr }));
-                array_->method_table().Add("@remove",       FnSign(none_, { array_, i32_ }));
+                array_->method_table().Add("@insert",       FnSign(none_, { array_, i64_, nullptr }));
+                array_->method_table().Add("@remove",       FnSign(none_, { array_, i64_ }));
                 array_->method_table().Add("@push_front",   FnSign(none_, { array_, nullptr }));
                 array_->method_table().Add("@pop_front",    FnSign(none_, { array_ }));
                 array_->method_table().Add("@push_back",    FnSign(none_, { array_, nullptr }));
                 array_->method_table().Add("@pop_back",     FnSign(none_, { array_ }));
             }
 
-            
+            /*
             // arrayview
             {
                 arrayview_->method_table().Add("len",        FnSign(i32_));

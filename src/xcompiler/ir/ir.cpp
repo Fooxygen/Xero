@@ -126,12 +126,20 @@ namespace xcompiler {
         if (type->is("f32"))    return llvm::Type::getFloatTy(llvm_context());
         if (type->is("f64"))    return llvm::Type::getDoubleTy(llvm_context());
         if (type->is("char"))   return llvm::Type::getInt32Ty(llvm_context());
-        //if (type->is("array"))  return llvm::PointerType::get(llvm_context(), 0);   // AddresSpace: normal memory, 0
-        if (type->is("range")) {
-            auto type_param = (sema::ParametricType*)type;
-            auto elem_type  = LLVMType(type_param->params_type()[0]);
+        if (type->is("array"))  {
             return llvm::StructType::get(llvm_context(),
-                { elem_type, elem_type, elem_type, llvm_builder().getInt1Ty() });
+                {
+                    llvm::PointerType::get(llvm_context(), 0),      // data
+                    llvm::Type::getInt64Ty(llvm_context())          // len
+                }
+            );
+        }
+        if (type->is("range")) {
+            auto parametric_type = (sema::ParametricType*)type;
+            auto elem_type       = LLVMType(parametric_type->params_type()[0]);
+            return llvm::StructType::get(llvm_context(),
+                { elem_type, elem_type, elem_type, llvm_builder().getInt1Ty() }
+            );
         }
 
         throw LogErr(LogModule::Xcompiler, std::format(
@@ -364,24 +372,54 @@ namespace xcompiler {
 
         auto isClosed_val = llvm_builder().getInt1(node.isClosed_);
 
-        // Range Type
-        auto range_type = llvm::StructType::get(
+        // Generated Value
+        auto gen_type = llvm::StructType::get(
             llvm_context(),
             // left, right, step, isClosed
             { iter_type_llvm, iter_type_llvm, iter_type_llvm, llvm_builder().getInt1Ty() }
         );
-        auto range_val  = (llvm::Value*)llvm::UndefValue::get(range_type);
-        range_val = llvm_builder().CreateInsertValue(range_val, left_val, 0);
-        range_val = llvm_builder().CreateInsertValue(range_val, right_val, 1);
-        range_val = llvm_builder().CreateInsertValue(range_val, step_val, 2);
-        range_val = llvm_builder().CreateInsertValue(range_val, isClosed_val, 3);
-        
-        return range_val;
+        auto gen_val  = (llvm::Value*)llvm::UndefValue::get(gen_type);
+        gen_val = llvm_builder().CreateInsertValue(gen_val, left_val, 0);
+        gen_val = llvm_builder().CreateInsertValue(gen_val, right_val, 1);
+        gen_val = llvm_builder().CreateInsertValue(gen_val, step_val, 2);
+        gen_val = llvm_builder().CreateInsertValue(gen_val, isClosed_val, 3);
+
+        return gen_val;
     }
 
-    //llvm::Value* IRGen::Exec(ArrayExpr& node) {
+    llvm::Value* IRGen::Exec(ArrayExpr& node) {
+        auto& exprs = node.elems_->exprs_;
         
-    //}
+        // Elem
+        size_t len       = exprs.size();
+        size_t size_elem = TypeImplTable::Lookup(node.elem_type_)->size();
+        size_t size      = len * size_elem;
+
+        // Data
+        auto data = llvm_builder().CreateCall(LibC_malloc(*this), {
+            llvm_builder().getInt64((int64_t)size)
+        });
+        for (size_t i = 0; i < len; i++) {
+            auto addr = llvm_builder().CreateInBoundsGEP(
+                llvm_builder().getInt8Ty(), data, {
+                    llvm_builder().getInt64((int64_t)(i * size_elem))
+                }
+            );
+            llvm_builder().CreateStore(
+                Exec(*exprs[i]), addr
+            );
+        }
+
+        // Generated Value
+        auto gen_type = LLVMType(node.resolved_type_);
+        auto gen_val  = (llvm::Value*)llvm::UndefValue::get(gen_type);
+        gen_val = llvm_builder().CreateInsertValue(gen_val, data, 0);
+        gen_val = llvm_builder().CreateInsertValue(
+            gen_val, llvm_builder().getInt64((int64_t)len), 1
+        );
+        
+        return gen_val;
+    }
 
     llvm::Value* IRGen::Exec(FnCallExpr& node) {
         auto fnsign = node.callee_fnsign_;
