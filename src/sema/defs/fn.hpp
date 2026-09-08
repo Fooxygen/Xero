@@ -17,13 +17,18 @@ namespace sema {
     class Type;
     
     // Modifier of Fn
-    struct FnModifier {
-        bool hasCast_ = false;
-
-        bool operator ==(const FnModifier& modifier) {
-            return modifier.hasCast_ == hasCast_;
-        }
+    enum FnModifier : int {
+        None    = 0,
+        Cast    = 1 << 0,
+        Mut     = 1 << 1
     };
+
+    inline FnModifier operator |(FnModifier a, FnModifier b) {
+        return FnModifier((int)a | (int)b);
+    }
+    inline FnModifier operator &(FnModifier a, FnModifier b) {
+        return FnModifier((int)a & (int)b);
+    }
 
     // Signature of Fn
     class  FnSign {
@@ -31,7 +36,7 @@ namespace sema {
         Type*                return_type_        = nullptr;
         std::vector<Type*>   params_type_fix_ = {};
         std::optional<Type*> params_type_var_ = std::nullopt;
-        FnModifier           modifier_        = FnModifier{};
+        FnModifier           modifier_        = FnModifier::None;
         std::string          name_            = "";
 
     public:

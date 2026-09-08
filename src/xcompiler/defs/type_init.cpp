@@ -128,13 +128,13 @@ namespace xcompiler {
                 
                 impl->MethodAdd("@cast",[](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateSExt(args[0], gen.llvm_builder().getInt64Ty());
-                }, sema::FnSign(i64_, { i32_ }, std::nullopt, sema::FnModifier{ .hasCast_ = true }));
+                }, sema::FnSign(i64_, { i32_ }, std::nullopt, sema::FnModifier::Cast));
                 impl->MethodAdd("@cast", [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateSIToFP(args[0], gen.llvm_builder().getFloatTy());
-                }, sema::FnSign(f32_, { i32_ }, std::nullopt, sema::FnModifier{ .hasCast_ = true }));
+                }, sema::FnSign(f32_, { i32_ }, std::nullopt, sema::FnModifier::Cast));
                 impl->MethodAdd("@cast", [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateSIToFP(args[0], gen.llvm_builder().getDoubleTy());
-                }, sema::FnSign(f64_, { i32_ }, std::nullopt, sema::FnModifier{ .hasCast_ = true }));
+                }, sema::FnSign(f64_, { i32_ }, std::nullopt, sema::FnModifier::Cast));
             }
 
             // i64
@@ -201,10 +201,10 @@ namespace xcompiler {
                 
                 impl->MethodAdd("@cast", [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateSIToFP(args[0], gen.llvm_builder().getFloatTy());
-                }, sema::FnSign(f32_, { i64_ }, std::nullopt, sema::FnModifier{ .hasCast_ = true }));
+                }, sema::FnSign(f32_, { i64_ }, std::nullopt, sema::FnModifier::Cast));
                 impl->MethodAdd("@cast", [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateSIToFP(args[0], gen.llvm_builder().getDoubleTy());
-                }, sema::FnSign(f64_, { i64_ }, std::nullopt, sema::FnModifier{ .hasCast_ = true }));
+                }, sema::FnSign(f64_, { i64_ }, std::nullopt, sema::FnModifier::Cast));
             }
 
             // f32
@@ -274,7 +274,7 @@ namespace xcompiler {
                 
                 impl->MethodAdd("@cast", [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateFPExt(args[0], gen.llvm_builder().getDoubleTy());
-                }, sema::FnSign(f64_, { f32_ }, std::nullopt, sema::FnModifier{ .hasCast_ = true }));
+                }, sema::FnSign(f64_, { f32_ }, std::nullopt, sema::FnModifier::Cast));
             }
 
             // f64
