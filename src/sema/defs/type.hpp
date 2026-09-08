@@ -142,13 +142,13 @@ namespace sema {
                         continue;
                     }
 
-                    std::set<Type*> temp;
+                    std::set<Type*> tmp;
                     std::set_intersection(
                         common.begin(), common.end(),
                         t->casts().begin(), t->casts().end(),
-                        std::inserter(temp, temp.begin())
+                        std::inserter(tmp, tmp.begin())
                     );
-                    common = std::move(temp);
+                    common = std::move(tmp);
 
                     if (common.empty()) {
                         common_cache_[ts] = nullptr;

@@ -473,13 +473,23 @@ namespace xcompiler {
     llvm::Value* IRGen::Exec(MethodCallExpr& node) {
         
         // Target
-        auto target_val   = Exec(*node.target_);
         auto target_type  = node.target_->resolved_type_;
         auto target_basic = target_type->BasicTypeGet();
         auto target_impl  = TypeImplTable::Lookup(target_basic);
 
+        llvm::Value* target_addr = nullptr;
+        if (auto idexpr = dynamic_cast<IdExpr*>(node.target_.get())) {
+            target_addr = IdResolve(*idexpr);
+        }
+        else {
+            auto target_val      = Exec(*node.target_);
+            auto target_slot_tmp = SlotCreate(LLVMType(node.target_->resolved_type_), ".method.target.slot.tmp");
+            llvm_builder().CreateStore(target_val, target_slot_tmp);
+            target_addr = target_slot_tmp;
+        }
+
         // Args
-        std::vector<llvm::Value*> args      = { target_val };
+        std::vector<llvm::Value*> args      = { target_addr };
         std::vector<sema::Type*>  args_type = { target_type };
         if (node.args_) {
             for (auto& e : node.args_->exprs_) {

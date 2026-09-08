@@ -45,11 +45,34 @@ namespace xcompiler {
         ));
     }
 
+    llvm::Function* LibC_realloc(IRGen& gen) {
+        auto context = &gen.llvm_module()->getContext();
+        return LibCCreate(gen, "realloc", llvm::FunctionType::get(
+            llvm::PointerType::getUnqual(*context),
+            {
+                llvm::PointerType::getUnqual(*context),     // ptr
+                llvm::Type::getInt64Ty(*context)            // size
+            },
+            false
+        ));
+    }
+
     llvm::Function* LibC_free(IRGen& gen) {
         auto context = &gen.llvm_module()->getContext();
         return LibCCreate(gen, "free", llvm::FunctionType::get(
             llvm::Type::getVoidTy(*context),
             { llvm::PointerType::getUnqual(*context) },
+            false
+        ));
+    }
+
+    llvm::Function* LibC_memmove(IRGen& gen) {
+        auto context = &gen.llvm_module()->getContext();
+        return LibCCreate(gen, "memmove", llvm::FunctionType::get(
+            llvm::PointerType::getUnqual(*context),
+            { llvm::PointerType::getUnqual(*context),   // dst
+            llvm::PointerType::getUnqual(*context),     // src
+            llvm::Type::getInt64Ty(*context) },         // cnt
             false
         ));
     }

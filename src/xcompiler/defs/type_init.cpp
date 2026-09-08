@@ -460,6 +460,29 @@ namespace xcompiler {
             {
                 auto impl = TypeImplTable::Set(TypeImpl(array_, 0));
 
+                auto array_realloc = [](IRGen& gen, llvm::Value* data, llvm::Value* new_len, size_t elem_size) -> llvm::Value* {
+                    auto& builder = gen.llvm_builder();
+                    auto  size    = builder.CreateMul(new_len, builder.getInt64((int64_t)elem_size));
+                    return builder.CreateCall(LibC_realloc(gen), { data, size });
+                };
+                auto array_elem    = [](IRGen& gen, llvm::Value* data, llvm::Value* idx, size_t elem_size) -> llvm::Value* {
+                    auto& builder = gen.llvm_builder();
+                    auto  offset  = builder.CreateMul(idx, builder.getInt64((int64_t)elem_size));
+                    return builder.CreateInBoundsGEP(builder.getInt8Ty(), data, { offset });
+                };
+                auto array_move    = [](IRGen& gen, llvm::Value* dst, llvm::Value* src, llvm::Value* cnt, size_t elem_size) {
+                    auto& builder = gen.llvm_builder();
+                    auto  nbytes  = builder.CreateMul(cnt, builder.getInt64((int64_t)elem_size));
+                    builder.CreateCall(LibC_memmove(gen), { dst, src, nbytes });
+                };
+                auto array_store   = [](IRGen& gen, llvm::Value* addr, llvm::Type* array_llvm_type, llvm::Value* data, llvm::Value* len) {
+                    auto& builder = gen.llvm_builder();
+                    auto  gen_val = (llvm::Value*)llvm::UndefValue::get(array_llvm_type);
+                    gen_val = builder.CreateInsertValue(gen_val, data, 0);
+                    gen_val = builder.CreateInsertValue(gen_val, len, 1);
+                    builder.CreateStore(gen_val, addr);
+                };
+
                 impl->MethodAdd("@print", [](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) -> llvm::Value* {
                     auto& builder = gen.llvm_builder();
 
@@ -540,6 +563,147 @@ namespace xcompiler {
                     
                     return nullptr;
                 }, sema::FnSign(none_, { array_ }));
+
+                impl->MethodAdd("len", [](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) -> llvm::Value* {
+                    auto& builder         = gen.llvm_builder();
+                    auto  array_addr      = args[0];
+                    auto  array_llvm_type = gen.LLVMType(args_type[0]);
+                    auto  array_val       = builder.CreateLoad(array_llvm_type, array_addr);
+                    return builder.CreateExtractValue(array_val, 1);
+                }, sema::FnSign(i64_, { array_ }));
+
+                impl->MethodAdd("clear", [array_store](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) -> llvm::Value* {
+                    auto& builder         = gen.llvm_builder();
+                    auto  array_addr      = args[0];
+                    auto  array_llvm_type = gen.LLVMType(args_type[0]);
+                    auto  array_val       = builder.CreateLoad(array_llvm_type, array_addr);
+                    auto  data            = builder.CreateExtractValue(array_val, 0);
+
+                    builder.CreateCall(LibC_free(gen), { data });
+
+                    auto null_data = llvm::ConstantPointerNull::get(llvm::PointerType::get(gen.llvm_context(), 0));
+                    array_store(gen, array_addr, array_llvm_type, null_data, builder.getInt64(0));
+                    return nullptr;
+                }, sema::FnSign(none_, { array_ }));
+
+                impl->MethodAdd("push_back", [array_realloc, array_elem, array_store](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) -> llvm::Value* {
+                    auto& builder          = gen.llvm_builder();
+                    auto  array_addr       = args[0];
+                    auto  array_type       = (sema::ParametricType*)args_type[0];
+                    auto  elem_type        = array_type->params_type()[0];
+                    auto  elem_type_impl   = TypeImplTable::Lookup(elem_type);
+                    auto  elem_size        = elem_type_impl->size();
+                    auto  array_llvm_type  = gen.LLVMType(args_type[0]);
+
+                    auto array_val = builder.CreateLoad(array_llvm_type, array_addr);
+                    auto data      = builder.CreateExtractValue(array_val, 0);
+                    auto len       = builder.CreateExtractValue(array_val, 1);
+
+                    auto new_len  = builder.CreateAdd(len, builder.getInt64(1));
+                    auto new_data = array_realloc(gen, data, new_len, elem_size);
+                    builder.CreateStore(args[1], array_elem(gen, new_data, len, elem_size));   // append
+                    array_store(gen, array_addr, array_llvm_type, new_data, new_len);
+                    return nullptr;
+                }, sema::FnSign(none_, { array_, nullptr }));
+
+                impl->MethodAdd("push_front", [array_realloc, array_elem, array_move, array_store](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) -> llvm::Value* {
+                    auto& builder         = gen.llvm_builder();
+                    auto  array_addr      = args[0];
+                    auto  array_type      = (sema::ParametricType*)args_type[0];
+                    auto  elem_type       = array_type->params_type()[0];
+                    auto  elem_type_impl  = TypeImplTable::Lookup(elem_type);
+                    auto  elem_size       = elem_type_impl->size();
+                    auto  array_llvm_type = gen.LLVMType(args_type[0]);
+                    auto  one             = builder.getInt64(1);
+
+                    auto array_val = builder.CreateLoad(array_llvm_type, array_addr);
+                    auto data      = builder.CreateExtractValue(array_val, 0);
+                    auto len       = builder.CreateExtractValue(array_val, 1);
+
+                    auto new_len  = builder.CreateAdd(len, one);
+                    auto new_data = array_realloc(gen, data, new_len, elem_size);
+                    array_move(gen, array_elem(gen, new_data, one, elem_size), new_data, len, elem_size);  // shift right
+                    builder.CreateStore(args[1], array_elem(gen, new_data, builder.getInt64(0), elem_size)); // data[0]
+                    array_store(gen, array_addr, array_llvm_type, new_data, new_len);
+                    return nullptr;
+                }, sema::FnSign(none_, { array_, nullptr }));
+
+                impl->MethodAdd("pop_back", [array_store](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) -> llvm::Value* {
+                    auto& builder         = gen.llvm_builder();
+                    auto  array_addr      = args[0];
+                    auto  array_llvm_type = gen.LLVMType(args_type[0]);
+                    auto  array_val       = builder.CreateLoad(array_llvm_type, array_addr);
+                    auto  data            = builder.CreateExtractValue(array_val, 0);
+                    auto  len             = builder.CreateExtractValue(array_val, 1);
+                    array_store(gen, array_addr, array_llvm_type, data, builder.CreateSub(len, builder.getInt64(1)));
+                    return nullptr;
+                }, sema::FnSign(none_, { array_ }));
+
+                impl->MethodAdd("pop_front", [array_elem, array_move, array_store](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) -> llvm::Value* {
+                    auto& builder         = gen.llvm_builder();
+                    auto  array_addr      = args[0];
+                    auto  array_type      = (sema::ParametricType*)args_type[0];
+                    auto  elem_type       = array_type->params_type()[0];
+                    auto  elem_type_impl  = TypeImplTable::Lookup(elem_type);
+                    auto  elem_size       = elem_type_impl->size();
+                    auto  array_llvm_type = gen.LLVMType(args_type[0]);
+                    auto  one             = builder.getInt64(1);
+
+                    auto array_val = builder.CreateLoad(array_llvm_type, array_addr);
+                    auto data      = builder.CreateExtractValue(array_val, 0);
+                    auto len       = builder.CreateExtractValue(array_val, 1);
+
+                    array_move(gen, data, array_elem(gen, data, one, elem_size), builder.CreateSub(len, one), elem_size); // shift left
+                    array_store(gen, array_addr, array_llvm_type, data, builder.CreateSub(len, one));
+                    return nullptr;
+                }, sema::FnSign(none_, { array_ }));
+
+                impl->MethodAdd("insert", [array_realloc, array_elem, array_move, array_store](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) -> llvm::Value* {
+                    auto& builder         = gen.llvm_builder();
+                    auto  array_addr      = args[0];
+                    auto  idx             = args[1];
+                    auto  array_type      = (sema::ParametricType*)args_type[0];
+                    auto  elem_type       = array_type->params_type()[0];
+                    auto  elem_type_impl  = TypeImplTable::Lookup(elem_type);
+                    auto  elem_size       = elem_type_impl->size();
+                    auto  array_llvm_type = gen.LLVMType(args_type[0]);
+                    auto  one             = builder.getInt64(1);
+
+                    auto array_val = builder.CreateLoad(array_llvm_type, array_addr);
+                    auto data      = builder.CreateExtractValue(array_val, 0);
+                    auto len       = builder.CreateExtractValue(array_val, 1);
+
+                    auto new_len  = builder.CreateAdd(len, one);
+                    auto new_data = array_realloc(gen, data, new_len, elem_size);
+                    array_move(gen, array_elem(gen, new_data, builder.CreateAdd(idx, one), elem_size),  // dst idx+1
+                                array_elem(gen, new_data, idx, elem_size),                              // src idx
+                                builder.CreateSub(len, idx), elem_size);                                // cnt len-idx
+                    builder.CreateStore(args[2], array_elem(gen, new_data, idx, elem_size));           // data[idx]
+                    array_store(gen, array_addr, array_llvm_type, new_data, new_len);
+                    return nullptr;
+                }, sema::FnSign(none_, { array_, i64_, nullptr }));
+
+                impl->MethodAdd("remove", [array_elem, array_move, array_store](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) -> llvm::Value* {
+                    auto& builder         = gen.llvm_builder();
+                    auto  array_addr      = args[0];
+                    auto  idx             = args[1];
+                    auto  array_type      = (sema::ParametricType*)args_type[0];
+                    auto  elem_type       = array_type->params_type()[0];
+                    auto  elem_type_impl  = TypeImplTable::Lookup(elem_type);
+                    auto  elem_size       = elem_type_impl->size();
+                    auto  array_llvm_type = gen.LLVMType(args_type[0]);
+                    auto  one             = builder.getInt64(1);
+
+                    auto array_val = builder.CreateLoad(array_llvm_type, array_addr);
+                    auto data      = builder.CreateExtractValue(array_val, 0);
+                    auto len       = builder.CreateExtractValue(array_val, 1);
+
+                    array_move(gen, array_elem(gen, data, idx, elem_size),                     // dst idx
+                                array_elem(gen, data, builder.CreateAdd(idx, one), elem_size),// src idx+1
+                                builder.CreateSub(builder.CreateSub(len, one), idx), elem_size);  // cnt len-1-idx
+                    array_store(gen, array_addr, array_llvm_type, data, builder.CreateSub(len, one));
+                    return nullptr;
+                }, sema::FnSign(none_, { array_, i64_ }));
             }
 
             // range

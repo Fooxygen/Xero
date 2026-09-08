@@ -163,14 +163,14 @@ namespace sema {
             // array
             {
                 array_->method_table().Add("@print",        FnSign(none_, { array_ }));
-                array_->method_table().Add("@len",          FnSign(i64_,  { array_ }));
-                array_->method_table().Add("@clear",        FnSign(none_, { array_ }));
-                array_->method_table().Add("@insert",       FnSign(none_, { array_, i64_, nullptr }));
-                array_->method_table().Add("@remove",       FnSign(none_, { array_, i64_ }));
-                array_->method_table().Add("@push_front",   FnSign(none_, { array_, nullptr }));
-                array_->method_table().Add("@pop_front",    FnSign(none_, { array_ }));
-                array_->method_table().Add("@push_back",    FnSign(none_, { array_, nullptr }));
-                array_->method_table().Add("@pop_back",     FnSign(none_, { array_ }));
+                array_->method_table().Add("len",           FnSign(i64_,  { array_ }));
+                array_->method_table().Add("clear",         FnSign(none_, { array_ }));
+                array_->method_table().Add("insert",        FnSign(none_, { array_, i64_, nullptr }));
+                array_->method_table().Add("remove",        FnSign(none_, { array_, i64_ }));
+                array_->method_table().Add("push_front",    FnSign(none_, { array_, nullptr }));
+                array_->method_table().Add("pop_front",     FnSign(none_, { array_ }));
+                array_->method_table().Add("push_back",     FnSign(none_, { array_, nullptr }));
+                array_->method_table().Add("pop_back",      FnSign(none_, { array_ }));
             }
 
             /*

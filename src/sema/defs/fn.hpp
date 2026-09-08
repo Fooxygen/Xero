@@ -19,8 +19,7 @@ namespace sema {
     // Modifier of Fn
     enum FnModifier : int {
         None    = 0,
-        Cast    = 1 << 0,
-        Mut     = 1 << 1
+        Cast    = 1 << 0,       // type casting
     };
 
     inline FnModifier operator |(FnModifier a, FnModifier b) {
