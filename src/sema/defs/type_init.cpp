@@ -39,16 +39,16 @@ namespace sema {
             TypeTable::CastRecompute();
         }
 
-        // Deepcopy
+        // Copy
         {
-            bool_->method_table().Add("@deepcopy",  FnSign(bool_,   { bool_ }));
-            i32_->method_table().Add("@deepcopy",   FnSign(i32_,    { i32_ }));
-            i64_->method_table().Add("@deepcopy",   FnSign(i64_,    { i64_ }));
-            f32_->method_table().Add("@deepcopy",   FnSign(f32_,    { f32_ }));
-            f64_->method_table().Add("@deepcopy",   FnSign(f64_,    { f64_ }));
-            char_->method_table().Add("@deepcopy",  FnSign(char_,   { char_ }));
-            array_->method_table().Add("@deepcopy", FnSign(array_,  { array_ }));
-            range_->method_table().Add("@deepcopy", FnSign(range_,  { range_ }));
+            bool_->method_table().Add("@copy",  FnSign(bool_,   { bool_ }));
+            i32_->method_table().Add("@copy",   FnSign(i32_,    { i32_ }));
+            i64_->method_table().Add("@copy",   FnSign(i64_,    { i64_ }));
+            f32_->method_table().Add("@copy",   FnSign(f32_,    { f32_ }));
+            f64_->method_table().Add("@copy",   FnSign(f64_,    { f64_ }));
+            char_->method_table().Add("@copy",  FnSign(char_,   { char_ }));
+            array_->method_table().Add("@copy", FnSign(array_,  { array_ }));
+            range_->method_table().Add("@copy", FnSign(range_,  { range_ }));
         }
 
         // Other

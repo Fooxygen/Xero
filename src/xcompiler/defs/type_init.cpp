@@ -43,23 +43,23 @@ namespace xcompiler {
                     return nullptr;
                 }, sema::FnSign(none_, { bool_ }));
 
-                impl->MethodAdd("@deepcopy", [](auto&, ARGS& args, auto) -> llvm::Value* {
+                impl->MethodAdd("@copy", [](auto&, ARGS& args, auto) -> llvm::Value* {
                     return args[0];
                 }, sema::FnSign(bool_, { bool_ }));
                 
-                impl->MethodAdd("@eq",   [](IRGen& gen, ARGS& args, auto) {
+                impl->MethodAdd("@eq",  [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateICmpEQ(args[0], args[1]);
                 }, sema::FnSign(bool_, { bool_, bool_ }));
-                impl->MethodAdd("@neq",  [](IRGen& gen, ARGS& args, auto) {
+                impl->MethodAdd("@neq", [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateICmpNE(args[0], args[1]);
                 }, sema::FnSign(bool_, { bool_, bool_ }));
-                impl->MethodAdd("@and",  [](IRGen& gen, ARGS& args, auto) {
+                impl->MethodAdd("@and", [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateAnd(args[0], args[1]);
                 }, sema::FnSign(bool_, { bool_, bool_ }));
-                impl->MethodAdd("@or",   [](IRGen& gen, ARGS& args, auto) {
+                impl->MethodAdd("@or",  [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateOr(args[0], args[1]);
                 }, sema::FnSign(bool_, { bool_, bool_ }));
-                impl->MethodAdd("@not",  [](IRGen& gen, ARGS& args, auto) {
+                impl->MethodAdd("@not", [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateNot(args[0]);
                 }, sema::FnSign(bool_, { bool_ }));
             }
@@ -75,7 +75,7 @@ namespace xcompiler {
                     return nullptr;
                 }, sema::FnSign(none_, { i32_ }));
                 
-                impl->MethodAdd("@deepcopy", [](auto&, ARGS& args, auto) -> llvm::Value* {
+                impl->MethodAdd("@copy", [](auto&, ARGS& args, auto) -> llvm::Value* {
                     return args[0];
                 }, sema::FnSign(i32_, { i32_ }));
                 
@@ -126,7 +126,7 @@ namespace xcompiler {
                     return gen.llvm_builder().CreateICmpNE(args[0], args[1]);
                 }, sema::FnSign(bool_, { i32_, i32_ }));
                 
-                impl->MethodAdd("@cast",[](IRGen& gen, ARGS& args, auto) {
+                impl->MethodAdd("@cast", [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateSExt(args[0], gen.llvm_builder().getInt64Ty());
                 }, sema::FnSign(i64_, { i32_ }, std::nullopt, sema::FnModifier::Cast));
                 impl->MethodAdd("@cast", [](IRGen& gen, ARGS& args, auto) {
@@ -148,7 +148,7 @@ namespace xcompiler {
                     return nullptr;
                 }, sema::FnSign(none_, { i64_ }));
                 
-                impl->MethodAdd("@deepcopy", [](auto&, ARGS& args, auto) -> llvm::Value* {
+                impl->MethodAdd("@copy", [](auto&, ARGS& args, auto) -> llvm::Value* {
                     return args[0];
                 }, sema::FnSign(i64_, { i64_ }));
                 
@@ -221,7 +221,7 @@ namespace xcompiler {
                     return nullptr;
                 }, sema::FnSign(none_, { f32_ }));
                 
-                impl->MethodAdd("@deepcopy", [](auto&, ARGS& args, auto) -> llvm::Value* {
+                impl->MethodAdd("@copy", [](auto&, ARGS& args, auto) -> llvm::Value* {
                     return args[0];
                 }, sema::FnSign(f32_, { f32_ }));
 
@@ -288,7 +288,7 @@ namespace xcompiler {
                     return nullptr;
                 }, sema::FnSign(none_, { f64_ }));
                 
-                impl->MethodAdd("@deepcopy", [](auto&, ARGS& args, auto) -> llvm::Value* {
+                impl->MethodAdd("@copy", [](auto&, ARGS& args, auto) -> llvm::Value* {
                     return args[0];
                 }, sema::FnSign(f64_, { f64_ }));
 
@@ -432,7 +432,7 @@ namespace xcompiler {
                     return nullptr;                    
                 }, sema::FnSign(none_, { char_ }));
                 
-                impl->MethodAdd("@deepcopy", [](auto&, ARGS& args, auto) -> llvm::Value* {
+                impl->MethodAdd("@copy", [](auto&, ARGS& args, auto) -> llvm::Value* {
                     return args[0];
                 }, sema::FnSign(char_, { char_ }));
 
@@ -564,6 +564,10 @@ namespace xcompiler {
                     return nullptr;
                 }, sema::FnSign(none_, { array_ }));
 
+                impl->MethodAdd("@copy", [](auto&, ARGS& args, auto) -> llvm::Value* {
+                    
+                }, sema::FnSign(array_, { array_ }));
+
                 impl->MethodAdd("len", [](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) -> llvm::Value* {
                     auto& builder         = gen.llvm_builder();
                     auto  array_addr      = args[0];
@@ -571,7 +575,6 @@ namespace xcompiler {
                     auto  array_val       = builder.CreateLoad(array_llvm_type, array_addr);
                     return builder.CreateExtractValue(array_val, 1);
                 }, sema::FnSign(i64_, { array_ }));
-
                 impl->MethodAdd("clear", [array_store](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) -> llvm::Value* {
                     auto& builder         = gen.llvm_builder();
                     auto  array_addr      = args[0];
@@ -585,7 +588,6 @@ namespace xcompiler {
                     array_store(gen, array_addr, array_llvm_type, null_data, builder.getInt64(0));
                     return nullptr;
                 }, sema::FnSign(none_, { array_ }));
-
                 impl->MethodAdd("push_back", [array_realloc, array_elem, array_store](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) -> llvm::Value* {
                     auto& builder          = gen.llvm_builder();
                     auto  array_addr       = args[0];
@@ -605,7 +607,6 @@ namespace xcompiler {
                     array_store(gen, array_addr, array_llvm_type, new_data, new_len);
                     return nullptr;
                 }, sema::FnSign(none_, { array_, nullptr }));
-
                 impl->MethodAdd("push_front", [array_realloc, array_elem, array_move, array_store](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) -> llvm::Value* {
                     auto& builder         = gen.llvm_builder();
                     auto  array_addr      = args[0];
@@ -627,7 +628,6 @@ namespace xcompiler {
                     array_store(gen, array_addr, array_llvm_type, new_data, new_len);
                     return nullptr;
                 }, sema::FnSign(none_, { array_, nullptr }));
-
                 impl->MethodAdd("pop_back", [array_store](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) -> llvm::Value* {
                     auto& builder         = gen.llvm_builder();
                     auto  array_addr      = args[0];
@@ -638,7 +638,6 @@ namespace xcompiler {
                     array_store(gen, array_addr, array_llvm_type, data, builder.CreateSub(len, builder.getInt64(1)));
                     return nullptr;
                 }, sema::FnSign(none_, { array_ }));
-
                 impl->MethodAdd("pop_front", [array_elem, array_move, array_store](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) -> llvm::Value* {
                     auto& builder         = gen.llvm_builder();
                     auto  array_addr      = args[0];
@@ -657,7 +656,6 @@ namespace xcompiler {
                     array_store(gen, array_addr, array_llvm_type, data, builder.CreateSub(len, one));
                     return nullptr;
                 }, sema::FnSign(none_, { array_ }));
-
                 impl->MethodAdd("insert", [array_realloc, array_elem, array_move, array_store](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) -> llvm::Value* {
                     auto& builder         = gen.llvm_builder();
                     auto  array_addr      = args[0];
@@ -682,7 +680,6 @@ namespace xcompiler {
                     array_store(gen, array_addr, array_llvm_type, new_data, new_len);
                     return nullptr;
                 }, sema::FnSign(none_, { array_, i64_, nullptr }));
-
                 impl->MethodAdd("remove", [array_elem, array_move, array_store](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) -> llvm::Value* {
                     auto& builder         = gen.llvm_builder();
                     auto  array_addr      = args[0];
