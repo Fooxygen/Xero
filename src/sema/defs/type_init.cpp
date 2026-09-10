@@ -51,6 +51,18 @@ namespace sema {
             range_->method_table().Add("@copy", FnSign(range_,  { range_ }));
         }
 
+        // Release
+        {
+            bool_->method_table().Add("@release",  FnSign(none_,    { bool_ }));
+            i32_->method_table().Add("@release",   FnSign(none_,    { i32_ }));
+            i64_->method_table().Add("@release",   FnSign(none_,    { i64_ }));
+            f32_->method_table().Add("@release",   FnSign(none_,    { f32_ }));
+            f64_->method_table().Add("@release",   FnSign(none_,    { f64_ }));
+            char_->method_table().Add("@release",  FnSign(none_,    { char_ }));
+            array_->method_table().Add("@release", FnSign(none_,    { array_ }));
+            range_->method_table().Add("@release", FnSign(none_,    { range_ }));
+        }
+
         // Other
         {
             // bool

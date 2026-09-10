@@ -43,9 +43,14 @@ namespace xcompiler {
                     return nullptr;
                 }, sema::FnSign(none_, { bool_ }));
 
-                impl->MethodAdd("@copy", [](auto&, ARGS& args, auto) -> llvm::Value* {
-                    return args[0];
+                impl->MethodAdd("@copy", [](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) {
+                    return gen.llvm_builder().CreateLoad(
+                        gen.LLVMType(args_type[0]), args[0]
+                    );
                 }, sema::FnSign(bool_, { bool_ }));
+                impl->MethodAdd("@release", [](auto&, auto&, auto) -> llvm::Value* {
+                    return nullptr;
+                }, sema::FnSign(none_, { bool_ }));
                 
                 impl->MethodAdd("@eq",  [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateICmpEQ(args[0], args[1]);
@@ -75,9 +80,14 @@ namespace xcompiler {
                     return nullptr;
                 }, sema::FnSign(none_, { i32_ }));
                 
-                impl->MethodAdd("@copy", [](auto&, ARGS& args, auto) -> llvm::Value* {
-                    return args[0];
+                impl->MethodAdd("@copy", [](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) {
+                    return gen.llvm_builder().CreateLoad(
+                        gen.LLVMType(args_type[0]), args[0]
+                    );
                 }, sema::FnSign(i32_, { i32_ }));
+                impl->MethodAdd("@release", [](auto&, auto&, auto) -> llvm::Value* {
+                    return nullptr;
+                }, sema::FnSign(none_, { i32_ }));
                 
                 impl->MethodAdd("@plus",  [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateAdd(args[0], args[1]);
@@ -148,9 +158,14 @@ namespace xcompiler {
                     return nullptr;
                 }, sema::FnSign(none_, { i64_ }));
                 
-                impl->MethodAdd("@copy", [](auto&, ARGS& args, auto) -> llvm::Value* {
-                    return args[0];
+                impl->MethodAdd("@copy", [](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) {
+                    return gen.llvm_builder().CreateLoad(
+                        gen.LLVMType(args_type[0]), args[0]
+                    );
                 }, sema::FnSign(i64_, { i64_ }));
+                impl->MethodAdd("@release", [](auto&, auto&, auto) -> llvm::Value* {
+                    return nullptr;
+                }, sema::FnSign(none_, { i64_ }));
                 
                 impl->MethodAdd("@plus",  [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateAdd(args[0], args[1]);
@@ -221,9 +236,14 @@ namespace xcompiler {
                     return nullptr;
                 }, sema::FnSign(none_, { f32_ }));
                 
-                impl->MethodAdd("@copy", [](auto&, ARGS& args, auto) -> llvm::Value* {
-                    return args[0];
+                impl->MethodAdd("@copy", [](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) {
+                    return gen.llvm_builder().CreateLoad(
+                        gen.LLVMType(args_type[0]), args[0]
+                    );
                 }, sema::FnSign(f32_, { f32_ }));
+                impl->MethodAdd("@release", [](auto&, auto&, auto) -> llvm::Value* {
+                    return nullptr;
+                }, sema::FnSign(none_, { f32_ }));
 
                 impl->MethodAdd("@plus",  [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateFAdd(args[0], args[1]);
@@ -288,9 +308,14 @@ namespace xcompiler {
                     return nullptr;
                 }, sema::FnSign(none_, { f64_ }));
                 
-                impl->MethodAdd("@copy", [](auto&, ARGS& args, auto) -> llvm::Value* {
-                    return args[0];
+                impl->MethodAdd("@copy", [](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) {
+                    return gen.llvm_builder().CreateLoad(
+                        gen.LLVMType(args_type[0]), args[0]
+                    );
                 }, sema::FnSign(f64_, { f64_ }));
+                impl->MethodAdd("@release", [](auto&, auto&, auto) -> llvm::Value* {
+                    return nullptr;
+                }, sema::FnSign(none_, { f64_ }));
 
                 impl->MethodAdd("@plus",  [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateFAdd(args[0], args[1]);
@@ -432,9 +457,14 @@ namespace xcompiler {
                     return nullptr;                    
                 }, sema::FnSign(none_, { char_ }));
                 
-                impl->MethodAdd("@copy", [](auto&, ARGS& args, auto) -> llvm::Value* {
-                    return args[0];
+                impl->MethodAdd("@copy", [](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) {
+                    return gen.llvm_builder().CreateLoad(
+                        gen.LLVMType(args_type[0]), args[0]
+                    );
                 }, sema::FnSign(char_, { char_ }));
+                impl->MethodAdd("@release", [](auto&, auto&, auto) -> llvm::Value* {
+                    return nullptr;
+                }, sema::FnSign(none_, { char_ }));
 
                 impl->MethodAdd("@gt",  [](IRGen& gen, ARGS& args, auto) {
                     return gen.llvm_builder().CreateICmpSGT(args[0], args[1]);
@@ -564,9 +594,9 @@ namespace xcompiler {
                     return nullptr;
                 }, sema::FnSign(none_, { array_ }));
 
-                impl->MethodAdd("@copy", [](auto&, ARGS& args, auto) -> llvm::Value* {
+                /*impl->MethodAdd("@copy", [](auto&, auto&, auto) {
                     
-                }, sema::FnSign(array_, { array_ }));
+                }, sema::FnSign(array_, { array_ }));*/
 
                 impl->MethodAdd("len", [](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) -> llvm::Value* {
                     auto& builder         = gen.llvm_builder();
@@ -734,6 +764,15 @@ namespace xcompiler {
                         builder.CreateSelect(isClosed_val, rb, rp)
                     });
 
+                    return nullptr;
+                }, sema::FnSign(none_, { range_ }));
+
+                impl->MethodAdd("@copy", [](IRGen& gen, ARGS& args, ARGS_TYPE& args_type) {
+                    return gen.llvm_builder().CreateLoad(
+                        gen.LLVMType(args_type[0]), args[0]
+                    );
+                }, sema::FnSign(range_, { range_ }));
+                impl->MethodAdd("@release", [](auto&, auto&, auto) -> llvm::Value* {
                     return nullptr;
                 }, sema::FnSign(none_, { range_ }));
             }
