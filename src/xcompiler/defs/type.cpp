@@ -6,7 +6,7 @@
 #include <format>
 
 #include "xcompiler/defs/type.hpp"
-#include "xcompiler/ir/ir.hpp"
+#include "xcompiler/ir/gen.hpp"
 #include "xcompiler/builtin.hpp"
 
 #include "common/log.hpp"

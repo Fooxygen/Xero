@@ -9,9 +9,10 @@
 
 #include "common/defs/ast.hpp"
 #include "sema/defs/fn.hpp"
+#include "xcompiler/backend/backend.hpp"
 #include "xcompiler/builtin.hpp"
 #include "xcompiler/defs/type.hpp"
-#include "xcompiler/ir/ir.hpp"
+#include "xcompiler/ir/gen.hpp"
 #include "xcompiler/optimizer/optimizer.hpp"
 
 namespace xcompiler {
@@ -36,17 +37,21 @@ namespace xcompiler {
             // Builtin
             BuiltinFnRegister(fn_table);
 
+            // Backend
+            Backend backend;
+
             // IR Gen and Output
             IRGen irgen(module_name);
+            backend.ModuleSet(*irgen.llvm_module());
             irgen.Exec(node);
-            irgen.IROutput((path_ir / (module_name + ".ll")).string());
+            backend.IROutput((path_ir / (module_name + ".ll")).string(), *irgen.llvm_module());
 
             // IR Optimize
             Optimizer optimizer;
             optimizer.Run(*irgen.llvm_module(), llvm::OptimizationLevel::O2);
 
             // Object Code Gen and Output
-            irgen.ObjectCodeOutput((path_obj / (module_name + ".o")).string());
+            backend.ObjectCodeOutput((path_obj / (module_name + ".o")).string(), *irgen.llvm_module());
 
             // Linker
             auto gpp = llvm::sys::findProgramByName("g++");

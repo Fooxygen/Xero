@@ -102,11 +102,6 @@ namespace xcompiler {
         llvm::Type*       LLVMType(sema::Type* type);
 
         llvm::BasicBlock* BlockCreate(const std::string& name, llvm::Function* fn);
-    
-        // Output
-
-        void IROutput(const std::string& path);
-        void ObjectCodeOutput(const std::string& path);
 
         // Exec
 

@@ -19,14 +19,15 @@ add_executable(xero
     sema/defs/fn.cpp
     sema/defs/type.cpp
     sema/defs/type_init.cpp
-    sema/analyzer.cpp
     sema/builtin.cpp
+    sema/analyzer.cpp
     xcompiler/defs/fn.cpp
     xcompiler/defs/type.cpp
     xcompiler/defs/type_init.cpp
-    xcompiler/ir/ir.cpp
     xcompiler/builtin.cpp
+    xcompiler/ir/gen.cpp
     xcompiler/optimizer/optimizer.cpp
+    xcompiler/backend/backend.cpp
 )
 
 target_include_directories(xero PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

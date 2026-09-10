@@ -5,8 +5,8 @@
 
 #include "sema/defs/type.hpp"
 #include "xcompiler/defs/type.hpp"
-#include "xcompiler/ir/ir.hpp"
 #include "xcompiler/builtin.hpp"
+#include "xcompiler/ir/gen.hpp"
 
 namespace xcompiler {
 
