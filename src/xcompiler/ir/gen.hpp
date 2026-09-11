@@ -98,14 +98,19 @@ namespace xcompiler {
 
     public:
         // Utility
-        
+        // └─ Type
+
         llvm::Type*  LLVMType(sema::Type* type);
 
-        Arg          ArgRefMake(llvm::Value* val, sema::Type* type);    // wrap ref value as arg
-        llvm::Value* ArgLoad(const Arg& arg);                           // take value   from arg
-        llvm::Value* ArgAddr(const Arg& arg);                           // take address from arg
+        // └─ Allocate
 
-        llvm::BasicBlock* BlockCreate(const std::string& name, llvm::Function* fn);
+        llvm::Value*      ValueMaterialize(llvm::Value* val, sema::Type* type);         // allocate memory for values to store
+        llvm::BasicBlock* BlockCreate(const std::string& name, llvm::Function* fn);     // create basic block
+
+        // └─ Fn
+        Arg          ArgRefMake(llvm::Value* val, sema::Type* type);                    // wrap value as ref arg
+        llvm::Value* ArgLoad(const Arg& arg);                                           // take value   from arg
+        llvm::Value* ArgAddr(const Arg& arg);                                           // take address from arg
 
         // Exec
 

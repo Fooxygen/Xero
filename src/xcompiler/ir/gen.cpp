@@ -64,14 +64,16 @@ namespace xcompiler {
         return var;
     }
 
-    Arg               IRGen::ArgRefMake(llvm::Value* val, sema::Type* type) {
-        // Ref
-        if (dynamic_cast<sema::ReferenceType*>(type)) return Arg(val, type);
-
-        // Val
+    llvm::Value*      IRGen::ValueMaterialize(llvm::Value* val, sema::Type* type) {
         auto slot = SlotCreate(LLVMType(type), ".arg.slot");
         llvm_builder().CreateStore(val, slot);
-        return Arg(slot, sema::TypeTable::ReferenceTypeGet(type));
+        return slot;
+    }
+    
+    Arg               IRGen::ArgRefMake(llvm::Value* val, sema::Type* type) {
+        // RefArg
+        if (dynamic_cast<sema::ReferenceType*>(type)) return Arg(val, type);
+        return Arg(ValueMaterialize(val, type), sema::TypeTable::ReferenceTypeGet(type));
     }
     
     llvm::Value*      IRGen::ArgLoad(const Arg& arg) {
