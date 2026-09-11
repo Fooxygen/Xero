@@ -591,12 +591,12 @@ public:
 public:
     FnExpr(
         std::string                name,
-        std::unique_ptr<TypeExpr>  ret_type,
+        std::unique_ptr<TypeExpr>  return_type,
         std::unique_ptr<Exprs>     params,
         std::unique_ptr<BlockExpr> body
     )
     :   name_(name),
-        return_type_(std::move(ret_type)),
+        return_type_(std::move(return_type)),
         params_(std::move(params)),
         body_(std::move(body))
     {
@@ -613,7 +613,7 @@ public:
         }
         
         if (return_type_)
-            return_type_->Print(prefix, "ret_type");
+            return_type_->Print(prefix, "return_type");
         if (params_ && !params_->exprs_.empty())
             params_->Print(prefix, "params");
         if (body_)

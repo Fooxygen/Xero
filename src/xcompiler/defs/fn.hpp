@@ -13,6 +13,29 @@
 namespace xcompiler {
     class IRGen;
 
+    class Arg {
+    private:
+        llvm::Value* val_  = nullptr;
+        sema::Type*  type_ = nullptr;
+
+    public:
+        Arg(llvm::Value* val, sema::Type* type)
+        :   val_(val), type_(type) {}
+
+        llvm::Value* val()  const { return val_; }
+        sema::Type*  type() const { return type_; }
+
+    public:
+        bool        isReferenceType() const {
+            return dynamic_cast<sema::ReferenceType*>(type_) != nullptr;
+        }
+        sema::Type* ValueTypeGet() const {
+            if (auto ref = dynamic_cast<sema::ReferenceType*>(type_))
+                return ref->type_referred();
+            return type_;
+        }
+    };
+
     class FnImpl {
     public:
         virtual ~FnImpl() = default;
@@ -20,10 +43,9 @@ namespace xcompiler {
 
     class NativeFnImpl : public FnImpl {
     public:
-        using Impl  = std::function<llvm::Value*(
+        using Impl = std::function<llvm::Value*(
             IRGen&,
-            const std::vector<llvm::Value*>&,
-            const std::vector<sema::Type*>&         // Built-in Fn required
+            const std::vector<Arg>&         // Built-in Fn required
         )>;
 
     private:

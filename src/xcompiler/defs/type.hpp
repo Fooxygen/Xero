@@ -40,10 +40,7 @@ namespace xcompiler {
         FnImpl* MethodGet(const sema::FnSign* sign);
         FnImpl* MethodGetTry(const sema::FnSign* sign);
     
-        llvm::Value* MethodCall(
-            IRGen& gen, const std::string& name,
-            const std::vector<llvm::Value*>& args, const std::vector<sema::Type*>& args_type
-        );
+        llvm::Value* MethodCall(IRGen& gen, const std::string& name, const std::vector<Arg>& args);
     };
 
     class TypeImplTable {

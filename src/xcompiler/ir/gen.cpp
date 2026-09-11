@@ -64,6 +64,32 @@ namespace xcompiler {
         return var;
     }
 
+    Arg               IRGen::ArgRefMake(llvm::Value* val, sema::Type* type) {
+        // Ref
+        if (dynamic_cast<sema::ReferenceType*>(type)) return Arg(val, type);
+
+        // Val
+        auto slot = SlotCreate(LLVMType(type), ".arg.slot");
+        llvm_builder().CreateStore(val, slot);
+        return Arg(slot, sema::TypeTable::ReferenceTypeGet(type));
+    }
+    
+    llvm::Value*      IRGen::ArgLoad(const Arg& arg) {
+        if (arg.isReferenceType()) {
+            auto reference_type = (sema::ReferenceType*)arg.type();
+            return llvm_builder().CreateLoad(LLVMType(reference_type->type_referred()), arg.val());
+        }
+        return arg.val();
+    }
+    
+    llvm::Value*      IRGen::ArgAddr(const Arg& arg) {
+        if (arg.isReferenceType()) return arg.val();
+
+        auto slot = SlotCreate(LLVMType(arg.type()), ".arg.slot");
+        llvm_builder().CreateStore(arg.val(), slot);
+        return slot;
+    }
+
     llvm::AllocaInst* IRGen::SlotCreate(llvm::Type* type, const std::string& name) {
         llvm::IRBuilder<> builder_alloc(
             &state_.fn_->getEntryBlock(), state_.fn_->getEntryBlock().begin()
@@ -127,6 +153,7 @@ namespace xcompiler {
         auto var_slot = SlotCreate(LLVMType(var_type), node.id_);
         
         // Reference
+        // x: i32& = y;
         if (dynamic_cast<sema::ReferenceType*>(node.resolved_type_)) {
             auto idexpr = (IdExpr*)(node.value_.get());
             auto addr   = IdResolve(*idexpr);
@@ -136,14 +163,16 @@ namespace xcompiler {
         }
 
         // Value
+        // x: i32 = y;
         else {
             if (node.value_) {
                 llvm::Value* val = nullptr;
                 auto val_type    = node.value_->resolved_type_;
+
                 if (auto idexpr = dynamic_cast<IdExpr*>(node.value_.get())) {
-                    val = TypeImplTable::Lookup(val_type)->MethodCall(
-                        *this, "@copy", { IdResolve(*idexpr) }, { val_type }
-                    );
+                    val = TypeImplTable::Lookup(val_type)->MethodCall(*this, "@copy", {
+                        Arg(IdResolve(*idexpr), sema::TypeTable::ReferenceTypeGet(val_type))
+                    });
                 }
                 else {
                     val = Exec(*node.value_);
@@ -163,17 +192,17 @@ namespace xcompiler {
     llvm::Value* IRGen::Exec(OperExpr& node) {
         using enum OperType;
 
-        auto call = [&](sema::Type* type, const std::string& name, std::vector<llvm::Value*> args) {
+        auto call = [&](sema::Type* type, const std::string& name, std::vector<Arg> args) {
             std::vector<sema::Type*> args_type(args.size(), type);
-            return TypeImplTable::Lookup(type)->MethodCall(*this, name, args, args_type);
+            return TypeImplTable::Lookup(type)->MethodCall(*this, name, std::move(args));
         };
 
         // Unary
         auto lval = Exec(*node.lexpr_);
         {
             switch (node.oper_type_) {
-                case Neg: return call(node.lexpr_->resolved_type_, "@neg", { lval });
-                case Not: return call(node.lexpr_->resolved_type_, "@not", { lval });
+                case Neg: return call(node.lexpr_->resolved_type_, "@neg", { ArgRefMake(lval, node.lexpr_->resolved_type_) });     // tmp value is packaged as arg
+                case Not: return call(node.lexpr_->resolved_type_, "@not", { ArgRefMake(lval, node.lexpr_->resolved_type_) });
                 default:  break;
             }
         }
@@ -242,20 +271,20 @@ namespace xcompiler {
             rval = TypeImplTable::Cast(*this, rval, rtype, com_type);
 
             switch (node.oper_type_) {
-                case Plus:  return call(com_type, "@plus",  { lval, rval });
-                case Minus: return call(com_type, "@minus", { lval, rval });
-                case Star:  return call(com_type, "@star",  { lval, rval });
-                case Slash: return call(com_type, "@slash", { lval, rval });
-                case ModT:  return call(com_type, "@modt",  { lval, rval });
-                case ModF:  return call(com_type, "@modf",  { lval, rval });
-                case Gt:    return call(com_type, "@gt",    { lval, rval });
-                case Lt:    return call(com_type, "@lt",    { lval, rval });
-                case Ge:    return call(com_type, "@ge",    { lval, rval });
-                case Le:    return call(com_type, "@le",    { lval, rval });
-                case Eq:    return call(com_type, "@eq",    { lval, rval });
-                case Neq:   return call(com_type, "@neq",   { lval, rval });
-                case And:   return call(com_type, "@and",   { lval, rval });
-                case Or:    return call(com_type, "@or",    { lval, rval });
+                case Plus:  return call(com_type, "@plus",  { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case Minus: return call(com_type, "@minus", { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case Star:  return call(com_type, "@star",  { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case Slash: return call(com_type, "@slash", { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case ModT:  return call(com_type, "@modt",  { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case ModF:  return call(com_type, "@modf",  { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case Gt:    return call(com_type, "@gt",    { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case Lt:    return call(com_type, "@lt",    { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case Ge:    return call(com_type, "@ge",    { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case Le:    return call(com_type, "@le",    { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case Eq:    return call(com_type, "@eq",    { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case Neq:   return call(com_type, "@neq",   { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case And:   return call(com_type, "@and",   { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case Or:    return call(com_type, "@or",    { ArgRefMake(lval, com_type), Arg(rval, com_type) });
                 default:    return nullptr;
             }
         }
@@ -336,46 +365,49 @@ namespace xcompiler {
     }
 
     llvm::Value* IRGen::Exec(FnCallExpr& node) {
-        auto fnsign = node.callee_fnsign_;
+        auto  fnsign     = node.callee_fnsign_;
+        auto& params_fix = node.callee_fnsign_->params_type_fix();
 
         // Args
-        std::vector<llvm::Value*> args      = {};
-        std::vector<sema::Type*>  args_type = {};
+        std::vector<Arg> args = {};
         if (node.args_) {
             for (size_t i = 0; i < node.args_->exprs_.size(); i++) {
                 auto& expr       = node.args_->exprs_[i];
-                auto& params_fix = node.callee_fnsign_->params_type_fix();
 
                 // Reference
                 // e.g. fn call(a: i32&) { ... }
                 //      x: i32 = 3; z: i32& = x;
                 //      call(z);
                 if (i < params_fix.size() && dynamic_cast<sema::ReferenceType*>(params_fix[i])) {
+                    llvm::Value* addr = nullptr;
 
                     // RefVar
                     if (auto idexpr = dynamic_cast<IdExpr*>(expr.get())) {
-                        args.emplace_back(IdResolve(*idexpr));      // getting address of x actually
+                        addr = IdResolve(*idexpr);
                     }
 
                     // RefExpr
-                    else {
-                        args.emplace_back(Exec(*expr));
-                    }
-                }
-                else
-                    args.emplace_back(Exec(*expr));
+                    else addr = Exec(*expr);
 
-                args_type.emplace_back(expr->resolved_type_);
+                    args.emplace_back(addr, params_fix[i]);
+                }
+                else {
+                    args.emplace_back(Exec(*expr), expr->resolved_type_);
+                }
             }
         }
 
         // Stored in FnTable
         if (auto impl = FnImplTable::LookupTry(fnsign)) {
             if (auto native = dynamic_cast<NativeFnImpl*>(impl)) {
-                return native->impl()(*this, args, args_type);
+                return native->impl()(*this, args);
             }
             if (auto lang   = dynamic_cast<LangFnImpl*>(impl)) {
-                return llvm_builder().CreateCall(lang->impl(), args);
+                std::vector<llvm::Value*> vals = {};
+                for (auto& arg : args) {
+                    vals.emplace_back(arg.val());
+                }
+                return llvm_builder().CreateCall(lang->impl(), vals);
             }
         }
 
@@ -396,25 +428,23 @@ namespace xcompiler {
             target_addr = IdResolve(*idexpr);
         }
         else {
-            auto target_val      = Exec(*node.target_);
-            auto target_slot_tmp = SlotCreate(LLVMType(node.target_->resolved_type_), ".method.target.slot.tmp");
-            llvm_builder().CreateStore(target_val, target_slot_tmp);
-            target_addr = target_slot_tmp;
+            auto target_val  = Exec(*node.target_);
+            auto target_slot = SlotCreate(LLVMType(node.target_->resolved_type_), ".method.target.slot");
+            llvm_builder().CreateStore(target_val, target_slot);
+            target_addr = target_slot;
         }
 
         // Args
-        std::vector<llvm::Value*> args      = { target_addr };
-        std::vector<sema::Type*>  args_type = { target_type };
+        std::vector<Arg> args = {};
         if (node.args_) {
             for (auto& e : node.args_->exprs_) {
-                args.emplace_back(Exec(*e));
-                args_type.emplace_back(e->resolved_type_);
+                args.emplace_back(Exec(*e), e->resolved_type_);
             }
         }
 
         // Call
         return target_impl->MethodCall(
-            *this, node.callee_->name_, args, args_type
+            *this, node.callee_->name_, args
         );
     }
 
@@ -526,17 +556,17 @@ namespace xcompiler {
         llvm::Value* val = nullptr;
         auto val_type    = node.value_->resolved_type_;
         if (auto idexpr = dynamic_cast<IdExpr*>(node.value_.get())) {
-            val = TypeImplTable::Lookup(val_type)->MethodCall(
-                *this, "@copy", { IdResolve(*idexpr) }, { val_type }
-            );
+            val = TypeImplTable::Lookup(val_type)->MethodCall(*this, "@copy", {
+                Arg(IdResolve(*idexpr), sema::TypeTable::ReferenceTypeGet(val_type))
+            });
         }
         else {
             val = Exec(*node.value_);
         }
 
-        TypeImplTable::Lookup(target_type)->MethodCall(
-            *this, "@release", { target_addr }, { target_type }
-        );
+        TypeImplTable::Lookup(target_type)->MethodCall(*this, "@release", {
+            Arg(target_addr, sema::TypeTable::ReferenceTypeGet(target_type))
+        });
         llvm_builder().CreateStore(
             TypeImplTable::Cast(*this, val, val_type, target_type),
             target_addr
@@ -619,6 +649,12 @@ namespace xcompiler {
 
             std::vector<sema::Type*> cmp_args_type = { iter_type, iter_type };
 
+            auto cmp = [&](const std::string& name, llvm::Value* a, llvm::Value* b) {
+                return iter_type_impl->MethodCall(*this, name, {
+                    ArgRefMake(a, iter_type), Arg(b, iter_type)
+                });
+            };
+
             // Iterator
             auto iter_slot = SlotCreate(LLVMType(iter_type), node.iter_->name_);
             llvm_builder().CreateStore(left_val, iter_slot);
@@ -635,14 +671,12 @@ namespace xcompiler {
             llvm_builder().SetInsertPoint(block_cond);
             {
                 auto iter_val = llvm_builder().CreateLoad(LLVMType(iter_type), iter_slot);
-                auto isIncreasing = iter_type_impl->MethodCall(
-                    *this, "@ge", { right_val, left_val }, cmp_args_type
-                );
 
-                auto ge = iter_type_impl->MethodCall(*this, "@ge", { iter_val, right_val }, cmp_args_type);
-                auto gt = iter_type_impl->MethodCall(*this, "@gt", { iter_val, right_val }, cmp_args_type);
-                auto le = iter_type_impl->MethodCall(*this, "@le", { iter_val, right_val }, cmp_args_type);
-                auto lt = iter_type_impl->MethodCall(*this, "@lt", { iter_val, right_val }, cmp_args_type);
+                auto isIncreasing = cmp("@ge", right_val, left_val);
+                auto ge           = cmp("@ge", iter_val, right_val);
+                auto gt           = cmp("@gt", iter_val, right_val);
+                auto le           = cmp("@le", iter_val, right_val);
+                auto lt           = cmp("@lt", iter_val, right_val);
 
                 auto overstep_inc = llvm_builder().CreateSelect(isClosed_val, gt, ge);
                 auto overstep_dec = llvm_builder().CreateSelect(isClosed_val, lt, le);
@@ -668,9 +702,7 @@ namespace xcompiler {
             llvm_builder().SetInsertPoint(block_step);
             {
                 auto iter_val      = llvm_builder().CreateLoad(LLVMType(iter_type), iter_slot);
-                auto iter_val_next = iter_type_impl->MethodCall(
-                    *this, "@plus", { iter_val, step_val }, cmp_args_type
-                );
+                auto iter_val_next = cmp("@plus", iter_val, step_val);
                 llvm_builder().CreateStore(iter_val_next, iter_slot);
                 llvm_builder().CreateBr(block_cond);
             }

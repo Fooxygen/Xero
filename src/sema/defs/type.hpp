@@ -60,7 +60,9 @@ namespace sema {
         BasicType(std::string name, size_t params_cnt = 0)
         :   Type(name, Using::Basic),
             params_cnt_(params_cnt)
-        {}
+        {
+            method_table_.OwnerSet(this);
+        }
 
         size_t   params_cnt() const { return params_cnt_; }
         FnTable& method_table()     { return method_table_; }

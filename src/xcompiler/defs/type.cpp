@@ -61,20 +61,27 @@ namespace xcompiler {
         return it == methods_.end() ? nullptr : it->second.get();
     }
 
-    llvm::Value* TypeImpl::MethodCall(
-        IRGen& gen, const std::string& name,
-        const std::vector<llvm::Value*>& args, const std::vector<sema::Type*>& args_type)
-    {
+    llvm::Value* TypeImpl::MethodCall(IRGen& gen, const std::string& name, const std::vector<Arg>& args) {
         auto  type_basic  = (sema::BasicType*)link_type_->BasicTypeGet();
         auto& method      = type_basic->method_table().Lookup(name);
+
+        std::vector<sema::Type*> args_type = {};
+        for (size_t i = 1; i < args.size(); i++) {      // elem 0 is target
+            args_type.emplace_back(args[i].type());
+        }
+        
         auto  method_sign = method.SignLookup(args_type);
         auto  method_impl = MethodGet(method_sign);
 
         if (auto native = dynamic_cast<NativeFnImpl*>(method_impl)) {
-            return native->impl()(gen, args, args_type);
+            return native->impl()(gen, args);
         }
         if (auto lang = dynamic_cast<LangFnImpl*>(method_impl)) {
-            return gen.llvm_builder().CreateCall(lang->impl(), args);
+            std::vector<llvm::Value*> vals = {};
+            for (auto& arg : args) {
+                vals.emplace_back(arg.val());
+            }
+            return gen.llvm_builder().CreateCall(lang->impl(), vals);
         }
 
         throw LogErr(LogModule::Xcompiler, std::format(
@@ -95,12 +102,13 @@ namespace xcompiler {
 
         auto from_impl   = TypeImplTable::Lookup(from_basic);
         auto method_impl = from_impl->MethodGet(method_sign->second);
+        auto receive     = gen.ArgRefMake(val, from);
 
         if (auto native = dynamic_cast<NativeFnImpl*>(method_impl)) {
-            return native->impl()(gen, { val }, { from });
+            return native->impl()(gen, { receive });
         }
         if (auto lang = dynamic_cast<LangFnImpl*>(method_impl)) {
-            return gen.llvm_builder().CreateCall(lang->impl(), { val });
+            return gen.llvm_builder().CreateCall(lang->impl(), { receive.val() });
         }
 
         std::unreachable();

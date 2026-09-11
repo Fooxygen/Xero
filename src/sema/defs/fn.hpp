@@ -32,7 +32,8 @@ namespace sema {
     // Signature of Fn
     class  FnSign {
     private:
-        Type*                return_type_        = nullptr;
+        Type*                return_type_     = nullptr;
+        Type*                receive_type_    = nullptr;
         std::vector<Type*>   params_type_fix_ = {};
         std::optional<Type*> params_type_var_ = std::nullopt;
         FnModifier           modifier_        = FnModifier::None;
@@ -40,32 +41,37 @@ namespace sema {
 
     public:
         FnSign(
-            Type*                     ret_type,
+            Type*                     return_type,
             const std::vector<Type*>& params_type_fix = {},
             std::optional<Type*>      params_type_var = std::nullopt,
             FnModifier                modifier        = FnModifier{},
             const std::string&        name            = ""
         )
-        :   return_type_(ret_type),
+        :   return_type_(return_type),
             params_type_fix_(params_type_fix),
             params_type_var_(params_type_var),
             modifier_(modifier),
             name_(name)
         {}
 
-        Type*                       ret_type()        const { return return_type_; }
+        Type*                       return_type()     const { return return_type_; }
+        Type*                       receive_type()    const { return receive_type_; }
         const std::vector<Type*>&   params_type_fix() const { return params_type_fix_; }
         const std::optional<Type*>& params_type_var() const { return params_type_var_; }
         const FnModifier&           modifier()        const { return modifier_; }
         const std::string           name()            const { return name_; }
 
     public:
+        void ReceiveTypeSet(Type* type)       { receive_type_ = type; }
         void NameSet(const std::string& name) { name_ = name; }
 
         std::string ParamsPrint() const;
 
         bool isSignEqual(const FnSign& sign);
         bool isSignMatch(const std::vector<Type*>& args_type);      // implicit type cast
+
+        bool isReceiveMatch(Type* type) const;
+        void ReceiveSet(Type* type) { receive_type_ = type; }
     };
 
     // Definition of Fn
@@ -82,8 +88,10 @@ namespace sema {
     public:
         const FnSign* SignLookup(const FnSign& sign, std::optional<Loc> loc = std::nullopt) const;
         const FnSign* SignLookup(const std::vector<Type*>& args_type, std::optional<Loc> loc = std::nullopt);
+        const FnSign* SignLookup(Type* receive_type, const std::vector<Type*>& args_type, std::optional<Loc> loc = std::nullopt);
         const FnSign* SignLookupTry(const FnSign& sign) const;
         const FnSign* SignLookupTry(const std::vector<Type*>& args_type);
+        const FnSign* SignLookupTry(Type* receive_type, const std::vector<Type*>& args_type);
 
         const FnSign* SignAdd(const std::string& name, const FnSign& sign);
     };
@@ -92,6 +100,7 @@ namespace sema {
     class  FnTable {
     private:
         std::unordered_map<std::string, Fn> table_;
+        Type* owner_ = nullptr;     // type attribution when used in a method table
 
     public:
         std::unordered_map<std::string, Fn>& table() { return table_; }
@@ -113,7 +122,11 @@ namespace sema {
         
         const FnSign* Add(const std::string& name, const FnSign& sign) {
             auto& fn = table_.try_emplace(name, name).first->second;
-            return fn.SignAdd(name, sign);
+            auto  sign_add = sign;
+            if (owner_) sign_add.ReceiveSet(owner_);
+            return fn.SignAdd(name, sign_add);
         }
+    
+        void OwnerSet(Type* type) { owner_ = type; }
     };
 }

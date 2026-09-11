@@ -131,9 +131,9 @@ namespace sema {
                 auto& method_table = basic_type->method_table();
                 for (auto& [method_name, method] : method_table.table()) {
                     for (auto& sign : method.signs()) {
-                        if (sign->modifier() & FnModifier::Cast && sign->ret_type()) {
-                            type->casts().emplace(sign->ret_type());
-                            type->casts_fnsign()[sign->ret_type()] = sign.get();
+                        if (sign->modifier() & FnModifier::Cast && sign->return_type()) {
+                            type->casts().emplace(sign->return_type());
+                            type->casts_fnsign()[sign->return_type()] = sign.get();
                         }
                     }
                 }

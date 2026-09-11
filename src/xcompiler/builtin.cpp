@@ -84,36 +84,30 @@ namespace xcompiler {
 
         // print and println
         {
-            auto impl_print_one = [](IRGen& gen, llvm::Value* val, sema::Type* type) {
+            auto impl_print_one = [](IRGen& gen, const Arg& arg) {
+                auto  receive     = gen.ArgRefMake(arg.val(), arg.type());  // x -> &x, &x -> &x
+                auto  type        = arg.type();
                 auto& method      = ((sema::BasicType*)type->BasicTypeGet())->method_table().Lookup("@print");
-                auto  method_sign = method.SignLookup({ type });
+                auto  method_sign = method.SignLookup({ receive.type() });
                 auto  method_impl = TypeImplTable::Lookup(type)->MethodGet(method_sign);
-                ((NativeFnImpl*)method_impl)->impl()(gen, { val }, { type });
+                ((NativeFnImpl*)method_impl)->impl()(gen, { receive });
             };
 
-            auto impl_print = [impl_print_one](
-                IRGen& gen,
-                const std::vector<llvm::Value*>& vals,
-                const std::vector<sema::Type*>&  types) -> llvm::Value*
-            {
+            auto impl_print = [impl_print_one](IRGen& gen, const std::vector<Arg>& args) -> llvm::Value* {
                 auto& builder = gen.llvm_builder();
-                for (size_t i = 0; i < vals.size(); i++) {
+                for (size_t i = 0; i < args.size(); i++) {
                     if (i != 0) builder.CreateCall(LibC_printf(gen), {
                         builder.CreateGlobalString(" ", ".delim")
                     });
-                    impl_print_one(gen, vals[i], types[i]);
+                    impl_print_one(gen, args[i]);
                 }
 
                 return nullptr;
             };
 
-            auto impl_println = [impl_print_one, impl_print](
-                IRGen& gen,
-                const std::vector<llvm::Value*>& vals,
-                const std::vector<sema::Type*>&  types) -> llvm::Value*
-            {
+            auto impl_println = [impl_print_one, impl_print](IRGen& gen, const std::vector<Arg>& args) -> llvm::Value* {
                 auto& builder = gen.llvm_builder();
-                impl_print(gen, vals, types);
+                impl_print(gen, args);
 
                 // Line Break
                 builder.CreateCall(LibC_printf(gen), {

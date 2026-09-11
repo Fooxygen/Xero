@@ -244,7 +244,7 @@ namespace sema {
             // Stored in FnTable
             if (auto fn = fn_table_.LookupTry(callee)) {
                 auto sign = fn->SignLookup(args_type, node.callee_->loc_);
-                node.resolved_type_ = sign->ret_type();
+                node.resolved_type_ = sign->return_type();
                 node.callee_fnsign_ = sign;
                 return;
             }
@@ -268,7 +268,7 @@ namespace sema {
         auto target_type = node.target_->resolved_type_;
 
         // Args Type
-        std::vector<Type*> args_type = { target_type };     // the first parameter is target
+        std::vector<Type*> args_type = {};
         for (auto& e : node.args_->exprs_) {
             Exec(*e);
             auto idexpr = dynamic_cast<IdExpr*>(e.get());
@@ -283,10 +283,10 @@ namespace sema {
         // Callee
         auto  callee = node.callee_->name_;
         auto& method = ((BasicType*)target_type->BasicTypeGet())->method_table().Lookup(callee, node.callee_->loc_);
-        if (auto sign = method.SignLookup(args_type, node.callee_->loc_)) {
-            node.resolved_type_ = sign->ret_type();
-            node.callee_fnsign_ = sign;
-        }
+        auto  sign   = method.SignLookup(target_type, args_type, node.callee_->loc_);       // target_type -> receive_type
+        
+        node.resolved_type_ = sign->return_type();
+        node.callee_fnsign_ = sign;
     }
 
     void Analyzer::Exec(FnExpr& node) {
