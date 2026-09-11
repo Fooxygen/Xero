@@ -70,7 +70,7 @@ namespace xcompiler {
             args_type.emplace_back(args[i].type());
         }
         
-        auto  method_sign = method.SignLookup(args_type);
+        auto  method_sign = method.SignLookup(args[0].type(), args_type);
         auto  method_impl = MethodGet(method_sign);
 
         if (auto native = dynamic_cast<NativeFnImpl*>(method_impl)) {

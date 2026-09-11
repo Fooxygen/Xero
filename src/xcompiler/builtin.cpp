@@ -88,7 +88,7 @@ namespace xcompiler {
                 auto  receive     = gen.ArgRefMake(arg.val(), arg.type());  // x -> &x, &x -> &x
                 auto  type        = arg.type();
                 auto& method      = ((sema::BasicType*)type->BasicTypeGet())->method_table().Lookup("@print");
-                auto  method_sign = method.SignLookup({ receive.type() });
+                auto  method_sign = method.SignLookup(receive.type(), {});
                 auto  method_impl = TypeImplTable::Lookup(type)->MethodGet(method_sign);
                 ((NativeFnImpl*)method_impl)->impl()(gen, { receive });
             };

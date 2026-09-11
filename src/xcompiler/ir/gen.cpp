@@ -193,7 +193,6 @@ namespace xcompiler {
         using enum OperType;
 
         auto call = [&](sema::Type* type, const std::string& name, std::vector<Arg> args) {
-            std::vector<sema::Type*> args_type(args.size(), type);
             return TypeImplTable::Lookup(type)->MethodCall(*this, name, std::move(args));
         };
 
@@ -436,6 +435,7 @@ namespace xcompiler {
 
         // Args
         std::vector<Arg> args = {};
+        args.emplace_back(target_addr, sema::TypeTable::ReferenceTypeGet(target_type));
         if (node.args_) {
             for (auto& e : node.args_->exprs_) {
                 args.emplace_back(Exec(*e), e->resolved_type_);
