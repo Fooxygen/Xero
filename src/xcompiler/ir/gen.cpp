@@ -138,8 +138,17 @@ namespace xcompiler {
         // Value
         else {
             if (node.value_) {
-                auto val      = Exec(*node.value_);
-                auto val_type = node.value_->resolved_type_;
+                llvm::Value* val = nullptr;
+                auto val_type    = node.value_->resolved_type_;
+                if (auto idexpr = dynamic_cast<IdExpr*>(node.value_.get())) {
+                    val = TypeImplTable::Lookup(val_type)->MethodCall(
+                        *this, "@copy", { IdResolve(*idexpr) }, { val_type }
+                    );
+                }
+                else {
+                    val = Exec(*node.value_);
+                }
+
                 llvm_builder().CreateStore(
                     TypeImplTable::Cast(*this, val, val_type, var_type),
                     var_slot
@@ -295,7 +304,9 @@ namespace xcompiler {
         
         // Elem
         size_t len       = exprs.size();
-        size_t size_elem = TypeImplTable::Lookup(node.elem_type_)->size();
+        size_t size_elem = llvm_module()->getDataLayout().getTypeAllocSize(
+            LLVMType(node.elem_type_)
+        );
         size_t size      = len * size_elem;
 
         // Data
@@ -508,15 +519,27 @@ namespace xcompiler {
     }
 
     llvm::Value* IRGen::Exec(AssignStmt& node) {
-        auto target   = (IdExpr*)(node.target_.get());
-        auto var      = IdResolve(*target);
-        auto var_type = target->resolved_type_;
-        auto val      = Exec(*node.value_);
-        auto val_type = node.value_->resolved_type_;
+        auto target      = (IdExpr*)(node.target_.get());
+        auto target_addr = IdResolve(*target);
+        auto target_type = target->resolved_type_;
 
+        llvm::Value* val = nullptr;
+        auto val_type    = node.value_->resolved_type_;
+        if (auto idexpr = dynamic_cast<IdExpr*>(node.value_.get())) {
+            val = TypeImplTable::Lookup(val_type)->MethodCall(
+                *this, "@copy", { IdResolve(*idexpr) }, { val_type }
+            );
+        }
+        else {
+            val = Exec(*node.value_);
+        }
+
+        TypeImplTable::Lookup(target_type)->MethodCall(
+            *this, "@release", { target_addr }, { target_type }
+        );
         llvm_builder().CreateStore(
-            TypeImplTable::Cast(*this, val, val_type, var_type),
-            var
+            TypeImplTable::Cast(*this, val, val_type, target_type),
+            target_addr
         );
         return nullptr;
     }

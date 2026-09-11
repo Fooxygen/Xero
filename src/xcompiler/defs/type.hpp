@@ -22,18 +22,16 @@ namespace xcompiler {
     private:
         sema::Type* link_type_ = nullptr;
         std::string name_      = "";
-        size_t      size_      = 0;
 
         // FnSign: Registed in Sema Stage, Linked to the unique implementation
         std::unordered_map<const sema::FnSign*, std::unique_ptr<FnImpl>> methods_;
 
     public:
-        TypeImpl(sema::Type* link_type, size_t size)
-        :   link_type_(link_type), name_(link_type->name()), size_(size) {}
+        TypeImpl(sema::Type* link_type)
+        :   link_type_(link_type), name_(link_type->name()) {}
 
         sema::Type* link_type() const { return link_type_; }
         std::string name()      const { return name_; }
-        size_t      size()      const { return size_; }
 
     public:
         void    MethodAdd(const std::string& name, NativeFnImpl::Impl impl, const sema::FnSign& sign);
