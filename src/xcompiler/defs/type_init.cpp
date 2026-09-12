@@ -539,10 +539,7 @@ namespace xcompiler {
                     builder.SetInsertPoint(block_cond);
                     auto counter = builder.CreatePHI(builder.getInt64Ty(), 2);
                     {
-                        counter->addIncoming(builder.getInt64(0), block_entry);         // init
-                        counter->addIncoming(
-                            builder.CreateAdd(counter, builder.getInt64(1)), block_body // after body
-                        );
+                        counter->addIncoming(builder.getInt64(0), block_entry); // init
                         builder.CreateCondBr(
                             builder.CreateICmpSLT(counter, len), block_cont, block_end
                         );
@@ -580,6 +577,11 @@ namespace xcompiler {
                         elem_type_impl->MethodCall(gen, "@print", {
                             Arg(addr, sema::TypeTable::ReferenceTypeGet(elem_type))
                         });
+                        
+                        auto body_end = builder.GetInsertBlock();
+                        auto next     = builder.CreateAdd(counter, builder.getInt64(1));
+                        counter->addIncoming(next, body_end);
+                        
                         builder.CreateBr(block_cond);
                     }
 

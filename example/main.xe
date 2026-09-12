@@ -1,23 +1,5 @@
 
 fn main() {
-    x: i32 = 42;
-    println(x);
-    println(&x);
-
-    z: i32& = x;
-    println(z);
-
-    a: array[=i32=] = [1, 2, 3];
+    a: array[=array[=i32=]=] = [[1], [2, 3]];
     println(a);
-    println(&a);
-    println(a.len());
-
-    y: i32 = 1 + 2 * 3;
-    println(y);
-
-    for (x in 0..3) {
-        println(x);
-    }
-
-    println(3.@plus(2));
 }

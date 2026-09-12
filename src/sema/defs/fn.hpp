@@ -17,7 +17,7 @@ namespace sema {
     class Type;
     
     // Modifier of Fn
-    enum FnModifier : int {
+    enum   FnModifier : int {
         None    = 0,
         Cast    = 1 << 0,       // type casting
     };
