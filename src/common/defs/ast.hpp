@@ -220,10 +220,7 @@ public:
 class IdExpr            : public Expr {
 public:
     std::string name_ = "";
-
-public:
-    bool isReferred_ = false;
-
+    
 public:
     IdExpr(const std::string& name) : name_(name) {
         type_ = AstType::IdExpr;

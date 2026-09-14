@@ -28,17 +28,7 @@ namespace sema {
 
     void Analyzer::Exec(IdExpr& node) {
         if (auto var = var_table_.LookupTry(node.name_)) {
-            auto type = var->type_;
-
-            // Reference
-            if (auto reference_type = dynamic_cast<ReferenceType*>(type)) {
-                node.isReferred_ = true;
-                node.resolved_type_ = reference_type->type_referred();
-            }
-            else {
-                node.isReferred_ = false;
-                node.resolved_type_ = var->type_;
-            }
+            node.resolved_type_ = var->type_;
             return;
         }
 
@@ -52,19 +42,19 @@ namespace sema {
         if (!dynamic_cast<IdExpr*>(node.target_.get())) {
             throw LogErr(LogModule::Sema, "cannot reference a non-referenceable value", node.loc_);
         }
-        node.resolved_type_ = TypeTable::ReferenceTypeGet(node.target_->resolved_type_);
+        node.resolved_type_ = TypeTable::ReferenceTypeGet(node.target_->resolved_type_->ReferenceUnwrap());
     }
 
     void Analyzer::Exec(TypeExpr& node) {
         auto  type_basic    = TypeTable::Lookup(node.type_basic_, node.loc_);
         Type* type_resolved = nullptr;
 
-        // Basic
+        // BasicType
         if (!node.params_) {
             type_resolved = type_basic;
         }
 
-        // Parametric
+        // ParametricType
         else {
             std::vector<Type*> params_type = {};
             for (auto& e : node.params_->exprs_) {
@@ -72,7 +62,7 @@ namespace sema {
                     Exec(*typeexpr);
                     params_type.emplace_back(typeexpr->resolved_type_);
                 }
-                else if (auto idexpr = dynamic_cast<IdExpr*>(e.get())) {
+                else if (auto idexpr   = dynamic_cast<IdExpr*>(e.get())) {
                     params_type.emplace_back(TypeTable::Lookup(idexpr->name_, idexpr->loc_));
                 }
                 else {
@@ -88,7 +78,7 @@ namespace sema {
                 type_resolved = TypeTable::ParametricTypeGet(type_basic, params_type, node.loc_);
         }
 
-        // Reference
+        // ReferenceType
         if (node.isReferred_) {
             type_resolved = TypeTable::ReferenceTypeGet(type_resolved);
         }
@@ -99,12 +89,14 @@ namespace sema {
     void Analyzer::Exec(DeclExpr& node) {
         Exec(*node.bind_type_);
 
-        // Reference
+        // ReferenceType
         if (node.bind_type_->isReferred_) {
+            // x: i32&;
             if (!node.value_) {
                 throw LogErr(LogModule::Sema, "reference type must be initialized with a value", node.loc_);
             }
 
+            // x: i32& = 3;
             if (!dynamic_cast<IdExpr*>(node.value_.get())) {
                 throw LogErr(LogModule::Sema, std::format(
                     "cannot assign non-reference value to reference type '{}'",
@@ -112,7 +104,6 @@ namespace sema {
                 ), node.value_->loc_);
             }
         }
-        
         node.resolved_type_ = node.bind_type_->resolved_type_;
 
         var_table_.Declare(std::make_unique<Var>(
@@ -128,7 +119,7 @@ namespace sema {
         Exec(*node.lexpr_);
         {
             if (node.oper_type_ == Neg) {
-                node.resolved_type_ = node.lexpr_->resolved_type_;
+                node.resolved_type_ = node.lexpr_->resolved_type_->ReferenceUnwrap();
                 return;
             }
             if (node.oper_type_ == Not) {
@@ -163,8 +154,8 @@ namespace sema {
 
             // Arith
             node.resolved_type_ = TypeTable::Common({
-                node.lexpr_->resolved_type_,
-                node.rexpr_->resolved_type_
+                node.lexpr_->resolved_type_->ReferenceUnwrap(),
+                node.rexpr_->resolved_type_->ReferenceUnwrap()
             });
 
             if (!node.resolved_type_) {
@@ -183,7 +174,8 @@ namespace sema {
         Exec(*node.lexpr_);
         Exec(*node.rexpr_);
         auto boundary_type = TypeTable::Common({
-            node.lexpr_->resolved_type_, node.rexpr_->resolved_type_
+            node.lexpr_->resolved_type_->ReferenceUnwrap(),
+            node.rexpr_->resolved_type_->ReferenceUnwrap()
         });
         if (!boundary_type) {
             throw LogErr(LogModule::Sema, "'left bound type of range' must be compatible with 'right bound type of range'", node.loc_);
@@ -193,7 +185,7 @@ namespace sema {
         auto step_type = boundary_type;
         if (node.step_) {
             Exec(*node.step_);
-            step_type = node.step_->resolved_type_;
+            step_type = node.step_->resolved_type_->ReferenceUnwrap();
             if (TypeTable::Common({ step_type, boundary_type }) != boundary_type) {
                 throw LogErr(LogModule::Sema, "'step type of range' must be compatible with 'boundary type of range'", node.loc_);
             }
@@ -211,7 +203,7 @@ namespace sema {
         if (exprs.empty())
             node.elem_type_ = nullptr;
         else
-            node.elem_type_ = exprs[0]->resolved_type_;
+            node.elem_type_ = exprs[0]->resolved_type_->ReferenceUnwrap();
 
         // Empty ArrayExpr
         std::vector<Type*> params = {};
@@ -228,14 +220,7 @@ namespace sema {
         std::vector<Type*> args_type = {};
         for (auto& e : node.args_->exprs_) {
             Exec(*e);
-            
-            auto idexpr = dynamic_cast<IdExpr*>(e.get());
-            auto isReferred = idexpr && idexpr->isReferred_;
-
-            if (isReferred)
-                args_type.emplace_back(TypeTable::ReferenceTypeGet(e->resolved_type_));
-            else
-                args_type.emplace_back(e->resolved_type_);
+            args_type.emplace_back(e->resolved_type_);
         }
 
         // Callee
@@ -271,13 +256,7 @@ namespace sema {
         std::vector<Type*> args_type = {};
         for (auto& e : node.args_->exprs_) {
             Exec(*e);
-            auto idexpr = dynamic_cast<IdExpr*>(e.get());
-            auto isReferred = idexpr && idexpr->isReferred_;
-
-            if (isReferred)
-                args_type.emplace_back(TypeTable::ReferenceTypeGet(e->resolved_type_));
-            else
-                args_type.emplace_back(e->resolved_type_);
+            args_type.emplace_back(e->resolved_type_);
         }
 
         // Callee
@@ -452,11 +431,11 @@ namespace sema {
 
     void Analyzer::Exec(ForStmt& node) {
         node.resolved_type_ = TypeTable::Lookup("none");
-        
         Exec(*node.data_);
-        auto data_type = node.data_->resolved_type_;
+
         Type* iter_type = nullptr;
-        
+        auto  data_type = node.data_->resolved_type_->ReferenceUnwrap();
+
         if (data_type->is("array")) {
             if (auto parametric_type = dynamic_cast<ParametricType*>(data_type)) {
                 auto params_type = parametric_type->params_type();

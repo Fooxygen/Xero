@@ -49,6 +49,8 @@ namespace sema {
 
         virtual Type* BasicTypeGet() = 0;
         void          BasicTypeCheck() const;
+
+        virtual Type* ReferenceUnwrap() = 0;
     };
 
     class BasicType      : public Type {
@@ -68,7 +70,8 @@ namespace sema {
         FnTable& method_table()     { return method_table_; }
     
     public:
-        Type* BasicTypeGet() override { return this; }
+        Type* BasicTypeGet()    override { return this; }
+        Type* ReferenceUnwrap() override { return this; }
     };
 
     class ParametricType : public Type {
@@ -89,7 +92,8 @@ namespace sema {
     public:
         static std::string ParamsPrint(Type* type_basic, const std::vector<Type*>& params_type);
 
-        Type* BasicTypeGet() override { return type_basic_; }
+        Type* BasicTypeGet()    override { return type_basic_; }
+        Type* ReferenceUnwrap() override { return this; }
     };
 
     class ReferenceType  : public Type {
@@ -105,7 +109,8 @@ namespace sema {
         Type* type_referred() const { return type_referred_; }
 
     public:
-        Type* BasicTypeGet() override { return type_referred_->BasicTypeGet(); }
+        Type* BasicTypeGet()    override { return type_referred_->BasicTypeGet(); }
+        Type* ReferenceUnwrap() override { return type_referred_; }
     };
 
     class TypeTable {

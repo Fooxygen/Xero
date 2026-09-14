@@ -515,7 +515,7 @@ namespace xcompiler {
                     auto data      = builder.CreateExtractValue(array_val, 0);
                     auto len       = builder.CreateExtractValue(array_val, 1);
                     
-                    auto array_type     = (sema::ParametricType*)args[0].ValueTypeGet();
+                    auto array_type     = (sema::ParametricType*)args[0].ReferenceUnwrap();
                     auto elem_type      = array_type->params_type()[0];
                     auto elem_type_impl = TypeImplTable::Lookup(elem_type);
                     auto elem_size      = module.getDataLayout().getTypeAllocSize(
@@ -599,8 +599,8 @@ namespace xcompiler {
                     auto& module  = *gen.llvm_module();
 
                     auto array_addr      = gen.ArgAddr(args[0]);
-                    auto array_type      = (sema::ParametricType*)args[0].ValueTypeGet();
-                    auto array_llvm_type = gen.LLVMType(args[0].ValueTypeGet());
+                    auto array_type      = (sema::ParametricType*)args[0].ReferenceUnwrap();
+                    auto array_llvm_type = gen.LLVMType(args[0].ReferenceUnwrap());
                     auto elem_type       = array_type->params_type()[0];
                     auto elem_type_impl  = TypeImplTable::Lookup(elem_type);
                     auto elem_size       = module.getDataLayout().getTypeAllocSize(
@@ -665,8 +665,8 @@ namespace xcompiler {
                     auto& module  = *gen.llvm_module();
 
                     auto array_addr      = gen.ArgAddr(args[0]);
-                    auto array_type      = (sema::ParametricType*)args[0].ValueTypeGet();
-                    auto array_llvm_type = gen.LLVMType(args[0].ValueTypeGet());
+                    auto array_type      = (sema::ParametricType*)args[0].ReferenceUnwrap();
+                    auto array_llvm_type = gen.LLVMType(args[0].ReferenceUnwrap());
                     auto elem_type       = array_type->params_type()[0];
                     auto elem_type_impl  = TypeImplTable::Lookup(elem_type);
                     auto elem_size       = module.getDataLayout().getTypeAllocSize(
@@ -721,18 +721,18 @@ namespace xcompiler {
                 impl->MethodAdd("len", [](IRGen& gen, ARGS& args) -> llvm::Value* {
                     auto& builder         = gen.llvm_builder();
                     auto  array_addr      = gen.ArgAddr(args[0]);
-                    auto  array_llvm_type = gen.LLVMType(args[0].ValueTypeGet());
+                    auto  array_llvm_type = gen.LLVMType(args[0].ReferenceUnwrap());
                     auto  array_val       = builder.CreateLoad(array_llvm_type, array_addr);
                     return builder.CreateExtractValue(array_val, 1);
                 }, sema::FnSign(i64_));
                 impl->MethodAdd("clear", [array_store](IRGen& gen, ARGS& args) -> llvm::Value* {
                     auto& builder         = gen.llvm_builder();
                     auto  array_addr      = gen.ArgAddr(args[0]);
-                    auto  array_llvm_type = gen.LLVMType(args[0].ValueTypeGet());
+                    auto  array_llvm_type = gen.LLVMType(args[0].ReferenceUnwrap());
 
-                    TypeImplTable::Lookup(args[0].ValueTypeGet())->MethodCall(
+                    TypeImplTable::Lookup(args[0].ReferenceUnwrap())->MethodCall(
                         gen, "@release", {
-                            Arg(array_addr, sema::TypeTable::ReferenceTypeGet(args[0].ValueTypeGet()))
+                            Arg(array_addr, sema::TypeTable::ReferenceTypeGet(args[0].ReferenceUnwrap()))
                         }
                     );
 
@@ -747,12 +747,12 @@ namespace xcompiler {
                     auto& module  = *gen.llvm_module();
 
                     auto  array_addr      = gen.ArgAddr(args[0]);
-                    auto  array_type      = (sema::ParametricType*)args[0].ValueTypeGet();
+                    auto  array_type      = (sema::ParametricType*)args[0].ReferenceUnwrap();
                     auto  elem_type       = array_type->params_type()[0];
                     auto  elem_size       = module.getDataLayout().getTypeAllocSize(
                         gen.LLVMType(elem_type)
                     );
-                    auto  array_llvm_type = gen.LLVMType(args[0].ValueTypeGet());
+                    auto  array_llvm_type = gen.LLVMType(args[0].ReferenceUnwrap());
 
                     auto array_val = builder.CreateLoad(array_llvm_type, array_addr);
                     auto data      = builder.CreateExtractValue(array_val, 0);
@@ -769,12 +769,12 @@ namespace xcompiler {
                     auto& module  = *gen.llvm_module();
 
                     auto  array_addr      = gen.ArgAddr(args[0]);
-                    auto  array_type      = (sema::ParametricType*)args[0].ValueTypeGet();
+                    auto  array_type      = (sema::ParametricType*)args[0].ReferenceUnwrap();
                     auto  elem_type       = array_type->params_type()[0];
                     auto  elem_size       = module.getDataLayout().getTypeAllocSize(
                         gen.LLVMType(elem_type)
                     );
-                    auto  array_llvm_type = gen.LLVMType(args[0].ValueTypeGet());
+                    auto  array_llvm_type = gen.LLVMType(args[0].ReferenceUnwrap());
                     auto  one             = builder.getInt64(1);
 
                     auto array_val = builder.CreateLoad(array_llvm_type, array_addr);
@@ -791,7 +791,7 @@ namespace xcompiler {
                 impl->MethodAdd("pop_back", [array_store](IRGen& gen, ARGS& args) -> llvm::Value* {
                     auto& builder         = gen.llvm_builder();
                     auto  array_addr      = gen.ArgAddr(args[0]);
-                    auto  array_llvm_type = gen.LLVMType(args[0].ValueTypeGet());
+                    auto  array_llvm_type = gen.LLVMType(args[0].ReferenceUnwrap());
                     auto  array_val       = builder.CreateLoad(array_llvm_type, array_addr);
                     auto  data            = builder.CreateExtractValue(array_val, 0);
                     auto  len             = builder.CreateExtractValue(array_val, 1);
@@ -803,12 +803,12 @@ namespace xcompiler {
                     auto& module  = *gen.llvm_module();
 
                     auto  array_addr       = gen.ArgAddr(args[0]);
-                    auto  array_type       = (sema::ParametricType*)args[0].ValueTypeGet();
+                    auto  array_type       = (sema::ParametricType*)args[0].ReferenceUnwrap();
                     auto  elem_type        = array_type->params_type()[0];
                     auto  elem_size        = module.getDataLayout().getTypeAllocSize(
                         gen.LLVMType(elem_type)
                     );
-                    auto  array_llvm_type  = gen.LLVMType(args[0].ValueTypeGet());
+                    auto  array_llvm_type  = gen.LLVMType(args[0].ReferenceUnwrap());
                     auto  one              = builder.getInt64(1);
 
                     auto array_val = builder.CreateLoad(array_llvm_type, array_addr);
@@ -825,12 +825,12 @@ namespace xcompiler {
 
                     auto  array_addr      = gen.ArgAddr(args[0]);
                     auto  idx             = args[1].val();
-                    auto  array_type      = (sema::ParametricType*)args[0].ValueTypeGet();
+                    auto  array_type      = (sema::ParametricType*)args[0].ReferenceUnwrap();
                     auto  elem_type       = array_type->params_type()[0];
                     auto  elem_size       = module.getDataLayout().getTypeAllocSize(
                         gen.LLVMType(elem_type)
                     );
-                    auto  array_llvm_type = gen.LLVMType(args[0].ValueTypeGet());
+                    auto  array_llvm_type = gen.LLVMType(args[0].ReferenceUnwrap());
                     auto  one             = builder.getInt64(1);
 
                     auto array_val = builder.CreateLoad(array_llvm_type, array_addr);
@@ -852,12 +852,12 @@ namespace xcompiler {
 
                     auto  array_addr      = gen.ArgAddr(args[0]);
                     auto  idx             = args[1].val();
-                    auto  array_type      = (sema::ParametricType*)args[0].ValueTypeGet();
+                    auto  array_type      = (sema::ParametricType*)args[0].ReferenceUnwrap();
                     auto  elem_type       = array_type->params_type()[0];
                     auto  elem_size       = module.getDataLayout().getTypeAllocSize(
                         gen.LLVMType(elem_type)
                     );
-                    auto  array_llvm_type = gen.LLVMType(args[0].ValueTypeGet());
+                    auto  array_llvm_type = gen.LLVMType(args[0].ReferenceUnwrap());
                     auto  one             = builder.getInt64(1);
 
                     auto array_val = builder.CreateLoad(array_llvm_type, array_addr);
@@ -880,7 +880,7 @@ namespace xcompiler {
                     auto& builder = gen.llvm_builder();
 
                     auto  range_val      = gen.ArgLoad(args[0]);
-                    auto  range_type     = (sema::ParametricType*)args[0].ValueTypeGet();
+                    auto  range_type     = (sema::ParametricType*)args[0].ReferenceUnwrap();
                     auto  iter_type      = range_type->params_type()[0];
                     auto  iter_type_impl = TypeImplTable::Lookup(iter_type);
                     auto  left_val       = builder.CreateExtractValue(range_val, 0);

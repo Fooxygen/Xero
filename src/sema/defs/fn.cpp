@@ -28,7 +28,7 @@ namespace sema {
         return res.empty() ? "(empty)" : '(' + res + ')';
     }
 
-    bool FnSign::isSignEqual(const FnSign& sign) {
+    bool        FnSign::isSignEqual(const FnSign& sign) {
 
         // Return Type
         if (sign.return_type_ != return_type_) return false;
@@ -48,8 +48,7 @@ namespace sema {
         return true;
     }
 
-    bool FnSign::isSignMatch(const std::vector<Type*>& args_type) {
-
+    bool        FnSign::isSignMatch(const std::vector<Type*>& args_type) {
         try {
             // Fixed Params
             if (args_type.size() < params_type_fix_.size()) throw 0;
@@ -57,16 +56,17 @@ namespace sema {
                 auto param = params_type_fix_[i];
                 auto arg   = args_type[i];
                 if (param) {
-
-                    // Reference
+                    // Reference Param
                     if (dynamic_cast<ReferenceType*>(param)) {
+                        // pass: param i32&, arg i32&
                         if (arg != param) throw 0;
                     }
-
+                    
+                    // NonReference Param
                     else {
-                        bool isMatch = arg->casts().contains(param);
-                        if (!isMatch && arg->BasicTypeGet() == param) isMatch = true;   // XXX: Useless logic
-                        if (!isMatch) throw 0;
+                        // pass: param i32, arg i32&
+                        //       param f64, arg i32
+                        if (arg->ReferenceUnwrap() != param && !arg->casts().contains(param)) throw 0;
                     }
                 }
             }
@@ -77,9 +77,7 @@ namespace sema {
                     auto param = *params_type_var_;
                     auto arg   = args_type[i];
                     if (param) {
-                        bool isMatch = arg->casts().contains(param);
-                        if (!isMatch && arg->BasicTypeGet() == param) isMatch = true;   // XXX: Useless logic
-                        if (!isMatch) throw 0;
+                        if (arg->ReferenceUnwrap() != param && !arg->casts().contains(param)) throw 0;
                     }
                 }
             }
@@ -94,7 +92,7 @@ namespace sema {
         return true;
     }
 
-    bool FnSign::isReceiveMatch(Type* type) const {
+    bool        FnSign::isReceiveMatch(Type* type) const {
         if (!receive_type_ || !type) return false;
         return receive_type_->BasicTypeGet() == type->BasicTypeGet();
     }

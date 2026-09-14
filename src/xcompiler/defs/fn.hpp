@@ -29,10 +29,8 @@ namespace xcompiler {
         bool        isReferenceType() const {
             return dynamic_cast<sema::ReferenceType*>(type_) != nullptr;
         }
-        sema::Type* ValueTypeGet() const {
-            if (auto ref = dynamic_cast<sema::ReferenceType*>(type_))
-                return ref->type_referred();
-            return type_;
+        sema::Type* ReferenceUnwrap() const {
+            return type_->ReferenceUnwrap();
         }
     };
 
