@@ -25,7 +25,7 @@ namespace xcompiler {
         PB.registerCGSCCAnalyses(CGAM);
         PB.registerFunctionAnalyses(FAM);
         PB.registerLoopAnalyses(LAM);
-        PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);   // Analyzer Communication Network
+        PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);   // analyzer communication network
 
         // Pipeline
         auto MPM = PB.buildPerModuleDefaultPipeline(level);

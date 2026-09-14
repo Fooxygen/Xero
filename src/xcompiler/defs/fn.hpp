@@ -41,10 +41,7 @@ namespace xcompiler {
 
     class NativeFnImpl : public FnImpl {
     public:
-        using Impl = std::function<llvm::Value*(
-            IRGen&,
-            const std::vector<Arg>&         // Built-in Fn required
-        )>;
+        using Impl = std::function<llvm::Value*(IRGen&, const std::vector<Arg>&)>;
 
     private:
         Impl impl_ = nullptr;

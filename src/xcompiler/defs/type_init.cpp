@@ -645,7 +645,6 @@ namespace xcompiler {
                         });
                         builder.CreateStore(copied, dst_elem);
 
-                        // recursion exists internally
                         auto next = builder.CreateAdd(counter, builder.getInt64(1));
                         builder.CreateBr(block_cond);
                         counter->addIncoming(next, builder.GetInsertBlock());

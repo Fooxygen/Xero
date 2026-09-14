@@ -56,7 +56,8 @@ public:
                 out_bytes[3] = 0x80 | (codepoint  &  0x3f);
                 out_bytes_len = 4;
             }
-            throw 0;
+            else throw 0;
+            
         } catch(...) {
             throw LogErr(log_module, std::format(
                 "invalid unicode codepoint U+{:X}", codepoint

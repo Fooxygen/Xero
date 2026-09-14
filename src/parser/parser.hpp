@@ -133,8 +133,8 @@ namespace parser {
         PATS           patterns_;
         PATS           prefix_delay_;
         PATS           prefix_allow_;
-        TTS            suffix_delay_;      // Delay reduction when hit symmbol
-        TTS            suffix_allow_;      // Delay reduction when miss symbol
+        TTS            suffix_delay_;      // delay reduction when hit symmbol
+        TTS            suffix_allow_;      // delay reduction when miss symbol
         ReduceCallback reduce_callback_;
 
     private:
@@ -254,15 +254,15 @@ namespace parser {
                     while (j > 0) {
 
                         // Skiped
-                        // exist path: (i, j - 1) -> (i, j) dir: →
+                        // Exist path: (i, j - 1) -> (i, j) dir: →
                         if (patterns_[j - 1].isOptional() && dp[i][j - 1]) {
-                            // mark zero: not used
+                            // Mark zero: not used
                             move_positions[j - 1] = 0;
                             cnt_skip++;
                         }
 
                         // Not Skiped
-                        // exist path: (i - 1, j - 1) -> (i, j) dir: ↘
+                        // Exist path: (i - 1, j - 1) -> (i, j) dir: ↘
                         else {
                             move_positions[j - 1] = (int)(np - j) - (int)cnt_skip + 1;
                             i--;
@@ -291,13 +291,13 @@ namespace parser {
     private:
         // Defined
 
-        inline static std::vector<Rule> rules_; // Reduce Rules
-        TS& tokens_;                            // Lexer's Tokens
+        std::vector<Rule> rules_;
+        TS& tokens_;
 
         // Cache
         
-        SS                  symbols_;           // Symbols Stack
-        std::vector<size_t> scopes_brace_;      // Brace Scope
+        SS                  symbols_;           // symbols stack
+        std::vector<size_t> scopes_brace_;      // brace scope
 
         // for Move():
         // while rule = AB[C]DE
@@ -307,7 +307,7 @@ namespace parser {
 
         // Result
 
-        ASTNODE             root_;              // Program
+        ASTNODE             root_;              // program
 
     private:
         // Defined

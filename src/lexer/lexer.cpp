@@ -170,9 +170,8 @@ namespace lexer {
         // └─ Single Char
         switch (c) {
             case '#': {
-                bool isMultiLineCommon =
-                    !isScanEnd() && code_[pos_] == '#'; // next '#' has been received
-                if (isMultiLineCommon) {
+                // Multi-Line Common
+                if (!isScanEnd() && code_[pos_] == '#') {
                     CharNext();
                     return TokenScanMultiComment();
                 }
@@ -326,10 +325,7 @@ namespace lexer {
 
     Token Lexer::TokenScanMultiComment() {
         while (!isScanEnd()) {
-            if (code_[pos_] == '#' &&
-                pos_ + 1 < code_.size() &&
-                code_[pos_ + 1] == '#')
-            {
+            if (code_[pos_] == '#' && !isNextScanEnd() && code_[pos_ + 1] == '#') {
                 CharNext(2);
                 return Token();
             }

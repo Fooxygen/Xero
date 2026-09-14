@@ -26,41 +26,41 @@ enum class AstType {
     Undefined,
 
     // Entry
-    Program,            //  Entrance
+    Program,            //  entrance
 
     // Const
-    Const,              //  Base ------
-    NumConst,           //  Number Type
-    BoolConst,          //  Boolean Type
-    CharConst,          //  Char Type
-    StringConst,        //  String Type
+    Const,              //  base ------
+    NumConst,           //  number
+    BoolConst,          //  boolean
+    CharConst,          //  char
+    StringConst,        //  string
 
     // Expr
-    Expr,               //  Base ------
-    BlockExpr,          //  Packaged Astnode
-    IdExpr,             //  Identity
-    RefExpr,            //  Get Reference to Var
-    TypeExpr,           //  Type
-    DeclExpr,           //  Declaration
-    OperExpr,           //  Operation
-    RangeExpr,          //  Range
-    ArrayExpr,          //  Array
-    FnCallExpr,         //  Function Call
-    MethodCallExpr,     //  Method Call
-    FnExpr,             //  Function
+    Expr,               //  base ------
+    BlockExpr,          //  packaged astnode
+    IdExpr,             //  identity
+    RefExpr,            //  getting reference to Var
+    TypeExpr,           //  type
+    DeclExpr,           //  declaration
+    OperExpr,           //  operation
+    RangeExpr,          //  range
+    ArrayExpr,          //  array
+    FnCallExpr,         //  calling function
+    MethodCallExpr,     //  calling method
+    FnExpr,             //  function
 
     // Stmt
-    Stmt,               //  Base ------
-    ExprStmt,           //  Expr used as Stmt
-    AssignStmt,         //  Assignment
-    CondStmt,           //  Condition
-    LoopSignalStmt,     //  Loop Signal
-    ReturnSignalStmt,   //  Return Signal
-    ForStmt,            //  For
-    WhileStmt,          //  While
+    Stmt,               //  base ------
+    ExprStmt,           //  expr used as stmt
+    AssignStmt,         //  assignment
+    CondStmt,           //  condition
+    LoopSignalStmt,     //  signal of loop
+    ReturnSignalStmt,   //  signal of return
+    ForStmt,            //  for
+    WhileStmt,          //  while
 
     // Common
-    Exprs,             // List of expr
+    Exprs,              //  list of expr
 };
 
 inline static AstType BaseOfAstType(AstType type) {
@@ -116,14 +116,18 @@ public:
     sema::Type* resolved_type_ = nullptr;
 
 public:
+    // Type
+
     virtual std::string TypeName() const {
         return "Undefined";
     }
-    void TypePrint() const {
+    void                TypePrint() const {
         std::cerr << TypeName();
     }
 
-    virtual void PrintImpl(std::string) {}
+    // Print
+
+    virtual void PrintImpl(std::string) = 0;
     void         Print(std::string prefix = "", std::string alias = "", bool isBegin = false) {
         std::cerr << prefix;
         if (!isBegin) std::cerr << "└── ";
@@ -141,6 +145,8 @@ public:
         std::cerr << prefix;
         std::cerr << "└── " << COLOR_ORANGE << "[" << name << "] " << COLOR_DEFAULT;
     }
+
+    // Data
 
     virtual std::unique_ptr<AstNode> Clone() const = 0;
 };

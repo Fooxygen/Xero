@@ -18,9 +18,9 @@ namespace lexer {
     private:
         std::string_view code_;
 
-        Loc    loc_;        // Current Location
-        Loc    loc_prev_;   // Previous Location
-        Loc    loc_scan_;   // Beginning of Current Location
+        Loc    loc_;        // current location
+        Loc    loc_prev_;   // previous location
+        Loc    loc_scan_;   // beginning of current location
         size_t pos_ = 0;
 
         std::vector<Token> tokens_;

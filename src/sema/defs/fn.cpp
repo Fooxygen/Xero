@@ -58,13 +58,13 @@ namespace sema {
                 if (param) {
                     // Reference Param
                     if (dynamic_cast<ReferenceType*>(param)) {
-                        // pass: param i32&, arg i32&
+                        // Pass: param i32&, arg i32&
                         if (arg != param) throw 0;
                     }
                     
-                    // NonReference Param
+                    // Non-Reference Param
                     else {
-                        // pass: param i32, arg i32&
+                        // Pass: param i32, arg i32&
                         //       param f64, arg i32
                         if (arg->ReferenceUnwrap() != param && !arg->casts().contains(param)) throw 0;
                     }

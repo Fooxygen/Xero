@@ -167,7 +167,7 @@ namespace xcompiler {
             return nullptr;
         }
 
-        // NonReference Type
+        // Non-Reference Type
         // x: i32 = y;
         else {
             if (node.value_) {
@@ -400,7 +400,7 @@ namespace xcompiler {
                     args.emplace_back(addr, params_fix[i]);
                 }
 
-                // NonReference Type
+                // Non-Reference Type
                 else {
                     args.emplace_back(Exec(*expr), expr->resolved_type_->ReferenceUnwrap());
                 }
@@ -484,7 +484,7 @@ namespace xcompiler {
 
         // Fn
         auto fntype = llvm::FunctionType::get(
-            return_type_llvm, params_type, false    // No variable params
+            return_type_llvm, params_type, false    // non-variable params
         );
         auto fn = llvm::Function::Create(
             fntype,
@@ -521,7 +521,7 @@ namespace xcompiler {
         });
 
         // Return Stmt
-        // Each block requires a terminal symbol
+        // Each block requires a terminal symbol,
         // including return value, the unreachable stmt...
         BlockTermCreate([&]() {
             if (return_type_llvm->isVoidTy())

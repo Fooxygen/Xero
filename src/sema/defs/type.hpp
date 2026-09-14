@@ -55,7 +55,7 @@ namespace sema {
 
     class BasicType      : public Type {
     private:
-        size_t  params_cnt_ = 0;     // Number of Type Parameters
+        size_t  params_cnt_ = 0;     // number of type parameters
         FnTable method_table_;
 
     public:
