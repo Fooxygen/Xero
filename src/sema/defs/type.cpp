@@ -122,6 +122,7 @@ namespace sema {
         // Clear
         for (auto& [type_name, type] : table_) {
             type->casts().clear();
+            type->casts_fnsign().clear();
             type->casts().emplace(type);
         }
 

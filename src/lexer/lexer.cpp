@@ -27,7 +27,7 @@ namespace lexer {
             auto next = next_opt.value();
             if (next.type_ != TT::Undefined) {
                 auto& token = tokens_.emplace_back(next);
-                if (isPrint && token.type_ != TT::Undefined) token.MetaPrint();
+                if (isPrint) token.MetaPrint();
             }
         }
     }

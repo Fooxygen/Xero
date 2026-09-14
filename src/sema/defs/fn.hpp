@@ -62,7 +62,6 @@ namespace sema {
         const std::string           name()            const { return name_; }
 
     public:
-        void ReceiveTypeSet(Type* type)       { receive_type_ = type; }
         void NameSet(const std::string& name) { name_ = name; }
 
         std::string ParamsPrint() const;

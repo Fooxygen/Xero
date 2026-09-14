@@ -51,9 +51,10 @@ namespace xcompiler {
     public:
         static void         Init();
         static TypeImpl*    Set(TypeImpl&& type_impl) {
-            auto type    = type_impl.link_type();
-            table_[type] = std::make_unique<TypeImpl>(std::move(type_impl));
-            auto impl    = table_[type].get();
+            auto type = type_impl.link_type();
+            auto impl = table_.emplace(
+                type, std::make_unique<TypeImpl>(std::move(type_impl))
+            ).first->second.get();
             table_reverse_[impl] = type;
             return impl;
         }
@@ -74,7 +75,7 @@ namespace xcompiler {
                     "undefined type with implementation '{}'", type_impl->name()
                 ));
             }
-            return table_reverse_.find(type_impl)->second;
+            return it->second;
         }
     
         static llvm::Value* Cast(IRGen& gen, llvm::Value* val, sema::Type* from, sema::Type* to);

@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <format>
 
 #include "common/log.hpp"
 
@@ -21,8 +22,9 @@ public:
             if (first_byte < 0xf8) return 4;
             throw 0;
         } catch (...) {
-            LogErr(log_module, "invalid");
-            throw;
+            throw LogErr(log_module, std::format(
+                "invalid utf8 leading byte 0x{:02x}", first_byte
+            ));
         }
     }
 
@@ -56,8 +58,9 @@ public:
             }
             throw 0;
         } catch(...) {
-            LogErr(log_module, "invalid");
-            throw;
+            throw LogErr(log_module, std::format(
+                "invalid unicode codepoint U+{:X}", codepoint
+            ));
         }
     }
 
@@ -79,8 +82,7 @@ public:
             }
 
         } catch(...) {
-            LogErr(log_module, "invalid utf8 first char");
-            throw;
+            throw LogErr(log_module, "invalid utf8 sequence");
         }
     }
 };

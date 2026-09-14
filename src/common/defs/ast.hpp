@@ -116,7 +116,7 @@ public:
     sema::Type* resolved_type_ = nullptr;
 
 public:
-    virtual const std::string TypeName() const {
+    virtual std::string TypeName() const {
         return "Undefined";
     }
     void TypePrint() const {
@@ -163,7 +163,7 @@ public:
         type_ = AstType::Exprs;
     }
 
-    const std::string TypeName() const {
+    std::string TypeName() const override {
         return "Exprs";
     }
 
@@ -197,7 +197,7 @@ public:
         type_ = AstType::BlockExpr;
     }
 
-    const std::string TypeName() const {
+    std::string TypeName() const override {
         return "BlockExpr";
     }
 
@@ -226,7 +226,7 @@ public:
         type_ = AstType::IdExpr;
     }
 
-    const std::string TypeName() const {
+    std::string TypeName() const override {
         return "IdExpr";
     }
 
@@ -251,7 +251,7 @@ public:
         type_ = AstType::RefExpr;
     }
 
-    const std::string TypeName() const {
+    std::string TypeName() const override {
         return "RefExpr";
     }
 
@@ -287,7 +287,7 @@ public:
         type_ = AstType::TypeExpr;
     }
 
-    const std::string TypeName() const {
+    std::string TypeName() const override {
         return "TypeExpr";
     }
 
@@ -335,7 +335,7 @@ public:
         type_ = AstType::DeclExpr;
     }
 
-    const std::string TypeName() const {
+    std::string TypeName() const override {
         return "DeclExpr";
     }
 
@@ -378,7 +378,7 @@ public:
         type_ = AstType::OperExpr;
     }
 
-    const std::string TypeName() const {
+    std::string TypeName() const override {
         return "OperExpr";
     }
     
@@ -389,7 +389,7 @@ public:
             std::cerr << COLOR_DEFAULT << std::endl;
         }
 
-        if (rexpr_) lexpr_->Print(prefix, "lexpr");
+        if (lexpr_) lexpr_->Print(prefix, "lexpr");
         if (rexpr_) rexpr_->Print(prefix, "rexpr");
     }
 
@@ -429,7 +429,7 @@ public:
         type_ = AstType::RangeExpr;
     }
 
-    const std::string TypeName() const {
+    std::string TypeName() const override {
         return "RangeExpr";
     }
 
@@ -473,7 +473,7 @@ public:
         type_ = AstType::ArrayExpr;
     }
 
-    const std::string TypeName() const {
+    std::string TypeName() const override {
         return "ArrayExpr";
     }
 
@@ -510,7 +510,7 @@ public:
         type_ = AstType::FnCallExpr;
     }
 
-    const std::string TypeName() const {
+    std::string TypeName() const override {
         return "FnCallExpr";
     }
 
@@ -552,7 +552,7 @@ public:
         type_ = AstType::MethodCallExpr;
     }
 
-    const std::string TypeName() const {
+    std::string TypeName() const override {
         return "MethodCallExpr";
     }
 
@@ -600,7 +600,7 @@ public:
         type_ = AstType::FnExpr;
     }
 
-    const std::string TypeName() const {
+    std::string TypeName() const override {
         return "FnExpr";
     }
 
@@ -653,7 +653,7 @@ public:
         type_ = AstType::NumConst;
     }
 
-    const std::string TypeName() const {
+    std::string TypeName() const override {
         return "NumConst";
     }
 
@@ -681,7 +681,7 @@ public:
         type_ = AstType::BoolConst;
     }
     
-    const std::string TypeName() const {
+    std::string TypeName() const override {
         return "BoolConst";
     }
 
@@ -712,7 +712,7 @@ public:
         type_ = AstType::CharConst;
     }
 
-    const std::string TypeName() const {
+    std::string TypeName() const override {
         return "CharConst";
     }
 
@@ -741,7 +741,7 @@ public:
         type_ = AstType::StringConst;
     }
 
-    const std::string TypeName() const {
+    std::string TypeName() const override {
         return "StringConst";
     }
 
@@ -773,7 +773,7 @@ public:
         type_ = AstType::ExprStmt;
     }
 
-    const std::string TypeName() const {
+    std::string TypeName() const override {
         return "ExprStmt";
     }
 
@@ -806,7 +806,7 @@ public:
         type_ = AstType::AssignStmt;
     }
 
-    const std::string TypeName() const {
+    std::string TypeName() const override {
         return "AssignStmt";
     }
 
@@ -844,7 +844,7 @@ public:
         type_ = AstType::CondStmt;
     }
 
-    const std::string TypeName() const {
+    std::string TypeName() const override {
         return "CondStmt";
     }
 
@@ -876,7 +876,7 @@ public:
         type_ = AstType::LoopSignalStmt;
     }
 
-    const std::string TypeName() const {
+    std::string TypeName() const override {
         return "LoopSignalStmt";
     }
 
@@ -909,7 +909,7 @@ public:
         type_ = AstType::ReturnSignalStmt;
     }
 
-    const std::string TypeName() const {
+    std::string TypeName() const override {
         return "ReturnSignalStmt";
     }
 
@@ -945,7 +945,7 @@ public:
         type_ = AstType::ForStmt;
     }
 
-    const std::string TypeName() const {
+    std::string TypeName() const override {
         return "ForStmt";
     }
 
@@ -982,7 +982,7 @@ public:
         type_ = AstType::WhileStmt;
     }
 
-    const std::string TypeName() const {
+    std::string TypeName() const override {
         return "WhileStmt";
     }
 
@@ -1013,7 +1013,7 @@ public:
     }
 
 public:
-    const std::string TypeName() const {
+    std::string TypeName() const override {
         return "Program";
     }
 

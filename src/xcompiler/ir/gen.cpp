@@ -636,6 +636,10 @@ namespace xcompiler {
     }
         
     llvm::Value* IRGen::Exec(LoopSignalStmt& node) {
+        if (state_.loop_nextblocks_.empty()) {
+            throw LogErr(LogModule::Xcompiler, "NOTHING");
+        }
+
         auto& nextblock = state_.loop_nextblocks_.back();
         llvm_builder().CreateBr(
             node.signal_ == LoopSignal::Continue ?
@@ -669,8 +673,6 @@ namespace xcompiler {
             auto right_val      = llvm_builder().CreateExtractValue(data, 1);
             auto step_val       = llvm_builder().CreateExtractValue(data, 2);
             auto isClosed_val   = llvm_builder().CreateExtractValue(data, 3);
-
-            std::vector<sema::Type*> cmp_args_type = { iter_type, iter_type };
 
             auto cmp = [&](const std::string& name, llvm::Value* a, llvm::Value* b) {
                 return iter_type_impl->MethodCall(*this, name, {
