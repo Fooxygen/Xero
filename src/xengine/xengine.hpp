@@ -19,7 +19,7 @@ namespace xengine {
 
         // Exec
 
-        Obj Exec(BlockExpr& node, std::function<void()> OnScopeReady = nullptr);
+        Obj Exec(BlockExpr& node, std::function<void()> on_scope_ready = nullptr);
         Obj Exec(IdExpr& node);
         Obj Exec(DeclExpr& node);
         Obj Exec(OperExpr& node);

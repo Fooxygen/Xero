@@ -118,9 +118,7 @@ public:
 public:
     // Type
 
-    virtual std::string TypeName() const {
-        return "Undefined";
-    }
+    virtual std::string TypeName()  const = 0;
     void                TypePrint() const {
         std::cerr << TypeName();
     }

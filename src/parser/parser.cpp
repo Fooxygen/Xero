@@ -14,9 +14,7 @@ namespace parser {
         scopes_brace_.clear();
 
         // Token Rewrite
-        for (size_t i = 0; i < tokens_.size(); i++) {
-            TokenRewrite(tokens_[i]);
-        }
+        for (auto& t : tokens_) TokenRewrite(t);
 
         // Symbols
         for (size_t i = 0; i < tokens_.size(); i++) {

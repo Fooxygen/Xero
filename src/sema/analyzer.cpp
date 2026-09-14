@@ -9,11 +9,11 @@ namespace sema {
 
     // Expr
 
-    void Analyzer::Exec(BlockExpr& node, std::function<void()> OnScopeReady) {
+    void Analyzer::Exec(BlockExpr& node, std::function<void()> on_scope_ready) {
         node.resolved_type_ = TypeTable::Lookup("none");
 
         var_table_.ScopePush();
-        if (OnScopeReady) OnScopeReady();
+        if (on_scope_ready) on_scope_ready();
 
         try {
             for (auto& child : node.children_) Exec(*child);
@@ -199,11 +199,23 @@ namespace sema {
 
     void Analyzer::Exec(ArrayExpr& node) {
         auto& exprs = node.elems_->exprs_;
-        for (auto& e : exprs) Exec(*e);
-        if (exprs.empty())
-            node.elem_type_ = nullptr;
-        else
-            node.elem_type_ = exprs[0]->resolved_type_->ReferenceUnwrap();
+        
+        // Elem Type
+        node.elem_type_ = nullptr;
+        for (size_t i = 0; i < exprs.size(); i++) {
+            Exec(*exprs[i]);
+
+            if (i == 0) {
+                node.elem_type_ = exprs[i]->resolved_type_->ReferenceUnwrap();
+            }
+            else if (exprs[i]->resolved_type_->ReferenceUnwrap() != node.elem_type_) {
+                throw LogErr(LogModule::Sema, std::format(
+                    "cannot make type '{}' compatible with '{}'",
+                    exprs[i]->resolved_type_->name(),
+                    node.elem_type_->name()
+                ), exprs[i]->loc_);
+            }
+        }
 
         // Empty ArrayExpr
         std::vector<Type*> params = {};

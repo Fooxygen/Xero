@@ -13,9 +13,9 @@ namespace xengine {
     
     // Expr
 
-    Obj Xengine::Exec(BlockExpr& node, std::function<void()> OnScopeReady) {
+    Obj Xengine::Exec(BlockExpr& node, std::function<void()> on_scope_ready) {
         env_.ScopePush();
-        if (OnScopeReady) OnScopeReady();
+        if (on_scope_ready) on_scope_ready();
 
         try {
             for (auto& child : node.children_) Exec(*child);

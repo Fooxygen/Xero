@@ -122,9 +122,9 @@ namespace xcompiler {
 
     // Expr
 
-    llvm::Value* IRGen::Exec(BlockExpr& node, std::function<void()> OnScopeReady) {
+    llvm::Value* IRGen::Exec(BlockExpr& node, std::function<void()> on_scope_ready) {
         var_table_.ScopePush();
-        if (OnScopeReady) OnScopeReady();
+        if (on_scope_ready) on_scope_ready();
 
         try {
             for (auto& child : node.children_) {
@@ -637,7 +637,7 @@ namespace xcompiler {
         
     llvm::Value* IRGen::Exec(LoopSignalStmt& node) {
         if (state_.loop_nextblocks_.empty()) {
-            throw LogErr(LogModule::Xcompiler, "NOTHING");
+            throw LogErr(LogModule::Xcompiler, "'break' or 'continue' outside of loop", node.loc_);
         }
 
         auto& nextblock = state_.loop_nextblocks_.back();

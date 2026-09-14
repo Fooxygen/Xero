@@ -37,8 +37,8 @@ namespace sema {
         Type(std::string name, Using type_using)
         :   name_(name), type_using_(type_using) {}
         
-        std::string      name()       const { return name_; }
-        Using            type_using() const { return type_using_; }
+        const std::string& name()       const { return name_; }
+        Using              type_using() const { return type_using_; }
 
         std::set<Type*>& casts() { return casts_; }
         std::unordered_map<Type*, const FnSign*>& casts_fnsign() { return casts_fnsign_; }
@@ -136,7 +136,8 @@ namespace sema {
             if (ts.size() == 1) return *ts.begin();
             
             // Search Cache
-            if (common_cache_.contains(ts)) return common_cache_[ts];
+            auto it = common_cache_.find(ts);
+            if (it != common_cache_.end()) return it->second;
 
             // Get Common
             std::set<Type*> common;

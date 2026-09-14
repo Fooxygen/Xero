@@ -30,8 +30,8 @@ namespace xcompiler {
         TypeImpl(sema::Type* link_type)
         :   link_type_(link_type), name_(link_type->name()) {}
 
-        sema::Type* link_type() const { return link_type_; }
-        std::string name()      const { return name_; }
+        sema::Type*        link_type() const { return link_type_; }
+        const std::string& name()      const { return name_; }
 
     public:
         void    MethodAdd(const std::string& name, NativeFnImpl::Impl impl, const sema::FnSign& sign);
