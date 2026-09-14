@@ -98,20 +98,20 @@ namespace parser {
             return std::make_unique<BlockExpr>(children);
         };
         
-        static auto Pack2Exprs  = [](SS& symbols, size_t pos)
+        static auto Pack2Exprs     = [](Parser& parser, size_t pos)
             -> std::unique_ptr<Exprs>
         {
-            if (Rule::isOptPatternEmpty(pos)) {
+            if (parser.isOptPatternEmpty(pos)) {
                 std::vector<std::unique_ptr<Expr>> empty;
                 return std::make_unique<Exprs>(empty);
             }
 
-            size_t mp = Rule::move_positions_[pos - 1];
-            if (symbols[symbols.size() - mp].type_astnode() == AT::Exprs)
-                return Rule::Move<Exprs>(symbols, pos);
+            size_t mp = parser.move_positions_[pos - 1];
+            if (parser.symbols_[parser.symbols_.size() - mp].type_astnode() == AT::Exprs)
+                return parser.Move<Exprs>(pos);
 
             std::vector<std::unique_ptr<Expr>> exprs;
-            exprs.emplace_back(Rule::Move<Expr>(symbols, pos));
+            exprs.emplace_back(parser.Move<Expr>(pos));
             return std::make_unique<Exprs>(exprs);
         };
 
@@ -127,10 +127,10 @@ namespace parser {
                     TT::Comma,
                     AT::Expr
                 },
-                [](SS& symbols, auto) -> ASTNODE {
+                [this](auto) -> ASTNODE {
                     std::vector<std::unique_ptr<Expr>> args;
-                    args.emplace_back(Rule::Move<Expr>(symbols, 1));
-                    args.emplace_back(Rule::Move<Expr>(symbols, 3));
+                    args.emplace_back(Move<Expr>(1));
+                    args.emplace_back(Move<Expr>(3));
                     return std::make_unique<Exprs>(args);
                 },
                 {}, {}, {},
@@ -148,9 +148,9 @@ namespace parser {
                     TT::Comma,
                     AT::Expr
                 },
-                [](SS& symbols, auto) -> ASTNODE {
-                    auto exprs = Rule::Move<Exprs>(symbols, 1);
-                    auto expr  = Rule::Move<Expr>(symbols, 3);
+                [this](auto) -> ASTNODE {
+                    auto exprs = Move<Exprs>(1);
+                    auto expr  = Move<Expr>(3);
                     exprs->exprs_.emplace_back(std::move(expr));
                     return exprs;
                 },
@@ -171,9 +171,9 @@ namespace parser {
                     AT::IdExpr,
                     TT::Amper
                 },
-                [](SS& symbols, auto) {
+                [this](auto) {
                     return std::make_unique<TypeExpr>(
-                        Rule::Move<IdExpr>(symbols, 1)->name_,
+                        Move<IdExpr>(1)->name_,
                         nullptr,
                         true
                     );
@@ -189,10 +189,10 @@ namespace parser {
                     SymbolPattern::Opt({ AT::Expr, AT::Exprs }),
                     TT::REBkt
                 },
-                [](SS& symbols, auto) {
+                [this](auto) {
                     return std::make_unique<TypeExpr>(
-                        Rule::Move<IdExpr>(symbols, 1)->name_,
-                        Pack2Exprs(symbols, 3),
+                        Move<IdExpr>(1)->name_,
+                        Pack2Exprs(*this, 3),
                         false
                     );
                 }
@@ -208,10 +208,10 @@ namespace parser {
                     TT::REBkt,
                     TT::Amper
                 },
-                [](SS& symbols, auto) {
+                [this](auto) {
                     return std::make_unique<TypeExpr>(
-                        Rule::Move<IdExpr>(symbols, 1)->name_,
-                        Pack2Exprs(symbols, 3),
+                        Move<IdExpr>(1)->name_,
+                        Pack2Exprs(*this, 3),
                         true
                     );
                 }
@@ -225,11 +225,11 @@ namespace parser {
                     TT::Colon,
                     AT::IdExpr
                 },
-                [](SS& symbols, auto) {
+                [this](auto) {
                     return std::make_unique<DeclExpr>(
-                        Rule::Move<IdExpr>(symbols, 1)->name_,
+                        Move<IdExpr>(1)->name_,
                         std::make_unique<TypeExpr>(
-                            Rule::Move<IdExpr>(symbols, 3)->name_,
+                            Move<IdExpr>(3)->name_,
                             nullptr,
                             false
                         ),
@@ -248,10 +248,10 @@ namespace parser {
                     TT::Colon,
                     AT::TypeExpr
                 },
-                [](SS& symbols, auto) {
+                [this](auto) {
                     return std::make_unique<DeclExpr>(
-                        Rule::Move<IdExpr>(symbols, 1)->name_,
-                        Rule::Move<TypeExpr>(symbols, 3),
+                        Move<IdExpr>(1)->name_,
+                        Move<TypeExpr>(3),
                         nullptr
                     );
                 }
@@ -265,12 +265,12 @@ namespace parser {
                     TT::Assign,
                     AT::Expr
                 },
-                [](SS& symbols, auto) {
-                    auto decl = Rule::Move<DeclExpr>(symbols, 1);
+                [this](auto) {
+                    auto decl = Move<DeclExpr>(1);
                     return std::make_unique<DeclExpr>(
                         decl->id_,
                         std::move(decl->bind_type_) ,
-                        Rule::Move<Expr>(symbols, 3)
+                        Move<Expr>(3)
                     );
                 },
                 {}, {}, {},
@@ -292,10 +292,10 @@ namespace parser {
                     AT::Expr,
                     TT::Semicolon
                 },
-                [](SS& symbols, auto) {
-                    auto token  = Rule::GetTokenType(symbols, 2);
-                    auto target = Rule::Move<Expr>(symbols, 1);
-                    auto value  = Rule::Move<Expr>(symbols, 3);
+                [this](auto) {
+                    auto token  = PatternTokenTypeGet(2);
+                    auto target = Move<Expr>(1);
+                    auto value  = Move<Expr>(3);
 
                     if (token == TT::Assign)
                         return std::make_unique<AssignStmt>(std::move(target), std::move(value));
@@ -326,11 +326,11 @@ namespace parser {
                     SymbolPattern::Opt({ AT::Expr, AT::Exprs}),
                     TT::RParen
                 },
-                [](SS& symbols, auto) {
+                [this](auto) {
                     return std::make_unique<MethodCallExpr>(
-                        Rule::Move<Expr>(symbols, 1),
-                        Rule::Move<IdExpr>(symbols, 3),
-                        Pack2Exprs(symbols, 5)
+                        Move<Expr>(1),
+                        Move<IdExpr>(3),
+                        Pack2Exprs(*this, 5)
                     );
                 }
             );
@@ -345,10 +345,10 @@ namespace parser {
                     SymbolPattern::Opt({ AT::Expr, AT::Exprs}),
                     TT::RParen
                 },
-                [](SS& symbols, auto) {
+                [this](auto) {
                     return std::make_unique<FnCallExpr>(
-                        Rule::Move<IdExpr>(symbols, 1),
-                        Pack2Exprs(symbols, 3)
+                        Move<IdExpr>(1),
+                        Pack2Exprs(*this, 3)
                     );
                 },
                 PATS_INIT{ TT::Fn }
@@ -368,29 +368,29 @@ namespace parser {
                     SymbolPattern({ AT::IdExpr, AT::TypeExpr }),
                     AT::BlockExpr
                 },
-                [](SS& symbols, auto) -> ASTNODE {
+                [this](auto) -> ASTNODE {
                     std::string name = "";
-                    if (!Rule::isOptPatternEmpty(2))
-                        name = Rule::Move<IdExpr>(symbols, 2)->name_;
+                    if (!isOptPatternEmpty(2))
+                        name = Move<IdExpr>(2)->name_;
 
-                    if (Rule::is(symbols, 7, AT::IdExpr)) {
+                    if (isPattern(7, AT::IdExpr)) {
                         return std::make_unique<FnExpr>(
                             name,
                             std::make_unique<TypeExpr>(
-                                Rule::Move<IdExpr>(symbols, 7)->name_,
+                                Move<IdExpr>(7)->name_,
                                 nullptr,
                                 false
                             ),
-                            Pack2Exprs(symbols, 4),
-                            Rule::Move<BlockExpr>(symbols, 8)
+                            Pack2Exprs(*this, 4),
+                            Move<BlockExpr>(8)
                         );
                     }
-                    if (Rule::is(symbols, 7, AT::TypeExpr)) {
+                    if (isPattern(7, AT::TypeExpr)) {
                         return std::make_unique<FnExpr>(
                             name,
-                            Rule::Move<TypeExpr>(symbols, 7),
-                            Pack2Exprs(symbols, 4),
-                            Rule::Move<BlockExpr>(symbols, 8)
+                            Move<TypeExpr>(7),
+                            Pack2Exprs(*this, 4),
+                            Move<BlockExpr>(8)
                         );
                     }
 
@@ -409,15 +409,15 @@ namespace parser {
                     TT::RParen,
                     AT::BlockExpr
                 },
-                [](SS& symbols, auto) {
+                [this](auto) {
                     std::string name = "";
-                    if (!Rule::isOptPatternEmpty(2)) name = Rule::Move<IdExpr>(symbols, 2)->name_;
+                    if (!isOptPatternEmpty(2)) name = Move<IdExpr>(2)->name_;
 
                     return std::make_unique<FnExpr>(
                         name,
                         nullptr,
-                        Pack2Exprs(symbols, 4),
-                        Rule::Move<BlockExpr>(symbols, 6)
+                        Pack2Exprs(*this, 4),
+                        Move<BlockExpr>(6)
                     );
                 }
             );
@@ -430,9 +430,9 @@ namespace parser {
                     SymbolPattern::Opt(AT::Expr),
                     TT::Semicolon
                 },
-                [](SS& symbols, auto) {
+                [this](auto) {
                     return std::make_unique<ReturnSignalStmt>(
-                        !Rule::isOptPatternEmpty(2) ? Rule::Move<Expr>(symbols, 2) : nullptr
+                        !isOptPatternEmpty(2) ? Move<Expr>(2) : nullptr
                     );
                 }
             );
@@ -447,9 +447,9 @@ namespace parser {
                     TT::Amper,
                     AT::Expr
                 },
-                [](std::vector<Symbol>& symbols, auto) -> ASTNODE {
+                [this](auto) -> ASTNODE {
                     return std::make_unique<RefExpr>(
-                        Rule::Move<Expr>(symbols, 2)
+                        Move<Expr>(2)
                     );
                 }
             );
@@ -462,8 +462,8 @@ namespace parser {
                     AT::Expr,
                     TT::RParen,
                 },
-                [](std::vector<Symbol>& symbols, auto) -> ASTNODE {
-                    return Rule::Move<Expr>(symbols, 2);
+                [this](auto) -> ASTNODE {
+                    return Move<Expr>(2);
                 },
                 PATS_INIT{ TT::If, TT::Elif, TT::For, TT::While },
                 {},
@@ -482,11 +482,11 @@ namespace parser {
                     AT::Expr,
                     TT::RBkt
                 },
-                [](SS& symbols, auto) {
+                [this](auto) {
                     return std::make_unique<OperExpr>(
                         OT::Pick,
-                        Rule::Move<Expr>(symbols, 1),
-                        Rule::Move<Expr>(symbols, 3)
+                        Move<Expr>(1),
+                        Move<Expr>(3)
                     );
                 }
             );
@@ -505,14 +505,14 @@ namespace parser {
                     }),
                     AT::Expr
                 },
-                [](SS& symbols, TT token_next) -> ASTNODE {
-                    auto tokentype = Rule::GetTokenType(symbols, 2);
+                [this](TT token_next) -> ASTNODE {
+                    auto tokentype = PatternTokenTypeGet(2);
                     if (isOperPriority(token_next, tokentype)) return nullptr;
 
                     return std::make_unique<OperExpr>(
                         TokenType2OperType(tokentype, false),
-                        Rule::Move<Expr>(symbols, 1),
-                        Rule::Move<Expr>(symbols, 3)
+                        Move<Expr>(1),
+                        Move<Expr>(3)
                     );
                 }
             );
@@ -525,10 +525,10 @@ namespace parser {
                     SymbolPattern({ TT::Minus, TT::Not }),
                     AT::Expr
                 },
-                [](SS& symbols, auto) {
+                [this](auto) {
                     return std::make_unique<OperExpr>(
-                        TokenType2OperType(Rule::GetTokenType(symbols, 1), true),
-                        Rule::Move<Expr>(symbols, 2),
+                        TokenType2OperType(PatternTokenTypeGet(1), true),
+                        Move<Expr>(2),
                         nullptr
                     );
                 },
@@ -546,9 +546,9 @@ namespace parser {
                     SymbolPattern::Opt({ AT::Expr, AT::Exprs}),
                     TT::RBkt
                 },
-                [](SS& symbols, auto) {
+                [this](auto) {
                     return std::make_unique<ArrayExpr>(
-                        Pack2Exprs(symbols, 2)
+                        Pack2Exprs(*this, 2)
                     );
                 }
             );
@@ -566,11 +566,11 @@ namespace parser {
                     TT::DotDot,
                     AT::Expr,
                 },
-                [](SS& symbols, auto) -> ASTNODE {                    
+                [this](auto) -> ASTNODE {                    
                     return std::make_unique<RangeExpr>(
-                        Rule::Move<Expr>(symbols, 1),
-                        Rule::Move<Expr>(symbols, 5),
-                        Rule::Move<Expr>(symbols, 3),
+                        Move<Expr>(1),
+                        Move<Expr>(5),
+                        Move<Expr>(3),
                         false
                     );
                 },
@@ -594,11 +594,11 @@ namespace parser {
                     TT::DotDotEq,
                     AT::Expr,
                 },
-                [](SS& symbols, auto) -> ASTNODE {
+                [this](auto) -> ASTNODE {
                     return std::make_unique<RangeExpr>(
-                        Rule::Move<Expr>(symbols, 1),
-                        Rule::Move<Expr>(symbols, 5),
-                        Rule::Move<Expr>(symbols, 3),
+                        Move<Expr>(1),
+                        Move<Expr>(5),
+                        Move<Expr>(3),
                         true
                     );
                 },
@@ -621,10 +621,10 @@ namespace parser {
                     TT::DotDot,
                     AT::Expr,
                 },
-                [](SS& symbols, auto) -> ASTNODE {
+                [this](auto) -> ASTNODE {
                     return std::make_unique<RangeExpr>(
-                        Rule::Move<Expr>(symbols, 1),
-                        Rule::Move<Expr>(symbols, 3),
+                        Move<Expr>(1),
+                        Move<Expr>(3),
                         nullptr,
                         false
                     );
@@ -647,10 +647,10 @@ namespace parser {
                     TT::DotDotEq,
                     AT::Expr,
                 },
-                [](SS& symbols, auto) -> ASTNODE {
+                [this](auto) -> ASTNODE {
                     return std::make_unique<RangeExpr>(
-                        Rule::Move<Expr>(symbols, 1),
-                        Rule::Move<Expr>(symbols, 3),
+                        Move<Expr>(1),
+                        Move<Expr>(3),
                         nullptr,
                         true
                     );
@@ -678,10 +678,10 @@ namespace parser {
                     TT::RParen,
                     { AT::Stmt, AT::BlockExpr }
                 },
-                [](SS& symbols, auto) {
+                [this](auto) {
                     return std::make_unique<CondStmt>(
-                        Rule::Move<Expr>(symbols, 3),
-                        Pack2BlockExpr(Rule::Move<AstNode>(symbols, 5)),
+                        Move<Expr>(3),
+                        Pack2BlockExpr(Move<AstNode>(5)),
                         nullptr
                     );
                 },
@@ -704,13 +704,13 @@ namespace parser {
                     TT::RParen,
                     { AT::Stmt, AT::BlockExpr }
                 },
-                [](SS& symbols, auto) {
+                [this](auto) {
                     return std::make_unique<CondStmt>(
-                        Rule::Move<Expr>(symbols, 3),
-                        Pack2BlockExpr(Rule::Move<AstNode>(symbols, 5)),
+                        Move<Expr>(3),
+                        Pack2BlockExpr(Move<AstNode>(5)),
                         std::make_unique<CondStmt>(
-                            Rule::Move<Expr>(symbols, 8),
-                            Pack2BlockExpr(Rule::Move<AstNode>(symbols, 10)),
+                            Move<Expr>(8),
+                            Pack2BlockExpr(Move<AstNode>(10)),
                             nullptr
                         )
                     );
@@ -729,13 +729,13 @@ namespace parser {
                     TT::Else,
                     { AT::Stmt, AT::BlockExpr }
                 },
-                [](SS& symbols, auto) {
+                [this](auto) {
                     return std::make_unique<CondStmt>(
-                        Rule::Move<Expr>(symbols, 3),
-                        Pack2BlockExpr(Rule::Move<AstNode>(symbols, 5)),
+                        Move<Expr>(3),
+                        Pack2BlockExpr(Move<AstNode>(5)),
                         std::make_unique<CondStmt>(
                             nullptr,
-                            Pack2BlockExpr(Rule::Move<AstNode>(symbols, 7)),
+                            Pack2BlockExpr(Move<AstNode>(7)),
                             nullptr
                         )
                     );
@@ -753,15 +753,15 @@ namespace parser {
                     TT::RParen,
                     { AT::Stmt, AT::BlockExpr }
                 },
-                [](SS& symbols, auto) {
-                    auto stmt = Rule::Move<CondStmt>(symbols, 1);
+                [this](auto) {
+                    auto stmt = Move<CondStmt>(1);
 
                     CondStmt* tail = stmt.get();
                     while (tail->next_) tail = tail->next_.get();
 
                     tail->next_ = std::make_unique<CondStmt>(
-                        Rule::Move<Expr>(symbols, 4),
-                        Pack2BlockExpr(Rule::Move<AstNode>(symbols, 6)),
+                        Move<Expr>(4),
+                        Pack2BlockExpr(Move<AstNode>(6)),
                         nullptr
                     );
                     return stmt;
@@ -777,15 +777,15 @@ namespace parser {
                     TT::Else,
                     { AT::Stmt, AT::BlockExpr }
                 },
-                [](SS& symbols, auto) {
-                    auto stmt = Rule::Move<CondStmt>(symbols, 1);
+                [this](auto) {
+                    auto stmt = Move<CondStmt>(1);
 
                     CondStmt* tail = stmt.get();
                     while (tail->next_) tail = tail->next_.get();
 
                     tail->next_ = std::make_unique<CondStmt>(
                         nullptr,
-                        Pack2BlockExpr(Rule::Move<AstNode>(symbols, 3)),
+                        Pack2BlockExpr(Move<AstNode>(3)),
                         nullptr
                     );
                     return stmt;
@@ -802,7 +802,7 @@ namespace parser {
                     TT::Break,
                     TT::Semicolon
                 },
-                [](auto&, auto) {
+                [](auto) {
                     return std::make_unique<LoopSignalStmt>(
                         LoopSignal::Break
                     );
@@ -816,7 +816,7 @@ namespace parser {
                     TT::Continue,
                     TT::Semicolon
                 },
-                [](auto&, auto) {
+                [](auto) {
                     return std::make_unique<LoopSignalStmt>(
                         LoopSignal::Continue
                     );
@@ -835,11 +835,11 @@ namespace parser {
                     TT::RParen,
                     { AT::Stmt, AT::BlockExpr }
                 },
-                [](SS& symbols, auto) {
+                [this](auto) {
                     return std::make_unique<ForStmt>(
-                        Rule::Move<IdExpr>(symbols, 3),
-                        Rule::Move<Expr>(symbols, 5),
-                        Pack2BlockExpr(Rule::Move<AstNode>(symbols, 7))
+                        Move<IdExpr>(3),
+                        Move<Expr>(5),
+                        Pack2BlockExpr(Move<AstNode>(7))
                     );
                 }
             );
@@ -854,10 +854,10 @@ namespace parser {
                     TT::RParen,
                     { AT::Stmt, AT::BlockExpr }
                 },
-                [](SS& symbols, auto) {
+                [this](auto) {
                     return std::make_unique<WhileStmt>(
-                        Rule::Move<Expr>(symbols, 3),
-                        Pack2BlockExpr(Rule::Move<AstNode>(symbols, 5))
+                        Move<Expr>(3),
+                        Pack2BlockExpr(Move<AstNode>(5))
                     );
                 }
             );
@@ -872,9 +872,9 @@ namespace parser {
                     AT::Expr,
                     TT::Semicolon
                 },
-                [](SS& symbols, auto) {
+                [this](auto) {
                     return std::make_unique<ExprStmt>(
-                        Rule::Move<Expr>(symbols, 1)
+                        Move<Expr>(1)
                     );
                 }
             );

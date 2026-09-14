@@ -37,7 +37,7 @@ namespace parser {
 
                     // Match
                     size_t len = 0;
-                    if (!rule.PatternsMatch(symbols_, token_next, len))
+                    if (!rule.PatternsMatch(symbols_, token_next, move_positions_, len))
                         continue;
                 
                     // Execute
@@ -215,7 +215,7 @@ namespace parser {
         auto loc = symbols_[symbols_.size() - reduce_len].loc();
 
         // Result
-        auto target = rule.reduce_callback()(symbols_, token_next);
+        auto target = rule.reduce_callback()(token_next);
         if (!target) return false;
 
         // Remove

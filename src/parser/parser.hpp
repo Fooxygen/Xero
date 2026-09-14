@@ -127,15 +127,7 @@ namespace parser {
     // [TokenType, { TokenType, TokenType }, AstType, ...] -> AstType
     class Rule {
     public:
-        using ReduceCallback = std::function<
-            ASTNODE(SS& symbols, TT token_next)
-        >;
-
-        // for Move():
-        // while rule = AB[C]DE
-        //     if pats = ABCDE, mps = [5, 4, 3, 2, 1]
-        //     if pats = _ABDE, mps = [4, 3, 0, 2, 1]
-        static inline std::vector<size_t> move_positions_;
+        using ReduceCallback = std::function<ASTNODE(TT token_next)>;
 
     private:
         PATS           patterns_;
@@ -145,12 +137,7 @@ namespace parser {
         TTS            suffix_allow_;      // Delay reduction when miss symbol
         ReduceCallback reduce_callback_;
 
-        static void PatternIndexCheck(size_t pos) {
-            if (pos < 1) {
-                throw LogErr(LogModule::Parser, "invalid rule pattern index");
-            }
-        }
-
+    private:
         bool isNeedDelayPrefix(const SS& symbols, size_t reduce_len) {
             if (prefix_delay_.empty() && prefix_allow_.empty()) return false;
             if (symbols.size() <= reduce_len) return false;
@@ -200,6 +187,7 @@ namespace parser {
         const PATS&           patterns()        const { return patterns_; }
         const ReduceCallback& reduce_callback() const { return reduce_callback_; }
 
+    public:
         bool PatternMatch(const SymbolPattern& pat, const Symbol& sym) {
 
             // Token
@@ -217,12 +205,12 @@ namespace parser {
  
             return false;
         }
-        bool PatternsMatch(const SS& symbols, TT token_next, size_t& out_reduce_len) {
+        bool PatternsMatch(const SS& syms, TT token_next, std::vector<size_t>& move_positions, size_t& out_reduce_len) {
             if (isNeedDelaySuffix(token_next)) return false;
 
             // Match Check
             size_t np = patterns_.size();
-            size_t ns = symbols.size();
+            size_t ns = syms.size();
 
             size_t start_max = (ns > np) ? (ns - np) : 0;
 
@@ -245,12 +233,12 @@ namespace parser {
                             dp[i][j + 1] = true;
 
                             // Optional 2: Match
-                            if (i < len && PatternMatch(patterns_[j], symbols[start + i])) dp[i + 1][j + 1] = true;
+                            if (i < len && PatternMatch(patterns_[j], syms[start + i])) dp[i + 1][j + 1] = true;
                         }
                         
                         else {
                             // Match
-                            if (i < len && PatternMatch(patterns_[j], symbols[start + i]))dp[i + 1][j + 1] = true;
+                            if (i < len && PatternMatch(patterns_[j], syms[start + i]))dp[i + 1][j + 1] = true;
                         }
                     }
                 }
@@ -259,7 +247,7 @@ namespace parser {
                 if (dp[len][np]) {
 
                     // Fill Move Positions for Move()
-                    move_positions_.resize(np);
+                    move_positions.resize(np);
 
                     size_t cnt_skip = 0;
                     size_t i = len, j = np;
@@ -269,14 +257,14 @@ namespace parser {
                         // exist path: (i, j - 1) -> (i, j) dir: →
                         if (patterns_[j - 1].isOptional() && dp[i][j - 1]) {
                             // mark zero: not used
-                            move_positions_[j - 1] = 0;
+                            move_positions[j - 1] = 0;
                             cnt_skip++;
                         }
 
                         // Not Skiped
                         // exist path: (i - 1, j - 1) -> (i, j) dir: ↘
                         else {
-                            move_positions_[j - 1] = (int)(np - j) - (int)cnt_skip + 1;
+                            move_positions[j - 1] = (int)(np - j) - (int)cnt_skip + 1;
                             i--;
                         }
 
@@ -284,11 +272,11 @@ namespace parser {
                     }
 
                     out_reduce_len = 0;
-                    for (auto& p : move_positions_) {
+                    for (auto& p : move_positions) {
                         if (p != 0) out_reduce_len++;
                     }
 
-                    if (isNeedDelayPrefix(symbols, out_reduce_len)) return false;
+                    if (isNeedDelayPrefix(syms, out_reduce_len)) return false;
 
                     return true;
                 }
@@ -296,48 +284,12 @@ namespace parser {
 
             return false;
         }
-        static bool isOptPatternEmpty(size_t pos) {
-            PatternIndexCheck(pos);
-            return move_positions_[pos - 1] == 0;
-        }
-
-        static bool is(SS& syms, size_t pos, TT token_type) {
-            PatternIndexCheck(pos);
-            pos = move_positions_[pos - 1];
-            auto& target = syms[syms.size() - pos];
-            
-            return  target.type() == ST::Token &&
-                    target.type_token() == token_type;
-        }
-        static bool is(SS& syms, size_t pos, AT ast_type) {
-            PatternIndexCheck(pos);
-            pos = move_positions_[pos - 1];
-            auto& target = syms[syms.size() - pos];
-            
-            return  target.type() == ST::AstNode &&
-                    target.type_astnode() == ast_type;
-        }
-
-        static Token::Type GetTokenType(SS& syms, size_t pos) {
-            PatternIndexCheck(pos);
-            pos = move_positions_[pos - 1];
-            return syms[syms.size() - pos].type_token();
-        }
-
-        // Move AstNode as type T from symbols
-        template<typename T>
-        static std::unique_ptr<T> Move(SS& syms, size_t pos) {
-            PatternIndexCheck(pos);
-            pos = move_positions_[pos - 1];
-            auto& node = std::get<ASTNODE>(syms[syms.size() - pos].data());
-            return std::unique_ptr<T>(static_cast<T*>(node.release()));
-        }
     };
 
     // Syntactic Analyzer
     class Parser {
     private:
-        // Predefined
+        // Defined
 
         inline static std::vector<Rule> rules_; // Reduce Rules
         TS& tokens_;                            // Lexer's Tokens
@@ -346,24 +298,81 @@ namespace parser {
         
         SS                  symbols_;           // Symbols Stack
         std::vector<size_t> scopes_brace_;      // Brace Scope
+
+        // for Move():
+        // while rule = AB[C]DE
+        //     if pats = ABCDE, mps = [5, 4, 3, 2, 1]
+        //     if pats = _ABDE, mps = [4, 3, 0, 2, 1]
+        std::vector<size_t> move_positions_;
+
+        // Result
+
         ASTNODE             root_;              // Program
 
-        void RulesInit();
+    private:
+        // Defined
 
-        void Shift(const Token& token);
-        bool TryReduce(const Rule& rule, TT token_next, size_t reduce_len);
+        void   RulesInit();
+
+        // Token
 
         void   TokenRewrite(Token& token);
         Symbol Token2Symbol(const Token& token);
+
+        // Parsing
+
+        void   Shift(const Token& token);
+        bool   TryReduce(const Rule& rule, TT token_next, size_t reduce_len);
+
+        void        PatternIndexCheck(size_t pos) {
+            if (pos < 1) {
+                throw LogErr(LogModule::Parser, "invalid rule pattern index");
+            }
+        }
+        Token::Type PatternTokenTypeGet(size_t pos) {
+            PatternIndexCheck(pos);
+            pos = move_positions_[pos - 1];
+            return symbols_[symbols_.size() - pos].type_token();
+        }
+        
+        bool   isOptPatternEmpty(size_t pos) {
+            PatternIndexCheck(pos);
+            return move_positions_[pos - 1] == 0;
+        }
+        bool   isPattern(size_t pos, TT token_type) {
+            PatternIndexCheck(pos);
+            pos = move_positions_[pos - 1];
+            auto& target = symbols_[symbols_.size() - pos];
+            
+            return  target.type() == ST::Token &&
+                    target.type_token() == token_type;
+        }
+        bool   isPattern(size_t pos, AT ast_type) {
+            PatternIndexCheck(pos);
+            pos = move_positions_[pos - 1];
+            auto& target = symbols_[symbols_.size() - pos];
+            
+            return  target.type() == ST::AstNode &&
+                    target.type_astnode() == ast_type;
+        }
+
+        // Move AstNode as type T from symbols
+        template<typename T>
+        std::unique_ptr<T> Move(size_t pos) {
+            PatternIndexCheck(pos);
+            pos = move_positions_[pos - 1];
+            auto& node = std::get<ASTNODE>(symbols_[symbols_.size() - pos].data());
+            return std::unique_ptr<T>(static_cast<T*>(node.release()));
+        }
 
     public:
         Parser(TS& tokens) : tokens_(tokens) { RulesInit(); }
         ~Parser() { rules_.clear(); }
 
+        ASTNODE& root() { return root_; }
+
+    public:
         void Execute();
-        ASTNODE& root() {
-            return root_;
-        }
     
         void RuleAdd(
             PATS_INIT               patterns,
