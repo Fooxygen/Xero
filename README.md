@@ -69,44 +69,64 @@ Xero 是一门静态类型编程语言。你可以在 `example/main.xe` 找到�
 
 > 暂只提供 Visual Studio Code 环境的参考步骤。
 
-### 编译
+Debug 与 Release 使用不同的 CMake 配置，分别输出到 `build-debug/` 与 `build-release/`。
 
-Debug 与 Release 使用不同的 CMake 配置：
+以下任务均以 `example/main.xe` 作为源代码文件，编译成功后自动启动生成的程序。你可以参照这些任务并仿写。
 
-- **Debug**：输出到 `build-debug/`；
-- **Release**：输出到 `build-release/`；
-
-使用任务 `CMake: Build` 编译；
-
-使用任务 `CMake: Clean Rebuild` 清理并重编译；
-
-### 启动
-
-Release 版本使用任务 `Run Xero` 启动；
+### `Debug Xero`：
 ```json
 {
-    "label": "Run Xero",
+    "label": "Debug Xero",
     "type": "shell",
-    "command": "${workspaceFolder}/build-release/bin/xero.exe",
-    "options": { "cwd": "${workspaceFolder}/build-release/bin" },
-    "args": ["${workspaceFolder}/example/main.xe", "-cp"]
+    "command": [
+        "${workspaceFolder}/build-debug/bin/xero.exe",
+        "${workspaceFolder}/example/main.xe",
+        "&&",
+        "${workspaceFolder}/build-debug/bin/build/main/main.exe"
+    ],
+    "options": {
+        "cwd": "${workspaceFolder}/build-debug/bin",
+        "shell": {
+            "executable": "cmd.exe",
+            "args": ["/d", "/c"]
+        }
+    }
 }
 ```
 
-需要输出 Token 流与抽象语法树时使用 `Run Xero with options`：
+### `Debug Xero (Token and Ast)`：
+
+需要输出 Token 流与抽象语法树时使用
+
 ```json
 {
-    "label": "Run Xero with options",
+    "label": "Debug Xero (Token and Ast)",
     "type": "shell",
-    "command": "${workspaceFolder}/build-release/bin/xero.exe",
-    "options": { "cwd": "${workspaceFolder}/build-release/bin" },
-    "args": ["${workspaceFolder}/example/main.xe", "--ast", "--tok", "-cp"]
+    "command": [
+        "${workspaceFolder}/build-debug/bin/xero.exe",
+        "${workspaceFolder}/example/main.xe",
+        "--tok",
+        "--ast",
+        "&&",
+        "${workspaceFolder}/build-debug/bin/build/main/main.exe"
+    ],
+    "options": {
+        "cwd": "${workspaceFolder}/build-debug/bin",
+        "shell": {
+            "executable": "cmd.exe",
+            "args": ["/d", "/c"]
+        }
+    }
 }
 ```
 
-Debug 版本对应 `Debug Xero` 与 `Debug Xero with options` 任务，可执行文件位于 `build-debug/bin/xero.exe`。
+Release 版本对应 `Release Xero` 与 `Release Xero (Token and Ast)` 任务。
 
-编译后的程序输出到 `build-release/bin/xero.exe`（Release）或 `build-debug/bin/xero.exe`（Debug）。
+### 输出
+
+可执行文件位于 `build-release/bin/xero.exe`。
+
+编译产物输出到 `build-<config>/bin/build/main/main.exe`。
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 

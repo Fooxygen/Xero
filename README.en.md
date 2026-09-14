@@ -69,44 +69,64 @@ You can find more information about Xero on the [Wiki](https://github.com/Fooxyg
 
 > The following steps assume a Visual Studio Code environment.
 
-### Build
+Debug and Release use different CMake configurations, outputting to `build-debug/` and `build-release/` respectively.
 
-Debug and Release use different CMake configurations:
+The following tasks all use `example/main.xe` as the source file and automatically launch the generated program once compilation succeeds. You can refer to these tasks and write your own.
 
-- **Debug**: outputs to `build-debug/`;
-- **Release**: outputs to `build-release/`;
-
-Use the `CMake: Build` task to compile.
-
-Use the `CMake: Clean Rebuild` task to clean and rebuild.
-
-### Run
-
-Use the `Run Xero` task to run the Release build:
+### `Debug Xero`:
 ```json
 {
-    "label": "Run Xero",
+    "label": "Debug Xero",
     "type": "shell",
-    "command": "${workspaceFolder}/build-release/bin/xero.exe",
-    "options": { "cwd": "${workspaceFolder}/build-release/bin" },
-    "args": ["${workspaceFolder}/example/main.xe", "-cp"]
+    "command": [
+        "${workspaceFolder}/build-debug/bin/xero.exe",
+        "${workspaceFolder}/example/main.xe",
+        "&&",
+        "${workspaceFolder}/build-debug/bin/build/main/main.exe"
+    ],
+    "options": {
+        "cwd": "${workspaceFolder}/build-debug/bin",
+        "shell": {
+            "executable": "cmd.exe",
+            "args": ["/d", "/c"]
+        }
+    }
 }
 ```
 
-Use the `Run Xero with options` task to print the token stream and the abstract syntax tree:
+### `Debug Xero (Token and Ast)`:
+
+Use this when the token stream and the abstract syntax tree need to be printed.
+
 ```json
 {
-    "label": "Run Xero with options",
+    "label": "Debug Xero (Token and Ast)",
     "type": "shell",
-    "command": "${workspaceFolder}/build-release/bin/xero.exe",
-    "options": { "cwd": "${workspaceFolder}/build-release/bin" },
-    "args": ["${workspaceFolder}/example/main.xe", "--ast", "--tok", "-cp"]
+    "command": [
+        "${workspaceFolder}/build-debug/bin/xero.exe",
+        "${workspaceFolder}/example/main.xe",
+        "--tok",
+        "--ast",
+        "&&",
+        "${workspaceFolder}/build-debug/bin/build/main/main.exe"
+    ],
+    "options": {
+        "cwd": "${workspaceFolder}/build-debug/bin",
+        "shell": {
+            "executable": "cmd.exe",
+            "args": ["/d", "/c"]
+        }
+    }
 }
 ```
 
-The Debug build corresponds to the `Debug Xero` and `Debug Xero with options` tasks; the executable is located at `build-debug/bin/xero.exe`.
+The Release build corresponds to the `Release Xero` and `Release Xero (Token and Ast)` tasks.
 
-The compiled program is output to `build-release/bin/xero.exe` (Release) or `build-debug/bin/xero.exe` (Debug).
+### Output
+
+The executable is located at `build-release/bin/xero.exe`.
+
+The compiled program is output to `build-<config>/bin/build/main/main.exe`.
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
