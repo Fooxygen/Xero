@@ -74,7 +74,7 @@ namespace xcompiler {
             builder.CreateCall(LibC_memmove(gen), { dst, src, bytes });
         };
 
-        impl->MethodAdd("@print", [array_load, elem_get](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@print",       [array_load, elem_get](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  arr     = array_load(gen, args[0]);
 
@@ -146,7 +146,7 @@ namespace xcompiler {
             return nullptr;
         }, sema::FnSign(none_));
 
-        impl->MethodAdd("@copy", [array_load, elem_get](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@copy",        [array_load, elem_get](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  arr     = array_load(gen, args[0]);
 
@@ -196,7 +196,7 @@ namespace xcompiler {
             gen_val = builder.CreateInsertValue(gen_val, arr.len,  1);
             return gen_val;
         }, sema::FnSign(array_));
-        impl->MethodAdd("@release", [array_load, elem_get](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@release",     [array_load, elem_get](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  arr     = array_load(gen, args[0]);
 
@@ -239,10 +239,10 @@ namespace xcompiler {
             return nullptr;
         }, sema::FnSign(none_));
 
-        impl->MethodAdd("len", [array_load](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("len",          [array_load](IRGen& gen, ARGS& args) -> llvm::Value* {
             return array_load(gen, args[0]).len;
         }, sema::FnSign(i64_));
-        impl->MethodAdd("clear", [array_load, array_store](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("clear",        [array_load, array_store](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  arr     = array_load(gen, args[0]);
 
@@ -258,7 +258,7 @@ namespace xcompiler {
             array_store(gen, arr.addr, null_data, arr.llvm_type, builder.getInt64(0));
             return nullptr;
         }, sema::FnSign(none_));
-        impl->MethodAdd("push_back", [array_load, array_realloc, array_store, elem_get](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("push_back",    [array_load, array_realloc, array_store, elem_get](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  arr     = array_load(gen, args[0]);
 
@@ -271,7 +271,7 @@ namespace xcompiler {
             array_store(gen, arr.addr, new_data, arr.llvm_type, new_len);
             return nullptr;
         }, sema::FnSign(none_, { nullptr }));
-        impl->MethodAdd("push_front", [array_load, array_realloc, array_store, elem_get, elem_move](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("push_front",   [array_load, array_realloc, array_store, elem_get, elem_move](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  arr     = array_load(gen, args[0]);
             auto  one     = builder.getInt64(1);
@@ -288,7 +288,7 @@ namespace xcompiler {
             array_store(gen, arr.addr, new_data, arr.llvm_type, new_len);
             return nullptr;
         }, sema::FnSign(none_, { nullptr }));
-        impl->MethodAdd("pop_back", [array_load, array_store](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("pop_back",     [array_load, array_store](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  arr     = array_load(gen, args[0]);
 
@@ -298,7 +298,7 @@ namespace xcompiler {
             );
             return nullptr;
         }, sema::FnSign(none_));
-        impl->MethodAdd("pop_front", [array_load, array_store, elem_get, elem_move](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("pop_front",    [array_load, array_store, elem_get, elem_move](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  arr     = array_load(gen, args[0]);
             auto  one     = builder.getInt64(1);
@@ -311,7 +311,7 @@ namespace xcompiler {
             array_store(gen, arr.addr, arr.data, arr.llvm_type, builder.CreateSub(arr.len, one));
             return nullptr;
         }, sema::FnSign(none_));
-        impl->MethodAdd("insert", [array_load, array_realloc, array_store, elem_get, elem_move](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("insert",       [array_load, array_realloc, array_store, elem_get, elem_move](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  arr     = array_load(gen, args[0]);
             auto  idx     = args[1].val();
@@ -331,7 +331,7 @@ namespace xcompiler {
             array_store(gen, arr.addr, new_data, arr.llvm_type, new_len);
             return nullptr;
         }, sema::FnSign(none_, { i64_, nullptr }));
-        impl->MethodAdd("remove", [array_load, elem_get, elem_move, array_store](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("remove",       [array_load, elem_get, elem_move, array_store](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  arr     = array_load(gen, args[0]);
             auto  idx     = args[1].val();

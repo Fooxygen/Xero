@@ -18,7 +18,7 @@ namespace xcompiler {
 
         auto  impl   = TypeImplTable::Set(TypeImpl(range_));
 
-        impl->MethodAdd("@print", [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@print",   [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
 
             auto  range_val      = gen.ArgLoad(args[0]);
@@ -48,7 +48,7 @@ namespace xcompiler {
             return nullptr;
         }, sema::FnSign(none_));
 
-        impl->MethodAdd("@copy", [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@copy",    [](IRGen& gen, ARGS& args) {
             return gen.ArgLoad(args[0]);
         }, sema::FnSign(range_));
         impl->MethodAdd("@release", [](IRGen&, ARGS&) -> llvm::Value* {
