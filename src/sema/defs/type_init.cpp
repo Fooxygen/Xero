@@ -175,6 +175,7 @@ namespace sema {
             // array
             {
                 array_->method_table().Add("@print",        FnSign(none_));
+                array_->method_table().Add("@neg",          FnSign(array_));
                 array_->method_table().Add("len",           FnSign(i64_));
                 array_->method_table().Add("clear",         FnSign(none_));
                 array_->method_table().Add("insert",        FnSign(none_, { i64_, nullptr }));

@@ -484,20 +484,41 @@ namespace xcompiler {
             {
                 auto impl = TypeImplTable::Set(TypeImpl(array_));
 
+                struct ArrayInfo {
+                    llvm::Value* addr           = nullptr;
+                    sema::Type*  type           = nullptr;
+                    llvm::Type*  llvm_type      = nullptr;
+                    
+                    sema::Type*  elem_type      = nullptr;
+                    TypeImpl*    elem_type_impl = nullptr;
+                    size_t       elem_size      = 0;
+
+                    llvm::Value* data           = nullptr;
+                    llvm::Value* len            = nullptr;
+                };
+
+                auto array_load    = [](IRGen& gen, const Arg& arg) -> ArrayInfo {
+                    auto& builder  = gen.llvm_builder();
+                    auto& module   = *gen.llvm_module();
+
+                    auto addr           = gen.ArgAddr(arg);
+                    auto type           = (sema::ParametricType*)arg.ReferenceUnwrap();
+                    auto llvm_type      = gen.LLVMType(type->BasicTypeGet());
+                    auto elem_type      = type->params_type()[0];
+                    auto elem_type_impl = TypeImplTable::Lookup(elem_type);
+                    auto elem_size      = module.getDataLayout().getTypeAllocSize(gen.LLVMType(elem_type));
+                    auto val            = builder.CreateLoad(llvm_type, addr);
+                    
+                    return {
+                        addr, type, llvm_type, elem_type, elem_type_impl, elem_size,
+                        builder.CreateExtractValue(val, 0),
+                        builder.CreateExtractValue(val, 1)
+                    };
+                };
                 auto array_realloc = [](IRGen& gen, llvm::Value* data, llvm::Value* new_len, size_t elem_size) -> llvm::Value* {
                     auto& builder = gen.llvm_builder();
                     auto  size    = builder.CreateMul(new_len, builder.getInt64((int64_t)elem_size));
                     return builder.CreateCall(LibC_realloc(gen), { data, size });
-                };
-                auto array_elem    = [](IRGen& gen, llvm::Value* data, llvm::Value* idx, size_t elem_size) -> llvm::Value* {
-                    auto& builder = gen.llvm_builder();
-                    auto  offset  = builder.CreateMul(idx, builder.getInt64((int64_t)elem_size));
-                    return builder.CreateInBoundsGEP(builder.getInt8Ty(), data, { offset });
-                };
-                auto array_move    = [](IRGen& gen, llvm::Value* dst, llvm::Value* src, llvm::Value* cnt, size_t elem_size) {
-                    auto& builder = gen.llvm_builder();
-                    auto  nbytes  = builder.CreateMul(cnt, builder.getInt64((int64_t)elem_size));
-                    builder.CreateCall(LibC_memmove(gen), { dst, src, nbytes });
                 };
                 auto array_store   = [](IRGen& gen, llvm::Value* addr, llvm::Type* array_llvm_type, llvm::Value* data, llvm::Value* len) {
                     auto& builder = gen.llvm_builder();
@@ -506,21 +527,21 @@ namespace xcompiler {
                     gen_val = builder.CreateInsertValue(gen_val, len, 1);
                     builder.CreateStore(gen_val, addr);
                 };
-
-                impl->MethodAdd("@print", [](IRGen& gen, ARGS& args) -> llvm::Value* {
+                auto elem_get      = [](IRGen& gen, llvm::Value* data, llvm::Value* idx, size_t elem_size) -> llvm::Value* {
                     auto& builder = gen.llvm_builder();
-                    auto& module  = *gen.llvm_module();
+                    auto  offset  = builder.CreateMul(idx, builder.getInt64((int64_t)elem_size));
+                    return builder.CreateInBoundsGEP(builder.getInt8Ty(), data, { offset });
+                };
+                auto elem_move     = [](IRGen& gen, llvm::Value* dst, llvm::Value* src, llvm::Value* cnt, size_t elem_size) {
+                    auto& builder = gen.llvm_builder();
+                    auto  bytes   = builder.CreateMul(cnt, builder.getInt64((int64_t)elem_size));
+                    builder.CreateCall(LibC_memmove(gen), { dst, src, bytes });
+                };
 
-                    auto array_val = gen.ArgLoad(args[0]);
-                    auto data      = builder.CreateExtractValue(array_val, 0);
-                    auto len       = builder.CreateExtractValue(array_val, 1);
-                    
-                    auto array_type     = (sema::ParametricType*)args[0].ReferenceUnwrap();
-                    auto elem_type      = array_type->params_type()[0];
-                    auto elem_type_impl = TypeImplTable::Lookup(elem_type);
-                    auto elem_size      = module.getDataLayout().getTypeAllocSize(
-                        gen.LLVMType(elem_type)
-                    );
+                impl->MethodAdd("@print", [array_load](IRGen& gen, ARGS& args) -> llvm::Value* {
+                    auto& builder = gen.llvm_builder();
+
+                    auto  arr = array_load(gen, args[0]);
 
                     // Blocks
                     auto fn = builder.GetInsertBlock()->getParent();
@@ -541,7 +562,7 @@ namespace xcompiler {
                     {
                         counter->addIncoming(builder.getInt64(0), block_entry); // init
                         builder.CreateCondBr(
-                            builder.CreateICmpSLT(counter, len), block_cont, block_end
+                            builder.CreateICmpSLT(counter, arr.len), block_cont, block_end
                         );
                     }
 
@@ -570,12 +591,12 @@ namespace xcompiler {
                     builder.SetInsertPoint(block_body);
                     {
                         auto addr = builder.CreateInBoundsGEP(
-                            builder.getInt8Ty(), data, {
-                                builder.CreateMul(counter, builder.getInt64((int64_t)elem_size))
+                            builder.getInt8Ty(), arr.data, {
+                                builder.CreateMul(counter, builder.getInt64((int64_t)arr.elem_size))
                             }
                         );
-                        elem_type_impl->MethodCall(gen, "@print", {
-                            Arg(addr, sema::TypeTable::ReferenceTypeGet(elem_type))
+                        arr.elem_type_impl->MethodCall(gen, "@print", {
+                            Arg(addr, sema::TypeTable::ReferenceTypeGet(arr.elem_type))
                         });
                         
                         auto body_end = builder.GetInsertBlock();
@@ -594,25 +615,13 @@ namespace xcompiler {
                     return nullptr;
                 }, sema::FnSign(none_));
 
-                impl->MethodAdd("@copy", [](IRGen& gen, ARGS& args) -> llvm::Value* {
+                impl->MethodAdd("@copy", [array_load](IRGen& gen, ARGS& args) -> llvm::Value* {
                     auto& builder = gen.llvm_builder();
-                    auto& module  = *gen.llvm_module();
 
-                    auto array_addr      = gen.ArgAddr(args[0]);
-                    auto array_type      = (sema::ParametricType*)args[0].ReferenceUnwrap();
-                    auto array_llvm_type = gen.LLVMType(args[0].ReferenceUnwrap());
-                    auto elem_type       = array_type->params_type()[0];
-                    auto elem_type_impl  = TypeImplTable::Lookup(elem_type);
-                    auto elem_size       = module.getDataLayout().getTypeAllocSize(
-                        gen.LLVMType(elem_type)
-                    );
-
-                    auto array_val = builder.CreateLoad(array_llvm_type, array_addr);
-                    auto data      = builder.CreateExtractValue(array_val, 0);
-                    auto len       = builder.CreateExtractValue(array_val, 1);
+                    auto  arr = array_load(gen, args[0]);
 
                     // New Data
-                    auto new_size = builder.CreateMul(len, builder.getInt64((int64_t)elem_size));
+                    auto new_size = builder.CreateMul(arr.len, builder.getInt64((int64_t)arr.elem_size));
                     auto new_data = builder.CreateCall(LibC_malloc(gen), { new_size });
 
                     // Blocks
@@ -629,19 +638,19 @@ namespace xcompiler {
                     {
                         counter->addIncoming(builder.getInt64(0), block_entry);
                         builder.CreateCondBr(
-                            builder.CreateICmpSLT(counter, len), block_body, block_end
+                            builder.CreateICmpSLT(counter, arr.len), block_body, block_end
                         );
                     }
 
                     // Body Block
                     builder.SetInsertPoint(block_body);
                     {
-                        auto offset   = builder.CreateMul(counter, builder.getInt64((int64_t)elem_size));
-                        auto src_elem = builder.CreateInBoundsGEP(builder.getInt8Ty(), data,     { offset });
+                        auto offset   = builder.CreateMul(counter, builder.getInt64((int64_t)arr.elem_size));
+                        auto src_elem = builder.CreateInBoundsGEP(builder.getInt8Ty(), arr.data, { offset });
                         auto dst_elem = builder.CreateInBoundsGEP(builder.getInt8Ty(), new_data, { offset });
 
-                        auto copied = elem_type_impl->MethodCall(gen, "@copy", {
-                            Arg(src_elem, sema::TypeTable::ReferenceTypeGet(elem_type))
+                        auto copied = arr.elem_type_impl->MethodCall(gen, "@copy", {
+                            Arg(src_elem, sema::TypeTable::ReferenceTypeGet(arr.elem_type))
                         });
                         builder.CreateStore(copied, dst_elem);
 
@@ -654,27 +663,15 @@ namespace xcompiler {
                     builder.SetInsertPoint(block_end);
 
                     // Generated Value
-                    auto gen_val = (llvm::Value*)llvm::UndefValue::get(array_llvm_type);
+                    auto gen_val = (llvm::Value*)llvm::UndefValue::get(arr.llvm_type);
                     gen_val = builder.CreateInsertValue(gen_val, new_data, 0);
-                    gen_val = builder.CreateInsertValue(gen_val, len,      1);
+                    gen_val = builder.CreateInsertValue(gen_val, arr.len,  1);
                     return gen_val;
                 }, sema::FnSign(array_));
-                impl->MethodAdd("@release", [](IRGen& gen, ARGS& args) -> llvm::Value* {
+                impl->MethodAdd("@release", [array_load](IRGen& gen, ARGS& args) -> llvm::Value* {
                     auto& builder = gen.llvm_builder();
-                    auto& module  = *gen.llvm_module();
 
-                    auto array_addr      = gen.ArgAddr(args[0]);
-                    auto array_type      = (sema::ParametricType*)args[0].ReferenceUnwrap();
-                    auto array_llvm_type = gen.LLVMType(args[0].ReferenceUnwrap());
-                    auto elem_type       = array_type->params_type()[0];
-                    auto elem_type_impl  = TypeImplTable::Lookup(elem_type);
-                    auto elem_size       = module.getDataLayout().getTypeAllocSize(
-                        gen.LLVMType(elem_type)
-                    );
-
-                    auto array_val = builder.CreateLoad(array_llvm_type, array_addr);
-                    auto data      = builder.CreateExtractValue(array_val, 0);
-                    auto len       = builder.CreateExtractValue(array_val, 1);
+                    auto  arr = array_load(gen, args[0]);
 
                     // Blocks
                     auto fn          = builder.GetInsertBlock()->getParent();
@@ -690,18 +687,18 @@ namespace xcompiler {
                     {
                         counter->addIncoming(builder.getInt64(0), block_entry);
                         builder.CreateCondBr(
-                            builder.CreateICmpSLT(counter, len), block_body, block_end
+                            builder.CreateICmpSLT(counter, arr.len), block_body, block_end
                         );
                     }
 
                     // Body Block
                     builder.SetInsertPoint(block_body);
                     {
-                        auto offset   = builder.CreateMul(counter, builder.getInt64((int64_t)elem_size));
-                        auto src_elem = builder.CreateInBoundsGEP(builder.getInt8Ty(), data,     { offset });
+                        auto offset   = builder.CreateMul(counter, builder.getInt64((int64_t)arr.elem_size));
+                        auto src_elem = builder.CreateInBoundsGEP(builder.getInt8Ty(), arr.data, { offset });
 
-                        elem_type_impl->MethodCall(gen, "@release", {
-                            Arg(src_elem, sema::TypeTable::ReferenceTypeGet(elem_type))
+                        arr.elem_type_impl->MethodCall(gen, "@release", {
+                            Arg(src_elem, sema::TypeTable::ReferenceTypeGet(arr.elem_type))
                         });
 
                         // recursion exists internally
@@ -712,7 +709,7 @@ namespace xcompiler {
 
                     // End Block
                     builder.SetInsertPoint(block_end);
-                    builder.CreateCall(LibC_free(gen), { data });
+                    builder.CreateCall(LibC_free(gen), { arr.data });
 
                     return nullptr;
                 }, sema::FnSign(none_));
@@ -741,50 +738,28 @@ namespace xcompiler {
                     array_store(gen, array_addr, array_llvm_type, null_data, builder.getInt64(0));
                     return nullptr;
                 }, sema::FnSign(none_));
-                impl->MethodAdd("push_back", [array_realloc, array_elem, array_store](IRGen& gen, ARGS& args) -> llvm::Value* {
+                impl->MethodAdd("push_back", [array_load, array_realloc, elem_get, array_store](IRGen& gen, ARGS& args) -> llvm::Value* {
                     auto& builder = gen.llvm_builder();
-                    auto& module  = *gen.llvm_module();
 
-                    auto  array_addr      = gen.ArgAddr(args[0]);
-                    auto  array_type      = (sema::ParametricType*)args[0].ReferenceUnwrap();
-                    auto  elem_type       = array_type->params_type()[0];
-                    auto  elem_size       = module.getDataLayout().getTypeAllocSize(
-                        gen.LLVMType(elem_type)
-                    );
-                    auto  array_llvm_type = gen.LLVMType(args[0].ReferenceUnwrap());
+                    auto  arr = array_load(gen, args[0]);
 
-                    auto array_val = builder.CreateLoad(array_llvm_type, array_addr);
-                    auto data      = builder.CreateExtractValue(array_val, 0);
-                    auto len       = builder.CreateExtractValue(array_val, 1);
-
-                    auto new_len  = builder.CreateAdd(len, builder.getInt64(1));
-                    auto new_data = array_realloc(gen, data, new_len, elem_size);
-                    builder.CreateStore(args[1].val(), array_elem(gen, new_data, len, elem_size));   // append
-                    array_store(gen, array_addr, array_llvm_type, new_data, new_len);
+                    auto new_len  = builder.CreateAdd(arr.len, builder.getInt64(1));
+                    auto new_data = array_realloc(gen, arr.data, new_len, arr.elem_size);
+                    builder.CreateStore(args[1].val(), elem_get(gen, new_data, arr.len, arr.elem_size));  // append
+                    array_store(gen, arr.addr, arr.llvm_type, new_data, new_len);
                     return nullptr;
                 }, sema::FnSign(none_, { nullptr }));
-                impl->MethodAdd("push_front", [array_realloc, array_elem, array_move, array_store](IRGen& gen, ARGS& args) -> llvm::Value* {
+                impl->MethodAdd("push_front", [array_load, array_realloc, elem_get, elem_move, array_store](IRGen& gen, ARGS& args) -> llvm::Value* {
                     auto& builder = gen.llvm_builder();
-                    auto& module  = *gen.llvm_module();
 
-                    auto  array_addr      = gen.ArgAddr(args[0]);
-                    auto  array_type      = (sema::ParametricType*)args[0].ReferenceUnwrap();
-                    auto  elem_type       = array_type->params_type()[0];
-                    auto  elem_size       = module.getDataLayout().getTypeAllocSize(
-                        gen.LLVMType(elem_type)
-                    );
-                    auto  array_llvm_type = gen.LLVMType(args[0].ReferenceUnwrap());
-                    auto  one             = builder.getInt64(1);
+                    auto  arr  = array_load(gen, args[0]);
+                    auto  one = builder.getInt64(1);
 
-                    auto array_val = builder.CreateLoad(array_llvm_type, array_addr);
-                    auto data      = builder.CreateExtractValue(array_val, 0);
-                    auto len       = builder.CreateExtractValue(array_val, 1);
-
-                    auto new_len  = builder.CreateAdd(len, one);
-                    auto new_data = array_realloc(gen, data, new_len, elem_size);
-                    array_move(gen, array_elem(gen, new_data, one, elem_size), new_data, len, elem_size);  // shift right
-                    builder.CreateStore(args[1].val(), array_elem(gen, new_data, builder.getInt64(0), elem_size)); // data[0]
-                    array_store(gen, array_addr, array_llvm_type, new_data, new_len);
+                    auto new_len  = builder.CreateAdd(arr.len, one);
+                    auto new_data = array_realloc(gen, arr.data, new_len, arr.elem_size);
+                    elem_move(gen, elem_get(gen, new_data, one, arr.elem_size), new_data, arr.len, arr.elem_size);  // shift right
+                    builder.CreateStore(args[1].val(), elem_get(gen, new_data, builder.getInt64(0), arr.elem_size)); // data[0]
+                    array_store(gen, arr.addr, arr.llvm_type, new_data, new_len);
                     return nullptr;
                 }, sema::FnSign(none_, { nullptr }));
                 impl->MethodAdd("pop_back", [array_store](IRGen& gen, ARGS& args) -> llvm::Value* {
@@ -797,76 +772,43 @@ namespace xcompiler {
                     array_store(gen, array_addr, array_llvm_type, data, builder.CreateSub(len, builder.getInt64(1)));
                     return nullptr;
                 }, sema::FnSign(none_));
-                impl->MethodAdd("pop_front", [array_elem, array_move, array_store](IRGen& gen, ARGS& args) -> llvm::Value* {
+                impl->MethodAdd("pop_front", [array_load, elem_get, elem_move, array_store](IRGen& gen, ARGS& args) -> llvm::Value* {
                     auto& builder = gen.llvm_builder();
-                    auto& module  = *gen.llvm_module();
 
-                    auto  array_addr       = gen.ArgAddr(args[0]);
-                    auto  array_type       = (sema::ParametricType*)args[0].ReferenceUnwrap();
-                    auto  elem_type        = array_type->params_type()[0];
-                    auto  elem_size        = module.getDataLayout().getTypeAllocSize(
-                        gen.LLVMType(elem_type)
-                    );
-                    auto  array_llvm_type  = gen.LLVMType(args[0].ReferenceUnwrap());
-                    auto  one              = builder.getInt64(1);
+                    auto  arr = array_load(gen, args[0]);
+                    auto  one = builder.getInt64(1);
 
-                    auto array_val = builder.CreateLoad(array_llvm_type, array_addr);
-                    auto data      = builder.CreateExtractValue(array_val, 0);
-                    auto len       = builder.CreateExtractValue(array_val, 1);
-
-                    array_move(gen, data, array_elem(gen, data, one, elem_size), builder.CreateSub(len, one), elem_size); // shift left
-                    array_store(gen, array_addr, array_llvm_type, data, builder.CreateSub(len, one));
+                    elem_move(gen, arr.data, elem_get(gen, arr.data, one, arr.elem_size), builder.CreateSub(arr.len, one), arr.elem_size); // shift left
+                    array_store(gen, arr.addr, arr.llvm_type, arr.data, builder.CreateSub(arr.len, one));
                     return nullptr;
                 }, sema::FnSign(none_));
-                impl->MethodAdd("insert", [array_realloc, array_elem, array_move, array_store](IRGen& gen, ARGS& args) -> llvm::Value* {
+                impl->MethodAdd("insert", [array_load, array_realloc, elem_get, elem_move, array_store](IRGen& gen, ARGS& args) -> llvm::Value* {
                     auto& builder = gen.llvm_builder();
-                    auto& module  = *gen.llvm_module();
 
-                    auto  array_addr      = gen.ArgAddr(args[0]);
-                    auto  idx             = args[1].val();
-                    auto  array_type      = (sema::ParametricType*)args[0].ReferenceUnwrap();
-                    auto  elem_type       = array_type->params_type()[0];
-                    auto  elem_size       = module.getDataLayout().getTypeAllocSize(
-                        gen.LLVMType(elem_type)
-                    );
-                    auto  array_llvm_type = gen.LLVMType(args[0].ReferenceUnwrap());
-                    auto  one             = builder.getInt64(1);
+                    auto  idx = args[1].val();
+                    auto  one = builder.getInt64(1);
+                    auto  arr = array_load(gen, args[0]);
 
-                    auto array_val = builder.CreateLoad(array_llvm_type, array_addr);
-                    auto data      = builder.CreateExtractValue(array_val, 0);
-                    auto len       = builder.CreateExtractValue(array_val, 1);
-
-                    auto new_len  = builder.CreateAdd(len, one);
-                    auto new_data = array_realloc(gen, data, new_len, elem_size);
-                    array_move(gen, array_elem(gen, new_data, builder.CreateAdd(idx, one), elem_size),  // dst idx+1
-                                array_elem(gen, new_data, idx, elem_size),                              // src idx
-                                builder.CreateSub(len, idx), elem_size);                                // cnt len-idx
-                    builder.CreateStore(args[2].val(), array_elem(gen, new_data, idx, elem_size));           // data[idx]
-                    array_store(gen, array_addr, array_llvm_type, new_data, new_len);
+                    auto new_len  = builder.CreateAdd(arr.len, one);
+                    auto new_data = array_realloc(gen, arr.data, new_len, arr.elem_size);
+                    elem_move(gen, elem_get(gen, new_data, builder.CreateAdd(idx, one), arr.elem_size),  // dst idx+1
+                                elem_get(gen, new_data, idx, arr.elem_size),                              // src idx
+                                builder.CreateSub(arr.len, idx), arr.elem_size);                                // cnt len-idx
+                    builder.CreateStore(args[2].val(), elem_get(gen, new_data, idx, arr.elem_size));           // data[idx]
+                    array_store(gen, arr.addr, arr.llvm_type, new_data, new_len);
                     return nullptr;
                 }, sema::FnSign(none_, { i64_, nullptr }));
-                impl->MethodAdd("remove", [array_elem, array_move, array_store](IRGen& gen, ARGS& args) -> llvm::Value* {
+                impl->MethodAdd("remove", [array_load, elem_get, elem_move, array_store](IRGen& gen, ARGS& args) -> llvm::Value* {
                     auto& builder = gen.llvm_builder();
-                    auto& module  = *gen.llvm_module();
 
-                    auto  array_addr      = gen.ArgAddr(args[0]);
-                    auto  idx             = args[1].val();
-                    auto  array_type      = (sema::ParametricType*)args[0].ReferenceUnwrap();
-                    auto  elem_type       = array_type->params_type()[0];
-                    auto  elem_size       = module.getDataLayout().getTypeAllocSize(
-                        gen.LLVMType(elem_type)
-                    );
-                    auto  array_llvm_type = gen.LLVMType(args[0].ReferenceUnwrap());
-                    auto  one             = builder.getInt64(1);
+                    auto  idx = args[1].val();
+                    auto  one = builder.getInt64(1);
+                    auto  arr = array_load(gen, args[0]);
 
-                    auto array_val = builder.CreateLoad(array_llvm_type, array_addr);
-                    auto data      = builder.CreateExtractValue(array_val, 0);
-                    auto len       = builder.CreateExtractValue(array_val, 1);
-
-                    array_move(gen, array_elem(gen, data, idx, elem_size),                     // dst idx
-                                array_elem(gen, data, builder.CreateAdd(idx, one), elem_size),// src idx+1
-                                builder.CreateSub(builder.CreateSub(len, one), idx), elem_size);  // cnt len-1-idx
-                    array_store(gen, array_addr, array_llvm_type, data, builder.CreateSub(len, one));
+                    elem_move(gen, elem_get(gen, arr.data, idx, arr.elem_size),                     // dst idx
+                                elem_get(gen, arr.data, builder.CreateAdd(idx, one), arr.elem_size),// src idx+1
+                                builder.CreateSub(builder.CreateSub(arr.len, one), idx), arr.elem_size);  // cnt len-1-idx
+                    array_store(gen, arr.addr, arr.llvm_type, arr.data, builder.CreateSub(arr.len, one));
                     return nullptr;
                 }, sema::FnSign(none_, { i64_ }));
             }
