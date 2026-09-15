@@ -15,7 +15,7 @@ namespace xcompiler {
 
     // TypeImpl
 
-    void    TypeImpl::MethodAdd(const std::string& name, NativeFnImpl::Impl impl, const sema::FnSign& sign) {
+    void         TypeImpl::MethodAdd(const std::string& name, NativeFnImpl::Impl impl, const sema::FnSign& sign) {
         auto  type_basic  = (sema::BasicType*)link_type_;
         auto& method      = type_basic->method_table().Lookup(name);
         auto  method_sign = method.SignLookup(sign);
@@ -30,7 +30,7 @@ namespace xcompiler {
         methods_[method_sign] = std::make_unique<NativeFnImpl>(impl);
     }
     
-    void    TypeImpl::MethodAdd(const std::string& name, LangFnImpl::Impl impl, const sema::FnSign& sign) {
+    void         TypeImpl::MethodAdd(const std::string& name, LangFnImpl::Impl impl, const sema::FnSign& sign) {
         auto  type_basic  = (sema::BasicType*)link_type_;
         auto& method      = type_basic->method_table().Lookup(name);
         auto  method_sign = method.SignLookup(sign);
@@ -45,7 +45,7 @@ namespace xcompiler {
         methods_[method_sign] = std::make_unique<LangFnImpl>(impl);
     }
 
-    FnImpl* TypeImpl::MethodGet(const sema::FnSign* sign) {
+    FnImpl*      TypeImpl::MethodGet(const sema::FnSign* sign) {
         auto it = methods_.find(sign);
         if (it == methods_.end()) {
             throw LogErr(LogModule::Xcompiler, std::format(
@@ -56,7 +56,7 @@ namespace xcompiler {
         return it->second.get();
     }
 
-    FnImpl* TypeImpl::MethodGetTry(const sema::FnSign* sign) {
+    FnImpl*      TypeImpl::MethodGetTry(const sema::FnSign* sign) {
         auto it = methods_.find(sign);
         return it == methods_.end() ? nullptr : it->second.get();
     }
@@ -87,6 +87,19 @@ namespace xcompiler {
         throw LogErr(LogModule::Xcompiler, std::format(
             "unsupported method '{}'", name
         ));
+    }
+
+    // TypeImplTable
+
+    void         TypeImplTable::Init() {
+        Init_bool();
+        Init_i32();
+        Init_i64();
+        Init_f32();
+        Init_f64();
+        Init_char();
+        Init_array();
+        Init_range();
     }
 
     llvm::Value* TypeImplTable::Cast(IRGen& gen, llvm::Value* val, sema::Type* from, sema::Type* to) {

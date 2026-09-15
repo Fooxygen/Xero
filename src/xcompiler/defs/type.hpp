@@ -48,7 +48,21 @@ namespace xcompiler {
         static inline std::unordered_map<sema::Type*, std::unique_ptr<TypeImpl>> table_;
         static inline std::unordered_map<TypeImpl*, sema::Type*>                 table_reverse_;
 
+    private:
+        // Init
+        
+        static void Init_bool();
+        static void Init_i32();
+        static void Init_i64();
+        static void Init_f32();
+        static void Init_f64();
+        static void Init_char();
+        static void Init_array();
+        static void Init_range();
+
     public:
+        // Init
+
         static void         Init();
         static TypeImpl*    Set(TypeImpl&& type_impl) {
             auto type = type_impl.link_type();

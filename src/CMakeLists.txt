@@ -23,7 +23,14 @@ add_executable(xero
     sema/analyzer.cpp
     xcompiler/defs/fn.cpp
     xcompiler/defs/type.cpp
-    xcompiler/defs/type_init.cpp
+    xcompiler/defs/types_init/bool.cpp
+    xcompiler/defs/types_init/i32.cpp
+    xcompiler/defs/types_init/i64.cpp
+    xcompiler/defs/types_init/f32.cpp
+    xcompiler/defs/types_init/f64.cpp
+    xcompiler/defs/types_init/char.cpp
+    xcompiler/defs/types_init/array.cpp
+    xcompiler/defs/types_init/range.cpp
     xcompiler/builtin.cpp
     xcompiler/ir/gen.cpp
     xcompiler/optimizer/optimizer.cpp
