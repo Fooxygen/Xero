@@ -1,5 +1,12 @@
 
+fn get(x: i32) {
+    x += 1;
+    println(x);
+}
+
 fn main() {
-    a: array[=array[=i32=]=] = [[1], [2, 3]];
-    println(a);
+    x: i32  = 5;
+    y: i32& = x;
+    get(y);
+    println(x);
 }

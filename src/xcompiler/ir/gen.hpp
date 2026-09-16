@@ -54,7 +54,9 @@ namespace xcompiler {
     private:
         // Utility
 
-        llvm::Value*      IdResolve(IdExpr& node);
+        llvm::Value*      IdResolve(IdExpr& node);                              // getting val's addr from id
+        llvm::Value*      ValMaterialize(llvm::Value* val, sema::Type* type);   // allocating memory for val to store
+        llvm::Value*      ExprLoad(Expr& node);                                 // loading val from expr
 
         llvm::AllocaInst* SlotCreate(llvm::Type* type, const std::string& name);
         bool              hasBlockTerm();
@@ -104,7 +106,6 @@ namespace xcompiler {
 
         // └─ Allocate
 
-        llvm::Value*      ValueMaterialize(llvm::Value* val, sema::Type* type);         // allocate memory for values to store
         llvm::BasicBlock* BlockCreate(const std::string& name, llvm::Function* fn);     // create basic block
 
         // └─ Fn

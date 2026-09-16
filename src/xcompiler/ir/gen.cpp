@@ -67,16 +67,32 @@ namespace xcompiler {
         return var;
     }
 
-    llvm::Value*      IRGen::ValueMaterialize(llvm::Value* val, sema::Type* type) {
+    llvm::Value*      IRGen::ValMaterialize(llvm::Value* val, sema::Type* type) {
         auto slot = SlotCreate(LLVMType(type), ".arg.slot");
         llvm_builder().CreateStore(val, slot);
         return slot;
     }
     
+    llvm::Value*      IRGen::ExprLoad(Expr& node) {
+        auto val = Exec(node);
+
+        // ReferenceType
+        // Non-IdExpr
+        if (node.resolved_type_ &&
+            dynamic_cast<sema::ReferenceType*>(node.resolved_type_) &&
+            !dynamic_cast<IdExpr*>(&node))
+        {
+            return llvm_builder().CreateLoad(
+                LLVMType(node.resolved_type_->ReferenceUnwrap()), val
+            );
+        }
+        return val;
+    }
+    
     Arg               IRGen::ArgRefMake(llvm::Value* val, sema::Type* type) {
         // RefArg
         if (dynamic_cast<sema::ReferenceType*>(type)) return Arg(val, type);
-        return Arg(ValueMaterialize(val, type), sema::TypeTable::ReferenceTypeGet(type));
+        return Arg(ValMaterialize(val, type), sema::TypeTable::ReferenceTypeGet(type));
     }
     
     llvm::Value*      IRGen::ArgLoad(const Arg& arg) {
@@ -202,10 +218,9 @@ namespace xcompiler {
         };
 
         // Unary
-        auto lval = Exec(*node.lexpr_);
+        auto lval = ExprLoad(*node.lexpr_);
         {
             auto ltype = node.lexpr_->resolved_type_->ReferenceUnwrap();
-            
             switch (node.oper_type_) {
                 case Neg: return call(ltype, "@neg", { ArgRefMake(lval, ltype) });  // tmp value is packaged as arg
                 case Not: return call(ltype, "@not", { ArgRefMake(lval, ltype) });
@@ -261,7 +276,7 @@ namespace xcompiler {
             return phi;
         }
 
-        auto rval = Exec(*node.rexpr_);
+        auto rval = ExprLoad(*node.rexpr_);
         {
             auto ltype = node.lexpr_->resolved_type_->ReferenceUnwrap();
             auto rtype = node.rexpr_->resolved_type_->ReferenceUnwrap();
@@ -301,8 +316,12 @@ namespace xcompiler {
         // Value
         auto iter_type      = node.iter_type_;
         auto iter_type_llvm = LLVMType(iter_type);
-        auto left_val  = TypeImplTable::Cast(*this, Exec(*node.lexpr_), node.lexpr_->resolved_type_->ReferenceUnwrap(), iter_type);
-        auto right_val = TypeImplTable::Cast(*this, Exec(*node.rexpr_), node.rexpr_->resolved_type_->ReferenceUnwrap(), iter_type);
+        auto left_val  = TypeImplTable::Cast(*this,
+            ExprLoad(*node.lexpr_), node.lexpr_->resolved_type_->ReferenceUnwrap(), iter_type
+        );
+        auto right_val = TypeImplTable::Cast(*this,
+            ExprLoad(*node.rexpr_), node.rexpr_->resolved_type_->ReferenceUnwrap(), iter_type
+        );
         
         llvm::Value* step_val = nullptr;
         if (node.step_) {
@@ -354,9 +373,7 @@ namespace xcompiler {
                     llvm_builder().getInt64((int64_t)(i * size_elem))
                 }
             );
-            llvm_builder().CreateStore(
-                Exec(*exprs[i]), addr
-            );
+            llvm_builder().CreateStore(ExprLoad(*exprs[i]), addr);
         }
 
         // Generated Value
@@ -402,7 +419,10 @@ namespace xcompiler {
 
                 // Non-Reference Type
                 else {
-                    args.emplace_back(Exec(*expr), expr->resolved_type_->ReferenceUnwrap());
+                    args.emplace_back(
+                        ExprLoad(*expr),
+                        expr->resolved_type_->ReferenceUnwrap()
+                    );
                 }
             }
         }
@@ -439,10 +459,13 @@ namespace xcompiler {
         if (auto idexpr = dynamic_cast<IdExpr*>(node.target_.get())) {
             target_addr = IdResolve(*idexpr);
         }
+        else if (dynamic_cast<sema::ReferenceType*>(node.target_->resolved_type_)) {
+            target_addr = Exec(*node.target_);
+        }
 
         // Value as Target
         else {
-            auto target_val  = Exec(*node.target_);
+            auto target_val  = ExprLoad(*node.target_);
             auto target_slot = SlotCreate(LLVMType(node.target_->resolved_type_), ".method.target.slot");
             llvm_builder().CreateStore(target_val, target_slot);
             target_addr = target_slot;
@@ -650,7 +673,7 @@ namespace xcompiler {
 
     llvm::Value* IRGen::Exec(ReturnSignalStmt& node) {
         if (node.value_) {
-            auto val = Exec(*node.value_);
+            auto val = ExprLoad(*node.value_);
             llvm_builder().CreateRet(
                 TypeImplTable::Cast(*this, val,
                     node.value_->resolved_type_->ReferenceUnwrap(), state_.fn_return_type_
@@ -662,7 +685,7 @@ namespace xcompiler {
     }
 
     llvm::Value* IRGen::Exec(ForStmt& node) {
-        auto data = Exec(*node.data_);
+        auto data = ExprLoad(*node.data_);
 
         // Range
         if (node.data_->resolved_type_->is("range")) {
