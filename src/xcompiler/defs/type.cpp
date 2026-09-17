@@ -98,6 +98,7 @@ namespace xcompiler {
         Init_f32();
         Init_f64();
         Init_char();
+        Init_string();
         Init_array();
         Init_range();
     }

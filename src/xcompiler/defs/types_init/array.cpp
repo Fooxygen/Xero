@@ -52,7 +52,7 @@ namespace xcompiler {
         };
         auto array_realloc = [](IRGen& gen, llvm::Value* data, size_t elem_size, llvm::Value* new_len) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
-            auto  size    = builder.CreateMul(new_len, builder.getInt64((int64_t)elem_size));
+            auto  size    = builder.CreateMul(new_len, builder.getInt64(elem_size));
             return builder.CreateCall(LibC_realloc(gen), { data, size });
         };
         auto array_store   = [](IRGen& gen, llvm::Value* addr, llvm::Value* data, llvm::Type* array_llvm_type, llvm::Value* len) {
@@ -65,12 +65,12 @@ namespace xcompiler {
         
         auto elem_get      = [](IRGen& gen, llvm::Value* data, size_t elem_size, llvm::Value* idx) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
-            auto  offset  = builder.CreateMul(idx, builder.getInt64((int64_t)elem_size));
+            auto  offset  = builder.CreateMul(idx, builder.getInt64(elem_size));
             return builder.CreateInBoundsGEP(builder.getInt8Ty(), data, { offset });
         };
         auto elem_move     = [](IRGen& gen, llvm::Value* dst, llvm::Value* src, llvm::Value* cnt, size_t elem_size) {
             auto& builder = gen.llvm_builder();
-            auto  bytes   = builder.CreateMul(cnt, builder.getInt64((int64_t)elem_size));
+            auto  bytes   = builder.CreateMul(cnt, builder.getInt64(elem_size));
             builder.CreateCall(LibC_memmove(gen), { dst, src, bytes });
         };
 
@@ -151,7 +151,7 @@ namespace xcompiler {
             auto  arr     = array_load(gen, args[0]);
 
             // New Data
-            auto new_size = builder.CreateMul(arr.len, builder.getInt64((int64_t)arr.elem_size));
+            auto new_size = builder.CreateMul(arr.len, builder.getInt64(arr.elem_size));
             auto new_data = builder.CreateCall(LibC_malloc(gen), { new_size });
 
             // Blocks
@@ -245,7 +245,7 @@ namespace xcompiler {
             auto  arr     = array_load(gen, args[0]);
 
             // New Data
-            auto new_size = builder.CreateMul(arr.len, builder.getInt64((int64_t)arr.elem_size));
+            auto new_size = builder.CreateMul(arr.len, builder.getInt64(arr.elem_size));
             auto new_data = builder.CreateCall(LibC_malloc(gen), { new_size });
 
             // Blocks

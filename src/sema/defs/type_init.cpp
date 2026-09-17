@@ -18,7 +18,7 @@ namespace sema {
         auto f32_           = (BasicType*)TypeTable::Set(BasicType("f32"));
         auto f64_           = (BasicType*)TypeTable::Set(BasicType("f64"));
         auto char_          = (BasicType*)TypeTable::Set(BasicType("char"));
-        /*auto string_        = (BasicType*)*/TypeTable::Set(BasicType("string"));
+        auto string_        = (BasicType*)TypeTable::Set(BasicType("string"));
         /*auto stringview_    = (BasicType*)*/TypeTable::Set(BasicType("stringview"));
         auto array_         = (BasicType*)TypeTable::Set(BasicType("array", 1));
         /*auto arrayview_     = (BasicType*)*/TypeTable::Set(BasicType("arrayview"));
@@ -47,20 +47,22 @@ namespace sema {
             f32_->method_table().Add("@copy",   FnSign(f32_));
             f64_->method_table().Add("@copy",   FnSign(f64_));
             char_->method_table().Add("@copy",  FnSign(char_));
+            string_->method_table().Add("@copy",  FnSign(string_));
             array_->method_table().Add("@copy", FnSign(array_));
             range_->method_table().Add("@copy", FnSign(range_));
         }
 
         // Release
         {
-            bool_->method_table().Add("@release",  FnSign(none_));
-            i32_->method_table().Add("@release",   FnSign(none_));
-            i64_->method_table().Add("@release",   FnSign(none_));
-            f32_->method_table().Add("@release",   FnSign(none_));
-            f64_->method_table().Add("@release",   FnSign(none_));
-            char_->method_table().Add("@release",  FnSign(none_));
-            array_->method_table().Add("@release", FnSign(none_));
-            range_->method_table().Add("@release", FnSign(none_));
+            bool_->method_table().Add("@release",   FnSign(none_));
+            i32_->method_table().Add("@release",    FnSign(none_));
+            i64_->method_table().Add("@release",    FnSign(none_));
+            f32_->method_table().Add("@release",    FnSign(none_));
+            f64_->method_table().Add("@release",    FnSign(none_));
+            char_->method_table().Add("@release",   FnSign(none_));
+            string_->method_table().Add("@release", FnSign(none_));
+            array_->method_table().Add("@release",  FnSign(none_));
+            range_->method_table().Add("@release",  FnSign(none_));
         }
 
         // Other
@@ -158,13 +160,13 @@ namespace sema {
                 char_->method_table().Add("@neq",   FnSign(bool_, { char_ }));
             }
             
-            /*
             // string
             {
-                string_->method_table().Add("len",   FnSign(i32_));
-                string_->method_table().Add("clear", FnSign(none_));
+                string_->method_table().Add("@print",   FnSign(none_));
+                string_->method_table().Add("len",      FnSign(i64_));
             }
 
+            /*
             // stringview
             {
                 stringview_->method_table().Add("len",       FnSign(i32_));

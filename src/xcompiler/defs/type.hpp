@@ -57,6 +57,7 @@ namespace xcompiler {
         static void Init_f32();
         static void Init_f64();
         static void Init_char();
+        static void Init_string();
         static void Init_array();
         static void Init_range();
 

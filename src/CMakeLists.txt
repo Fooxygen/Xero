@@ -13,14 +13,18 @@ llvm_map_components_to_libnames(XERO_LLVM_LIBS
 
 add_executable(xero
     xero.cpp
+
     lexer/lexer.cpp
+
     parser/parser.cpp
     parser/rule.cpp
+
     sema/defs/fn.cpp
     sema/defs/type.cpp
     sema/defs/type_init.cpp
     sema/builtin.cpp
     sema/analyzer.cpp
+    
     xcompiler/defs/fn.cpp
     xcompiler/defs/type.cpp
     xcompiler/defs/types_init/bool.cpp
@@ -29,6 +33,7 @@ add_executable(xero
     xcompiler/defs/types_init/f32.cpp
     xcompiler/defs/types_init/f64.cpp
     xcompiler/defs/types_init/char.cpp
+    xcompiler/defs/types_init/string.cpp
     xcompiler/defs/types_init/array.cpp
     xcompiler/defs/types_init/range.cpp
     xcompiler/builtin.cpp

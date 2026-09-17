@@ -13,16 +13,29 @@ namespace xcompiler {
             return llvm::PointerType::get(llvm_context(), 0);
         }
 
-        if (type->is("none"))   return llvm::Type::getVoidTy(llvm_context());
-        if (type->is("bool"))   return llvm::Type::getInt1Ty(llvm_context());
-        if (type->is("i32"))    return llvm::Type::getInt32Ty(llvm_context());
-        if (type->is("i64"))    return llvm::Type::getInt64Ty(llvm_context());
-        if (type->is("f32"))    return llvm::Type::getFloatTy(llvm_context());
-        if (type->is("f64"))    return llvm::Type::getDoubleTy(llvm_context());
-        if (type->is("char"))   return llvm::Type::getInt32Ty(llvm_context());
-        if (type->is("array"))  {
-            return llvm::StructType::get(llvm_context(),
-                {
+        if (type->is("none")) {
+            return llvm::Type::getVoidTy(llvm_context());
+        }
+        if (type->is("bool")) {
+            return llvm::Type::getInt1Ty(llvm_context());
+        }
+        if (type->is("i32")) {
+            return llvm::Type::getInt32Ty(llvm_context());
+        }
+        if (type->is("i64")) {
+            return llvm::Type::getInt64Ty(llvm_context());
+        }
+        if (type->is("f32")) {
+            return llvm::Type::getFloatTy(llvm_context());
+        }
+        if (type->is("f64")) {
+            return llvm::Type::getDoubleTy(llvm_context());
+        }
+        if (type->is("char")) {
+            return llvm::Type::getInt32Ty(llvm_context());
+        }
+        if (type->is("string") || type->is("array"))  {
+            return llvm::StructType::get(llvm_context(), {
                     llvm::PointerType::get(llvm_context(), 0),      // data
                     llvm::Type::getInt64Ty(llvm_context())          // len
                 }

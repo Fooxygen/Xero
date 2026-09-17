@@ -8,6 +8,7 @@
 
 #include "common/log.hpp"
 #include "common/defs/opertype.hpp"
+#include "common/utils/utf8.hpp"
 #include "xcompiler/builtin.hpp"
 #include "xcompiler/defs/type.hpp"
 #include "xcompiler/defs/fn.hpp"
@@ -244,12 +245,12 @@ namespace xcompiler {
 
         // Data
         auto data = llvm_builder().CreateCall(LibC_malloc(*this), {
-            llvm_builder().getInt64((int64_t)size)
+            llvm_builder().getInt64(size)
         });
         for (size_t i = 0; i < len; i++) {
             auto addr = llvm_builder().CreateInBoundsGEP(
                 llvm_builder().getInt8Ty(), data, {
-                    llvm_builder().getInt64((int64_t)(i * size_elem))
+                    llvm_builder().getInt64(i * size_elem)
                 }
             );
             llvm_builder().CreateStore(ExprLoad(*exprs[i]), addr);
@@ -260,7 +261,7 @@ namespace xcompiler {
         auto gen_val  = (llvm::Value*)llvm::UndefValue::get(gen_type);
         gen_val = llvm_builder().CreateInsertValue(gen_val, data, 0);
         gen_val = llvm_builder().CreateInsertValue(
-            gen_val, llvm_builder().getInt64((int64_t)len), 1
+            gen_val, llvm_builder().getInt64(len), 1
         );
         
         return gen_val;
@@ -458,6 +459,54 @@ namespace xcompiler {
 
     llvm::Value* IRGen::Exec(CharConst& node) {
         return llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_context()), node.codepoint_);
+    }
+
+    llvm::Value* IRGen::Exec(StringConst& node) {
+        
+        // Codepoints
+        size_t i = 0;
+        auto& str = node.value_;                // bytes
+        std::vector<uint32_t> codepoints = {};
+        while (i < str.size()) {
+
+            // 0xxxxxxx
+            // 110xxxxx 10xxxxxx
+            // 1110xxxx 10xxxxxx 10xxxxxx
+            // 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+            // getting bytes_len from the first byte
+
+            auto&  codepoint = codepoints.emplace_back(0);
+            size_t bytes_len = UTF8::CharBytesGet((uint8_t)str[i], LogModule::Xcompiler);
+            UTF8::Decode((const uint8_t *)str.data() + i, str.size() - i, codepoint, LogModule::Xcompiler);
+            i += bytes_len;
+        }
+
+        // Data
+        constexpr size_t size_char = 4;
+        auto len  = codepoints.size();
+        auto size = len * size_char;
+        auto data = llvm_builder().CreateCall(LibC_malloc(*this), {
+            llvm_builder().getInt64(size)
+        });
+        
+        for (size_t j = 0; j < len; j++) {
+            auto addr = llvm_builder().CreateInBoundsGEP(
+                llvm_builder().getInt32Ty(), data, { llvm_builder().getInt64(j) }
+            );
+            llvm_builder().CreateStore(
+                llvm_builder().getInt32(codepoints[j]), addr
+            );
+        }
+
+        // Generated Value
+        auto gen_type = LLVMType(node.resolved_type_);
+        auto gen_val  = (llvm::Value*)llvm::UndefValue::get(gen_type);
+        gen_val = llvm_builder().CreateInsertValue(gen_val, data, 0);
+        gen_val = llvm_builder().CreateInsertValue(
+            gen_val, llvm_builder().getInt64(len), 1
+        );
+        
+        return gen_val;
     }
 
     // Stmt

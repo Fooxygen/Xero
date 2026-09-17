@@ -79,6 +79,7 @@ namespace xcompiler {
         llvm::Value* Exec(NumConst& node);
         llvm::Value* Exec(BoolConst& node);
         llvm::Value* Exec(CharConst& node);
+        llvm::Value* Exec(StringConst& node);
 
         llvm::Value* Exec(ExprStmt& node);
         llvm::Value* Exec(AssignStmt& node);
@@ -131,6 +132,7 @@ namespace xcompiler {
                 case AstType::NumConst:         return Exec((NumConst&)node);
                 case AstType::BoolConst:        return Exec((BoolConst&)node);
                 case AstType::CharConst:        return Exec((CharConst&)node);
+                case AstType::StringConst:      return Exec((StringConst&)node);
                 
                 case AstType::ExprStmt:         return Exec((ExprStmt&)node);
                 case AstType::AssignStmt:       return Exec((AssignStmt&)node);

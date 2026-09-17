@@ -1,12 +1,6 @@
 
-fn get(x: i32) {
-    x += 1;
-    println(x);
-}
-
 fn main() {
-    x: i32  = 5;
-    y: i32& = x;
-    get(y);
-    println(x);
+    s: string = "Hello World! 🥰";
+    println(s);
+    println("Xero 2026.1.0 Snapshot 🧑‍💻");
 }
