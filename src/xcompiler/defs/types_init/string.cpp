@@ -147,14 +147,14 @@ namespace xcompiler {
             auto& builder = gen.llvm_builder();
             auto  str     = string_load(gen, args[0]);
 
-            // New Data
-            auto size     = builder.CreateMul(str.len, builder.getInt64(4));
-            auto new_data = builder.CreateCall(LibC_malloc(gen), { size });
-            builder.CreateCall(LibC_memmove(gen), { new_data, str.data, size });
+            // Result
+            auto result_size = builder.CreateMul(str.len, builder.getInt64(4));
+            auto result_data = builder.CreateCall(LibC_malloc(gen), { result_size });
+            builder.CreateCall(LibC_memmove(gen), { result_data, str.data, result_size });
 
             // Generated Value
             auto gen_val = (llvm::Value*)llvm::UndefValue::get(str.llvm_type);
-            gen_val = builder.CreateInsertValue(gen_val, new_data, 0);
+            gen_val = builder.CreateInsertValue(gen_val, result_data, 0);
             gen_val = builder.CreateInsertValue(gen_val, str.len,  1);
             return gen_val;
         }, sema::FnSign(string_));
