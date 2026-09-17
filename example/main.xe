@@ -1,6 +1,11 @@
 
 fn main() {
-    s: string = "Hello World! 🥰";
-    println(s);
-    println("Xero 2026.1.0 Snapshot 🧑‍💻");
+    println("abc"  == "abc");       # true
+    println("abc"  != "xyz");       # true
+    println("abc"  == "ab");        # false
+    println("中文" == "中文");      # true
+
+    a: string = "Hello";
+    a.clear();
+    println(a.len());               # 0
 }

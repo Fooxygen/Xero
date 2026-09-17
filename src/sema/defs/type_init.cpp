@@ -163,7 +163,12 @@ namespace sema {
             // string
             {
                 string_->method_table().Add("@print",   FnSign(none_));
+                string_->method_table().Add("@plus",    FnSign(string_, { string_ }));
+                string_->method_table().Add("@neg",     FnSign(string_));
+                string_->method_table().Add("@eq",      FnSign(bool_,   { string_ }));
+                string_->method_table().Add("@neq",     FnSign(bool_,   { string_ }));
                 string_->method_table().Add("len",      FnSign(i64_));
+                string_->method_table().Add("clear",    FnSign(none_));
             }
 
             /*
