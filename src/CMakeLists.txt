@@ -32,6 +32,7 @@ add_executable(xero
     xcompiler/defs/types_init/array.cpp
     xcompiler/defs/types_init/range.cpp
     xcompiler/builtin.cpp
+    xcompiler/ir/utility.cpp
     xcompiler/ir/gen.cpp
     xcompiler/optimizer/optimizer.cpp
     xcompiler/backend/backend.cpp
