@@ -173,12 +173,12 @@ namespace xcompiler {
             auto result_size = builder.CreateMul(result_len, builder.getInt64(4));
             auto result_data = builder.CreateCall(LibC_malloc(gen), { result_size });
 
-            // Copy lhs
+            // Copy lstr
             builder.CreateCall(LibC_memmove(gen), {
                 result_data, lstr.data, builder.CreateMul(lstr.len, builder.getInt64(4))
             });
 
-            // Copy rhs
+            // Copy rstr
             auto rstr_dst = builder.CreateInBoundsGEP(
                 builder.getInt32Ty(), result_data, { lstr.len }
             );

@@ -11,11 +11,12 @@
 namespace xcompiler {
 
     void TypeImplTable::Init_char() {
-        using ARGS  = const std::vector<Arg>&;
+        using ARGS    = const std::vector<Arg>&;
 
-        auto  none_ = sema::TypeTable::Lookup("none");
-        auto  bool_ = sema::TypeTable::Lookup("bool");
-        auto  char_ = sema::TypeTable::Lookup("char");
+        auto  none_   = sema::TypeTable::Lookup("none");
+        auto  bool_   = sema::TypeTable::Lookup("bool");
+        auto  char_   = sema::TypeTable::Lookup("char");
+        auto  string_ = sema::TypeTable::Lookup("string");
 
         auto impl = TypeImplTable::Set(TypeImpl(char_));
 
@@ -132,5 +133,18 @@ namespace xcompiler {
         impl->MethodAdd("@neq",     [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateICmpNE(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { char_ }));
+
+        impl->MethodAdd("@cast",    [string_](IRGen& gen, ARGS& args) -> llvm::Value* {
+            auto& builder   = gen.llvm_builder();
+            auto  codepoint = gen.ArgLoad(args[0]);
+
+            auto  data = builder.CreateCall(LibC_malloc(gen), { builder.getInt64(4) });
+            builder.CreateStore(codepoint, data);
+
+            auto gen_val = (llvm::Value*)llvm::UndefValue::get(gen.LLVMType(string_));
+            gen_val = builder.CreateInsertValue(gen_val, data, 0);
+            gen_val = builder.CreateInsertValue(gen_val, builder.getInt64(1), 1);
+            return gen_val;
+        }, sema::FnSign(string_, {}, std::nullopt, sema::FnModifier::Cast));
     }
 }

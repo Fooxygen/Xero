@@ -616,7 +616,7 @@ namespace xcompiler {
         auto data = ExprLoad(*node.data_);
 
         // Range
-        if (node.data_->resolved_type_->is("range")) {
+        if      (node.data_->resolved_type_->is("range")) {
             auto range_type     = (sema::ParametricType*)node.data_->resolved_type_->ReferenceUnwrap();
             auto iter_type      = range_type->params_type()[0];
             auto iter_type_impl = TypeImplTable::Lookup(iter_type);
@@ -648,15 +648,15 @@ namespace xcompiler {
             {
                 auto iter_val = llvm_builder().CreateLoad(LLVMType(iter_type), iter_slot);
 
-                auto isIncreasing = cmp("@ge", right_val, left_val);
-                auto ge           = cmp("@ge", iter_val, right_val);
-                auto gt           = cmp("@gt", iter_val, right_val);
-                auto le           = cmp("@le", iter_val, right_val);
-                auto lt           = cmp("@lt", iter_val, right_val);
+                auto isUp = cmp("@ge", right_val, left_val);    // increasing
+                auto ge   = cmp("@ge", iter_val, right_val);
+                auto gt   = cmp("@gt", iter_val, right_val);
+                auto le   = cmp("@le", iter_val, right_val);
+                auto lt   = cmp("@lt", iter_val, right_val);
 
                 auto overstep_inc = llvm_builder().CreateSelect(isClosed_val, gt, ge);
                 auto overstep_dec = llvm_builder().CreateSelect(isClosed_val, lt, le);
-                auto overstep     = llvm_builder().CreateSelect(isIncreasing, overstep_inc, overstep_dec);
+                auto overstep     = llvm_builder().CreateSelect(isUp, overstep_inc, overstep_dec);
                 
                 llvm_builder().CreateCondBr(overstep, block_end, block_body);
             }
@@ -681,6 +681,62 @@ namespace xcompiler {
                 auto iter_val_next = cmp("@plus", iter_val, step_val);
                 llvm_builder().CreateStore(iter_val_next, iter_slot);
                 llvm_builder().CreateBr(block_cond);
+            }
+
+            // End Block
+            llvm_builder().SetInsertPoint(block_end);
+        }
+
+        // String
+        else if (node.data_->resolved_type_->is("string")) {
+            auto str_data = llvm_builder().CreateExtractValue(data, 0);
+            auto str_len  = llvm_builder().CreateExtractValue(data, 1);
+
+            // Iterator
+            auto iter_slot = SlotCreate(llvm::Type::getInt32Ty(llvm_context()), node.iter_->name_);
+
+            // Blocks
+            auto fn          = llvm_builder().GetInsertBlock()->getParent();
+            auto block_entry = llvm_builder().GetInsertBlock();
+            auto block_cond  = BlockCreate(".for.cond", fn);
+            auto block_body  = BlockCreate(".for.body", fn);
+            auto block_step  = BlockCreate(".for.step", fn);
+            auto block_end   = BlockCreate(".for.end",  fn);
+
+            // Cond Block
+            llvm_builder().CreateBr(block_cond);
+            llvm_builder().SetInsertPoint(block_cond);
+            auto counter = llvm_builder().CreatePHI(llvm_builder().getInt64Ty(), 2);
+            {
+                counter->addIncoming(llvm_builder().getInt64(0), block_entry);
+                llvm_builder().CreateCondBr(
+                    llvm_builder().CreateICmpSLT(counter, str_len), block_body, block_end
+                );
+            }
+
+            // Body Block
+            llvm_builder().SetInsertPoint(block_body);
+            {
+                auto elem = llvm_builder().CreateInBoundsGEP(
+                    llvm_builder().getInt32Ty(), str_data, { counter }
+                );
+                llvm_builder().CreateStore(
+                    llvm_builder().CreateLoad(llvm_builder().getInt32Ty(), elem), iter_slot
+                );
+
+                state_.loop_nextblocks_.emplace_back(State::LoopNextBlock{ block_step, block_end });
+                Exec(*node.body_, [&]{ var_table_.Declare(node.iter_->name_, iter_slot); });
+                state_.loop_nextblocks_.pop_back();
+
+                BlockTermCreate(block_step);
+            }
+
+            // Step Block
+            llvm_builder().SetInsertPoint(block_step);
+            {
+                auto next = llvm_builder().CreateAdd(counter, llvm_builder().getInt64(1));
+                llvm_builder().CreateBr(block_cond);
+                counter->addIncoming(next, llvm_builder().GetInsertBlock());
             }
 
             // End Block

@@ -27,14 +27,16 @@ namespace sema {
 
         // Cast
         {
-            i32_->method_table().Add("@cast", FnSign(i64_, { }, std::nullopt, FnModifier::Cast));
-            i32_->method_table().Add("@cast", FnSign(f32_, { }, std::nullopt, FnModifier::Cast));
-            i32_->method_table().Add("@cast", FnSign(f64_, { }, std::nullopt, FnModifier::Cast));
+            i32_->method_table().Add("@cast", FnSign(i64_, {}, std::nullopt, FnModifier::Cast));
+            i32_->method_table().Add("@cast", FnSign(f32_, {}, std::nullopt, FnModifier::Cast));
+            i32_->method_table().Add("@cast", FnSign(f64_, {}, std::nullopt, FnModifier::Cast));
 
-            i64_->method_table().Add("@cast", FnSign(f32_, { }, std::nullopt, FnModifier::Cast));
-            i64_->method_table().Add("@cast", FnSign(f64_, { }, std::nullopt, FnModifier::Cast));
+            i64_->method_table().Add("@cast", FnSign(f32_, {}, std::nullopt, FnModifier::Cast));
+            i64_->method_table().Add("@cast", FnSign(f64_, {}, std::nullopt, FnModifier::Cast));
 
-            f32_->method_table().Add("@cast", FnSign(f64_, { }, std::nullopt, FnModifier::Cast));
+            f32_->method_table().Add("@cast", FnSign(f64_, {}, std::nullopt, FnModifier::Cast));
+
+            char_->method_table().Add("@cast", FnSign(string_, {}, std::nullopt, FnModifier::Cast));
         
             TypeTable::CastRecompute();
         }
