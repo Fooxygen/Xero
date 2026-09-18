@@ -161,7 +161,7 @@ namespace sema {
         return type;
     }
 
-    FnSign TypeTable::InstantiateSign(const FnSign& sign, BasicType* base, const std::vector<Type*>& args) {
+    FnSign  TypeTable::InstantiateSign(const FnSign& sign, BasicType* base, const std::vector<Type*>& args) {
         std::vector<Type*> params_fix = {};
         for (auto param : sign.params_type_fix())
             params_fix.emplace_back(param ? Substitute(param, base, args) : nullptr);

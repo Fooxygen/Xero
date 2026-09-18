@@ -133,6 +133,17 @@ namespace sema {
         {
             // Pick
             if (node.oper_type_ == Pick) {
+                auto target_type = node.lexpr_->resolved_type_;
+                auto index_type  = node.rexpr_->resolved_type_->ReferenceUnwrap();
+
+                if (index_type->is("range")) {
+                    throw LogErr(LogModule::Sema, "range pick is not supported", node.loc_);
+                }
+                else {
+                    auto method = TypeTable::MethodLookup(target_type, "@pick");
+                    auto sign   = method->SignLookup(target_type, { index_type }, node.loc_);
+                    node.resolved_type_ = sign->return_type();
+                }
                 return;
             }
 

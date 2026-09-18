@@ -187,6 +187,7 @@ namespace sema {
             // array
             {
                 array_->method_table().Add("@print",        FnSign(none_));
+                array_->method_table().Add("@pick",         FnSign(ReferenceTypeGet(array_->params_binding()[0]), { i64_ }));
                 //array_->method_table().Add("@neg",          FnSign(array_));
                 array_->method_table().Add("len",           FnSign(i64_));
                 array_->method_table().Add("clear",         FnSign(none_));

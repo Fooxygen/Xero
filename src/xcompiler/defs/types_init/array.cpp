@@ -18,6 +18,7 @@ namespace xcompiler {
         auto  array_ = sema::TypeTable::Lookup("array");
 
         auto  impl   = TypeImplTable::Set(TypeImpl(array_));
+        auto  T      = ((sema::BasicType*)array_)->params_binding()[0];
 
         struct ArrayInfo {
             llvm::Value* addr           = nullptr;
@@ -73,6 +74,12 @@ namespace xcompiler {
             auto  bytes   = builder.CreateMul(cnt, builder.getInt64(elem_size));
             builder.CreateCall(LibC_memmove(gen), { dst, src, bytes });
         };
+
+        impl->MethodAdd("@pick",        [array_load, elem_get](IRGen& gen, ARGS& args) -> llvm::Value* {
+            auto arr = array_load(gen, args[0]);
+            auto idx = gen.ArgLoad(args[1]);
+            return elem_get(gen, arr.data, arr.elem_size, idx);
+        }, sema::FnSign(sema::TypeTable::ReferenceTypeGet(T), { i64_ }));
 
         impl->MethodAdd("@print",       [array_load, elem_get](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
