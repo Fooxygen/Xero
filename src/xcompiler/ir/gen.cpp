@@ -550,9 +550,18 @@ namespace xcompiler {
     }
 
     llvm::Value* IRGen::Exec(AssignStmt& node) {
-        auto target      = (IdExpr*)(node.target_.get());
-        auto target_addr = IdResolve(*target);
-        auto target_type = target->resolved_type_->ReferenceUnwrap();
+        auto target_type = node.target_->resolved_type_->ReferenceUnwrap();
+
+        llvm::Value* target_addr = nullptr;
+        if (auto idexpr = dynamic_cast<IdExpr*>(node.target_.get())) {
+            target_addr = IdResolve(*idexpr);
+        }
+        else if (dynamic_cast<sema::ReferenceType*>(node.target_->resolved_type_)) {
+            target_addr = Exec(*node.target_);
+        }
+        else {
+            throw LogErr(LogModule::Xcompiler, "cannot assign to a non-referenceable value", node.loc_);
+        }
 
         // Value
         llvm::Value* val = nullptr;

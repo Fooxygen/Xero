@@ -1,7 +1,7 @@
 
 fn main() {
     a: array[=i32=] = [10, 20, 30];
-    x: i32 = a[1];
-    println(x);
-    println(a[2]);
+    println(a[1]);
+    a[1] = 99;
+    println(a[1]);
 }
