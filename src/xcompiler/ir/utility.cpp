@@ -13,6 +13,12 @@ namespace xcompiler {
             return llvm::PointerType::get(llvm_context(), 0);
         }
 
+        if (dynamic_cast<sema::BindingType*>(type)) {
+            throw LogErr(LogModule::Xcompiler, std::format(
+                "unresolved binding type '{}'", type->name()
+            ));
+        }
+
         if (type->is("none")) {
             return llvm::Type::getVoidTy(llvm_context());
         }

@@ -46,7 +46,8 @@ namespace xcompiler {
     }
 
     FnImpl*      TypeImpl::MethodGet(const sema::FnSign* sign) {
-        auto it = methods_.find(sign);
+        auto key = sign->TemplateSign();
+        auto it  = methods_.find(key);
         if (it == methods_.end()) {
             throw LogErr(LogModule::Xcompiler, std::format(
                 "undefined implementation of method {} for type '{}', signature it attempts to obtain is {}",
@@ -62,15 +63,14 @@ namespace xcompiler {
     }
 
     llvm::Value* TypeImpl::MethodCall(IRGen& gen, const std::string& name, const std::vector<Arg>& args) {
-        auto  type_basic  = (sema::BasicType*)link_type_->BasicTypeGet();
-        auto& method      = type_basic->method_table().Lookup(name);
+        auto  method = sema::TypeTable::MethodLookup(args[0].type(), name);
 
         std::vector<sema::Type*> args_type = {};
         for (size_t i = 1; i < args.size(); i++) {      // elem 0 is target
             args_type.emplace_back(args[i].type());
         }
         
-        auto  method_sign = method.SignLookup(args[0].type(), args_type);
+        auto  method_sign = method->SignLookup(args[0].type(), args_type);
         auto  method_impl = MethodGet(method_sign);
 
         if (auto native = dynamic_cast<NativeFnImpl*>(method_impl)) {

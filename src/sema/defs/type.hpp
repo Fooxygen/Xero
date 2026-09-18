@@ -23,7 +23,8 @@ namespace sema {
         enum class Using {
             Basic,          // array
             Parametric,     // array[=i32=]
-            Reference       // array&
+            Reference,      // array&
+            Binding         // T
         };
     
     private:
@@ -53,9 +54,19 @@ namespace sema {
         virtual Type* ReferenceUnwrap() = 0;
     };
 
+    class BindingType    : public Type {
+    public:
+        BindingType(const std::string& name)
+        :   Type(name, Using::Binding) {}
+
+        Type* BasicTypeGet()    override { return this; }
+        Type* ReferenceUnwrap() override { return this; }
+    };
+
     class BasicType      : public Type {
     private:
         size_t  params_cnt_ = 0;     // number of type parameters
+        std::vector<BindingType*> params_binding_ = {};
         FnTable method_table_;
 
     public:
@@ -67,6 +78,7 @@ namespace sema {
         }
 
         size_t   params_cnt() const { return params_cnt_; }
+        std::vector<BindingType*>& params_binding() { return params_binding_; }
         FnTable& method_table()     { return method_table_; }
     
     public:
@@ -78,16 +90,28 @@ namespace sema {
     private:
         Type*              type_basic_  = nullptr;
         std::vector<Type*> params_type_ = {};
+        FnTable            method_table_;
 
     public:
         ParametricType(std::string name, Type* type_basic, const std::vector<Type*>& params_type)
         :   Type(name, Using::Parametric),
             type_basic_(type_basic),
             params_type_(params_type)
-        {}
+        {
+            method_table_.OwnerSet(this);
+        }
+
+        ParametricType(const ParametricType& other)
+        :   Type(other.name(), Using::Parametric),
+            type_basic_(other.type_basic_),
+            params_type_(other.params_type_)
+        {
+            method_table_.OwnerSet(this);
+        }
 
         Type*               type_basic() const { return type_basic_; }
         std::vector<Type*>& params_type()      { return params_type_; }
+        FnTable&            method_table()     { return method_table_; }
 
     public:
         static std::string ParamsPrint(Type* type_basic, const std::vector<Type*>& params_type);
@@ -130,6 +154,12 @@ namespace sema {
         
         static Type* ParametricTypeGet(Type* type, const std::vector<Type*>& params, std::optional<Loc> loc = std::nullopt);
         static Type* ReferenceTypeGet(Type* type);
+
+        static bool  isContainsBinding(Type* type);
+        static bool  isContainsBinding(const FnSign& sign);
+        static Type* Substitute(Type* type, BasicType* base, const std::vector<Type*>& args);
+        static FnSign InstantiateSign(const FnSign& sign, BasicType* base, const std::vector<Type*>& args);
+        static Fn*   MethodLookup(Type* type, const std::string& name);
 
         static void  CastRecompute();
         static Type* Common(std::set<Type*> ts) {

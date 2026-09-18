@@ -21,6 +21,9 @@ namespace sema {
         auto string_        = (BasicType*)TypeTable::Set(BasicType("string"));
         /*auto stringview_    = (BasicType*)*/TypeTable::Set(BasicType("stringview"));
         auto array_         = (BasicType*)TypeTable::Set(BasicType("array", 1));
+        {
+            array_->params_binding().emplace_back(new BindingType("T"));
+        }
         /*auto arrayview_     = (BasicType*)*/TypeTable::Set(BasicType("arrayview"));
         auto range_         = (BasicType*)TypeTable::Set(BasicType("range", 1));
         /*auto function_      = (BasicType*)*/TypeTable::Set(BasicType("function"));

@@ -38,6 +38,7 @@ namespace sema {
         std::optional<Type*> params_type_var_ = std::nullopt;
         FnModifier           modifier_        = FnModifier::None;
         std::string          name_            = "";
+        const FnSign*        template_        = nullptr;
 
     public:
         FnSign(
@@ -71,6 +72,9 @@ namespace sema {
 
         bool isReceiveMatch(Type* type) const;
         void ReceiveSet(Type* type) { receive_type_ = type; }
+
+        const FnSign* TemplateSign() const { return template_ ? template_ : this; }
+        void          TemplateSet(const FnSign* sign) { template_ = sign; }
     };
 
     // Definition of Fn

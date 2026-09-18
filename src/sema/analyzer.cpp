@@ -273,8 +273,8 @@ namespace sema {
 
         // Callee
         auto  callee = node.callee_->name_;
-        auto& method = ((BasicType*)target_type->BasicTypeGet())->method_table().Lookup(callee, node.callee_->loc_);
-        auto  sign   = method.SignLookup(target_type, args_type, node.callee_->loc_);       // target_type -> receive_type
+        auto  method = TypeTable::MethodLookup(target_type, callee);
+        auto  sign   = method->SignLookup(target_type, args_type, node.callee_->loc_);      // target_type -> receive_type
         
         node.resolved_type_ = sign->return_type();
         node.callee_fnsign_ = sign;
