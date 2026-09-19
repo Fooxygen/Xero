@@ -96,33 +96,30 @@ namespace xcompiler {
         if (node.oper_type_ == Pick) {
             auto target_type = node.lexpr_->resolved_type_;
             auto target_impl = TypeImplTable::Lookup(target_type);
-            auto index_type  = node.rexpr_->resolved_type_->ReferenceUnwrap();
+            auto idx_type    = node.rexpr_->resolved_type_->ReferenceUnwrap();
 
-            if (index_type->is("range")) {
-                throw LogErr(LogModule::Xcompiler, "range pick is not supported", node.loc_);
+            llvm::Value* target_addr = nullptr;
+            if (auto idexpr = dynamic_cast<IdExpr*>(node.lexpr_.get())) {
+                target_addr = IdResolve(*idexpr);
+            }
+            else if (dynamic_cast<sema::ReferenceType*>(node.lexpr_->resolved_type_)) {
+                target_addr = Exec(*node.lexpr_);
             }
             else {
-                llvm::Value* target_addr = nullptr;
-                if (auto idexpr = dynamic_cast<IdExpr*>(node.lexpr_.get())) {
-                    target_addr = IdResolve(*idexpr);
-                }
-                else if (dynamic_cast<sema::ReferenceType*>(node.lexpr_->resolved_type_)) {
-                    target_addr = Exec(*node.lexpr_);
-                }
-                else {
-                    auto target_val  = ExprLoad(*node.lexpr_);
-                    auto target_slot = SlotCreate(LLVMType(node.lexpr_->resolved_type_), ".pick.target.slot");
-                    llvm_builder().CreateStore(target_val, target_slot);
-                    target_addr = target_slot;
-                }
+                target_addr = ValMaterialize(ExprLoad(*node.lexpr_), node.lexpr_->resolved_type_);
+            }
 
-                auto i64_type  = sema::TypeTable::Lookup("i64");
-                auto index_val = TypeImplTable::Cast(*this, ExprLoad(*node.rexpr_), index_type, i64_type);
+            auto target_arg = Arg(target_addr, sema::TypeTable::ReferenceTypeGet(target_type->ReferenceUnwrap()));
 
+            if (idx_type->is("range")) {
                 return target_impl->MethodCall(*this, "@pick", {
-                    Arg(target_addr, sema::TypeTable::ReferenceTypeGet(target_type->ReferenceUnwrap())),
-                    Arg(index_val, i64_type)
+                    target_arg, Arg(ExprLoad(*node.rexpr_), idx_type)
                 });
+            }
+            else {
+                auto i64_    = sema::TypeTable::Lookup("i64");
+                auto idx_val = TypeImplTable::Cast(*this, ExprLoad(*node.rexpr_), idx_type, i64_);
+                return target_impl->MethodCall(*this, "@pick", { target_arg, Arg(idx_val, i64_) });
             }
         }
 
@@ -378,10 +375,7 @@ namespace xcompiler {
 
         // Value as Target
         else {
-            auto target_val  = ExprLoad(*node.target_);
-            auto target_slot = SlotCreate(LLVMType(node.target_->resolved_type_), ".method.target.slot");
-            llvm_builder().CreateStore(target_val, target_slot);
-            target_addr = target_slot;
+            target_addr = ValMaterialize(ExprLoad(*node.target_), node.target_->resolved_type_);
         }
 
         // Args

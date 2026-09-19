@@ -19,12 +19,15 @@ namespace sema {
         auto f64_           = (BasicType*)TypeTable::Set(BasicType("f64"));
         auto char_          = (BasicType*)TypeTable::Set(BasicType("char"));
         auto string_        = (BasicType*)TypeTable::Set(BasicType("string"));
-        /*auto stringview_    = (BasicType*)*/TypeTable::Set(BasicType("stringview"));
+        auto stringview_    = (BasicType*)TypeTable::Set(BasicType("stringview"));
         auto array_         = (BasicType*)TypeTable::Set(BasicType("array", 1));
         {
-            array_->params_binding().emplace_back(new BindingType("T"));
+            array_->params_binding().emplace_back(new BindingType("array.T"));
         }
-        /*auto arrayview_     = (BasicType*)*/TypeTable::Set(BasicType("arrayview"));
+        auto arrayview_     = (BasicType*)TypeTable::Set(BasicType("arrayview", 1));
+        {
+            arrayview_->params_binding().emplace_back(new BindingType("arrayview.T"));
+        }
         auto range_         = (BasicType*)TypeTable::Set(BasicType("range", 1));
         /*auto function_      = (BasicType*)*/TypeTable::Set(BasicType("function"));
 
@@ -169,6 +172,7 @@ namespace sema {
             {
                 string_->method_table().Add("@print",   FnSign(none_));
                 string_->method_table().Add("@pick",    FnSign(ReferenceTypeGet(char_), { i64_ }));
+                string_->method_table().Add("@pick",    FnSign(stringview_, { range_ }));
                 string_->method_table().Add("@plus",    FnSign(string_, { string_ }));
                 string_->method_table().Add("@neg",     FnSign(string_));
                 string_->method_table().Add("@eq",      FnSign(bool_,   { string_ }));
@@ -177,18 +181,27 @@ namespace sema {
                 string_->method_table().Add("clear",    FnSign(none_));
             }
 
-            /*
+            // arrayview
+            {
+                arrayview_->method_table().Add("@print",   FnSign(none_));
+                arrayview_->method_table().Add("@copy",    FnSign(arrayview_));
+                arrayview_->method_table().Add("@release", FnSign(none_));
+                arrayview_->method_table().Add("@pick",    FnSign(ParametricTypeGet(arrayview_, { arrayview_->params_binding()[0] }), { range_ }));
+            }
+
             // stringview
             {
-                stringview_->method_table().Add("len",       FnSign(i32_));
-                stringview_->method_table().Add("to_string", FnSign(string_));
+                stringview_->method_table().Add("@print",   FnSign(none_));
+                stringview_->method_table().Add("@copy",    FnSign(stringview_));
+                stringview_->method_table().Add("@release", FnSign(none_));
+                stringview_->method_table().Add("@pick",    FnSign(stringview_, { range_ }));
             }
-            */
             
             // array
             {
                 array_->method_table().Add("@print",        FnSign(none_));
                 array_->method_table().Add("@pick",         FnSign(ReferenceTypeGet(array_->params_binding()[0]), { i64_ }));
+                array_->method_table().Add("@pick",         FnSign(ParametricTypeGet(arrayview_, { array_->params_binding()[0] }), { range_ }));
                 //array_->method_table().Add("@neg",          FnSign(array_));
                 array_->method_table().Add("len",           FnSign(i64_));
                 array_->method_table().Add("clear",         FnSign(none_));
@@ -199,14 +212,6 @@ namespace sema {
                 array_->method_table().Add("push_back",     FnSign(none_, { nullptr }));
                 array_->method_table().Add("pop_back",      FnSign(none_));
             }
-
-            /*
-            // arrayview
-            {
-                arrayview_->method_table().Add("len",        FnSign(i32_));
-                arrayview_->method_table().Add("to_array",   FnSign(array_));
-            }
-            */
 
             // range
             {

@@ -100,6 +100,8 @@ namespace xcompiler {
         Init_char();
         Init_string();
         Init_array();
+        Init_arrayview();
+        Init_stringview();
         Init_range();
     }
 

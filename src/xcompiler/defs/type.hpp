@@ -59,6 +59,8 @@ namespace xcompiler {
         static void Init_char();
         static void Init_string();
         static void Init_array();
+        static void Init_arrayview();
+        static void Init_stringview();
         static void Init_range();
 
     public:

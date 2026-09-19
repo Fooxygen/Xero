@@ -1,9 +1,10 @@
 
 fn main() {
-    s: string = "Hello";
-    c: char   = s[1];
-    
-    println(c);
-    s[0] = 'X';
-    println(s);
+    s: string       = "Hello World";
+    a: array[=i32=] = [3, 1, 4, 1, 5, 9, 2, 6];
+
+    println(s[2..=6]);          # "llo W"
+    println(a[3..7]);           # [1, 5, 9, 2]
+    println(s[2..=6][1..=2]);   # "lo"
+    println(a[3..7][1..=2]);    # [5, 9]
 }

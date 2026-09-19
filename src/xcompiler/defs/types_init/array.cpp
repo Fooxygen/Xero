@@ -81,12 +81,32 @@ namespace xcompiler {
             return elem_get(gen, arr.data, arr.elem_size, idx);
         }, sema::FnSign(sema::TypeTable::ReferenceTypeGet(T), { i64_ }));
 
+        impl->MethodAdd("@pick",        [array_load](IRGen& gen, ARGS& args) -> llvm::Value* {
+            auto& builder = gen.llvm_builder();
+            auto  arr     = array_load(gen, args[0]);
+            auto  range   = gen.ArgLoad(args[1]);
+
+            auto left     = builder.CreateIntCast(builder.CreateExtractValue(range, 0), builder.getInt64Ty(), true);
+            auto right    = builder.CreateIntCast(builder.CreateExtractValue(range, 1), builder.getInt64Ty(), true);
+            auto isClosed = builder.CreateExtractValue(range, 3);
+
+            auto diff = builder.CreateSub(right, left);
+            auto len  = builder.CreateSelect(isClosed, builder.CreateAdd(diff, builder.getInt64(1)), diff);
+
+            auto view_type = gen.LLVMType(sema::TypeTable::Lookup("arrayview"));
+            auto gen_val   = (llvm::Value*)llvm::UndefValue::get(view_type);
+            gen_val = builder.CreateInsertValue(gen_val, arr.addr, 0);
+            gen_val = builder.CreateInsertValue(gen_val, left,     1);
+            gen_val = builder.CreateInsertValue(gen_val, len,      2);
+            return gen_val;
+        }, sema::FnSign(sema::TypeTable::ParametricTypeGet(sema::TypeTable::Lookup("arrayview"), { T }), { sema::TypeTable::Lookup("range") }));
+
         impl->MethodAdd("@print",       [array_load, elem_get](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  arr     = array_load(gen, args[0]);
 
             // Blocks
-            auto fn = builder.GetInsertBlock()->getParent();
+            auto fn          = builder.GetInsertBlock()->getParent();
             auto block_entry = builder.GetInsertBlock();
             auto block_cond  = gen.BlockCreate(".array.print.cond",  fn);
             auto block_cont  = gen.BlockCreate(".array.print.cont",  fn);   // continue

@@ -64,9 +64,11 @@ namespace sema {
                     
                     // Non-Reference Param
                     else {
-                        // Pass: param i32, arg i32&
-                        //       param f64, arg i32
-                        if (arg->ReferenceUnwrap() != param && !arg->casts().contains(param)) throw 0;
+                        // Pass: param i32,   arg i32&
+                        //       param f64,   arg i32
+                        //       param range, arg range[=i32=]
+                        auto arg_unwrap = arg->ReferenceUnwrap();
+                        if (arg_unwrap != param && !arg_unwrap->is(param->name()) && !arg->casts().contains(param)) throw 0;
                     }
                 }
             }

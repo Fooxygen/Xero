@@ -47,6 +47,14 @@ namespace xcompiler {
                 }
             );
         }
+        if (type->is("arrayview") || type->is("stringview")) {
+            return llvm::StructType::get(llvm_context(), {
+                    llvm::PointerType::get(llvm_context(), 0),      // org
+                    llvm::Type::getInt64Ty(llvm_context()),         // offset
+                    llvm::Type::getInt64Ty(llvm_context())          // len
+                }
+            );
+        }
         if (type->is("range")) {
             auto parametric_type = (sema::ParametricType*)type;
             auto elem_type       = LLVMType(parametric_type->params_type()[0]);
@@ -115,10 +123,7 @@ namespace xcompiler {
     
     llvm::Value*      IRGen::ArgAddr(const Arg& arg) {
         if (arg.isReferenceType()) return arg.val();
-
-        auto slot = SlotCreate(LLVMType(arg.type()), ".arg.slot");
-        llvm_builder().CreateStore(arg.val(), slot);
-        return slot;
+        return ValMaterialize(arg.val(), arg.type());
     }
 
     llvm::AllocaInst* IRGen::SlotCreate(llvm::Type* type, const std::string& name) {

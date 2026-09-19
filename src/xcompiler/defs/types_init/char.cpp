@@ -40,7 +40,7 @@ namespace xcompiler {
             };
 
             // Blocks
-            auto fn = builder.GetInsertBlock()->getParent();
+            auto fn              = builder.GetInsertBlock()->getParent();
             auto block_write1    = gen.BlockCreate(".char.write1", fn);
             auto block_write2    = gen.BlockCreate(".char.write2", fn);
             auto block_write3    = gen.BlockCreate(".char.write3", fn);
