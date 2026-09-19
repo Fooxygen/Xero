@@ -143,6 +143,12 @@ namespace xcompiler {
             return nullptr;
         }, sema::FnSign(none_));
 
+        impl->MethodAdd("@pick",    [string_load, char_get](IRGen& gen, ARGS& args) -> llvm::Value* {
+            auto str     = string_load(gen, args[0]);
+            auto idx     = gen.ArgLoad(args[1]);
+            return char_get(gen, str.data, idx);
+        }, sema::FnSign(sema::TypeTable::ReferenceTypeGet(char_), { i64_ }));
+
         impl->MethodAdd("@copy",    [string_load](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  str     = string_load(gen, args[0]);
