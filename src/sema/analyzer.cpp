@@ -461,7 +461,7 @@ namespace sema {
         Type* iter_type = nullptr;
         auto  data_type = node.data_->resolved_type_->ReferenceUnwrap();
 
-        if (data_type->is("array")) {
+        if (data_type->is("array") || data_type->is("arrayview")) {
             if (auto parametric_type = dynamic_cast<ParametricType*>(data_type)) {
                 auto params_type = parametric_type->params_type();
                 if (!params_type.empty()) iter_type = params_type[0];

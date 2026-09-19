@@ -15,6 +15,7 @@ namespace xcompiler {
 
         auto  none_       = sema::TypeTable::Lookup("none");
         auto  char_       = sema::TypeTable::Lookup("char");
+        auto  i64_        = sema::TypeTable::Lookup("i64");
         auto  string_     = sema::TypeTable::Lookup("string");
         auto  stringview_ = sema::TypeTable::Lookup("stringview");
         auto  range_      = sema::TypeTable::Lookup("range");
@@ -51,12 +52,14 @@ namespace xcompiler {
             auto str_val = builder.CreateLoad(gen.LLVMType(string_), view.org);
             auto data    = builder.CreateExtractValue(str_val, 0);
 
+            // Blocks
             auto fn          = builder.GetInsertBlock()->getParent();
             auto block_entry = builder.GetInsertBlock();
             auto block_cond  = gen.BlockCreate(".stringview.print.cond", fn);
             auto block_body  = gen.BlockCreate(".stringview.print.body", fn);
             auto block_end   = gen.BlockCreate(".stringview.print.end",  fn);
 
+            // Cond Block
             builder.CreateBr(block_cond);
             builder.SetInsertPoint(block_cond);
             auto counter = builder.CreatePHI(builder.getInt64Ty(), 2);
@@ -67,6 +70,7 @@ namespace xcompiler {
                 );
             }
 
+            // Body Block
             builder.SetInsertPoint(block_body);
             {
                 auto idx  = builder.CreateAdd(view.offset, counter);
@@ -80,6 +84,7 @@ namespace xcompiler {
                 counter->addIncoming(next, builder.GetInsertBlock());
             }
 
+            // End Block
             builder.SetInsertPoint(block_end);
             return nullptr;
         }, sema::FnSign(none_));
@@ -90,6 +95,22 @@ namespace xcompiler {
         impl->MethodAdd("@release", [](IRGen&, ARGS&) -> llvm::Value* {
             return nullptr;
         }, sema::FnSign(none_));
+
+        impl->MethodAdd("len",      [view_load](IRGen& gen, ARGS& args) -> llvm::Value* {
+            return view_load(gen, args[0]).len;
+        }, sema::FnSign(i64_));
+
+        impl->MethodAdd("@pick",    [view_load, string_](IRGen& gen, ARGS& args) -> llvm::Value* {
+            auto& builder = gen.llvm_builder();
+            auto  view    = view_load(gen, args[0]);
+            auto  idx     = gen.ArgLoad(args[1]);
+
+            auto str_val = builder.CreateLoad(gen.LLVMType(string_), view.org);
+            auto data    = builder.CreateExtractValue(str_val, 0);
+
+            auto abs_idx = builder.CreateAdd(view.offset, idx);
+            return builder.CreateInBoundsGEP(builder.getInt32Ty(), data, { abs_idx });
+        }, sema::FnSign(sema::TypeTable::ReferenceTypeGet(char_), { i64_ }));
 
         impl->MethodAdd("@pick",    [view_load, stringview_](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
@@ -111,5 +132,25 @@ namespace xcompiler {
             gen_val = builder.CreateInsertValue(gen_val, len,      2);
             return gen_val;
         }, sema::FnSign(stringview_, { range_ }));
+
+        impl->MethodAdd("@cast",    [view_load, string_](IRGen& gen, ARGS& args) -> llvm::Value* {
+            auto& builder = gen.llvm_builder();
+            auto  view    = view_load(gen, args[0]);
+
+            auto str_val = builder.CreateLoad(gen.LLVMType(string_), view.org);
+            auto data    = builder.CreateExtractValue(str_val, 0);
+
+            auto new_size = builder.CreateMul(view.len, builder.getInt64(4));
+            auto new_data = builder.CreateCall(LibC_malloc(gen), { new_size });
+
+            auto src = builder.CreateInBoundsGEP(builder.getInt32Ty(), data, { view.offset });
+            builder.CreateCall(LibC_memmove(gen), { new_data, src, new_size });
+
+            auto gen_type = gen.LLVMType(string_);
+            auto gen_val  = (llvm::Value*)llvm::UndefValue::get(gen_type);
+            gen_val = builder.CreateInsertValue(gen_val, new_data, 0);
+            gen_val = builder.CreateInsertValue(gen_val, view.len,  1);
+            return gen_val;
+        }, sema::FnSign(string_, {}, std::nullopt, sema::FnModifier::Cast));
     }
 }

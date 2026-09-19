@@ -186,7 +186,10 @@ namespace sema {
                 arrayview_->method_table().Add("@print",   FnSign(none_));
                 arrayview_->method_table().Add("@copy",    FnSign(arrayview_));
                 arrayview_->method_table().Add("@release", FnSign(none_));
+                arrayview_->method_table().Add("@pick",    FnSign(ReferenceTypeGet(arrayview_->params_binding()[0]), { i64_ }));
                 arrayview_->method_table().Add("@pick",    FnSign(ParametricTypeGet(arrayview_, { arrayview_->params_binding()[0] }), { range_ }));
+                arrayview_->method_table().Add("@cast",    FnSign(ParametricTypeGet(array_, { arrayview_->params_binding()[0] }), {}, std::nullopt, FnModifier::Cast));
+                arrayview_->method_table().Add("len",      FnSign(i64_));
             }
 
             // stringview
@@ -194,7 +197,10 @@ namespace sema {
                 stringview_->method_table().Add("@print",   FnSign(none_));
                 stringview_->method_table().Add("@copy",    FnSign(stringview_));
                 stringview_->method_table().Add("@release", FnSign(none_));
+                stringview_->method_table().Add("@pick",    FnSign(ReferenceTypeGet(char_), { i64_ }));
                 stringview_->method_table().Add("@pick",    FnSign(stringview_, { range_ }));
+                stringview_->method_table().Add("@cast",    FnSign(string_, {}, std::nullopt, FnModifier::Cast));
+                stringview_->method_table().Add("len",      FnSign(i64_));
             }
             
             // array

@@ -651,6 +651,55 @@ namespace xcompiler {
     llvm::Value* IRGen::Exec(ForStmt& node) {
         auto data = ExprLoad(*node.data_);
 
+        auto iterate = [&](llvm::Value* data_ptr, llvm::Value* offset, llvm::Value* len, llvm::Type* elem_llvm_type) {
+            auto& builder   = llvm_builder();
+            auto  elem_size = llvm_module()->getDataLayout().getTypeAllocSize(elem_llvm_type);
+            auto  iter_slot = SlotCreate(elem_llvm_type, node.iter_->name_);
+
+            // Blocks
+            auto fn          = builder.GetInsertBlock()->getParent();
+            auto block_entry = builder.GetInsertBlock();
+            auto block_cond  = BlockCreate(".for.cond", fn);
+            auto block_body  = BlockCreate(".for.body", fn);
+            auto block_step  = BlockCreate(".for.step", fn);
+            auto block_end   = BlockCreate(".for.end",  fn);
+
+            // Cond Block
+            builder.CreateBr(block_cond);
+            builder.SetInsertPoint(block_cond);
+            auto counter = builder.CreatePHI(builder.getInt64Ty(), 2);
+            {
+                counter->addIncoming(builder.getInt64(0), block_entry);
+                builder.CreateCondBr(builder.CreateICmpSLT(counter, len), block_body, block_end);
+            }
+
+            // Body Block
+            builder.SetInsertPoint(block_body);
+            {
+                auto idx      = builder.CreateAdd(offset, counter);
+                auto byte_off = builder.CreateMul(idx, builder.getInt64(elem_size));
+                auto elem     = builder.CreateInBoundsGEP(builder.getInt8Ty(), data_ptr, { byte_off });
+                builder.CreateStore(builder.CreateLoad(elem_llvm_type, elem), iter_slot);
+
+                state_.loop_nextblocks_.emplace_back(State::LoopNextBlock{ block_step, block_end });
+                Exec(*node.body_, [&]{ var_table_.Declare(node.iter_->name_, iter_slot); });
+                state_.loop_nextblocks_.pop_back();
+
+                BlockTermCreate(block_step);
+            }
+
+            // Step Block
+            builder.SetInsertPoint(block_step);
+            {
+                auto next = builder.CreateAdd(counter, builder.getInt64(1));
+                builder.CreateBr(block_cond);
+                counter->addIncoming(next, builder.GetInsertBlock());
+            }
+
+            // End Block
+            builder.SetInsertPoint(block_end);
+        };
+
         // Range
         if      (node.data_->resolved_type_->is("range")) {
             auto range_type     = (sema::ParametricType*)node.data_->resolved_type_->ReferenceUnwrap();
@@ -723,60 +772,50 @@ namespace xcompiler {
             llvm_builder().SetInsertPoint(block_end);
         }
 
+        // Array
+        else if (node.data_->resolved_type_->is("array")) {
+            auto array_type = (sema::ParametricType*)node.data_->resolved_type_->ReferenceUnwrap();
+            auto elem_type  = array_type->params_type()[0];
+            iterate(
+                llvm_builder().CreateExtractValue(data, 0),
+                llvm_builder().getInt64(0),
+                llvm_builder().CreateExtractValue(data, 1),
+                LLVMType(elem_type)
+            );
+        }
+
+        // Arrayview
+        else if (node.data_->resolved_type_->is("arrayview")) {
+            auto view_type = (sema::ParametricType*)node.data_->resolved_type_->ReferenceUnwrap();
+            auto elem_type = view_type->params_type()[0];
+            auto arr_val   = llvm_builder().CreateLoad(LLVMType(sema::TypeTable::Lookup("array")), llvm_builder().CreateExtractValue(data, 0));
+            iterate(
+                llvm_builder().CreateExtractValue(arr_val, 0),
+                llvm_builder().CreateExtractValue(data, 1),
+                llvm_builder().CreateExtractValue(data, 2),
+                LLVMType(elem_type)
+            );
+        }
+
         // String
         else if (node.data_->resolved_type_->is("string")) {
-            auto str_data = llvm_builder().CreateExtractValue(data, 0);
-            auto str_len  = llvm_builder().CreateExtractValue(data, 1);
+            iterate(
+                llvm_builder().CreateExtractValue(data, 0),
+                llvm_builder().getInt64(0),
+                llvm_builder().CreateExtractValue(data, 1),
+                llvm_builder().getInt32Ty()
+            );
+        }
 
-            // Iterator
-            auto iter_slot = SlotCreate(llvm::Type::getInt32Ty(llvm_context()), node.iter_->name_);
-
-            // Blocks
-            auto fn          = llvm_builder().GetInsertBlock()->getParent();
-            auto block_entry = llvm_builder().GetInsertBlock();
-            auto block_cond  = BlockCreate(".for.cond", fn);
-            auto block_body  = BlockCreate(".for.body", fn);
-            auto block_step  = BlockCreate(".for.step", fn);
-            auto block_end   = BlockCreate(".for.end",  fn);
-
-            // Cond Block
-            llvm_builder().CreateBr(block_cond);
-            llvm_builder().SetInsertPoint(block_cond);
-            auto counter = llvm_builder().CreatePHI(llvm_builder().getInt64Ty(), 2);
-            {
-                counter->addIncoming(llvm_builder().getInt64(0), block_entry);
-                llvm_builder().CreateCondBr(
-                    llvm_builder().CreateICmpSLT(counter, str_len), block_body, block_end
-                );
-            }
-
-            // Body Block
-            llvm_builder().SetInsertPoint(block_body);
-            {
-                auto elem = llvm_builder().CreateInBoundsGEP(
-                    llvm_builder().getInt32Ty(), str_data, { counter }
-                );
-                llvm_builder().CreateStore(
-                    llvm_builder().CreateLoad(llvm_builder().getInt32Ty(), elem), iter_slot
-                );
-
-                state_.loop_nextblocks_.emplace_back(State::LoopNextBlock{ block_step, block_end });
-                Exec(*node.body_, [&]{ var_table_.Declare(node.iter_->name_, iter_slot); });
-                state_.loop_nextblocks_.pop_back();
-
-                BlockTermCreate(block_step);
-            }
-
-            // Step Block
-            llvm_builder().SetInsertPoint(block_step);
-            {
-                auto next = llvm_builder().CreateAdd(counter, llvm_builder().getInt64(1));
-                llvm_builder().CreateBr(block_cond);
-                counter->addIncoming(next, llvm_builder().GetInsertBlock());
-            }
-
-            // End Block
-            llvm_builder().SetInsertPoint(block_end);
+        // Stringview
+        else if (node.data_->resolved_type_->is("stringview")) {
+            auto str_val = llvm_builder().CreateLoad(LLVMType(sema::TypeTable::Lookup("string")), llvm_builder().CreateExtractValue(data, 0));
+            iterate(
+                llvm_builder().CreateExtractValue(str_val, 0),
+                llvm_builder().CreateExtractValue(data, 1),
+                llvm_builder().CreateExtractValue(data, 2),
+                llvm_builder().getInt32Ty()
+            );
         }
 
         return nullptr;

@@ -108,16 +108,31 @@ namespace xcompiler {
     llvm::Value* TypeImplTable::Cast(IRGen& gen, llvm::Value* val, sema::Type* from, sema::Type* to) {
         if (from == to) return val;
 
-        auto from_basic  = (sema::BasicType*)from->BasicTypeGet();
-        auto method_sign = from_basic->casts_fnsign().find(to);
-        if (method_sign == from_basic->casts_fnsign().end()) {
+        auto from_basic = (sema::BasicType*)from->BasicTypeGet();
+        const sema::FnSign* method_sign = nullptr;
+
+        if (auto from_parametric = dynamic_cast<sema::ParametricType*>(from)) {
+            for (auto& [cast_type, sign] : from_basic->casts_fnsign()) {
+                auto resolved = sema::TypeTable::Substitute(cast_type, from_basic, from_parametric->params_type());
+                if (resolved == to) {
+                    method_sign = sign;
+                    break;
+                }
+            }
+        }
+        else {
+            auto it = from_basic->casts_fnsign().find(to);
+            if (it != from_basic->casts_fnsign().end()) method_sign = it->second;
+        }
+
+        if (!method_sign) {
             throw LogErr(LogModule::Xcompiler, std::format(
                 "cannot cast type from '{}' to '{}'", from->name(), to->name()
             ));
         }
 
         auto from_impl   = TypeImplTable::Lookup(from_basic);
-        auto method_impl = from_impl->MethodGet(method_sign->second);
+        auto method_impl = from_impl->MethodGet(method_sign);
         auto receive     = gen.ArgRefMake(val, from);
 
         if (auto native = dynamic_cast<NativeFnImpl*>(method_impl)) {

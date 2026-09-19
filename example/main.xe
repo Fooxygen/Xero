@@ -1,10 +1,38 @@
 
 fn main() {
-    s: string       = "Hello World";
-    a: array[=i32=] = [3, 1, 4, 1, 5, 9, 2, 6];
+    a: array[=i32=]     = [10, 20, 30, 40, 50];
+    v: arrayview[=i32=] = a[1..4];
 
-    println(s[2..=6]);          # "llo W"
-    println(a[3..7]);           # [1, 5, 9, 2]
-    println(s[2..=6][1..=2]);   # "lo"
-    println(a[3..7][1..=2]);    # [5, 9]
+    println(v.len());                  # 3
+    println(v[0]);                     # 20
+    println(v[2]);                     # 40
+
+    for (x in a) {
+        println(x);                    # 10 20 30 40 50
+    }
+    for (x in v) {
+        println(x);                    # 20 30 40
+    }
+
+    b: array[=i32=] = v;
+    println(b);                        # [20, 30, 40]
+
+    v[0] = 99;
+    println(a);                        # [10, 99, 30, 40, 50]
+
+    s: string     = "Hello World";
+    w: stringview = s[0..7];
+
+    println(w.len());                  # 7
+    println(w[0]);                     # H
+
+    for (c in s) {
+        println(c);                    # H e l l o _ W o r l d
+    }
+    for (c in w) {
+        println(c);                    # H e l l o _ W
+    }
+
+    t: string = w;
+    println(t);                        # Hello W
 }

@@ -14,6 +14,7 @@ namespace xcompiler {
         using ARGS       = const std::vector<Arg>&;
 
         auto  none_      = sema::TypeTable::Lookup("none");
+        auto  i64_       = sema::TypeTable::Lookup("i64");
         auto  array_     = sema::TypeTable::Lookup("array");
         auto  arrayview_ = sema::TypeTable::Lookup("arrayview");
         auto  range_     = sema::TypeTable::Lookup("range");
@@ -47,14 +48,15 @@ namespace xcompiler {
             auto& builder = gen.llvm_builder();
             auto  view    = view_load(gen, args[0]);
 
-            auto  view_type = (sema::ParametricType*)args[0].ReferenceUnwrap();
-            auto  elem_type = view_type->params_type()[0];
-            auto  elem_impl = TypeImplTable::Lookup(elem_type);
-            auto  elem_size = gen.llvm_module()->getDataLayout().getTypeAllocSize(gen.LLVMType(elem_type));
+            auto  view_type      = (sema::ParametricType*)args[0].ReferenceUnwrap();
+            auto  elem_type      = view_type->params_type()[0];
+            auto  elem_type_impl = TypeImplTable::Lookup(elem_type);
+            auto  elem_size      = gen.llvm_module()->getDataLayout().getTypeAllocSize(gen.LLVMType(elem_type));
 
             auto arr_val = builder.CreateLoad(gen.LLVMType(array_), view.org);
             auto data    = builder.CreateExtractValue(arr_val, 0);
 
+            // Blocks
             auto fn          = builder.GetInsertBlock()->getParent();
             auto block_entry = builder.GetInsertBlock();
             auto block_cond  = gen.BlockCreate(".arrayview.print.cond",  fn);
@@ -66,6 +68,7 @@ namespace xcompiler {
 
             builder.CreateCall(LibC_printf(gen), { builder.CreateGlobalString("[", ".arrayview.lb") });
 
+            // Cond Block
             builder.CreateBr(block_cond);
             builder.SetInsertPoint(block_cond);
             auto counter = builder.CreatePHI(builder.getInt64Ty(), 2);
@@ -76,6 +79,7 @@ namespace xcompiler {
                 );
             }
 
+            // Cont Block
             builder.SetInsertPoint(block_cont);
             {
                 builder.CreateCondBr(
@@ -83,23 +87,26 @@ namespace xcompiler {
                 );
             }
 
+            // NoSep Block
             builder.SetInsertPoint(block_nosep);
             {
                 builder.CreateBr(block_body);
             }
 
+            // Sep Block
             builder.SetInsertPoint(block_sep);
             {
                 builder.CreateCall(LibC_printf(gen), { builder.CreateGlobalString(", ", ".arrayview.sep") });
                 builder.CreateBr(block_body);
             }
 
+            // Body Block
             builder.SetInsertPoint(block_body);
             {
                 auto idx    = builder.CreateAdd(view.offset, counter);
                 auto offset = builder.CreateMul(idx, builder.getInt64(elem_size));
                 auto elem   = builder.CreateInBoundsGEP(builder.getInt8Ty(), data, { offset });
-                elem_impl->MethodCall(gen, "@print", {
+                elem_type_impl->MethodCall(gen, "@print", {
                     Arg(elem, sema::TypeTable::ReferenceTypeGet(elem_type))
                 });
 
@@ -110,6 +117,7 @@ namespace xcompiler {
                 builder.CreateBr(block_cond);
             }
 
+            // End Block
             builder.SetInsertPoint(block_end);
             {
                 builder.CreateCall(LibC_printf(gen), { builder.CreateGlobalString("]", ".arrayview.rb") });
@@ -124,6 +132,27 @@ namespace xcompiler {
         impl->MethodAdd("@release", [](IRGen&, ARGS&) -> llvm::Value* {
             return nullptr;
         }, sema::FnSign(none_));
+
+        impl->MethodAdd("len",      [view_load](IRGen& gen, ARGS& args) -> llvm::Value* {
+            return view_load(gen, args[0]).len;
+        }, sema::FnSign(i64_));
+
+        impl->MethodAdd("@pick",    [view_load, array_](IRGen& gen, ARGS& args) -> llvm::Value* {
+            auto& builder = gen.llvm_builder();
+            auto  view    = view_load(gen, args[0]);
+            auto  idx     = gen.ArgLoad(args[1]);
+
+            auto  view_type = (sema::ParametricType*)args[0].ReferenceUnwrap();
+            auto  elem_type = view_type->params_type()[0];
+            auto  elem_size = gen.llvm_module()->getDataLayout().getTypeAllocSize(gen.LLVMType(elem_type));
+
+            auto arr_val = builder.CreateLoad(gen.LLVMType(array_), view.org);
+            auto data    = builder.CreateExtractValue(arr_val, 0);
+
+            auto abs_idx  = builder.CreateAdd(view.offset, idx);
+            auto byte_off = builder.CreateMul(abs_idx, builder.getInt64(elem_size));
+            return builder.CreateInBoundsGEP(builder.getInt8Ty(), data, { byte_off });
+        }, sema::FnSign(sema::TypeTable::ReferenceTypeGet(((sema::BasicType*)arrayview_)->params_binding()[0]), { i64_ }));
 
         impl->MethodAdd("@pick",    [view_load, arrayview_](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
@@ -145,5 +174,64 @@ namespace xcompiler {
             gen_val = builder.CreateInsertValue(gen_val, len,      2);
             return gen_val;
         }, sema::FnSign(sema::TypeTable::ParametricTypeGet(arrayview_, { ((sema::BasicType*)arrayview_)->params_binding()[0] }), { range_ }));
+
+        impl->MethodAdd("@cast",    [view_load, array_](IRGen& gen, ARGS& args) -> llvm::Value* {
+            auto& builder = gen.llvm_builder();
+            auto  view    = view_load(gen, args[0]);
+
+            auto  view_type      = (sema::ParametricType*)args[0].ReferenceUnwrap();
+            auto  elem_type      = view_type->params_type()[0];
+            auto  elem_type_impl = TypeImplTable::Lookup(elem_type);
+            auto  elem_size      = gen.llvm_module()->getDataLayout().getTypeAllocSize(gen.LLVMType(elem_type));
+
+            auto arr_val = builder.CreateLoad(gen.LLVMType(array_), view.org);
+            auto data    = builder.CreateExtractValue(arr_val, 0);
+
+            auto new_size = builder.CreateMul(view.len, builder.getInt64(elem_size));
+            auto new_data = builder.CreateCall(LibC_malloc(gen), { new_size });
+
+            // Blocks
+            auto fn          = builder.GetInsertBlock()->getParent();
+            auto block_entry = builder.GetInsertBlock();
+            auto block_cond  = gen.BlockCreate(".arrayview.cast.cond", fn);
+            auto block_body  = gen.BlockCreate(".arrayview.cast.body", fn);
+            auto block_end   = gen.BlockCreate(".arrayview.cast.end",  fn);
+
+            // Cond Block
+            builder.CreateBr(block_cond);
+            builder.SetInsertPoint(block_cond);
+            auto counter = builder.CreatePHI(builder.getInt64Ty(), 2);
+            {
+                counter->addIncoming(builder.getInt64(0), block_entry);
+                builder.CreateCondBr(builder.CreateICmpSLT(counter, view.len), block_body, block_end);
+            }
+
+            // Body Block
+            builder.SetInsertPoint(block_body);
+            {
+                auto src_idx  = builder.CreateAdd(view.offset, counter);
+                auto src_off  = builder.CreateMul(src_idx, builder.getInt64(elem_size));
+                auto dst_off  = builder.CreateMul(counter, builder.getInt64(elem_size));
+                auto elem_src = builder.CreateInBoundsGEP(builder.getInt8Ty(), data, { src_off });
+                auto elem_dst = builder.CreateInBoundsGEP(builder.getInt8Ty(), new_data, { dst_off });
+                auto copied   = elem_type_impl->MethodCall(gen, "@copy", {
+                    Arg(elem_src, sema::TypeTable::ReferenceTypeGet(elem_type))
+                });
+                builder.CreateStore(copied, elem_dst);
+
+                auto next = builder.CreateAdd(counter, builder.getInt64(1));
+                builder.CreateBr(block_cond);
+                counter->addIncoming(next, builder.GetInsertBlock());
+            }
+
+            // End Block
+            builder.SetInsertPoint(block_end);
+
+            auto gen_type = gen.LLVMType(array_);
+            auto gen_val  = (llvm::Value*)llvm::UndefValue::get(gen_type);
+            gen_val = builder.CreateInsertValue(gen_val, new_data, 0);
+            gen_val = builder.CreateInsertValue(gen_val, view.len,  1);
+            return gen_val;
+        }, sema::FnSign(sema::TypeTable::ParametricTypeGet(array_, { ((sema::BasicType*)arrayview_)->params_binding()[0] }), {}, std::nullopt, sema::FnModifier::Cast));
     }
 }
