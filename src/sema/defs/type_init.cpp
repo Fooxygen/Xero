@@ -189,6 +189,8 @@ namespace sema {
                 arrayview_->method_table().Add("@pick",    FnSign(ReferenceTypeGet(arrayview_->params_binding()[0]), { i64_ }));
                 arrayview_->method_table().Add("@pick",    FnSign(ParametricTypeGet(arrayview_, { arrayview_->params_binding()[0] }), { range_ }));
                 arrayview_->method_table().Add("@cast",    FnSign(ParametricTypeGet(array_, { arrayview_->params_binding()[0] }), {}, std::nullopt, FnModifier::Cast));
+                arrayview_->method_table().Add("@assign",  FnSign(none_, { ParametricTypeGet(array_,     { arrayview_->params_binding()[0] }) }));
+                arrayview_->method_table().Add("@assign",  FnSign(none_, { ParametricTypeGet(arrayview_, { arrayview_->params_binding()[0] }) }));
                 arrayview_->method_table().Add("len",      FnSign(i64_));
             }
 

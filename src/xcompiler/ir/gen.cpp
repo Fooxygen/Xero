@@ -546,40 +546,58 @@ namespace xcompiler {
     llvm::Value* IRGen::Exec(AssignStmt& node) {
         auto target_type = node.target_->resolved_type_->ReferenceUnwrap();
 
-        llvm::Value* target_addr = nullptr;
-        if (auto idexpr = dynamic_cast<IdExpr*>(node.target_.get())) {
-            target_addr = IdResolve(*idexpr);
-        }
-        else if (dynamic_cast<sema::ReferenceType*>(node.target_->resolved_type_)) {
-            target_addr = Exec(*node.target_);
-        }
-        else {
-            throw LogErr(LogModule::Xcompiler, "cannot assign to a non-referenceable value", node.loc_);
-        }
+        // Use @assign
+        if (sema::TypeTable::MethodLookupTry(target_type, "@assign")) {
+            auto target_val  = Exec(*node.target_);
+            auto target_addr = ValMaterialize(target_val, target_type);
 
-        // Value
-        llvm::Value* val = nullptr;
-        auto val_type    = node.value_->resolved_type_->ReferenceUnwrap();
-        if (auto idexpr = dynamic_cast<IdExpr*>(node.value_.get())) {
-            val = TypeImplTable::Lookup(val_type)->MethodCall(*this, "@copy", {
-                Arg(IdResolve(*idexpr), sema::TypeTable::ReferenceTypeGet(val_type))
+            auto val_type = node.value_->resolved_type_->ReferenceUnwrap();
+            auto val      = ExprLoad(*node.value_);
+
+            TypeImplTable::Lookup(target_type)->MethodCall(*this, "@assign", {
+                Arg(target_addr, sema::TypeTable::ReferenceTypeGet(target_type)),
+                Arg(val, val_type)
             });
+            return nullptr;
         }
+
+        // Replace
         else {
-            val = ExprLoad(*node.value_);
+            llvm::Value* target_addr = nullptr;
+            if (auto idexpr = dynamic_cast<IdExpr*>(node.target_.get())) {
+                target_addr = IdResolve(*idexpr);
+            }
+            else if (dynamic_cast<sema::ReferenceType*>(node.target_->resolved_type_)) {
+                target_addr = Exec(*node.target_);
+            }
+            else {
+                throw LogErr(LogModule::Xcompiler, "cannot assign to a non-referenceable value", node.loc_);
+            }
+
+            // Value
+            llvm::Value* val = nullptr;
+            auto val_type    = node.value_->resolved_type_->ReferenceUnwrap();
+            if (auto idexpr = dynamic_cast<IdExpr*>(node.value_.get())) {
+                val = TypeImplTable::Lookup(val_type)->MethodCall(*this, "@copy", {
+                    Arg(IdResolve(*idexpr), sema::TypeTable::ReferenceTypeGet(val_type))
+                });
+            }
+            else {
+                val = ExprLoad(*node.value_);
+            }
+
+            // Release Var's Value
+            TypeImplTable::Lookup(target_type)->MethodCall(*this, "@release", {
+                Arg(target_addr, sema::TypeTable::ReferenceTypeGet(target_type))
+            });
+
+            // Assign
+            llvm_builder().CreateStore(
+                TypeImplTable::Cast(*this, val, val_type, target_type),
+                target_addr
+            );
+            return nullptr;
         }
-
-        // Release Var's Value
-        TypeImplTable::Lookup(target_type)->MethodCall(*this, "@release", {
-            Arg(target_addr, sema::TypeTable::ReferenceTypeGet(target_type))
-        });
-
-        // Assign
-        llvm_builder().CreateStore(
-            TypeImplTable::Cast(*this, val, val_type, target_type),
-            target_addr
-        );
-        return nullptr;
     }
 
     llvm::Value* IRGen::Exec(CondStmt& node) {

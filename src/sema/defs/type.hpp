@@ -146,23 +146,24 @@ namespace sema {
     public:
         static void  Init();
 
-        static Type* Set(const BasicType& t);
-        static Type* Set(const ParametricType& t);
-        static Type* Set(const ReferenceType& t);
-        static Type* Lookup(std::string_view name, std::optional<Loc> loc = std::nullopt);
-        static Type* LookupTry(std::string_view name);
+        static Type*  Set(const BasicType& t);
+        static Type*  Set(const ParametricType& t);
+        static Type*  Set(const ReferenceType& t);
+        static Type*  Lookup(std::string_view name, std::optional<Loc> loc = std::nullopt);
+        static Type*  LookupTry(std::string_view name);
         
-        static Type* ParametricTypeGet(Type* type, const std::vector<Type*>& params, std::optional<Loc> loc = std::nullopt);
-        static Type* ReferenceTypeGet(Type* type);
+        static Type*  ParametricTypeGet(Type* type, const std::vector<Type*>& params, std::optional<Loc> loc = std::nullopt);
+        static Type*  ReferenceTypeGet(Type* type);
 
-        static bool  isContainsBinding(Type* type);
-        static bool  isContainsBinding(const FnSign& sign);
-        static Type* Substitute(Type* type, BasicType* base, const std::vector<Type*>& args);
+        static bool   isContainsBinding(Type* type);
+        static bool   isContainsBinding(const FnSign& sign);
+        static Type*  Substitute(Type* type, BasicType* base, const std::vector<Type*>& args);
         static FnSign InstantiateSign(const FnSign& sign, BasicType* base, const std::vector<Type*>& args);
-        static Fn*   MethodLookup(Type* type, const std::string& name);
+        static Fn*    MethodLookup(Type* type, const std::string& name);
+        static Fn*    MethodLookupTry(Type* type, const std::string& name);
 
-        static void  CastRecompute();
-        static Type* Common(std::set<Type*> ts) {
+        static void   CastRecompute();
+        static Type*  Common(std::set<Type*> ts) {
             if (ts.size() == 1) return *ts.begin();
             
             // Search Cache

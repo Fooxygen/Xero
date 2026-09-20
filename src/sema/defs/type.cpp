@@ -186,6 +186,14 @@ namespace sema {
         return &((BasicType*)type_unwrap->BasicTypeGet())->method_table().Lookup(name);
     }
 
+    Fn*     TypeTable::MethodLookupTry(Type* type, const std::string& name) {
+        auto type_unwrap = type->ReferenceUnwrap();
+        if (auto par = dynamic_cast<ParametricType*>(type_unwrap)) {
+            if (auto fn = par->method_table().LookupTry(name)) return fn;
+        }
+        return ((BasicType*)type_unwrap->BasicTypeGet())->method_table().LookupTry(name);
+    }
+
     Type*   TypeTable::ReferenceTypeGet(Type* type) {
         auto name = type->name() + '&';
         auto it   = table_.find(name);
