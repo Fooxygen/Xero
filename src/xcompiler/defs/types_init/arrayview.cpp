@@ -526,5 +526,53 @@ namespace xcompiler {
             assign_core(gen, view, right_data, right_len, elem_type, elem_type_impl, elem_size);
             return nullptr;
         }, sema::FnSign(none_, { sema::TypeTable::ParametricTypeGet(arrayview_, { ((sema::BasicType*)arrayview_)->params_binding()[0] }) }));
+
+        impl->MethodAdd("@assign",  [view_load, view_elem_get, array_](IRGen& gen, ARGS& args) -> llvm::Value* {
+            auto& builder = gen.llvm_builder();
+            auto  view    = view_load(gen, args[0]);
+            auto  value   = gen.ArgLoad(args[1]);
+
+            auto  view_type      = (sema::ParametricType*)args[0].ReferenceUnwrap();
+            auto  elem_type      = view_type->params_type()[0];
+            auto  elem_type_impl = TypeImplTable::Lookup(elem_type);
+            auto  elem_size      = gen.llvm_module()->getDataLayout().getTypeAllocSize(gen.LLVMType(elem_type));
+
+            auto  value_ref = gen.ArgRefMake(value, elem_type);
+
+            auto arr_val  = builder.CreateLoad(gen.LLVMType(array_), view.org);
+            auto arr_data = builder.CreateExtractValue(arr_val, 0);
+
+            auto fn          = builder.GetInsertBlock()->getParent();
+            auto block_entry = builder.GetInsertBlock();
+            auto block_cond  = gen.BlockCreate(".arrayview.fill.cond", fn);
+            auto block_body  = gen.BlockCreate(".arrayview.fill.body", fn);
+            auto block_end   = gen.BlockCreate(".arrayview.fill.end",  fn);
+
+            builder.CreateBr(block_cond);
+            builder.SetInsertPoint(block_cond);
+            auto counter = builder.CreatePHI(builder.getInt64Ty(), 2);
+            {
+                counter->addIncoming(builder.getInt64(0), block_entry);
+                builder.CreateCondBr(builder.CreateICmpSLT(counter, view.len), block_body, block_end);
+            }
+
+            builder.SetInsertPoint(block_body);
+            {
+                auto idx = builder.CreateAdd(view.offset, counter);
+                auto dst = view_elem_get(gen, arr_data, elem_size, idx);
+                elem_type_impl->MethodCall(gen, "@release", {
+                    Arg(dst, sema::TypeTable::ReferenceTypeGet(elem_type))
+                });
+                auto copied = elem_type_impl->MethodCall(gen, "@copy", { value_ref });
+                builder.CreateStore(copied, dst);
+
+                auto next = builder.CreateAdd(counter, builder.getInt64(1));
+                builder.CreateBr(block_cond);
+                counter->addIncoming(next, builder.GetInsertBlock());
+            }
+
+            builder.SetInsertPoint(block_end);
+            return nullptr;
+        }, sema::FnSign(none_, { ((sema::BasicType*)arrayview_)->params_binding()[0] }));
     }
 }

@@ -1,10 +1,24 @@
 
 fn main() {
-    a: array[=i32=] = [1, 2];
-    b: array[=i32=] = [3, 4];
-    println(a + b);                 # [1, 2, 3, 4]
+    a: array[=i32=] = [1, 2, 3, 4];
+    a[0..2] = 0;
+    println(a);                     # [0, 0, 3, 4]
 
-    x: array[=string=] = ["ab", "cd"];
-    y: array[=string=] = ["ef"];
-    println(x + y);                 # [ab, cd, ef]
+    a[2..4] = 9;
+    println(a);                     # [0, 0, 9, 9]
+
+    s: string = "Xero";
+    s[0..4] = 'a';
+    println(s);                     # aaaa
+
+    s[1..3] = 'z';
+    println(s);                     # azza
+
+    v: arrayview[=i32=] = a[1..3];
+    v = 7;
+    println(a);                     # [0, 7, 7, 9]
+
+    w: stringview = s[2..4];
+    w = 'b';
+    println(s);                     # azbb
 }

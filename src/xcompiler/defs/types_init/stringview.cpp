@@ -388,5 +388,42 @@ namespace xcompiler {
             string_assign_core(gen, view, right_data, right_len, elem_size);
             return nullptr;
         }, sema::FnSign(none_, { stringview_ }));
+
+        impl->MethodAdd("@assign",  [view_load, string_](IRGen& gen, ARGS& args) -> llvm::Value* {
+            auto& builder = gen.llvm_builder();
+            auto  view    = view_load(gen, args[0]);
+            auto  value   = gen.ArgLoad(args[1]);
+
+            auto str_val = builder.CreateLoad(gen.LLVMType(string_), view.org);
+            auto data    = builder.CreateExtractValue(str_val, 0);
+
+            auto fn          = builder.GetInsertBlock()->getParent();
+            auto block_entry = builder.GetInsertBlock();
+            auto block_cond  = gen.BlockCreate(".stringview.fill.cond", fn);
+            auto block_body  = gen.BlockCreate(".stringview.fill.body", fn);
+            auto block_end   = gen.BlockCreate(".stringview.fill.end",  fn);
+
+            builder.CreateBr(block_cond);
+            builder.SetInsertPoint(block_cond);
+            auto counter = builder.CreatePHI(builder.getInt64Ty(), 2);
+            {
+                counter->addIncoming(builder.getInt64(0), block_entry);
+                builder.CreateCondBr(builder.CreateICmpSLT(counter, view.len), block_body, block_end);
+            }
+
+            builder.SetInsertPoint(block_body);
+            {
+                auto idx = builder.CreateAdd(view.offset, counter);
+                auto dst = builder.CreateInBoundsGEP(builder.getInt32Ty(), data, { idx });
+                builder.CreateStore(value, dst);
+
+                auto next = builder.CreateAdd(counter, builder.getInt64(1));
+                builder.CreateBr(block_cond);
+                counter->addIncoming(next, builder.GetInsertBlock());
+            }
+
+            builder.SetInsertPoint(block_end);
+            return nullptr;
+        }, sema::FnSign(none_, { char_ }));
     }
 }

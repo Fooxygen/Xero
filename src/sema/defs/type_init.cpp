@@ -192,6 +192,7 @@ namespace sema {
                 arrayview_->method_table().Add("@neg",     FnSign(ParametricTypeGet(array_, { arrayview_->params_binding()[0] })));
                 arrayview_->method_table().Add("@assign",  FnSign(none_, { ParametricTypeGet(array_,     { arrayview_->params_binding()[0] }) }));
                 arrayview_->method_table().Add("@assign",  FnSign(none_, { ParametricTypeGet(arrayview_, { arrayview_->params_binding()[0] }) }));
+                arrayview_->method_table().Add("@assign",  FnSign(none_, { arrayview_->params_binding()[0] }));
                 arrayview_->method_table().Add("len",      FnSign(i64_));
             }
 
@@ -206,6 +207,7 @@ namespace sema {
                 stringview_->method_table().Add("@neg",     FnSign(string_));
                 stringview_->method_table().Add("@eq",      FnSign(bool_, { stringview_ }));
                 stringview_->method_table().Add("@neq",     FnSign(bool_, { stringview_ }));
+                stringview_->method_table().Add("@assign",  FnSign(none_, { char_ }));
                 stringview_->method_table().Add("@assign",  FnSign(none_, { stringview_ }));
                 stringview_->method_table().Add("@assign",  FnSign(none_, { string_ }));
                 stringview_->method_table().Add("len",      FnSign(i64_));
