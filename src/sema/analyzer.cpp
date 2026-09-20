@@ -119,7 +119,10 @@ namespace sema {
         Exec(*node.lexpr_);
         {
             if (node.oper_type_ == Neg) {
-                node.resolved_type_ = node.lexpr_->resolved_type_->ReferenceUnwrap();
+                auto ltype  = node.lexpr_->resolved_type_->ReferenceUnwrap();
+                auto method = TypeTable::MethodLookup(ltype, "@neg");
+                auto sign   = method->SignLookup(ltype, {});
+                node.resolved_type_ = sign->return_type();
                 return;
             }
             if (node.oper_type_ == Not) {

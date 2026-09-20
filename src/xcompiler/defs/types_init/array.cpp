@@ -222,7 +222,7 @@ namespace xcompiler {
             gen_val = builder.CreateInsertValue(gen_val, result_data, 0);
             gen_val = builder.CreateInsertValue(gen_val, arr.len,  1);
             return gen_val;
-        }, sema::FnSign(array_));
+        }, sema::FnSign(sema::TypeTable::ParametricTypeGet(array_, { T })));
         impl->MethodAdd("@release",     [array_load, elem_get](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  arr     = array_load(gen, args[0]);
@@ -266,7 +266,6 @@ namespace xcompiler {
             return nullptr;
         }, sema::FnSign(none_));
 
-        /*
         impl->MethodAdd("@neg",         [array_load, elem_get](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  arr     = array_load(gen, args[0]);
@@ -317,9 +316,8 @@ namespace xcompiler {
             gen_val = builder.CreateInsertValue(gen_val, result_data, 0);
             gen_val = builder.CreateInsertValue(gen_val, arr.len,  1);
             return gen_val;
-        }, sema::FnSign(array_));
-        */
-       
+        }, sema::FnSign(sema::TypeTable::ParametricTypeGet(array_, { T })));
+        
         impl->MethodAdd("len",          [array_load](IRGen& gen, ARGS& args) -> llvm::Value* {
             return array_load(gen, args[0]).len;
         }, sema::FnSign(i64_));

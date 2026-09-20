@@ -1,14 +1,14 @@
 
 fn main() {
-    s: string = "Hello Xero";
+    a: array[=i32=] = [1, 2, 3];
+    println(-a);                     # [3, 2, 1]
 
-    println(s[0..5] == s[0..5]);     # true
-    println(s[0..5] == s[6..10]);    # false
-    println(s[0..5] != s[6..10]);    # true
+    s: string = "Xero";
+    println(-s);                     # oreX
 
-    v: stringview = s[0..5];
-    w: stringview = s[0..5];
-    println(v == w);                 # true
+    v: arrayview[=i32=] = a[0..2];
+    println(-v);                     # [2, 1]
 
-    println(s[0..1] == s[0..2]);     # false
+    w: stringview = s[0..2];
+    println(-w);                     # eX
 }

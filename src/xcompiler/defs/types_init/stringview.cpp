@@ -310,6 +310,51 @@ namespace xcompiler {
             return gen_val;
         }, sema::FnSign(string_, {}, std::nullopt, sema::FnModifier::Cast));
 
+        impl->MethodAdd("@neg",     [view_load, string_](IRGen& gen, ARGS& args) -> llvm::Value* {
+            auto& builder = gen.llvm_builder();
+            auto  view    = view_load(gen, args[0]);
+
+            auto str_val = builder.CreateLoad(gen.LLVMType(string_), view.org);
+            auto data    = builder.CreateExtractValue(str_val, 0);
+
+            auto result_size = builder.CreateMul(view.len, builder.getInt64(4));
+            auto result_data = builder.CreateCall(LibC_malloc(gen), { result_size });
+
+            auto fn          = builder.GetInsertBlock()->getParent();
+            auto block_entry = builder.GetInsertBlock();
+            auto block_cond  = gen.BlockCreate(".stringview.neg.cond", fn);
+            auto block_body  = gen.BlockCreate(".stringview.neg.body", fn);
+            auto block_end   = gen.BlockCreate(".stringview.neg.end",  fn);
+
+            builder.CreateBr(block_cond);
+            builder.SetInsertPoint(block_cond);
+            auto counter = builder.CreatePHI(builder.getInt64Ty(), 2);
+            {
+                counter->addIncoming(builder.getInt64(0), block_entry);
+                builder.CreateCondBr(builder.CreateICmpSLT(counter, view.len), block_body, block_end);
+            }
+
+            builder.SetInsertPoint(block_body);
+            {
+                auto src_idx = builder.CreateAdd(view.offset, builder.CreateSub(builder.CreateSub(view.len, builder.getInt64(1)), counter));
+                auto src     = builder.CreateInBoundsGEP(builder.getInt32Ty(), data, { src_idx });
+                auto dst     = builder.CreateInBoundsGEP(builder.getInt32Ty(), result_data, { counter });
+                builder.CreateStore(builder.CreateLoad(builder.getInt32Ty(), src), dst);
+
+                auto next = builder.CreateAdd(counter, builder.getInt64(1));
+                builder.CreateBr(block_cond);
+                counter->addIncoming(next, builder.GetInsertBlock());
+            }
+
+            builder.SetInsertPoint(block_end);
+
+            auto gen_type = gen.LLVMType(string_);
+            auto gen_val  = (llvm::Value*)llvm::UndefValue::get(gen_type);
+            gen_val = builder.CreateInsertValue(gen_val, result_data, 0);
+            gen_val = builder.CreateInsertValue(gen_val, view.len,    1);
+            return gen_val;
+        }, sema::FnSign(string_));
+
         impl->MethodAdd("@eq",      [stringview_equal](IRGen& gen, ARGS& args) -> llvm::Value* {
             return stringview_equal(gen, args[0], args[1]);
         }, sema::FnSign(bool_, { stringview_ }));

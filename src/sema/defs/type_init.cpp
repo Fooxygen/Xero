@@ -56,7 +56,7 @@ namespace sema {
             f64_->method_table().Add("@copy",   FnSign(f64_));
             char_->method_table().Add("@copy",  FnSign(char_));
             string_->method_table().Add("@copy",  FnSign(string_));
-            array_->method_table().Add("@copy", FnSign(array_));
+            array_->method_table().Add("@copy", FnSign(ParametricTypeGet(array_, { array_->params_binding()[0] })));
             range_->method_table().Add("@copy", FnSign(range_));
         }
 
@@ -189,6 +189,7 @@ namespace sema {
                 arrayview_->method_table().Add("@pick",    FnSign(ReferenceTypeGet(arrayview_->params_binding()[0]), { i64_ }));
                 arrayview_->method_table().Add("@pick",    FnSign(ParametricTypeGet(arrayview_, { arrayview_->params_binding()[0] }), { range_ }));
                 arrayview_->method_table().Add("@cast",    FnSign(ParametricTypeGet(array_, { arrayview_->params_binding()[0] }), {}, std::nullopt, FnModifier::Cast));
+                arrayview_->method_table().Add("@neg",     FnSign(ParametricTypeGet(array_, { arrayview_->params_binding()[0] })));
                 arrayview_->method_table().Add("@assign",  FnSign(none_, { ParametricTypeGet(array_,     { arrayview_->params_binding()[0] }) }));
                 arrayview_->method_table().Add("@assign",  FnSign(none_, { ParametricTypeGet(arrayview_, { arrayview_->params_binding()[0] }) }));
                 arrayview_->method_table().Add("len",      FnSign(i64_));
@@ -202,6 +203,7 @@ namespace sema {
                 stringview_->method_table().Add("@pick",    FnSign(ReferenceTypeGet(char_), { i64_ }));
                 stringview_->method_table().Add("@pick",    FnSign(stringview_, { range_ }));
                 stringview_->method_table().Add("@cast",    FnSign(string_, {}, std::nullopt, FnModifier::Cast));
+                stringview_->method_table().Add("@neg",     FnSign(string_));
                 stringview_->method_table().Add("@eq",      FnSign(bool_, { stringview_ }));
                 stringview_->method_table().Add("@neq",     FnSign(bool_, { stringview_ }));
                 stringview_->method_table().Add("@assign",  FnSign(none_, { stringview_ }));
@@ -214,7 +216,7 @@ namespace sema {
                 array_->method_table().Add("@print",        FnSign(none_));
                 array_->method_table().Add("@pick",         FnSign(ReferenceTypeGet(array_->params_binding()[0]), { i64_ }));
                 array_->method_table().Add("@pick",         FnSign(ParametricTypeGet(arrayview_, { array_->params_binding()[0] }), { range_ }));
-                //array_->method_table().Add("@neg",          FnSign(array_));
+                array_->method_table().Add("@neg",          FnSign(ParametricTypeGet(array_, { array_->params_binding()[0] })));
                 array_->method_table().Add("len",           FnSign(i64_));
                 array_->method_table().Add("clear",         FnSign(none_));
                 array_->method_table().Add("insert",        FnSign(none_, { i64_, nullptr }));
