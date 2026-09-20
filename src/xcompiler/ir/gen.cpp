@@ -39,8 +39,8 @@ namespace xcompiler {
     
     llvm::Value* IRGen::Exec(IdExpr& node) {
         auto var       = IdResolve(node);
-        auto type_llvm = LLVMType(node.resolved_type_->ReferenceUnwrap());
-        return llvm_builder().CreateLoad(type_llvm, var, node.name_);
+        auto llvm_type = LLVMType(node.resolved_type_->ReferenceUnwrap());
+        return llvm_builder().CreateLoad(llvm_type, var, node.name_);
     }
 
     llvm::Value* IRGen::Exec(RefExpr& node) {
@@ -225,7 +225,7 @@ namespace xcompiler {
 
         // Value
         auto iter_type      = node.iter_type_;
-        auto iter_type_llvm = LLVMType(iter_type);
+        auto iter_llvm_type = LLVMType(iter_type);
         auto left_val  = TypeImplTable::Cast(*this,
             ExprLoad(*node.lexpr_), node.lexpr_->resolved_type_->ReferenceUnwrap(), iter_type
         );
@@ -239,10 +239,10 @@ namespace xcompiler {
         }
         else {
             if (iter_type->is("i32") || iter_type->is("i64")) {
-                step_val = llvm::ConstantInt::get(iter_type_llvm, 1);
+                step_val = llvm::ConstantInt::get(iter_llvm_type, 1);
             }
             else {
-                step_val = llvm::ConstantFP::get(iter_type_llvm, 1.0);
+                step_val = llvm::ConstantFP::get(iter_llvm_type, 1.0);
             }
         }
 
@@ -252,7 +252,7 @@ namespace xcompiler {
         auto gen_type = llvm::StructType::get(
             llvm_context(),
             // left, right, step, isClosed
-            { iter_type_llvm, iter_type_llvm, iter_type_llvm, llvm_builder().getInt1Ty() }
+            { iter_llvm_type, iter_llvm_type, iter_llvm_type, llvm_builder().getInt1Ty() }
         );
         auto gen_val  = (llvm::Value*)llvm::UndefValue::get(gen_type);
         gen_val = llvm_builder().CreateInsertValue(gen_val, left_val, 0);
@@ -398,9 +398,9 @@ namespace xcompiler {
     llvm::Value* IRGen::Exec(FnExpr& node) {
 
         // Return Type
-        auto return_type_llvm = LLVMType(node.ret_resolved_type_);
+        auto return_llvm_type = LLVMType(node.ret_resolved_type_);
         if (node.name_ == "main") {
-            return_type_llvm = llvm::Type::getInt32Ty(llvm_context());
+            return_llvm_type = llvm::Type::getInt32Ty(llvm_context());
         }
 
         // Params Type
@@ -414,7 +414,7 @@ namespace xcompiler {
 
         // Fn
         auto fntype = llvm::FunctionType::get(
-            return_type_llvm, params_type, false    // non-variable params
+            return_llvm_type, params_type, false    // non-variable params
         );
         auto fn = llvm::Function::Create(
             fntype,
@@ -454,10 +454,10 @@ namespace xcompiler {
         // Each block requires a terminal symbol,
         // including return value, the unreachable stmt...
         BlockTermCreate([&]() {
-            if (return_type_llvm->isVoidTy())
+            if (return_llvm_type->isVoidTy())
                 llvm_builder().CreateRetVoid();
             else
-                llvm_builder().CreateRet(llvm::ConstantInt::get(return_type_llvm, 0));
+                llvm_builder().CreateRet(llvm::ConstantInt::get(return_llvm_type, 0));
         });
 
         if (node.name_ != "main") {

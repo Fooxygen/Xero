@@ -139,16 +139,10 @@ namespace sema {
                 auto target_type = node.lexpr_->resolved_type_;
                 auto idx_type    = node.rexpr_->resolved_type_->ReferenceUnwrap();
 
-                if (idx_type->is("range")) {
-                    auto method = TypeTable::MethodLookup(target_type, "@pick");
-                    auto sign   = method->SignLookup(target_type, { idx_type }, node.loc_);
-                    node.resolved_type_ = sign->return_type();
-                }
-                else {
-                    auto method = TypeTable::MethodLookup(target_type, "@pick");
-                    auto sign   = method->SignLookup(target_type, { idx_type }, node.loc_);
-                    node.resolved_type_ = sign->return_type();
-                }
+                auto method = TypeTable::MethodLookup(target_type, "@pick");
+                auto sign   = method->SignLookup(target_type, { idx_type }, node.loc_);
+                node.resolved_type_ = sign->return_type();
+                
                 return;
             }
 

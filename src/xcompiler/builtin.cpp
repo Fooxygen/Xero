@@ -15,7 +15,7 @@ namespace xcompiler {
     
     // LibC
 
-    llvm::Function* LibCCreate(IRGen& gen, const std::string& name, llvm::FunctionType* fntype) {
+    llvm::Function* LibCLookup(IRGen& gen, const std::string& name, llvm::FunctionType* fntype) {
         auto module = gen.llvm_module();
         if (auto fn = module->getFunction(name)) return fn;
 
@@ -29,7 +29,7 @@ namespace xcompiler {
     
     llvm::Function* LibC_printf(IRGen& gen) {
         auto context = &gen.llvm_module()->getContext();
-        return LibCCreate(gen, "printf", llvm::FunctionType::get(
+        return LibCLookup(gen, "printf", llvm::FunctionType::get(
             llvm::Type::getInt32Ty(*context),
             { llvm::PointerType::getUnqual(*context) },
             true    // variable parameters
@@ -38,7 +38,7 @@ namespace xcompiler {
 
     llvm::Function* LibC_malloc(IRGen& gen) {
         auto context = &gen.llvm_module()->getContext();
-        return LibCCreate(gen, "malloc", llvm::FunctionType::get(
+        return LibCLookup(gen, "malloc", llvm::FunctionType::get(
             llvm::PointerType::getUnqual(*context),
             { llvm::Type::getInt64Ty(*context) },
             false
@@ -47,7 +47,7 @@ namespace xcompiler {
 
     llvm::Function* LibC_realloc(IRGen& gen) {
         auto context = &gen.llvm_module()->getContext();
-        return LibCCreate(gen, "realloc", llvm::FunctionType::get(
+        return LibCLookup(gen, "realloc", llvm::FunctionType::get(
             llvm::PointerType::getUnqual(*context),
             {
                 llvm::PointerType::getUnqual(*context),     // ptr
@@ -59,7 +59,7 @@ namespace xcompiler {
 
     llvm::Function* LibC_free(IRGen& gen) {
         auto context = &gen.llvm_module()->getContext();
-        return LibCCreate(gen, "free", llvm::FunctionType::get(
+        return LibCLookup(gen, "free", llvm::FunctionType::get(
             llvm::Type::getVoidTy(*context),
             { llvm::PointerType::getUnqual(*context) },
             false
@@ -68,7 +68,7 @@ namespace xcompiler {
 
     llvm::Function* LibC_memmove(IRGen& gen) {
         auto context = &gen.llvm_module()->getContext();
-        return LibCCreate(gen, "memmove", llvm::FunctionType::get(
+        return LibCLookup(gen, "memmove", llvm::FunctionType::get(
             llvm::PointerType::getUnqual(*context),
             { llvm::PointerType::getUnqual(*context),   // dst
             llvm::PointerType::getUnqual(*context),     // src

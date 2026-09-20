@@ -18,7 +18,7 @@ namespace xcompiler {
         auto  char_   = sema::TypeTable::Lookup("char");
         auto  string_ = sema::TypeTable::Lookup("string");
 
-        auto impl = TypeImplTable::Set(TypeImpl(char_));
+        auto  impl    = TypeImplTable::Set(TypeImpl(char_));
 
         // @copy and @release
 
