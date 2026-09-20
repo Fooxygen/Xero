@@ -20,6 +20,7 @@ namespace xcompiler {
         auto  range_     = sema::TypeTable::Lookup("range");
 
         auto  impl       = TypeImplTable::Set(TypeImpl(arrayview_));
+        auto  T          = ((sema::BasicType*)arrayview_)->params_binding()[0];
 
         // Utility
 
@@ -310,7 +311,7 @@ namespace xcompiler {
             gen_val = builder.CreateInsertValue(gen_val, new_data, 0);
             gen_val = builder.CreateInsertValue(gen_val, view.len,  1);
             return gen_val;
-        }, sema::FnSign(sema::TypeTable::ParametricTypeGet(array_, { ((sema::BasicType*)arrayview_)->params_binding()[0] }), {}, std::nullopt, sema::FnModifier::Cast));
+        }, sema::FnSign(sema::TypeTable::ParametricTypeGet(array_, { T }), {}, std::nullopt, sema::FnModifier::Cast));
 
         // @copy and @release
 
@@ -338,7 +339,7 @@ namespace xcompiler {
 
             assign_core(gen, view, value_data, value_len, elem_type, elem_type_impl, elem_size);
             return nullptr;
-        }, sema::FnSign(none_, { sema::TypeTable::ParametricTypeGet(array_, { ((sema::BasicType*)arrayview_)->params_binding()[0] }) }));
+        }, sema::FnSign(none_, { sema::TypeTable::ParametricTypeGet(array_, { T }) }));
         impl->MethodAdd("@assign",  [view_load, assign_core, array_](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  view    = view_load(gen, args[0]);
@@ -355,7 +356,7 @@ namespace xcompiler {
 
             assign_core(gen, view, right_data, right_len, elem_type, elem_type_impl, elem_size);
             return nullptr;
-        }, sema::FnSign(none_, { sema::TypeTable::ParametricTypeGet(arrayview_, { ((sema::BasicType*)arrayview_)->params_binding()[0] }) }));
+        }, sema::FnSign(none_, { sema::TypeTable::ParametricTypeGet(arrayview_, { T }) }));
         impl->MethodAdd("@assign",  [view_load, view_elem_get, array_](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  view    = view_load(gen, args[0]);
@@ -402,7 +403,7 @@ namespace xcompiler {
 
             builder.SetInsertPoint(block_end);
             return nullptr;
-        }, sema::FnSign(none_, { ((sema::BasicType*)arrayview_)->params_binding()[0] }));
+        }, sema::FnSign(none_, { T }));
 
         // Other
 
@@ -503,7 +504,7 @@ namespace xcompiler {
             auto abs_idx  = builder.CreateAdd(view.offset, idx);
             auto byte_off = builder.CreateMul(abs_idx, builder.getInt64(elem_size));
             return builder.CreateInBoundsGEP(builder.getInt8Ty(), data, { byte_off });
-        }, sema::FnSign(sema::TypeTable::ReferenceTypeGet(((sema::BasicType*)arrayview_)->params_binding()[0]), { i64_ }));
+        }, sema::FnSign(sema::TypeTable::ReferenceTypeGet(T), { i64_ }));
         impl->MethodAdd("@pick",    [view_load, arrayview_](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  view    = view_load(gen, args[0]);
@@ -523,9 +524,10 @@ namespace xcompiler {
             gen_val = builder.CreateInsertValue(gen_val, offset,   1);
             gen_val = builder.CreateInsertValue(gen_val, len,      2);
             return gen_val;
-        }, sema::FnSign(sema::TypeTable::ParametricTypeGet(arrayview_, { ((sema::BasicType*)arrayview_)->params_binding()[0] }), { range_ }));
+        }, sema::FnSign(sema::TypeTable::ParametricTypeGet(arrayview_, { T }), { range_ }));
 
-        impl->MethodAdd("@neg",     [view_load, view_elem_get, array_](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@neg",     [view_load, view_elem_get, array_](IRGen& gen, ARGS& args)
+         -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  view    = view_load(gen, args[0]);
 
@@ -576,7 +578,7 @@ namespace xcompiler {
             gen_val = builder.CreateInsertValue(gen_val, result_data, 0);
             gen_val = builder.CreateInsertValue(gen_val, view.len,    1);
             return gen_val;
-        }, sema::FnSign(sema::TypeTable::ParametricTypeGet(array_, { ((sema::BasicType*)arrayview_)->params_binding()[0] })));
+        }, sema::FnSign(sema::TypeTable::ParametricTypeGet(array_, { T })));
     
         impl->MethodAdd("len",      [view_load](IRGen& gen, ARGS& args) -> llvm::Value* {
             return view_load(gen, args[0]).len;
