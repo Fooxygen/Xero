@@ -1,24 +1,17 @@
 
 fn main() {
-    a: array[=i32=] = [10, 20, 30, 40, 50];
+    s: string = "Hello World";
 
-    a[1..=2] = [99, 88];
-    println(a);                     # [10, 99, 88, 40, 50]
+    s[0..5] = "HELLO";
+    println(s);                  # HELLO World
 
-    a[1..=2] = [1];
-    println(a);                     # [10, 1, 40, 50]
+    s[0..5] = "Hi";
+    println(s);                  # Hi World
 
-    a[1..=2] = [7, 8, 9];
-    println(a);                     # [10, 7, 8, 9, 50]
+    s[0..2] = "Hey";
+    println(s);                  # Hey World
 
-    b: array[=i32=] = [100, 200];
-    a[0..2] = b;
-    println(a);                     # [100, 200, 8, 9, 50]
-
-    c: array[=i32=] = [1, 2, 3, 4];
-    a[1..=2] = c[0..2];
-    println(a);                     # [100, 1, 2, 9, 50]
-
-    a = [1, 2, 3];
-    println(a);                     # [1, 2, 3]
+    t: string = "abc";
+    s[0..3] = t[0..3];
+    println(s);                  # abc World
 }

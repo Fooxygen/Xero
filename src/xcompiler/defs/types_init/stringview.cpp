@@ -44,6 +44,109 @@ namespace xcompiler {
                 llvm_type
             };
         };
+        auto string_realloc     = [](IRGen& gen, llvm::Value* data, size_t elem_size, llvm::Value* new_len) -> llvm::Value* {
+            auto& builder = gen.llvm_builder();
+            auto  size    = builder.CreateMul(new_len, builder.getInt64(elem_size));
+            return builder.CreateCall(LibC_realloc(gen), { data, size });
+        };
+        auto string_elem_get    = [](IRGen& gen, llvm::Value* data, size_t elem_size, llvm::Value* idx) -> llvm::Value* {
+            auto& builder = gen.llvm_builder();
+            auto  offset  = builder.CreateMul(idx, builder.getInt64(elem_size));
+            return builder.CreateInBoundsGEP(builder.getInt8Ty(), data, { offset });
+        };
+        auto string_elem_move   = [](IRGen& gen, llvm::Value* dst, llvm::Value* src, llvm::Value* cnt, size_t elem_size) {
+            auto& builder = gen.llvm_builder();
+            auto  bytes   = builder.CreateMul(cnt, builder.getInt64(elem_size));
+            builder.CreateCall(LibC_memmove(gen), { dst, src, bytes });
+        };
+        auto string_assign_core = [string_realloc, string_elem_get, string_elem_move, string_](
+            IRGen& gen, const ViewInfo& view,
+            llvm::Value* right_data, llvm::Value* right_len, size_t elem_size) -> void
+        {
+            auto& builder = gen.llvm_builder();
+
+            auto arr_val  = builder.CreateLoad(gen.LLVMType(string_), view.org);
+            auto arr_data = builder.CreateExtractValue(arr_val, 0);
+            auto arr_len  = builder.CreateExtractValue(arr_val, 1);
+
+            auto temp_size = builder.CreateMul(right_len, builder.getInt64(elem_size));
+            auto temp_data = builder.CreateCall(LibC_malloc(gen), { temp_size });
+            builder.CreateCall(LibC_memmove(gen), { temp_data, right_data, temp_size });
+
+            auto common = builder.CreateSelect(
+                builder.CreateICmpSLT(view.len, right_len), view.len, right_len
+            );
+
+            string_elem_move(
+                gen,
+                string_elem_get(gen, arr_data, elem_size, view.offset),
+                temp_data, common, elem_size
+            );
+
+            auto fn           = builder.GetInsertBlock()->getParent();
+            auto is_equal     = builder.CreateICmpEQ(right_len, view.len);
+            auto is_shrink    = builder.CreateICmpSLT(right_len, view.len);
+
+            auto block_diff   = gen.BlockCreate(".stringview.assign.diff",   fn);
+            auto block_shrink = gen.BlockCreate(".stringview.assign.shrink", fn);
+            auto block_grow   = gen.BlockCreate(".stringview.assign.grow",   fn);
+            auto block_adjust = gen.BlockCreate(".stringview.assign.adjust", fn);
+
+            builder.CreateCondBr(is_equal, block_adjust, block_diff);
+
+            builder.SetInsertPoint(block_diff);
+            builder.CreateCondBr(is_shrink, block_shrink, block_grow);
+
+            builder.SetInsertPoint(block_shrink);
+            {
+                string_elem_move(
+                    gen,
+                    string_elem_get(gen, arr_data, elem_size, builder.CreateAdd(view.offset, right_len)),
+                    string_elem_get(gen, arr_data, elem_size, builder.CreateAdd(view.offset, view.len)),
+                    builder.CreateSub(builder.CreateSub(arr_len, view.offset), view.len),
+                    elem_size
+                );
+
+                auto new_len  = builder.CreateSub(arr_len, builder.CreateSub(view.len, right_len));
+                auto new_data = string_realloc(gen, arr_data, elem_size, new_len);
+
+                auto gen_val = (llvm::Value*)llvm::UndefValue::get(gen.LLVMType(string_));
+                gen_val = builder.CreateInsertValue(gen_val, new_data, 0);
+                gen_val = builder.CreateInsertValue(gen_val, new_len,  1);
+                builder.CreateStore(gen_val, view.org);
+                builder.CreateBr(block_adjust);
+            }
+
+            builder.SetInsertPoint(block_grow);
+            {
+                auto new_len  = builder.CreateAdd(arr_len, builder.CreateSub(right_len, view.len));
+                auto new_data = string_realloc(gen, arr_data, elem_size, new_len);
+
+                string_elem_move(
+                    gen,
+                    string_elem_get(gen, new_data, elem_size, builder.CreateAdd(view.offset, right_len)),
+                    string_elem_get(gen, new_data, elem_size, builder.CreateAdd(view.offset, view.len)),
+                    builder.CreateSub(builder.CreateSub(arr_len, view.offset), view.len),
+                    elem_size
+                );
+                string_elem_move(
+                    gen,
+                    string_elem_get(gen, new_data, elem_size, builder.CreateAdd(view.offset, common)),
+                    string_elem_get(gen, temp_data, elem_size, common),
+                    builder.CreateSub(right_len, common),
+                    elem_size
+                );
+
+                auto gen_val = (llvm::Value*)llvm::UndefValue::get(gen.LLVMType(string_));
+                gen_val = builder.CreateInsertValue(gen_val, new_data, 0);
+                gen_val = builder.CreateInsertValue(gen_val, new_len,  1);
+                builder.CreateStore(gen_val, view.org);
+                builder.CreateBr(block_adjust);
+            }
+
+            builder.SetInsertPoint(block_adjust);
+            builder.CreateCall(LibC_free(gen), { temp_data });
+        };
 
         impl->MethodAdd("@print",   [view_load, string_, char_](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
@@ -152,5 +255,32 @@ namespace xcompiler {
             gen_val = builder.CreateInsertValue(gen_val, view.len,  1);
             return gen_val;
         }, sema::FnSign(string_, {}, std::nullopt, sema::FnModifier::Cast));
+
+        impl->MethodAdd("@assign",  [view_load, string_assign_core, char_](IRGen& gen, ARGS& args) -> llvm::Value* {
+            auto& builder = gen.llvm_builder();
+            auto  view    = view_load(gen, args[0]);
+
+            auto  value      = gen.ArgLoad(args[1]);
+            auto  value_data = builder.CreateExtractValue(value, 0);
+            auto  value_len  = builder.CreateExtractValue(value, 1);
+
+            auto  elem_size = gen.llvm_module()->getDataLayout().getTypeAllocSize(gen.LLVMType(char_));
+            string_assign_core(gen, view, value_data, value_len, elem_size);
+            return nullptr;
+        }, sema::FnSign(none_, { string_ }));
+
+        impl->MethodAdd("@assign",  [view_load, string_assign_core, char_, string_](IRGen& gen, ARGS& args) -> llvm::Value* {
+            auto& builder = gen.llvm_builder();
+            auto  view    = view_load(gen, args[0]);
+            auto  right   = view_load(gen, args[1]);
+
+            auto  str_val    = builder.CreateLoad(gen.LLVMType(string_), right.org);
+            auto  right_data = builder.CreateExtractValue(str_val, 0);
+            auto  right_len  = right.len;
+
+            auto  elem_size = gen.llvm_module()->getDataLayout().getTypeAllocSize(gen.LLVMType(char_));
+            string_assign_core(gen, view, right_data, right_len, elem_size);
+            return nullptr;
+        }, sema::FnSign(none_, { stringview_ }));
     }
 }

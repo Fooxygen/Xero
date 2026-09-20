@@ -202,6 +202,8 @@ namespace sema {
                 stringview_->method_table().Add("@pick",    FnSign(ReferenceTypeGet(char_), { i64_ }));
                 stringview_->method_table().Add("@pick",    FnSign(stringview_, { range_ }));
                 stringview_->method_table().Add("@cast",    FnSign(string_, {}, std::nullopt, FnModifier::Cast));
+                stringview_->method_table().Add("@assign",  FnSign(none_, { stringview_ }));
+                stringview_->method_table().Add("@assign",  FnSign(none_, { string_ }));
                 stringview_->method_table().Add("len",      FnSign(i64_));
             }
             
