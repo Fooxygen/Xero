@@ -31,46 +31,61 @@ namespace sema {
         auto range_         = (BasicType*)TypeTable::Set(BasicType("range", 1));
         /*auto function_      = (BasicType*)*/TypeTable::Set(BasicType("function"));
 
-        // Cast
+        // @cast
         {
-            i32_->method_table().Add("@cast", FnSign(i64_, {}, std::nullopt, FnModifier::Cast));
-            i32_->method_table().Add("@cast", FnSign(f32_, {}, std::nullopt, FnModifier::Cast));
-            i32_->method_table().Add("@cast", FnSign(f64_, {}, std::nullopt, FnModifier::Cast));
+            i32_->method_table().Add("@cast",           FnSign(i64_, {}, std::nullopt, FnModifier::Cast));
+            i32_->method_table().Add("@cast",           FnSign(f32_, {}, std::nullopt, FnModifier::Cast));
+            i32_->method_table().Add("@cast",           FnSign(f64_, {}, std::nullopt, FnModifier::Cast));
+            i64_->method_table().Add("@cast",           FnSign(f32_, {}, std::nullopt, FnModifier::Cast));
+            i64_->method_table().Add("@cast",           FnSign(f64_, {}, std::nullopt, FnModifier::Cast));
+            f32_->method_table().Add("@cast",           FnSign(f64_, {}, std::nullopt, FnModifier::Cast));
+            char_->method_table().Add("@cast",          FnSign(string_, {}, std::nullopt, FnModifier::Cast));
+            stringview_->method_table().Add("@cast",    FnSign(string_, {}, std::nullopt, FnModifier::Cast));
+            arrayview_->method_table().Add("@cast",     FnSign(
+                ParametricTypeGet(array_, { arrayview_->params_binding()[0] }), {}, std::nullopt, FnModifier::Cast
+            ));
 
-            i64_->method_table().Add("@cast", FnSign(f32_, {}, std::nullopt, FnModifier::Cast));
-            i64_->method_table().Add("@cast", FnSign(f64_, {}, std::nullopt, FnModifier::Cast));
-
-            f32_->method_table().Add("@cast", FnSign(f64_, {}, std::nullopt, FnModifier::Cast));
-
-            char_->method_table().Add("@cast", FnSign(string_, {}, std::nullopt, FnModifier::Cast));
-        
             TypeTable::CastRecompute();
         }
 
-        // Copy
+        // @copy
         {
-            bool_->method_table().Add("@copy",  FnSign(bool_));
-            i32_->method_table().Add("@copy",   FnSign(i32_));
-            i64_->method_table().Add("@copy",   FnSign(i64_));
-            f32_->method_table().Add("@copy",   FnSign(f32_));
-            f64_->method_table().Add("@copy",   FnSign(f64_));
-            char_->method_table().Add("@copy",  FnSign(char_));
-            string_->method_table().Add("@copy",  FnSign(string_));
-            array_->method_table().Add("@copy", FnSign(ParametricTypeGet(array_, { array_->params_binding()[0] })));
-            range_->method_table().Add("@copy", FnSign(range_));
+            bool_->method_table().Add("@copy",          FnSign(bool_));
+            i32_->method_table().Add("@copy",           FnSign(i32_));
+            i64_->method_table().Add("@copy",           FnSign(i64_));
+            f32_->method_table().Add("@copy",           FnSign(f32_));
+            f64_->method_table().Add("@copy",           FnSign(f64_));
+            char_->method_table().Add("@copy",          FnSign(char_));
+            string_->method_table().Add("@copy",        FnSign(string_));
+            stringview_->method_table().Add("@copy",    FnSign(stringview_));
+            array_->method_table().Add("@copy",         FnSign(ParametricTypeGet(array_, { array_->params_binding()[0] })));
+            arrayview_->method_table().Add("@copy",     FnSign(arrayview_));
+            range_->method_table().Add("@copy",         FnSign(range_));
         }
 
-        // Release
+        // @release
         {
-            bool_->method_table().Add("@release",   FnSign(none_));
-            i32_->method_table().Add("@release",    FnSign(none_));
-            i64_->method_table().Add("@release",    FnSign(none_));
-            f32_->method_table().Add("@release",    FnSign(none_));
-            f64_->method_table().Add("@release",    FnSign(none_));
-            char_->method_table().Add("@release",   FnSign(none_));
-            string_->method_table().Add("@release", FnSign(none_));
-            array_->method_table().Add("@release",  FnSign(none_));
-            range_->method_table().Add("@release",  FnSign(none_));
+            bool_->method_table().Add("@release",       FnSign(none_));
+            i32_->method_table().Add("@release",        FnSign(none_));
+            i64_->method_table().Add("@release",        FnSign(none_));
+            f32_->method_table().Add("@release",        FnSign(none_));
+            f64_->method_table().Add("@release",        FnSign(none_));
+            char_->method_table().Add("@release",       FnSign(none_));
+            string_->method_table().Add("@release",     FnSign(none_));
+            stringview_->method_table().Add("@release", FnSign(none_));
+            array_->method_table().Add("@release",      FnSign(none_));
+            arrayview_->method_table().Add("@release",  FnSign(none_));
+            range_->method_table().Add("@release",      FnSign(none_));
+        }
+
+        // @assign
+        {
+            stringview_->method_table().Add("@assign",  FnSign(none_, { char_ }));
+            stringview_->method_table().Add("@assign",  FnSign(none_, { stringview_ }));
+            stringview_->method_table().Add("@assign",  FnSign(none_, { string_ }));
+            arrayview_->method_table().Add("@assign",   FnSign(none_, { ParametricTypeGet(array_,     { arrayview_->params_binding()[0] }) }));
+            arrayview_->method_table().Add("@assign",   FnSign(none_, { ParametricTypeGet(arrayview_, { arrayview_->params_binding()[0] }) }));
+            arrayview_->method_table().Add("@assign",   FnSign(none_, { arrayview_->params_binding()[0] }));
         }
 
         // Other
@@ -181,35 +196,14 @@ namespace sema {
                 string_->method_table().Add("clear",    FnSign(none_));
             }
 
-            // arrayview
-            {
-                arrayview_->method_table().Add("@print",   FnSign(none_));
-                arrayview_->method_table().Add("@copy",    FnSign(arrayview_));
-                arrayview_->method_table().Add("@release", FnSign(none_));
-                arrayview_->method_table().Add("@pick",    FnSign(ReferenceTypeGet(arrayview_->params_binding()[0]), { i64_ }));
-                arrayview_->method_table().Add("@pick",    FnSign(ParametricTypeGet(arrayview_, { arrayview_->params_binding()[0] }), { range_ }));
-                arrayview_->method_table().Add("@cast",    FnSign(ParametricTypeGet(array_, { arrayview_->params_binding()[0] }), {}, std::nullopt, FnModifier::Cast));
-                arrayview_->method_table().Add("@neg",     FnSign(ParametricTypeGet(array_, { arrayview_->params_binding()[0] })));
-                arrayview_->method_table().Add("@assign",  FnSign(none_, { ParametricTypeGet(array_,     { arrayview_->params_binding()[0] }) }));
-                arrayview_->method_table().Add("@assign",  FnSign(none_, { ParametricTypeGet(arrayview_, { arrayview_->params_binding()[0] }) }));
-                arrayview_->method_table().Add("@assign",  FnSign(none_, { arrayview_->params_binding()[0] }));
-                arrayview_->method_table().Add("len",      FnSign(i64_));
-            }
-
             // stringview
             {
                 stringview_->method_table().Add("@print",   FnSign(none_));
-                stringview_->method_table().Add("@copy",    FnSign(stringview_));
-                stringview_->method_table().Add("@release", FnSign(none_));
                 stringview_->method_table().Add("@pick",    FnSign(ReferenceTypeGet(char_), { i64_ }));
                 stringview_->method_table().Add("@pick",    FnSign(stringview_, { range_ }));
-                stringview_->method_table().Add("@cast",    FnSign(string_, {}, std::nullopt, FnModifier::Cast));
                 stringview_->method_table().Add("@neg",     FnSign(string_));
                 stringview_->method_table().Add("@eq",      FnSign(bool_, { stringview_ }));
                 stringview_->method_table().Add("@neq",     FnSign(bool_, { stringview_ }));
-                stringview_->method_table().Add("@assign",  FnSign(none_, { char_ }));
-                stringview_->method_table().Add("@assign",  FnSign(none_, { stringview_ }));
-                stringview_->method_table().Add("@assign",  FnSign(none_, { string_ }));
                 stringview_->method_table().Add("len",      FnSign(i64_));
             }
             
@@ -228,6 +222,15 @@ namespace sema {
                 array_->method_table().Add("pop_front",     FnSign(none_));
                 array_->method_table().Add("push_back",     FnSign(none_, { nullptr }));
                 array_->method_table().Add("pop_back",      FnSign(none_));
+            }
+
+            // arrayview
+            {
+                arrayview_->method_table().Add("@print",   FnSign(none_));
+                arrayview_->method_table().Add("@pick",    FnSign(ReferenceTypeGet(arrayview_->params_binding()[0]), { i64_ }));
+                arrayview_->method_table().Add("@pick",    FnSign(ParametricTypeGet(arrayview_, { arrayview_->params_binding()[0] }), { range_ }));
+                arrayview_->method_table().Add("@neg",     FnSign(ParametricTypeGet(array_, { arrayview_->params_binding()[0] })));
+                arrayview_->method_table().Add("len",      FnSign(i64_));
             }
 
             // range

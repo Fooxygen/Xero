@@ -21,17 +21,30 @@ namespace xcompiler {
 
         auto impl = TypeImplTable::Set(TypeImpl(i64_));
 
-        impl->MethodAdd("@print",   [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto& builder = gen.llvm_builder();
-            auto  str_fmt = builder.CreateGlobalString("%lld", ".fmt.i64");
-            builder.CreateCall(LibC_printf(gen), { str_fmt, gen.ArgLoad(args[0]) });
-            return nullptr;
-        }, sema::FnSign(none_));
-        
+        // @copy and @release
+
         impl->MethodAdd("@copy",    [](IRGen& gen, ARGS& args) {
             return gen.ArgLoad(args[0]);
         }, sema::FnSign(i64_));
         impl->MethodAdd("@release", [](IRGen&, ARGS&) -> llvm::Value* {
+            return nullptr;
+        }, sema::FnSign(none_));
+
+        // @cast
+
+        impl->MethodAdd("@cast",    [](IRGen& gen, ARGS& args) {
+            return gen.llvm_builder().CreateSIToFP(gen.ArgLoad(args[0]), gen.llvm_builder().getFloatTy());
+        }, sema::FnSign(f32_, {}, std::nullopt, sema::FnModifier::Cast));
+        impl->MethodAdd("@cast",    [](IRGen& gen, ARGS& args) {
+            return gen.llvm_builder().CreateSIToFP(gen.ArgLoad(args[0]), gen.llvm_builder().getDoubleTy());
+        }, sema::FnSign(f64_, {}, std::nullopt, sema::FnModifier::Cast));
+
+        // Other
+
+        impl->MethodAdd("@print",   [](IRGen& gen, ARGS& args) -> llvm::Value* {
+            auto& builder = gen.llvm_builder();
+            auto  str_fmt = builder.CreateGlobalString("%lld", ".fmt.i64");
+            builder.CreateCall(LibC_printf(gen), { str_fmt, gen.ArgLoad(args[0]) });
             return nullptr;
         }, sema::FnSign(none_));
         
@@ -83,12 +96,5 @@ namespace xcompiler {
         impl->MethodAdd("@neq",     [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateICmpNE(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { i64_ }));
-        
-        impl->MethodAdd("@cast",    [](IRGen& gen, ARGS& args) {
-            return gen.llvm_builder().CreateSIToFP(gen.ArgLoad(args[0]), gen.llvm_builder().getFloatTy());
-        }, sema::FnSign(f32_, {}, std::nullopt, sema::FnModifier::Cast));
-        impl->MethodAdd("@cast",    [](IRGen& gen, ARGS& args) {
-            return gen.llvm_builder().CreateSIToFP(gen.ArgLoad(args[0]), gen.llvm_builder().getDoubleTy());
-        }, sema::FnSign(f64_, {}, std::nullopt, sema::FnModifier::Cast));
     }
 }

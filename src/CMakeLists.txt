@@ -34,9 +34,9 @@ add_executable(xero
     xcompiler/defs/types_init/f64.cpp
     xcompiler/defs/types_init/char.cpp
     xcompiler/defs/types_init/string.cpp
+    xcompiler/defs/types_init/stringview.cpp
     xcompiler/defs/types_init/array.cpp
     xcompiler/defs/types_init/arrayview.cpp
-    xcompiler/defs/types_init/stringview.cpp
     xcompiler/defs/types_init/range.cpp
     xcompiler/builtin.cpp
     xcompiler/ir/utility.cpp

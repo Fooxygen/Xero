@@ -99,9 +99,9 @@ namespace xcompiler {
         Init_f64();
         Init_char();
         Init_string();
+        Init_stringview();
         Init_array();
         Init_arrayview();
-        Init_stringview();
         Init_range();
     }
 

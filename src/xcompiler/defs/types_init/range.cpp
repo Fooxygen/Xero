@@ -18,6 +18,17 @@ namespace xcompiler {
 
         auto  impl   = TypeImplTable::Set(TypeImpl(range_));
 
+        // @copy and @release
+
+        impl->MethodAdd("@copy",    [](IRGen& gen, ARGS& args) {
+            return gen.ArgLoad(args[0]);
+        }, sema::FnSign(range_));
+        impl->MethodAdd("@release", [](IRGen&, ARGS&) -> llvm::Value* {
+            return nullptr;
+        }, sema::FnSign(none_));
+
+        // Other
+
         impl->MethodAdd("@print",   [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
 
@@ -45,13 +56,6 @@ namespace xcompiler {
                 builder.CreateSelect(isClosed_val, rb, rp)
             });
 
-            return nullptr;
-        }, sema::FnSign(none_));
-
-        impl->MethodAdd("@copy",    [](IRGen& gen, ARGS& args) {
-            return gen.ArgLoad(args[0]);
-        }, sema::FnSign(range_));
-        impl->MethodAdd("@release", [](IRGen&, ARGS&) -> llvm::Value* {
             return nullptr;
         }, sema::FnSign(none_));
     }

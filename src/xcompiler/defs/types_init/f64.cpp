@@ -19,17 +19,21 @@ namespace xcompiler {
 
         auto  impl  = TypeImplTable::Set(TypeImpl(f64_));
 
-        impl->MethodAdd("@print",   [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto& builder = gen.llvm_builder();
-            auto  str_fmt = builder.CreateGlobalString("%f", ".fmt.f64");
-            builder.CreateCall(LibC_printf(gen), { str_fmt, gen.ArgLoad(args[0]) });
-            return nullptr;
-        }, sema::FnSign(none_));
-        
+        // @copy and @release
+
         impl->MethodAdd("@copy",    [](IRGen& gen, ARGS& args) {
             return gen.ArgLoad(args[0]);
         }, sema::FnSign(f64_));
         impl->MethodAdd("@release", [](IRGen&, ARGS&) -> llvm::Value* {
+            return nullptr;
+        }, sema::FnSign(none_));
+
+        // Other
+
+        impl->MethodAdd("@print",   [](IRGen& gen, ARGS& args) -> llvm::Value* {
+            auto& builder = gen.llvm_builder();
+            auto  str_fmt = builder.CreateGlobalString("%f", ".fmt.f64");
+            builder.CreateCall(LibC_printf(gen), { str_fmt, gen.ArgLoad(args[0]) });
             return nullptr;
         }, sema::FnSign(none_));
 

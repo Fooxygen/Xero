@@ -20,6 +20,23 @@ namespace xcompiler {
 
         auto  impl = TypeImplTable::Set(TypeImpl(f32_));
 
+        // @copy and @release
+
+        impl->MethodAdd("@copy",    [](IRGen& gen, ARGS& args) {
+            return gen.ArgLoad(args[0]);
+        }, sema::FnSign(f32_));
+        impl->MethodAdd("@release", [](IRGen&, ARGS&) -> llvm::Value* {
+            return nullptr;
+        }, sema::FnSign(none_));
+
+        // @cast
+
+        impl->MethodAdd("@cast",    [](IRGen& gen, ARGS& args) {
+            return gen.llvm_builder().CreateFPExt(gen.ArgLoad(args[0]), gen.llvm_builder().getDoubleTy());
+        }, sema::FnSign(f64_, {}, std::nullopt, sema::FnModifier::Cast));
+
+        // Other
+
         impl->MethodAdd("@print",   [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  str_fmt = builder.CreateGlobalString("%f", ".fmt.f32");
@@ -29,14 +46,7 @@ namespace xcompiler {
             });
             return nullptr;
         }, sema::FnSign(none_));
-        
-        impl->MethodAdd("@copy",    [](IRGen& gen, ARGS& args) {
-            return gen.ArgLoad(args[0]);
-        }, sema::FnSign(f32_));
-        impl->MethodAdd("@release", [](IRGen&, ARGS&) -> llvm::Value* {
-            return nullptr;
-        }, sema::FnSign(none_));
-
+    
         impl->MethodAdd("@plus",    [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFAdd(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(f32_,  { f32_ }));
@@ -85,9 +95,5 @@ namespace xcompiler {
         impl->MethodAdd("@neq",     [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFCmpONE(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { f32_ }));
-        
-        impl->MethodAdd("@cast",    [](IRGen& gen, ARGS& args) {
-            return gen.llvm_builder().CreateFPExt(gen.ArgLoad(args[0]), gen.llvm_builder().getDoubleTy());
-        }, sema::FnSign(f64_, {}, std::nullopt, sema::FnModifier::Cast));
     }
 }

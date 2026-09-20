@@ -202,6 +202,103 @@ namespace xcompiler {
             builder.CreateCall(LibC_free(gen), { temp_data });
         };
 
+        // @copy and @release
+
+        impl->MethodAdd("@copy",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
+            return gen.ArgLoad(args[0]);
+        }, sema::FnSign(stringview_));
+        impl->MethodAdd("@release", [](IRGen&, ARGS&) -> llvm::Value* {
+            return nullptr;
+        }, sema::FnSign(none_));
+
+        // @cast
+
+        impl->MethodAdd("@cast",    [view_load, string_](IRGen& gen, ARGS& args) -> llvm::Value* {
+            auto& builder = gen.llvm_builder();
+            auto  view    = view_load(gen, args[0]);
+
+            auto str_val = builder.CreateLoad(gen.LLVMType(string_), view.org);
+            auto data    = builder.CreateExtractValue(str_val, 0);
+
+            auto new_size = builder.CreateMul(view.len, builder.getInt64(4));
+            auto new_data = builder.CreateCall(LibC_malloc(gen), { new_size });
+
+            auto src = builder.CreateInBoundsGEP(builder.getInt32Ty(), data, { view.offset });
+            builder.CreateCall(LibC_memmove(gen), { new_data, src, new_size });
+
+            auto gen_type = gen.LLVMType(string_);
+            auto gen_val  = (llvm::Value*)llvm::UndefValue::get(gen_type);
+            gen_val = builder.CreateInsertValue(gen_val, new_data, 0);
+            gen_val = builder.CreateInsertValue(gen_val, view.len,  1);
+            return gen_val;
+        }, sema::FnSign(string_, {}, std::nullopt, sema::FnModifier::Cast));
+
+        // @assign
+        
+        impl->MethodAdd("@assign",  [view_load, string_assign_core, char_](IRGen& gen, ARGS& args) -> llvm::Value* {
+            auto& builder = gen.llvm_builder();
+            auto  view    = view_load(gen, args[0]);
+
+            auto  value      = gen.ArgLoad(args[1]);
+            auto  value_data = builder.CreateExtractValue(value, 0);
+            auto  value_len  = builder.CreateExtractValue(value, 1);
+
+            auto  elem_size = gen.llvm_module()->getDataLayout().getTypeAllocSize(gen.LLVMType(char_));
+            string_assign_core(gen, view, value_data, value_len, elem_size);
+            return nullptr;
+        }, sema::FnSign(none_, { string_ }));
+        impl->MethodAdd("@assign",  [view_load, string_assign_core, char_, string_](IRGen& gen, ARGS& args) -> llvm::Value* {
+            auto& builder = gen.llvm_builder();
+            auto  view    = view_load(gen, args[0]);
+            auto  right   = view_load(gen, args[1]);
+
+            auto  str_val    = builder.CreateLoad(gen.LLVMType(string_), right.org);
+            auto  right_data = builder.CreateExtractValue(str_val, 0);
+            auto  right_len  = right.len;
+
+            auto  elem_size = gen.llvm_module()->getDataLayout().getTypeAllocSize(gen.LLVMType(char_));
+            string_assign_core(gen, view, right_data, right_len, elem_size);
+            return nullptr;
+        }, sema::FnSign(none_, { stringview_ }));
+        impl->MethodAdd("@assign",  [view_load, string_](IRGen& gen, ARGS& args) -> llvm::Value* {
+            auto& builder = gen.llvm_builder();
+            auto  view    = view_load(gen, args[0]);
+            auto  value   = gen.ArgLoad(args[1]);
+
+            auto str_val = builder.CreateLoad(gen.LLVMType(string_), view.org);
+            auto data    = builder.CreateExtractValue(str_val, 0);
+
+            auto fn          = builder.GetInsertBlock()->getParent();
+            auto block_entry = builder.GetInsertBlock();
+            auto block_cond  = gen.BlockCreate(".stringview.fill.cond", fn);
+            auto block_body  = gen.BlockCreate(".stringview.fill.body", fn);
+            auto block_end   = gen.BlockCreate(".stringview.fill.end",  fn);
+
+            builder.CreateBr(block_cond);
+            builder.SetInsertPoint(block_cond);
+            auto counter = builder.CreatePHI(builder.getInt64Ty(), 2);
+            {
+                counter->addIncoming(builder.getInt64(0), block_entry);
+                builder.CreateCondBr(builder.CreateICmpSLT(counter, view.len), block_body, block_end);
+            }
+
+            builder.SetInsertPoint(block_body);
+            {
+                auto idx = builder.CreateAdd(view.offset, counter);
+                auto dst = builder.CreateInBoundsGEP(builder.getInt32Ty(), data, { idx });
+                builder.CreateStore(value, dst);
+
+                auto next = builder.CreateAdd(counter, builder.getInt64(1));
+                builder.CreateBr(block_cond);
+                counter->addIncoming(next, builder.GetInsertBlock());
+            }
+
+            builder.SetInsertPoint(block_end);
+            return nullptr;
+        }, sema::FnSign(none_, { char_ }));
+
+        // Other
+
         impl->MethodAdd("@print",   [view_load, string_, char_](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  view    = view_load(gen, args[0]);
@@ -246,17 +343,6 @@ namespace xcompiler {
             return nullptr;
         }, sema::FnSign(none_));
 
-        impl->MethodAdd("@copy",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return gen.ArgLoad(args[0]);
-        }, sema::FnSign(stringview_));
-        impl->MethodAdd("@release", [](IRGen&, ARGS&) -> llvm::Value* {
-            return nullptr;
-        }, sema::FnSign(none_));
-
-        impl->MethodAdd("len",      [view_load](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return view_load(gen, args[0]).len;
-        }, sema::FnSign(i64_));
-
         impl->MethodAdd("@pick",    [view_load, string_](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  view    = view_load(gen, args[0]);
@@ -268,7 +354,6 @@ namespace xcompiler {
             auto abs_idx = builder.CreateAdd(view.offset, idx);
             return builder.CreateInBoundsGEP(builder.getInt32Ty(), data, { abs_idx });
         }, sema::FnSign(sema::TypeTable::ReferenceTypeGet(char_), { i64_ }));
-
         impl->MethodAdd("@pick",    [view_load, stringview_](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  view    = view_load(gen, args[0]);
@@ -289,26 +374,6 @@ namespace xcompiler {
             gen_val = builder.CreateInsertValue(gen_val, len,      2);
             return gen_val;
         }, sema::FnSign(stringview_, { range_ }));
-
-        impl->MethodAdd("@cast",    [view_load, string_](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto& builder = gen.llvm_builder();
-            auto  view    = view_load(gen, args[0]);
-
-            auto str_val = builder.CreateLoad(gen.LLVMType(string_), view.org);
-            auto data    = builder.CreateExtractValue(str_val, 0);
-
-            auto new_size = builder.CreateMul(view.len, builder.getInt64(4));
-            auto new_data = builder.CreateCall(LibC_malloc(gen), { new_size });
-
-            auto src = builder.CreateInBoundsGEP(builder.getInt32Ty(), data, { view.offset });
-            builder.CreateCall(LibC_memmove(gen), { new_data, src, new_size });
-
-            auto gen_type = gen.LLVMType(string_);
-            auto gen_val  = (llvm::Value*)llvm::UndefValue::get(gen_type);
-            gen_val = builder.CreateInsertValue(gen_val, new_data, 0);
-            gen_val = builder.CreateInsertValue(gen_val, view.len,  1);
-            return gen_val;
-        }, sema::FnSign(string_, {}, std::nullopt, sema::FnModifier::Cast));
 
         impl->MethodAdd("@neg",     [view_load, string_](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
@@ -354,7 +419,6 @@ namespace xcompiler {
             gen_val = builder.CreateInsertValue(gen_val, view.len,    1);
             return gen_val;
         }, sema::FnSign(string_));
-
         impl->MethodAdd("@eq",      [stringview_equal](IRGen& gen, ARGS& args) -> llvm::Value* {
             return stringview_equal(gen, args[0], args[1]);
         }, sema::FnSign(bool_, { stringview_ }));
@@ -362,68 +426,8 @@ namespace xcompiler {
             return gen.llvm_builder().CreateNot(stringview_equal(gen, args[0], args[1]));
         }, sema::FnSign(bool_, { stringview_ }));
 
-        impl->MethodAdd("@assign",  [view_load, string_assign_core, char_](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto& builder = gen.llvm_builder();
-            auto  view    = view_load(gen, args[0]);
-
-            auto  value      = gen.ArgLoad(args[1]);
-            auto  value_data = builder.CreateExtractValue(value, 0);
-            auto  value_len  = builder.CreateExtractValue(value, 1);
-
-            auto  elem_size = gen.llvm_module()->getDataLayout().getTypeAllocSize(gen.LLVMType(char_));
-            string_assign_core(gen, view, value_data, value_len, elem_size);
-            return nullptr;
-        }, sema::FnSign(none_, { string_ }));
-
-        impl->MethodAdd("@assign",  [view_load, string_assign_core, char_, string_](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto& builder = gen.llvm_builder();
-            auto  view    = view_load(gen, args[0]);
-            auto  right   = view_load(gen, args[1]);
-
-            auto  str_val    = builder.CreateLoad(gen.LLVMType(string_), right.org);
-            auto  right_data = builder.CreateExtractValue(str_val, 0);
-            auto  right_len  = right.len;
-
-            auto  elem_size = gen.llvm_module()->getDataLayout().getTypeAllocSize(gen.LLVMType(char_));
-            string_assign_core(gen, view, right_data, right_len, elem_size);
-            return nullptr;
-        }, sema::FnSign(none_, { stringview_ }));
-
-        impl->MethodAdd("@assign",  [view_load, string_](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto& builder = gen.llvm_builder();
-            auto  view    = view_load(gen, args[0]);
-            auto  value   = gen.ArgLoad(args[1]);
-
-            auto str_val = builder.CreateLoad(gen.LLVMType(string_), view.org);
-            auto data    = builder.CreateExtractValue(str_val, 0);
-
-            auto fn          = builder.GetInsertBlock()->getParent();
-            auto block_entry = builder.GetInsertBlock();
-            auto block_cond  = gen.BlockCreate(".stringview.fill.cond", fn);
-            auto block_body  = gen.BlockCreate(".stringview.fill.body", fn);
-            auto block_end   = gen.BlockCreate(".stringview.fill.end",  fn);
-
-            builder.CreateBr(block_cond);
-            builder.SetInsertPoint(block_cond);
-            auto counter = builder.CreatePHI(builder.getInt64Ty(), 2);
-            {
-                counter->addIncoming(builder.getInt64(0), block_entry);
-                builder.CreateCondBr(builder.CreateICmpSLT(counter, view.len), block_body, block_end);
-            }
-
-            builder.SetInsertPoint(block_body);
-            {
-                auto idx = builder.CreateAdd(view.offset, counter);
-                auto dst = builder.CreateInBoundsGEP(builder.getInt32Ty(), data, { idx });
-                builder.CreateStore(value, dst);
-
-                auto next = builder.CreateAdd(counter, builder.getInt64(1));
-                builder.CreateBr(block_cond);
-                counter->addIncoming(next, builder.GetInsertBlock());
-            }
-
-            builder.SetInsertPoint(block_end);
-            return nullptr;
-        }, sema::FnSign(none_, { char_ }));
+        impl->MethodAdd("len",      [view_load](IRGen& gen, ARGS& args) -> llvm::Value* {
+            return view_load(gen, args[0]).len;
+        }, sema::FnSign(i64_));
     }
 }

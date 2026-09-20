@@ -18,6 +18,17 @@ namespace xcompiler {
 
         auto  impl  = TypeImplTable::Set(TypeImpl(bool_));
                 
+        // @copy and @release
+
+        impl->MethodAdd("@copy",    [](IRGen& gen, ARGS& args) {
+            return gen.ArgLoad(args[0]);
+        }, sema::FnSign(bool_));
+        impl->MethodAdd("@release", [](IRGen&, ARGS&) -> llvm::Value* {
+            return nullptr;
+        }, sema::FnSign(none_));
+
+        // Other
+
         impl->MethodAdd("@print",   [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder    = gen.llvm_builder();
             auto  str_fmt    = builder.CreateGlobalString("%s",    ".fmt.str");
@@ -25,13 +36,6 @@ namespace xcompiler {
             auto  str_false  = builder.CreateGlobalString("false", ".false");
             auto  str_output = builder.CreateSelect(gen.ArgLoad(args[0]), str_true, str_false);
             builder.CreateCall(LibC_printf(gen), { str_fmt, str_output });
-            return nullptr;
-        }, sema::FnSign(none_));
-
-        impl->MethodAdd("@copy",    [](IRGen& gen, ARGS& args) {
-            return gen.ArgLoad(args[0]);
-        }, sema::FnSign(bool_));
-        impl->MethodAdd("@release", [](IRGen&, ARGS&) -> llvm::Value* {
             return nullptr;
         }, sema::FnSign(none_));
         

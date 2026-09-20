@@ -21,6 +21,8 @@ namespace xcompiler {
 
         auto  impl    = TypeImplTable::Set(TypeImpl(string_));
 
+        // Utility
+
         struct StringInfo {
             llvm::Value* addr      = nullptr;
             sema::Type*  type      = nullptr;
@@ -103,6 +105,31 @@ namespace xcompiler {
             return result;
         };
 
+        // @copy and @release
+
+        impl->MethodAdd("@copy",    [string_load](IRGen& gen, ARGS& args) -> llvm::Value* {
+            auto& builder = gen.llvm_builder();
+            auto  str     = string_load(gen, args[0]);
+
+            // Result
+            auto result_size = builder.CreateMul(str.len, builder.getInt64(4));
+            auto result_data = builder.CreateCall(LibC_malloc(gen), { result_size });
+            builder.CreateCall(LibC_memmove(gen), { result_data, str.data, result_size });
+
+            // Generated Value
+            auto gen_val = (llvm::Value*)llvm::UndefValue::get(str.llvm_type);
+            gen_val = builder.CreateInsertValue(gen_val, result_data, 0);
+            gen_val = builder.CreateInsertValue(gen_val, str.len,  1);
+            return gen_val;
+        }, sema::FnSign(string_));
+        impl->MethodAdd("@release", [string_load](IRGen& gen, ARGS& args) -> llvm::Value* {
+            auto str = string_load(gen, args[0]);
+            gen.llvm_builder().CreateCall(LibC_free(gen), { str.data });
+            return nullptr;
+        }, sema::FnSign(none_));
+
+        // Other
+
         impl->MethodAdd("@print",   [string_load, char_get, char_](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  str     = string_load(gen, args[0]);
@@ -148,7 +175,6 @@ namespace xcompiler {
             auto idx     = gen.ArgLoad(args[1]);
             return char_get(gen, str.data, idx);
         }, sema::FnSign(sema::TypeTable::ReferenceTypeGet(char_), { i64_ }));
-
         impl->MethodAdd("@pick",    [string_load](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  str     = string_load(gen, args[0]);
@@ -168,27 +194,6 @@ namespace xcompiler {
             gen_val = builder.CreateInsertValue(gen_val, len,      2);
             return gen_val;
         }, sema::FnSign(sema::TypeTable::Lookup("stringview"), { sema::TypeTable::Lookup("range") }));
-
-        impl->MethodAdd("@copy",    [string_load](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto& builder = gen.llvm_builder();
-            auto  str     = string_load(gen, args[0]);
-
-            // Result
-            auto result_size = builder.CreateMul(str.len, builder.getInt64(4));
-            auto result_data = builder.CreateCall(LibC_malloc(gen), { result_size });
-            builder.CreateCall(LibC_memmove(gen), { result_data, str.data, result_size });
-
-            // Generated Value
-            auto gen_val = (llvm::Value*)llvm::UndefValue::get(str.llvm_type);
-            gen_val = builder.CreateInsertValue(gen_val, result_data, 0);
-            gen_val = builder.CreateInsertValue(gen_val, str.len,  1);
-            return gen_val;
-        }, sema::FnSign(string_));
-        impl->MethodAdd("@release", [string_load](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto str = string_load(gen, args[0]);
-            gen.llvm_builder().CreateCall(LibC_free(gen), { str.data });
-            return nullptr;
-        }, sema::FnSign(none_));
 
         impl->MethodAdd("@plus",    [string_load](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
