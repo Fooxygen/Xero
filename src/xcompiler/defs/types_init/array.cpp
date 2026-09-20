@@ -317,6 +317,80 @@ namespace xcompiler {
             gen_val = builder.CreateInsertValue(gen_val, arr.len,  1);
             return gen_val;
         }, sema::FnSign(sema::TypeTable::ParametricTypeGet(array_, { T })));
+        impl->MethodAdd("@plus",        [array_load, elem_get](IRGen& gen, ARGS& args) -> llvm::Value* {
+            auto& builder = gen.llvm_builder();
+            auto  larr    = array_load(gen, args[0]);
+            auto  rarr    = array_load(gen, args[1]);
+
+            auto  result_len  = builder.CreateAdd(larr.len, rarr.len);
+            auto  result_size = builder.CreateMul(result_len, builder.getInt64(larr.elem_size));
+            auto  result_data = builder.CreateCall(LibC_malloc(gen), { result_size });
+
+            auto fn          = builder.GetInsertBlock()->getParent();
+            auto block_entry = builder.GetInsertBlock();
+
+            auto block_l_cond = gen.BlockCreate(".array.plus.l.cond", fn);
+            auto block_l_body = gen.BlockCreate(".array.plus.l.body", fn);
+            auto block_l_end  = gen.BlockCreate(".array.plus.l.end",  fn);
+
+            builder.CreateBr(block_l_cond);
+            builder.SetInsertPoint(block_l_cond);
+            auto l_counter = builder.CreatePHI(builder.getInt64Ty(), 2);
+            {
+                l_counter->addIncoming(builder.getInt64(0), block_entry);
+                builder.CreateCondBr(builder.CreateICmpSLT(l_counter, larr.len), block_l_body, block_l_end);
+            }
+
+            builder.SetInsertPoint(block_l_body);
+            {
+                auto elem_src = elem_get(gen, larr.data, larr.elem_size, l_counter);
+                auto elem_dst = elem_get(gen, result_data, larr.elem_size, l_counter);
+                auto copied   = larr.elem_type_impl->MethodCall(gen, "@copy", {
+                    Arg(elem_src, sema::TypeTable::ReferenceTypeGet(larr.elem_type))
+                });
+                builder.CreateStore(copied, elem_dst);
+
+                auto next = builder.CreateAdd(l_counter, builder.getInt64(1));
+                builder.CreateBr(block_l_cond);
+                l_counter->addIncoming(next, builder.GetInsertBlock());
+            }
+
+            builder.SetInsertPoint(block_l_end);
+
+            auto block_r_cond = gen.BlockCreate(".array.plus.r.cond", fn);
+            auto block_r_body = gen.BlockCreate(".array.plus.r.body", fn);
+            auto block_r_end  = gen.BlockCreate(".array.plus.r.end",  fn);
+
+            builder.CreateBr(block_r_cond);
+            builder.SetInsertPoint(block_r_cond);
+            auto r_counter = builder.CreatePHI(builder.getInt64Ty(), 2);
+            {
+                r_counter->addIncoming(builder.getInt64(0), block_l_end);
+                builder.CreateCondBr(builder.CreateICmpSLT(r_counter, rarr.len), block_r_body, block_r_end);
+            }
+
+            builder.SetInsertPoint(block_r_body);
+            {
+                auto dst_idx  = builder.CreateAdd(larr.len, r_counter);
+                auto elem_src = elem_get(gen, rarr.data, rarr.elem_size, r_counter);
+                auto elem_dst = elem_get(gen, result_data, rarr.elem_size, dst_idx);
+                auto copied   = rarr.elem_type_impl->MethodCall(gen, "@copy", {
+                    Arg(elem_src, sema::TypeTable::ReferenceTypeGet(rarr.elem_type))
+                });
+                builder.CreateStore(copied, elem_dst);
+
+                auto next = builder.CreateAdd(r_counter, builder.getInt64(1));
+                builder.CreateBr(block_r_cond);
+                r_counter->addIncoming(next, builder.GetInsertBlock());
+            }
+
+            builder.SetInsertPoint(block_r_end);
+
+            auto gen_val = (llvm::Value*)llvm::UndefValue::get(larr.llvm_type);
+            gen_val = builder.CreateInsertValue(gen_val, result_data, 0);
+            gen_val = builder.CreateInsertValue(gen_val, result_len,  1);
+            return gen_val;
+        }, sema::FnSign(sema::TypeTable::ParametricTypeGet(array_, { T }), { sema::TypeTable::ParametricTypeGet(array_, { T }) }));
         
         impl->MethodAdd("len",          [array_load](IRGen& gen, ARGS& args) -> llvm::Value* {
             return array_load(gen, args[0]).len;

@@ -1,14 +1,10 @@
 
 fn main() {
-    a: array[=i32=] = [1, 2, 3];
-    println(-a);                     # [3, 2, 1]
+    a: array[=i32=] = [1, 2];
+    b: array[=i32=] = [3, 4];
+    println(a + b);                 # [1, 2, 3, 4]
 
-    s: string = "Xero";
-    println(-s);                     # oreX
-
-    v: arrayview[=i32=] = a[0..2];
-    println(-v);                     # [2, 1]
-
-    w: stringview = s[0..2];
-    println(-w);                     # eX
+    x: array[=string=] = ["ab", "cd"];
+    y: array[=string=] = ["ef"];
+    println(x + y);                 # [ab, cd, ef]
 }

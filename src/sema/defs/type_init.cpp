@@ -217,6 +217,7 @@ namespace sema {
                 array_->method_table().Add("@pick",         FnSign(ReferenceTypeGet(array_->params_binding()[0]), { i64_ }));
                 array_->method_table().Add("@pick",         FnSign(ParametricTypeGet(arrayview_, { array_->params_binding()[0] }), { range_ }));
                 array_->method_table().Add("@neg",          FnSign(ParametricTypeGet(array_, { array_->params_binding()[0] })));
+                array_->method_table().Add("@plus",         FnSign(ParametricTypeGet(array_, { array_->params_binding()[0] }), { ParametricTypeGet(array_, { array_->params_binding()[0] }) }));
                 array_->method_table().Add("len",           FnSign(i64_));
                 array_->method_table().Add("clear",         FnSign(none_));
                 array_->method_table().Add("insert",        FnSign(none_, { i64_, nullptr }));
