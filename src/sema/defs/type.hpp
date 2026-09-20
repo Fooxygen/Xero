@@ -114,7 +114,7 @@ namespace sema {
         FnTable&            method_table()     { return method_table_; }
 
     public:
-        static std::string ParamsPrint(Type* type_basic, const std::vector<Type*>& params_type);
+        static std::string ParamsPrint(Type* basic_type, const std::vector<Type*>& params_type);
 
         Type* BasicTypeGet()    override { return type_basic_; }
         Type* ReferenceUnwrap() override { return this; }

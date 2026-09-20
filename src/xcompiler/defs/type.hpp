@@ -37,8 +37,8 @@ namespace xcompiler {
         void    MethodAdd(const std::string& name, NativeFnImpl::Impl impl, const sema::FnSign& sign);
         void    MethodAdd(const std::string& name, LangFnImpl::Impl   impl, const sema::FnSign& sign);
         
-        FnImpl* MethodGet(const sema::FnSign* sign);
-        FnImpl* MethodGetTry(const sema::FnSign* sign);
+        FnImpl* MethodLookup(const sema::FnSign* sign);
+        FnImpl* MethodLookupTry(const sema::FnSign* sign);
     
         llvm::Value* MethodCall(IRGen& gen, const std::string& name, const std::vector<Arg>& args);
     };

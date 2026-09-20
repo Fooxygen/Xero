@@ -34,9 +34,9 @@ namespace sema {
     
     // ParametricType
 
-    std::string ParametricType::ParamsPrint(Type* base, const std::vector<Type*>& params_type) {
-        base->BasicTypeCheck();
-        return base->name() + format::JoinWithBoundary(params_type, [](Type* type) {
+    std::string ParametricType::ParamsPrint(Type* basic_type, const std::vector<Type*>& params_type) {
+        basic_type->BasicTypeCheck();
+        return basic_type->name() + format::JoinWithBoundary(params_type, [](Type* type) {
             return type->name();
         }, "[=", "=]");
     }

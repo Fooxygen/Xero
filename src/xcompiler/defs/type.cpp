@@ -45,7 +45,7 @@ namespace xcompiler {
         methods_[method_sign] = std::make_unique<LangFnImpl>(impl);
     }
 
-    FnImpl*      TypeImpl::MethodGet(const sema::FnSign* sign) {
+    FnImpl*      TypeImpl::MethodLookup(const sema::FnSign* sign) {
         auto key = sign->TemplateSign();
         auto it  = methods_.find(key);
         if (it == methods_.end()) {
@@ -57,7 +57,7 @@ namespace xcompiler {
         return it->second.get();
     }
 
-    FnImpl*      TypeImpl::MethodGetTry(const sema::FnSign* sign) {
+    FnImpl*      TypeImpl::MethodLookupTry(const sema::FnSign* sign) {
         auto it = methods_.find(sign);
         return it == methods_.end() ? nullptr : it->second.get();
     }
@@ -71,7 +71,7 @@ namespace xcompiler {
         }
         
         auto  method_sign = method->SignLookup(args[0].type(), args_type);
-        auto  method_impl = MethodGet(method_sign);
+        auto  method_impl = MethodLookup(method_sign);
 
         if (auto native = dynamic_cast<NativeFnImpl*>(method_impl)) {
             return native->impl()(gen, args);
@@ -132,7 +132,7 @@ namespace xcompiler {
         }
 
         auto from_impl   = TypeImplTable::Lookup(from_basic);
-        auto method_impl = from_impl->MethodGet(method_sign);
+        auto method_impl = from_impl->MethodLookup(method_sign);
         auto receive     = gen.ArgRefMake(val, from);
 
         if (auto native = dynamic_cast<NativeFnImpl*>(method_impl)) {
