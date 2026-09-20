@@ -19,6 +19,7 @@ namespace xcompiler {
         auto  string_     = sema::TypeTable::Lookup("string");
         auto  stringview_ = sema::TypeTable::Lookup("stringview");
         auto  range_      = sema::TypeTable::Lookup("range");
+        auto  bool_       = sema::TypeTable::Lookup("bool");
 
         auto  impl        = TypeImplTable::Set(TypeImpl(stringview_));
 
@@ -43,6 +44,59 @@ namespace xcompiler {
                 builder.CreateExtractValue(val, 2),
                 llvm_type
             };
+        };
+        auto stringview_equal   = [view_load, string_](
+            IRGen& gen, const Arg& arg_lview, const Arg& arg_rview) -> llvm::Value*
+        {
+            auto& builder = gen.llvm_builder();
+            auto  lview   = view_load(gen, arg_lview);
+            auto  rview   = view_load(gen, arg_rview);
+
+            auto lstr  = builder.CreateLoad(gen.LLVMType(string_), lview.org);
+            auto ldata = builder.CreateExtractValue(lstr, 0);
+            auto rstr  = builder.CreateLoad(gen.LLVMType(string_), rview.org);
+            auto rdata = builder.CreateExtractValue(rstr, 0);
+
+            auto fn          = builder.GetInsertBlock()->getParent();
+            auto block_entry = builder.GetInsertBlock();
+            auto block_cond  = gen.BlockCreate(".stringview.equal.cond", fn);
+            auto block_body  = gen.BlockCreate(".stringview.equal.body", fn);
+            auto block_end   = gen.BlockCreate(".stringview.equal.end",  fn);
+
+            auto len_eq = builder.CreateICmpEQ(lview.len, rview.len);
+
+            builder.CreateBr(block_cond);
+            builder.SetInsertPoint(block_cond);
+            auto counter = builder.CreatePHI(builder.getInt64Ty(), 2);
+            auto result  = builder.CreatePHI(builder.getInt1Ty(),  2);
+            {
+                counter->addIncoming(builder.getInt64(0), block_entry);
+                result->addIncoming(len_eq, block_entry);
+
+                auto l_in = builder.CreateICmpSLT(counter, lview.len);
+                auto r_in = builder.CreateICmpSLT(counter, rview.len);
+                auto cont = builder.CreateAnd(builder.CreateAnd(l_in, r_in), result);
+                builder.CreateCondBr(cont, block_body, block_end);
+            }
+
+            builder.SetInsertPoint(block_body);
+            {
+                auto lidx = builder.CreateAdd(lview.offset, counter);
+                auto ridx = builder.CreateAdd(rview.offset, counter);
+                auto lval = builder.CreateLoad(builder.getInt32Ty(),
+                    builder.CreateInBoundsGEP(builder.getInt32Ty(), ldata, { lidx }));
+                auto rval = builder.CreateLoad(builder.getInt32Ty(),
+                    builder.CreateInBoundsGEP(builder.getInt32Ty(), rdata, { ridx }));
+                auto eq   = builder.CreateICmpEQ(lval, rval);
+
+                auto next = builder.CreateAdd(counter, builder.getInt64(1));
+                builder.CreateBr(block_cond);
+                counter->addIncoming(next, builder.GetInsertBlock());
+                result->addIncoming(eq,   builder.GetInsertBlock());
+            }
+
+            builder.SetInsertPoint(block_end);
+            return result;
         };
         auto string_realloc     = [](IRGen& gen, llvm::Value* data, size_t elem_size, llvm::Value* new_len) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
@@ -255,6 +309,13 @@ namespace xcompiler {
             gen_val = builder.CreateInsertValue(gen_val, view.len,  1);
             return gen_val;
         }, sema::FnSign(string_, {}, std::nullopt, sema::FnModifier::Cast));
+
+        impl->MethodAdd("@eq",      [stringview_equal](IRGen& gen, ARGS& args) -> llvm::Value* {
+            return stringview_equal(gen, args[0], args[1]);
+        }, sema::FnSign(bool_, { stringview_ }));
+        impl->MethodAdd("@neq",     [stringview_equal](IRGen& gen, ARGS& args) -> llvm::Value* {
+            return gen.llvm_builder().CreateNot(stringview_equal(gen, args[0], args[1]));
+        }, sema::FnSign(bool_, { stringview_ }));
 
         impl->MethodAdd("@assign",  [view_load, string_assign_core, char_](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();

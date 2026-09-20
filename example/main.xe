@@ -1,17 +1,14 @@
 
 fn main() {
-    s: string = "Hello World";
+    s: string = "Hello Xero";
 
-    s[0..5] = "HELLO";
-    println(s);                  # HELLO World
+    println(s[0..5] == s[0..5]);     # true
+    println(s[0..5] == s[6..10]);    # false
+    println(s[0..5] != s[6..10]);    # true
 
-    s[0..5] = "Hi";
-    println(s);                  # Hi World
+    v: stringview = s[0..5];
+    w: stringview = s[0..5];
+    println(v == w);                 # true
 
-    s[0..2] = "Hey";
-    println(s);                  # Hey World
-
-    t: string = "abc";
-    s[0..3] = t[0..3];
-    println(s);                  # abc World
+    println(s[0..1] == s[0..2]);     # false
 }
