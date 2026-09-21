@@ -238,7 +238,8 @@ namespace parser {
                         
                         else {
                             // Match
-                            if (i < len && PatternMatchTry(patterns_[j], syms[start + i]))dp[i + 1][j + 1] = true;
+                            if (i < len && PatternMatchTry(patterns_[j], syms[start + i]))
+                                dp[i + 1][j + 1] = true;
                         }
                     }
                 }

@@ -700,7 +700,7 @@ namespace xcompiler {
                 builder.CreateStore(builder.CreateLoad(elem_llvm_type, elem), iter_slot);
 
                 state_.loop_nextblocks_.emplace_back(State::LoopNextBlock{ block_step, block_end });
-                Exec(*node.body_, [&]{ var_table_.Declare(node.iter_->name_, iter_slot); });
+                Exec(*node.body_, [&] { var_table_.Declare(node.iter_->name_, iter_slot); });
                 state_.loop_nextblocks_.pop_back();
 
                 BlockTermCreate(block_step);
@@ -768,7 +768,7 @@ namespace xcompiler {
             llvm_builder().SetInsertPoint(block_body);
             {
                 state_.loop_nextblocks_.emplace_back(State::LoopNextBlock{ block_step, block_end });
-                Exec(*node.body_, [&]{ var_table_.Declare(node.iter_->name_, iter_slot); });
+                Exec(*node.body_, [&] { var_table_.Declare(node.iter_->name_, iter_slot); });
                 state_.loop_nextblocks_.pop_back();
 
                 // Entry step block to iterate var

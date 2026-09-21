@@ -269,7 +269,7 @@ namespace parser {
                     auto decl = Move<DeclExpr>(1);
                     return std::make_unique<DeclExpr>(
                         decl->id_,
-                        std::move(decl->bind_type_) ,
+                        std::move(decl->bind_type_),
                         Move<Expr>(3)
                     );
                 },
