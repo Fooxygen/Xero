@@ -101,11 +101,11 @@ inline static AstType BaseOfAstType(AstType type) {
     }
 }
 
-inline static bool    isAstTypeCompatible(AstType expected, AstType actual) {
+inline static bool    IsAstTypeCompatible(AstType expected, AstType actual) {
     if (expected == AstType::Undefined ||
         actual   == AstType::Undefined) return false;
     if (expected == actual) return true;
-    return isAstTypeCompatible(expected, BaseOfAstType(actual));
+    return IsAstTypeCompatible(expected, BaseOfAstType(actual));
 }
 
 // Node of Abstract Syntax Tree
@@ -126,9 +126,9 @@ public:
     // Print
 
     virtual void PrintImpl(std::string) = 0;
-    void         Print(std::string prefix = "", std::string alias = "", bool isBegin = false) {
+    void         Print(std::string prefix = "", std::string alias = "", bool is_begin_node = false) {
         std::cerr << prefix;
-        if (!isBegin) std::cerr << "└── ";
+        if (!is_begin_node) std::cerr << "└── ";
 
         size_t indent_alias = 0;
         if (alias != "") {
@@ -274,19 +274,19 @@ public:
 };
 class TypeExpr          : public Expr {
 public:
-    std::string            type_basic_ = "";
-    std::unique_ptr<Exprs> params_     = nullptr;
-    bool                   isReferred_ = false;
+    std::string            type_basic_  = "";
+    std::unique_ptr<Exprs> params_      = nullptr;
+    bool                   is_referred_ = false;
 
 public:
     TypeExpr(
         const std::string&     type_basic,
         std::unique_ptr<Exprs> params,
-        bool                   isReferred
+        bool                   is_referred
     )
     :   type_basic_(type_basic),
         params_(std::move(params)),
-        isReferred_(isReferred)
+        is_referred_(is_referred)
     {
         type_ = AstType::TypeExpr;
     }
@@ -303,7 +303,7 @@ public:
         if (params_) params_->Print(prefix, "params");
 
         PrintLabel("isReferred", prefix);
-        if (isReferred_)
+        if (is_referred_)
             std::cerr << COLOR_GREEN << "true" << COLOR_DEFAULT << std::endl;
         else
             std::cerr << COLOR_RED << "false" << COLOR_DEFAULT << std::endl;
@@ -313,7 +313,7 @@ public:
         auto node = std::make_unique<TypeExpr>(
             type_basic_,
             params_ ? std::unique_ptr<Exprs>((Exprs*)(params_->Clone().release())) : nullptr,
-            isReferred_
+            is_referred_
         );
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
@@ -413,7 +413,7 @@ public:
     std::unique_ptr<Expr> lexpr_ = nullptr;
     std::unique_ptr<Expr> rexpr_ = nullptr;
     std::unique_ptr<Expr> step_  = nullptr;
-    bool isClosed_ = false;
+    bool is_closed_ = false;
 
 public:
     sema::Type* iter_type_ = nullptr;
@@ -423,12 +423,12 @@ public:
         std::unique_ptr<Expr> lexpr,
         std::unique_ptr<Expr> rexpr,
         std::unique_ptr<Expr> step,
-        bool isClosed
+        bool is_closed
     )
     :   lexpr_(std::move(lexpr)),  
         rexpr_(std::move(rexpr)),
         step_(std::move(step)),
-        isClosed_(isClosed)
+        is_closed_(is_closed)
     {
         type_ = AstType::RangeExpr;
     }
@@ -440,7 +440,7 @@ public:
     void PrintImpl(std::string prefix) override {
         PrintLabel("type", prefix); {
             std::cerr << COLOR_MAGENTA;
-            if (isClosed_)  Token::TypePrint(Token::Type::DotDotEq);
+            if (is_closed_)  Token::TypePrint(Token::Type::DotDotEq);
             else            Token::TypePrint(Token::Type::DotDot);
             std::cerr << COLOR_DEFAULT << std::endl;
         }
@@ -455,7 +455,7 @@ public:
             std::unique_ptr<Expr>((Expr*)(lexpr_->Clone().release())),
             std::unique_ptr<Expr>((Expr*)(rexpr_->Clone().release())),
             step_ ? std::unique_ptr<Expr>((Expr*)(step_->Clone().release())) : nullptr,
-            isClosed_
+            is_closed_
         );
         node->iter_type_ = iter_type_;
         node->resolved_type_ = resolved_type_;

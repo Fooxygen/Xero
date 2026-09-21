@@ -28,23 +28,23 @@ namespace parser {
             Shift(token);
 
             // Try Reduce
-            bool isNeedTryAgain = false;  // set true only when at least one match
+            bool is_try_again = false;  // set true only when at least one match
             do {
-                isNeedTryAgain = false;
+                is_try_again = false;
                 for (auto& rule : rules_) {
 
                     // Match
                     size_t len = 0;
-                    if (!rule.PatternsMatch(symbols_, token_next, move_positions_, len))
+                    if (!rule.PatternsMatchTry(symbols_, token_next, move_positions_, len))
                         continue;
                 
                     // Execute
-                    if (TryReduce(rule, token_next, len)) {
-                        isNeedTryAgain = true;
+                    if (ReduceTry(rule, token_next, len)) {
+                        is_try_again = true;
                         break;
                     }
                 }
-            } while (isNeedTryAgain);
+            } while (is_try_again);
         }
 
         // Program (Root Node)
@@ -207,7 +207,7 @@ namespace parser {
         symbols_.emplace_back(Token2Symbol(token));
     }
 
-    bool   Parser::TryReduce(const Rule& rule, TT token_next, size_t reduce_len) {
+    bool   Parser::ReduceTry(const Rule& rule, TT token_next, size_t reduce_len) {
 
         // Loc
         auto loc = symbols_[symbols_.size() - reduce_len].loc();

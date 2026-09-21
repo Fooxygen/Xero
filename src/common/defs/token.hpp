@@ -187,11 +187,11 @@ public:
         }
     }
 
-    static bool isTypeCompatible(Type expected, Type actual) {
+    static bool IsTypeCompatible(Type expected, Type actual) {
         if (expected == Type::Undefined ||
             actual   == Type::Undefined) return false;
         if (expected == actual) return true;
-        return isTypeCompatible(expected, BaseOfType(actual));
+        return IsTypeCompatible(expected, BaseOfType(actual));
     }
 
     static std::string TypeName(Type type) {

@@ -76,11 +76,11 @@ namespace parser {
 
     class SymbolPattern {
     private:
-        ST  type_          = ST::Undefined;
-        TTS type_tokens_   = {};
-        ATS type_astnodes_ = {};
+        ST   type_          = ST::Undefined;
+        TTS  type_tokens_   = {};
+        ATS  type_astnodes_ = {};
 
-        bool isOptional_ = false;
+        bool is_optional_    = false;
 
     public:
         SymbolPattern(TT type)
@@ -95,28 +95,28 @@ namespace parser {
         ST         type()          const { return type_; }
         const TTS& type_tokens()   const { return type_tokens_; }
         const ATS& type_astnodes() const { return type_astnodes_; }
-        bool       isOptional()    const { return isOptional_; }
+        bool       IsOptional()    const { return is_optional_; }
     
         // Make Optional SP 
 
         static SymbolPattern Opt(TT type) {
             auto sp = SymbolPattern(type);
-            sp.isOptional_ = true;
+            sp.is_optional_ = true;
             return sp;
         }
         static SymbolPattern Opt(AT type) {
             auto sp = SymbolPattern(type);
-            sp.isOptional_ = true;
+            sp.is_optional_ = true;
             return sp;
         }
         static SymbolPattern Opt(TTS_INIT types) {
             auto sp = SymbolPattern(types);
-            sp.isOptional_ = true;
+            sp.is_optional_ = true;
             return sp;
         }
         static SymbolPattern Opt(ATS_INIT types) {
             auto sp = SymbolPattern(types);
-            sp.isOptional_ = true;
+            sp.is_optional_ = true;
             return sp;
         }
     };
@@ -138,7 +138,7 @@ namespace parser {
         ReduceCallback reduce_callback_;
 
     private:
-        bool isNeedDelayPrefix(const SS& symbols, size_t reduce_len) {
+        bool IsDelayByPrefix(const SS& symbols, size_t reduce_len) {
             if (prefix_delay_.empty() && prefix_allow_.empty()) return false;
             if (symbols.size() <= reduce_len) return false;
 
@@ -146,19 +146,19 @@ namespace parser {
 
             if (!prefix_delay_.empty()) {
                 for (auto& sp : prefix_delay_) {
-                    if (PatternMatch(sp, pred)) return true;
+                    if (PatternMatchTry(sp, pred)) return true;
                 }
             }
 
             if (!prefix_allow_.empty()) {
-                bool isFind = false;
+                bool is_find = false;
                 for (auto& sp : prefix_allow_)
-                    if (PatternMatch(sp, pred)) { isFind = true; break; }
-                if (!isFind) return true;
+                    if (PatternMatchTry(sp, pred)) { is_find = true; break; }
+                if (!is_find) return true;
             }
             return false;
         }
-        bool isNeedDelaySuffix(TT token_next) const {
+        bool IsDelayBySuffix(TT token_next) const {
             if (token_next == TT::Undefined) return false;
             if (!suffix_delay_.empty() && std::ranges::contains(suffix_delay_, token_next))
                 return true;
@@ -188,25 +188,25 @@ namespace parser {
         const ReduceCallback& reduce_callback() const { return reduce_callback_; }
 
     public:
-        bool PatternMatch(const SymbolPattern& pat, const Symbol& sym) {
+        bool PatternMatchTry(const SymbolPattern& pat, const Symbol& sym) {
 
             // Token
             if (sym.type() == ST::Token) {
                 for (auto t : pat.type_tokens()) {
-                    if (Token::isTypeCompatible(t, sym.type_token())) return true;
+                    if (Token::IsTypeCompatible(t, sym.type_token())) return true;
                 }
                 return false;
             }
 
             // AstNode
             for (auto a : pat.type_astnodes()) {
-                if (isAstTypeCompatible(a, sym.type_astnode())) return true;
+                if (IsAstTypeCompatible(a, sym.type_astnode())) return true;
             }
  
             return false;
         }
-        bool PatternsMatch(const SS& syms, TT token_next, std::vector<size_t>& move_positions, size_t& out_reduce_len) {
-            if (isNeedDelaySuffix(token_next)) return false;
+        bool PatternsMatchTry(const SS& syms, TT token_next, std::vector<size_t>& move_positions, size_t& out_reduce_len) {
+            if (IsDelayBySuffix(token_next)) return false;
 
             // Match Check
             size_t np = patterns_.size();
@@ -223,22 +223,22 @@ namespace parser {
                 dp[0][0] = true;
 
                 for (size_t j = 0; j < np; j++) {
-                    bool isOpt = patterns_[j].isOptional();
+                    bool is_optional = patterns_[j].IsOptional();
 
                     for (size_t i = 0; i <= len; i++) {
                         if (!dp[i][j]) continue;  // unreachable
 
-                        if (isOpt) {
+                        if (is_optional) {
                             // Optional 1: Mismatch
                             dp[i][j + 1] = true;
 
                             // Optional 2: Match
-                            if (i < len && PatternMatch(patterns_[j], syms[start + i])) dp[i + 1][j + 1] = true;
+                            if (i < len && PatternMatchTry(patterns_[j], syms[start + i])) dp[i + 1][j + 1] = true;
                         }
                         
                         else {
                             // Match
-                            if (i < len && PatternMatch(patterns_[j], syms[start + i]))dp[i + 1][j + 1] = true;
+                            if (i < len && PatternMatchTry(patterns_[j], syms[start + i]))dp[i + 1][j + 1] = true;
                         }
                     }
                 }
@@ -255,7 +255,7 @@ namespace parser {
 
                         // Skiped
                         // Exist path: (i, j - 1) -> (i, j) dir: →
-                        if (patterns_[j - 1].isOptional() && dp[i][j - 1]) {
+                        if (patterns_[j - 1].IsOptional() && dp[i][j - 1]) {
                             // Mark zero: not used
                             move_positions[j - 1] = 0;
                             cnt_skip++;
@@ -276,7 +276,7 @@ namespace parser {
                         if (p != 0) out_reduce_len++;
                     }
 
-                    if (isNeedDelayPrefix(syms, out_reduce_len)) return false;
+                    if (IsDelayByPrefix(syms, out_reduce_len)) return false;
 
                     return true;
                 }
@@ -322,7 +322,7 @@ namespace parser {
         // Parsing
 
         void   Shift(const Token& token);
-        bool   TryReduce(const Rule& rule, TT token_next, size_t reduce_len);
+        bool   ReduceTry(const Rule& rule, TT token_next, size_t reduce_len);
 
         void        PatternIndexCheck(size_t pos) {
             if (pos < 1) {
@@ -335,11 +335,11 @@ namespace parser {
             return symbols_[symbols_.size() - pos].type_token();
         }
         
-        bool   isOptPatternEmpty(size_t pos) {
+        bool   IsOptPatternEmpty(size_t pos) {
             PatternIndexCheck(pos);
             return move_positions_[pos - 1] == 0;
         }
-        bool   isPattern(size_t pos, TT token_type) {
+        bool   IsPattern(size_t pos, TT token_type) {
             PatternIndexCheck(pos);
             pos = move_positions_[pos - 1];
             auto& target = symbols_[symbols_.size() - pos];
@@ -347,7 +347,7 @@ namespace parser {
             return  target.type() == ST::Token &&
                     target.type_token() == token_type;
         }
-        bool   isPattern(size_t pos, AT ast_type) {
+        bool   IsPattern(size_t pos, AT ast_type) {
             PatternIndexCheck(pos);
             pos = move_positions_[pos - 1];
             auto& target = symbols_[symbols_.size() - pos];

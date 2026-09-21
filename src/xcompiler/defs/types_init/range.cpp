@@ -39,7 +39,7 @@ namespace xcompiler {
             auto  left_val       = builder.CreateExtractValue(range_val, 0);
             auto  right_val      = builder.CreateExtractValue(range_val, 1);
             auto  step_val       = builder.CreateExtractValue(range_val, 2);
-            auto  isClosed_val   = builder.CreateExtractValue(range_val, 3);
+            auto  is_closed_val  = builder.CreateExtractValue(range_val, 3);
 
             builder.CreateCall(LibC_printf(gen), { builder.CreateGlobalString("[", ".range.lb") });
             iter_type_impl->MethodCall(gen, "@print", { gen.ArgRefMake(left_val, iter_type) });
@@ -53,7 +53,7 @@ namespace xcompiler {
             auto rp = builder.CreateGlobalString(")", ".rp");   // RParen
             builder.CreateCall(LibC_printf(gen), {
                 builder.CreateGlobalString("%s", ".fmt.str"),
-                builder.CreateSelect(isClosed_val, rb, rp)
+                builder.CreateSelect(is_closed_val, rb, rp)
             });
 
             return nullptr;

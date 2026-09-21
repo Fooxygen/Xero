@@ -13,7 +13,7 @@ namespace parser {
 
         // Oper Auxiliary
 
-        static auto isOperPriority = [](TT a, TT b) {
+        static auto IsOperPriority = [](TT a, TT b) {
             auto group = [](TT type) {
                 switch (type) {
                     case TT::LBkt:
@@ -53,10 +53,10 @@ namespace parser {
             return group(a) > group(b);
         };
 
-        static auto TokenType2OperType = [](TT token, bool isUnary) {
+        static auto TokenType2OperType = [](TT token, bool is_unary) {
             switch (token) {
                 case TT::Plus:          return OT::Plus;
-                case TT::Minus:         return isUnary ? OT::Neg : OT::Minus;
+                case TT::Minus:         return is_unary ? OT::Neg : OT::Minus;
                 case TT::Star:          return OT::Star;
                 case TT::Slash:         return OT::Slash;
                 case TT::ModT:          return OT::ModT;
@@ -101,7 +101,7 @@ namespace parser {
         static auto Pack2Exprs     = [](Parser& parser, size_t pos)
             -> std::unique_ptr<Exprs>
         {
-            if (parser.isOptPatternEmpty(pos)) {
+            if (parser.IsOptPatternEmpty(pos)) {
                 std::vector<std::unique_ptr<Expr>> empty;
                 return std::make_unique<Exprs>(empty);
             }
@@ -370,10 +370,10 @@ namespace parser {
                 },
                 [this](auto) -> ASTNODE {
                     std::string name = "";
-                    if (!isOptPatternEmpty(2))
+                    if (!IsOptPatternEmpty(2))
                         name = Move<IdExpr>(2)->name_;
 
-                    if (isPattern(7, AT::IdExpr)) {
+                    if (IsPattern(7, AT::IdExpr)) {
                         return std::make_unique<FnExpr>(
                             name,
                             std::make_unique<TypeExpr>(
@@ -385,7 +385,7 @@ namespace parser {
                             Move<BlockExpr>(8)
                         );
                     }
-                    if (isPattern(7, AT::TypeExpr)) {
+                    if (IsPattern(7, AT::TypeExpr)) {
                         return std::make_unique<FnExpr>(
                             name,
                             Move<TypeExpr>(7),
@@ -411,7 +411,7 @@ namespace parser {
                 },
                 [this](auto) {
                     std::string name = "";
-                    if (!isOptPatternEmpty(2)) name = Move<IdExpr>(2)->name_;
+                    if (!IsOptPatternEmpty(2)) name = Move<IdExpr>(2)->name_;
 
                     return std::make_unique<FnExpr>(
                         name,
@@ -432,7 +432,7 @@ namespace parser {
                 },
                 [this](auto) {
                     return std::make_unique<ReturnSignalStmt>(
-                        !isOptPatternEmpty(2) ? Move<Expr>(2) : nullptr
+                        !IsOptPatternEmpty(2) ? Move<Expr>(2) : nullptr
                     );
                 }
             );
@@ -507,7 +507,7 @@ namespace parser {
                 },
                 [this](TT token_next) -> ASTNODE {
                     auto tokentype = PatternTokenTypeGet(2);
-                    if (isOperPriority(token_next, tokentype)) return nullptr;
+                    if (IsOperPriority(token_next, tokentype)) return nullptr;
 
                     return std::make_unique<OperExpr>(
                         TokenType2OperType(tokentype, false),

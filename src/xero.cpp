@@ -23,8 +23,8 @@
 
 struct Args {
     std::filesystem::path path_;
-    bool isPrintToken_ = false;
-    bool isPrintAst_   = false;
+    bool is_print_token_ = false;
+    bool is_print_ast_   = false;
 };
 
 std::string FileRead(const std::string& path) {
@@ -60,9 +60,9 @@ int main(int argc, char* argv[]) {
         Args args;
         for (int i = 1; i < argc; i++) {
             std::string arg = argv[i];
-            if      (arg == "--ast"  || arg == "-a")  args.isPrintAst_   = true;
-            else if (arg == "--tok"  || arg == "-t")  args.isPrintToken_ = true;
-            else                                      args.path_         = std::filesystem::path(arg);
+            if      (arg == "--ast"  || arg == "-a")  args.is_print_ast_   = true;
+            else if (arg == "--tok"  || arg == "-t")  args.is_print_token_ = true;
+            else                                      args.path_           = std::filesystem::path(arg);
         }
 
         // Code
@@ -70,13 +70,13 @@ int main(int argc, char* argv[]) {
 
         // Lexer
         lexer::Lexer lexer(code);
-        lexer.TokensGen(args.isPrintToken_);
+        lexer.TokensGen(args.is_print_token_);
         LogDone(LogModule::Lexer).Print();
 
         // Parser
         parser::Parser parser(lexer.tokens());
         parser.Execute();
-        if (args.isPrintAst_) parser.root()->Print("", "", true);
+        if (args.is_print_ast_) parser.root()->Print("", "", true);
         LogDone(LogModule::Parser).Print();
 
         // Sema

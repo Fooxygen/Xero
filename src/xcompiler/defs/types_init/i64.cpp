@@ -72,10 +72,10 @@ namespace xcompiler {
             auto  lval    = gen.ArgLoad(args[0]);
             auto  rval    = gen.ArgLoad(args[1]);
             auto  modt    = builder.CreateSRem(lval, rval);
-            auto  isModTNeqZero = builder.CreateICmpNE(modt, zero);
-            auto  isDiffSign    = builder.CreateXor(builder.CreateICmpSLT(modt, zero), builder.CreateICmpSLT(rval, zero));
-            auto  hasRevise     = builder.CreateAnd(isModTNeqZero, isDiffSign);
-            return builder.CreateAdd(modt, builder.CreateSelect(hasRevise, rval, zero));
+            auto  is_modt_neq_zero = builder.CreateICmpNE(modt, zero);
+            auto  is_sign_diff     = builder.CreateXor(builder.CreateICmpSLT(modt, zero), builder.CreateICmpSLT(rval, zero));
+            auto  has_revise       = builder.CreateAnd(is_modt_neq_zero, is_sign_diff);
+            return builder.CreateAdd(modt, builder.CreateSelect(has_revise, rval, zero));
         }, sema::FnSign(i64_,  { i64_ }));
         
         impl->MethodAdd("@gt",      [](IRGen& gen, ARGS& args) {

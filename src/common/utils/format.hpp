@@ -27,11 +27,11 @@ namespace format {
         return res;
     }
 
-    // Join range elements into a formatted string
+    // Join range elems into a formatted string
     template <std::ranges::input_range R, typename Fn>
     requires std::invocable<Fn, std::ranges::range_value_t<R>>
     inline std::string JoinWithBoundary (
-        const R& elements,
+        const R& elems,
         Fn to_string,
         std::string_view left  = "(",
         std::string_view right = ")",
@@ -40,11 +40,11 @@ namespace format {
         std::ostringstream oss;
         oss << left;
 
-        bool isFirst = true;
-        for (const auto& e : elements) {
-            if (!isFirst) oss << sep;
+        bool is_first_elem = true;
+        for (const auto& e : elems) {
+            if (!is_first_elem) oss << sep;
             oss << std::invoke(to_string, e);
-            isFirst = false;
+            is_first_elem = false;
         }
 
         oss << right;

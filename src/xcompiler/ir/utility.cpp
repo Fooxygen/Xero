@@ -19,35 +19,35 @@ namespace xcompiler {
             ));
         }
 
-        if (type->is("none")) {
+        if (type->Is("none")) {
             return llvm::Type::getVoidTy(llvm_context());
         }
-        if (type->is("bool")) {
+        if (type->Is("bool")) {
             return llvm::Type::getInt1Ty(llvm_context());
         }
-        if (type->is("i32")) {
+        if (type->Is("i32")) {
             return llvm::Type::getInt32Ty(llvm_context());
         }
-        if (type->is("i64")) {
+        if (type->Is("i64")) {
             return llvm::Type::getInt64Ty(llvm_context());
         }
-        if (type->is("f32")) {
+        if (type->Is("f32")) {
             return llvm::Type::getFloatTy(llvm_context());
         }
-        if (type->is("f64")) {
+        if (type->Is("f64")) {
             return llvm::Type::getDoubleTy(llvm_context());
         }
-        if (type->is("char")) {
+        if (type->Is("char")) {
             return llvm::Type::getInt32Ty(llvm_context());
         }
-        if (type->is("string") || type->is("array"))  {
+        if (type->Is("string") || type->Is("array"))  {
             return llvm::StructType::get(llvm_context(), {
                     llvm::PointerType::get(llvm_context(), 0),      // data
                     llvm::Type::getInt64Ty(llvm_context())          // len
                 }
             );
         }
-        if (type->is("arrayview") || type->is("stringview")) {
+        if (type->Is("arrayview") || type->Is("stringview")) {
             return llvm::StructType::get(llvm_context(), {
                     llvm::PointerType::get(llvm_context(), 0),      // org
                     llvm::Type::getInt64Ty(llvm_context()),         // offset
@@ -55,7 +55,7 @@ namespace xcompiler {
                 }
             );
         }
-        if (type->is("range")) {
+        if (type->Is("range")) {
             auto parametric_type = (sema::ParametricType*)type;
             auto elem_type       = LLVMType(parametric_type->params_type()[0]);
             return llvm::StructType::get(llvm_context(),
@@ -114,7 +114,7 @@ namespace xcompiler {
     }
     
     llvm::Value*      IRGen::ArgLoad(const Arg& arg) {
-        if (arg.isReferenceType()) {
+        if (arg.IsReferenceType()) {
             auto reference_type = (sema::ReferenceType*)arg.type();
             return llvm_builder().CreateLoad(LLVMType(reference_type->type_referred()), arg.val());
         }
@@ -122,7 +122,7 @@ namespace xcompiler {
     }
     
     llvm::Value*      IRGen::ArgAddr(const Arg& arg) {
-        if (arg.isReferenceType()) return arg.val();
+        if (arg.IsReferenceType()) return arg.val();
         return ValMaterialize(arg.val(), arg.type());
     }
 
@@ -133,7 +133,7 @@ namespace xcompiler {
         return builder_alloc.CreateAlloca(type, nullptr, name);
     }
 
-    bool              IRGen::hasBlockTerm() {
+    bool              IRGen::HasBlockTerm() {
         // Program is a top-level node and has no BasicBlock
         auto block = llvm_builder().GetInsertBlock();
         return block && block->getTerminator() != nullptr;
@@ -144,10 +144,10 @@ namespace xcompiler {
     }
 
     void              IRGen::BlockTermCreate(llvm::BasicBlock* term) {
-        if (!hasBlockTerm()) llvm_builder().CreateBr(term);
+        if (!HasBlockTerm()) llvm_builder().CreateBr(term);
     }
 
     void              IRGen::BlockTermCreate(std::function<void()> callback) {
-        if (!hasBlockTerm()) callback();
+        if (!HasBlockTerm()) callback();
     }
 }

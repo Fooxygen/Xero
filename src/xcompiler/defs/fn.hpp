@@ -26,7 +26,7 @@ namespace xcompiler {
         sema::Type*  type() const { return type_; }
 
     public:
-        bool        isReferenceType() const {
+        bool        IsReferenceType() const {
             return dynamic_cast<sema::ReferenceType*>(type_) != nullptr;
         }
         sema::Type* ReferenceUnwrap() const {

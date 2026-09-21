@@ -176,16 +176,16 @@ namespace xcompiler {
             return char_get(gen, str.data, idx);
         }, sema::FnSign(sema::TypeTable::ReferenceTypeGet(char_), { i64_ }));
         impl->MethodAdd("@pick",    [string_load](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto& builder = gen.llvm_builder();
-            auto  str     = string_load(gen, args[0]);
-            auto  range   = gen.ArgLoad(args[1]);
+            auto& builder  = gen.llvm_builder();
+            auto  str      = string_load(gen, args[0]);
+            auto  range    = gen.ArgLoad(args[1]);
 
-            auto left     = builder.CreateIntCast(builder.CreateExtractValue(range, 0), builder.getInt64Ty(), true);
-            auto right    = builder.CreateIntCast(builder.CreateExtractValue(range, 1), builder.getInt64Ty(), true);
-            auto isClosed = builder.CreateExtractValue(range, 3);
+            auto left      = builder.CreateIntCast(builder.CreateExtractValue(range, 0), builder.getInt64Ty(), true);
+            auto right     = builder.CreateIntCast(builder.CreateExtractValue(range, 1), builder.getInt64Ty(), true);
+            auto is_closed = builder.CreateExtractValue(range, 3);
 
             auto diff = builder.CreateSub(right, left);
-            auto len  = builder.CreateSelect(isClosed, builder.CreateAdd(diff, builder.getInt64(1)), diff);
+            auto len  = builder.CreateSelect(is_closed, builder.CreateAdd(diff, builder.getInt64(1)), diff);
 
             auto view_type = gen.LLVMType(sema::TypeTable::Lookup("stringview"));
             auto gen_val   = (llvm::Value*)llvm::UndefValue::get(view_type);

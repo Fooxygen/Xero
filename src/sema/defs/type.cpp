@@ -13,15 +13,15 @@ namespace sema {
     
     // Type
 
-    bool Type::isNone() {
-        return is("none");
+    bool Type::IsNone() {
+        return Is("none");
     }
 
-    bool Type::is(std::string_view name) {
+    bool Type::Is(std::string_view name) {
         if (this->name_ == name) return true;
 
         Type* base_type = BasicTypeGet();
-        return base_type != this && base_type->is(name);
+        return base_type != this && base_type->Is(name);
     }
 
     void Type::BasicTypeCheck() const {
@@ -111,7 +111,7 @@ namespace sema {
 
         for (auto& [method_name, method] : base_type->method_table().table()) {
             for (auto& sign : method.signs()) {
-                if (!isContainsBinding(*sign)) continue;
+                if (!IsContainBindingType(*sign)) continue;
                 parametric_type->method_table().Add(
                     method_name,
                     InstantiateSign(*sign, base_type, params_type)
@@ -123,23 +123,23 @@ namespace sema {
         return parametric_type;
     }
 
-    bool    TypeTable::isContainsBinding(Type* type) {
+    bool    TypeTable::IsContainBindingType(Type* type) {
         if (dynamic_cast<BindingType*>(type)) return true;
         if (auto ref = dynamic_cast<ReferenceType*>(type))
-            return isContainsBinding(ref->type_referred());
+            return IsContainBindingType(ref->type_referred());
         if (auto par = dynamic_cast<ParametricType*>(type)) {
             for (auto param : par->params_type())
-                if (isContainsBinding(param)) return true;
+                if (IsContainBindingType(param)) return true;
         }
         return false;
     }
 
-    bool    TypeTable::isContainsBinding(const FnSign& sign) {
-        if (sign.return_type() && isContainsBinding(sign.return_type())) return true;
+    bool    TypeTable::IsContainBindingType(const FnSign& sign) {
+        if (sign.return_type() && IsContainBindingType(sign.return_type())) return true;
         for (auto param : sign.params_type_fix())
-            if (param && isContainsBinding(param)) return true;
+            if (param && IsContainBindingType(param)) return true;
         if (sign.params_type_var() && *sign.params_type_var())
-            if (isContainsBinding(*sign.params_type_var())) return true;
+            if (IsContainBindingType(*sign.params_type_var())) return true;
         return false;
     }
 

@@ -252,16 +252,16 @@ namespace xcompiler {
             return elem_get(gen, arr.data, arr.elem_size, idx);
         }, sema::FnSign(sema::TypeTable::ReferenceTypeGet(T), { i64_ }));
         impl->MethodAdd("@pick",        [array_load](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto& builder = gen.llvm_builder();
-            auto  arr     = array_load(gen, args[0]);
-            auto  range   = gen.ArgLoad(args[1]);
+            auto& builder  = gen.llvm_builder();
+            auto  arr      = array_load(gen, args[0]);
+            auto  range    = gen.ArgLoad(args[1]);
 
-            auto left     = builder.CreateIntCast(builder.CreateExtractValue(range, 0), builder.getInt64Ty(), true);
-            auto right    = builder.CreateIntCast(builder.CreateExtractValue(range, 1), builder.getInt64Ty(), true);
-            auto isClosed = builder.CreateExtractValue(range, 3);
+            auto left      = builder.CreateIntCast(builder.CreateExtractValue(range, 0), builder.getInt64Ty(), true);
+            auto right     = builder.CreateIntCast(builder.CreateExtractValue(range, 1), builder.getInt64Ty(), true);
+            auto is_closed = builder.CreateExtractValue(range, 3);
 
             auto diff = builder.CreateSub(right, left);
-            auto len  = builder.CreateSelect(isClosed, builder.CreateAdd(diff, builder.getInt64(1)), diff);
+            auto len  = builder.CreateSelect(is_closed, builder.CreateAdd(diff, builder.getInt64(1)), diff);
 
             auto view_type = gen.LLVMType(sema::TypeTable::Lookup("arrayview"));
             auto gen_val   = (llvm::Value*)llvm::UndefValue::get(view_type);

@@ -67,10 +67,10 @@ namespace sema {
 
         std::string ParamsPrint() const;
 
-        bool isSignEqual(const FnSign& sign);
-        bool isSignMatch(const std::vector<Type*>& args_type);      // implicit type cast
+        bool IsSignEqual(const FnSign& sign);
+        bool IsSignMatch(const std::vector<Type*>& args_type);      // implicit type cast
 
-        bool isReceiveMatch(Type* type) const;
+        bool IsReceiveMatch(Type* type) const;
         void ReceiveSet(Type* type) { receive_type_ = type; }
 
         const FnSign* TemplateSign() const { return template_ ? template_ : this; }

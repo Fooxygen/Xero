@@ -19,29 +19,29 @@ namespace lexer {
         return Token(type, lexeme, loc_prev_);
     }
 
-    void  Lexer::TokensGen(bool isPrint) {
-        while (!isScanEnd()) {
+    void  Lexer::TokensGen(bool is_print) {
+        while (!IsScanEnd()) {
             auto next_opt = TokenNext();
             if (!next_opt.has_value()) break;
 
             auto next = next_opt.value();
             if (next.type_ != TT::Undefined) {
                 auto& token = tokens_.emplace_back(next);
-                if (isPrint) token.MetaPrint();
+                if (is_print) token.MetaPrint();
             }
         }
     }
 
     std::optional<Token> Lexer::TokenNext() {
         WhitespaceSkip();
-        if (isScanEnd()) return std::nullopt;
+        if (IsScanEnd()) return std::nullopt;
 
         loc_scan_ = loc_;
         char c = code_[pos_];
 
         // Indef Length
-        if (isIdBegin(c))   return TokenScanWord();     // a... | _... | @...
-        if (isNumber(c))    return TokenScanNumber();   // 1...
+        if (IsIdBegin(c))   return TokenScanWord();     // a... | _... | @...
+        if (IsNumber(c))    return TokenScanNumber();   // 1...
         if (c == '"')       return TokenScanString();   // "..."
         if (c == '\'')      return TokenScanChar();     // '.'
         
@@ -49,8 +49,8 @@ namespace lexer {
         CharNext();
 
         // └─ Multiple Chars
-        char cn  = !isScanEnd()     ? code_[pos_]     : '\0';
-        char cnn = !isNextScanEnd() ? code_[pos_ + 1] : '\0';
+        char cn  = !IsScanEnd()     ? code_[pos_]     : '\0';
+        char cnn = !IsNextScanEnd() ? code_[pos_ + 1] : '\0';
         switch (c) {
             case '=': {
                 if (cn == '=') {
@@ -171,7 +171,7 @@ namespace lexer {
         switch (c) {
             case '#': {
                 // Multi-Line Common
-                if (!isScanEnd() && code_[pos_] == '#') {
+                if (!IsScanEnd() && code_[pos_] == '#') {
                     CharNext();
                     return TokenScanMultiComment();
                 }
@@ -192,7 +192,7 @@ namespace lexer {
 
     Token Lexer::TokenScanWord() {
         size_t pbeg = pos_;
-        while (pos_ + 1 < code_.length() && isIdContinue(code_[pos_ + 1])) {
+        while (pos_ + 1 < code_.length() && IsIdContinue(code_[pos_ + 1])) {
             CharNext();
         }
         CharNext();
@@ -203,19 +203,19 @@ namespace lexer {
 
     Token Lexer::TokenScanNumber() {
         size_t pbeg   = pos_;
-        bool   hasDot = false;
+        bool   has_dot = false;
 
         while (pos_ + 1 < code_.length()) {
             char cn = code_[pos_ + 1];
             
-            if (isNumber(cn)) CharNext();
+            if (IsNumber(cn)) CharNext();
 
             // 123.
-            else if (isDot(cn) && !hasDot) {
+            else if (IsDot(cn) && !has_dot) {
 
                 // 123.4
-                if (pos_ + 2 < code_.length() && isNumber(code_[pos_ + 2])) {
-                    hasDot = true;
+                if (pos_ + 2 < code_.length() && IsNumber(code_[pos_ + 2])) {
+                    has_dot = true;
                     CharNext();
                 }
 
@@ -235,13 +235,13 @@ namespace lexer {
     Token Lexer::TokenScanChar() {
         std::string bytes = "";
         CharNext();
-        if (isScanEnd())
+        if (IsScanEnd())
             throw LogErr(LogModule::Lexer, "unclosed single quotes of char", loc_scan_);
 
         // Escape Char
         if (code_[pos_] == '\\') {
             CharNext();
-            if (isScanEnd())
+            if (IsScanEnd())
                 throw LogErr(LogModule::Lexer, "unclosed single quotes of char", loc_scan_);
 
             switch (code_[pos_]) {
@@ -262,14 +262,14 @@ namespace lexer {
         else {
             size_t bytes_get = UTF8::CharBytesGet((uint8_t)code_[pos_], LogModule::Lexer);
             for (size_t i = 0; i < bytes_get; i++) {
-                if (isScanEnd())
+                if (IsScanEnd())
                     throw LogErr(LogModule::Lexer, "unclosed single quotes of char", loc_scan_);
                 bytes += code_[pos_];
                 CharNext();
             }
         }
 
-        if (isScanEnd() || code_[pos_] != '\'')
+        if (IsScanEnd() || code_[pos_] != '\'')
             throw LogErr(LogModule::Lexer, "unclosed single quotes of char", loc_scan_);
         CharNext();
         return TokenGen(TT::Char, bytes);
@@ -279,7 +279,7 @@ namespace lexer {
         std::string lexeme = "";
         CharNext();
 
-        while (!isScanEnd()) {
+        while (!IsScanEnd()) {
             char c = code_[pos_];
 
             if (c == '"') {
@@ -293,7 +293,7 @@ namespace lexer {
             if (c == '\\') {
                 CharNext();
                 
-                if (isScanEnd())
+                if (IsScanEnd())
                     throw LogErr(LogModule::Lexer, "unclosed double quotes of string", loc_scan_);
 
                 switch (code_[pos_]) {
@@ -319,13 +319,13 @@ namespace lexer {
     }
 
     Token Lexer::TokenScanSingleComment() {
-        while (!isScanEnd() && code_[pos_] != '\n') CharNext();
+        while (!IsScanEnd() && code_[pos_] != '\n') CharNext();
         return Token();
     }
 
     Token Lexer::TokenScanMultiComment() {
-        while (!isScanEnd()) {
-            if (code_[pos_] == '#' && !isNextScanEnd() && code_[pos_ + 1] == '#') {
+        while (!IsScanEnd()) {
+            if (code_[pos_] == '#' && !IsNextScanEnd() && code_[pos_ + 1] == '#') {
                 CharNext(2);
                 return Token();
             }

@@ -45,8 +45,8 @@ namespace sema {
         std::unordered_map<Type*, const FnSign*>& casts_fnsign() { return casts_fnsign_; }
 
     public:
-        bool isNone();
-        bool is(std::string_view name);
+        bool IsNone();
+        bool Is(std::string_view name);
 
         virtual Type* BasicTypeGet() = 0;
         void          BasicTypeCheck() const;
@@ -155,8 +155,8 @@ namespace sema {
         static Type*  ParametricTypeGet(Type* type, const std::vector<Type*>& params, std::optional<Loc> loc = std::nullopt);
         static Type*  ReferenceTypeGet(Type* type);
 
-        static bool   isContainsBinding(Type* type);
-        static bool   isContainsBinding(const FnSign& sign);
+        static bool   IsContainBindingType(Type* type);
+        static bool   IsContainBindingType(const FnSign& sign);
         static Type*  Substitute(Type* type, BasicType* base, const std::vector<Type*>& args);
         static FnSign InstantiateSign(const FnSign& sign, BasicType* base, const std::vector<Type*>& args);
         static Fn*    MethodLookup(Type* type, const std::string& name);
@@ -173,10 +173,10 @@ namespace sema {
             // Get Common
             std::set<Type*> common;
             {
-                bool isFirstAdd = false;
+                bool is_first_add = false;
                 for (auto t : ts) {
-                    if (!isFirstAdd) {
-                        isFirstAdd = true;
+                    if (!is_first_add) {
+                        is_first_add = true;
                         common = t->casts();
                         continue;
                     }
@@ -198,17 +198,17 @@ namespace sema {
 
             // Find Minimal
             for (auto& i : common) {
-                bool isFind = true;
+                bool is_find = true;
 
                 for (auto& j : common) {
                     if (i == j) continue;
                     if (j->casts().contains(i)) {
-                        isFind = false;
+                        is_find = false;
                         break;
                     }
                 }
 
-                if (isFind) {
+                if (is_find) {
                     common_cache_[ts] = i;
                     return i;
                 }

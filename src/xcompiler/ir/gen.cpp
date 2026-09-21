@@ -24,7 +24,7 @@ namespace xcompiler {
 
         try {
             for (auto& child : node.children_) {
-                if (hasBlockTerm()) continue;   // invalid stmts come after term
+                if (HasBlockTerm()) continue;   // invalid stmts come after term
                 Exec(*child);
             }
         }
@@ -111,7 +111,7 @@ namespace xcompiler {
 
             auto target_arg = Arg(target_addr, sema::TypeTable::ReferenceTypeGet(target_type->ReferenceUnwrap()));
 
-            if (idx_type->is("range")) {
+            if (idx_type->Is("range")) {
                 return target_impl->MethodCall(*this, "@pick", {
                     target_arg, Arg(ExprLoad(*node.rexpr_), idx_type)
                 });
@@ -238,7 +238,7 @@ namespace xcompiler {
             step_val = TypeImplTable::Cast(*this, Exec(*node.step_), node.step_->resolved_type_->ReferenceUnwrap(), iter_type);
         }
         else {
-            if (iter_type->is("i32") || iter_type->is("i64")) {
+            if (iter_type->Is("i32") || iter_type->Is("i64")) {
                 step_val = llvm::ConstantInt::get(iter_llvm_type, 1);
             }
             else {
@@ -246,19 +246,19 @@ namespace xcompiler {
             }
         }
 
-        auto isClosed_val = llvm_builder().getInt1(node.isClosed_);
+        auto is_closed_val = llvm_builder().getInt1(node.is_closed_);
 
         // Generated Value
         auto gen_type = llvm::StructType::get(
             llvm_context(),
-            // left, right, step, isClosed
+            // left, right, step, is_closed
             { iter_llvm_type, iter_llvm_type, iter_llvm_type, llvm_builder().getInt1Ty() }
         );
         auto gen_val  = (llvm::Value*)llvm::UndefValue::get(gen_type);
         gen_val = llvm_builder().CreateInsertValue(gen_val, left_val, 0);
         gen_val = llvm_builder().CreateInsertValue(gen_val, right_val, 1);
         gen_val = llvm_builder().CreateInsertValue(gen_val, step_val, 2);
-        gen_val = llvm_builder().CreateInsertValue(gen_val, isClosed_val, 3);
+        gen_val = llvm_builder().CreateInsertValue(gen_val, is_closed_val, 3);
 
         return gen_val;
     }
@@ -471,10 +471,10 @@ namespace xcompiler {
 
     llvm::Value* IRGen::Exec(NumConst& node) {
         auto type = node.resolved_type_;
-        if (type->is("i32")) return llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_context()), node.resolved_value_.integer_);
-        if (type->is("i64")) return llvm::ConstantInt::get(llvm::Type::getInt64Ty(llvm_context()), node.resolved_value_.integer_);
-        if (type->is("f32")) return llvm::ConstantFP::get(llvm::Type::getFloatTy(llvm_context()),  node.resolved_value_.floating_);
-        if (type->is("f64")) return llvm::ConstantFP::get(llvm::Type::getDoubleTy(llvm_context()), node.resolved_value_.floating_);
+        if (type->Is("i32")) return llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_context()), node.resolved_value_.integer_);
+        if (type->Is("i64")) return llvm::ConstantInt::get(llvm::Type::getInt64Ty(llvm_context()), node.resolved_value_.integer_);
+        if (type->Is("f32")) return llvm::ConstantFP::get(llvm::Type::getFloatTy(llvm_context()),  node.resolved_value_.floating_);
+        if (type->Is("f64")) return llvm::ConstantFP::get(llvm::Type::getDoubleTy(llvm_context()), node.resolved_value_.floating_);
         std::unreachable();
     }
 
@@ -718,15 +718,15 @@ namespace xcompiler {
             builder.SetInsertPoint(block_end);
         };
 
-        // Range
-        if      (node.data_->resolved_type_->is("range")) {
+        // range
+        if      (node.data_->resolved_type_->Is("range")) {
             auto range_type     = (sema::ParametricType*)node.data_->resolved_type_->ReferenceUnwrap();
             auto iter_type      = range_type->params_type()[0];
             auto iter_type_impl = TypeImplTable::Lookup(iter_type);
             auto left_val       = llvm_builder().CreateExtractValue(data, 0);
             auto right_val      = llvm_builder().CreateExtractValue(data, 1);
             auto step_val       = llvm_builder().CreateExtractValue(data, 2);
-            auto isClosed_val   = llvm_builder().CreateExtractValue(data, 3);
+            auto is_closed_val  = llvm_builder().CreateExtractValue(data, 3);
 
             auto cmp = [&](const std::string& name, llvm::Value* a, llvm::Value* b) {
                 return iter_type_impl->MethodCall(*this, name, {
@@ -751,15 +751,15 @@ namespace xcompiler {
             {
                 auto iter_val = llvm_builder().CreateLoad(LLVMType(iter_type), iter_slot);
 
-                auto isUp = cmp("@ge", right_val, left_val);    // increasing
-                auto ge   = cmp("@ge", iter_val, right_val);
-                auto gt   = cmp("@gt", iter_val, right_val);
-                auto le   = cmp("@le", iter_val, right_val);
-                auto lt   = cmp("@lt", iter_val, right_val);
+                auto is_up = cmp("@ge", right_val, left_val);   // increasing
+                auto ge    = cmp("@ge", iter_val, right_val);
+                auto gt    = cmp("@gt", iter_val, right_val);
+                auto le    = cmp("@le", iter_val, right_val);
+                auto lt    = cmp("@lt", iter_val, right_val);
 
-                auto overstep_inc = llvm_builder().CreateSelect(isClosed_val, gt, ge);
-                auto overstep_dec = llvm_builder().CreateSelect(isClosed_val, lt, le);
-                auto overstep     = llvm_builder().CreateSelect(isUp, overstep_inc, overstep_dec);
+                auto overstep_inc = llvm_builder().CreateSelect(is_closed_val, gt, ge);
+                auto overstep_dec = llvm_builder().CreateSelect(is_closed_val, lt, le);
+                auto overstep     = llvm_builder().CreateSelect(is_up, overstep_inc, overstep_dec);
                 
                 llvm_builder().CreateCondBr(overstep, block_end, block_body);
             }
@@ -790,8 +790,8 @@ namespace xcompiler {
             llvm_builder().SetInsertPoint(block_end);
         }
 
-        // Array
-        else if (node.data_->resolved_type_->is("array")) {
+        // array
+        else if (node.data_->resolved_type_->Is("array")) {
             auto array_type = (sema::ParametricType*)node.data_->resolved_type_->ReferenceUnwrap();
             auto elem_type  = array_type->params_type()[0];
             iterate(
@@ -802,8 +802,8 @@ namespace xcompiler {
             );
         }
 
-        // Arrayview
-        else if (node.data_->resolved_type_->is("arrayview")) {
+        // arrayview
+        else if (node.data_->resolved_type_->Is("arrayview")) {
             auto view_type = (sema::ParametricType*)node.data_->resolved_type_->ReferenceUnwrap();
             auto elem_type = view_type->params_type()[0];
             auto arr_val   = llvm_builder().CreateLoad(LLVMType(sema::TypeTable::Lookup("array")), llvm_builder().CreateExtractValue(data, 0));
@@ -815,8 +815,8 @@ namespace xcompiler {
             );
         }
 
-        // String
-        else if (node.data_->resolved_type_->is("string")) {
+        // string
+        else if (node.data_->resolved_type_->Is("string")) {
             iterate(
                 llvm_builder().CreateExtractValue(data, 0),
                 llvm_builder().getInt64(0),
@@ -825,8 +825,8 @@ namespace xcompiler {
             );
         }
 
-        // Stringview
-        else if (node.data_->resolved_type_->is("stringview")) {
+        // stringview
+        else if (node.data_->resolved_type_->Is("stringview")) {
             auto str_val = llvm_builder().CreateLoad(LLVMType(sema::TypeTable::Lookup("string")), llvm_builder().CreateExtractValue(data, 0));
             iterate(
                 llvm_builder().CreateExtractValue(str_val, 0),

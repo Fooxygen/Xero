@@ -79,7 +79,7 @@ namespace sema {
         }
 
         // ReferenceType
-        if (node.isReferred_) {
+        if (node.is_referred_) {
             type_resolved = TypeTable::ReferenceTypeGet(type_resolved);
         }
 
@@ -90,7 +90,7 @@ namespace sema {
         Exec(*node.bind_type_);
 
         // ReferenceType
-        if (node.bind_type_->isReferred_) {
+        if (node.bind_type_->is_referred_) {
             // x: i32&;
             if (!node.value_) {
                 throw LogErr(LogModule::Sema, "reference type must be initialized with a value", node.loc_);
@@ -433,7 +433,7 @@ namespace sema {
 
         if (node.cond_) {
             Exec(*node.cond_);
-            if (node.cond_->resolved_type_ && !node.cond_->resolved_type_->is("bool")) {
+            if (node.cond_->resolved_type_ && !node.cond_->resolved_type_->Is("bool")) {
                 throw LogErr(LogModule::Sema, std::format(
                     "'condition' must be 'bool', not '{}'",
                     node.cond_->resolved_type_->name()
@@ -458,16 +458,16 @@ namespace sema {
         Type* iter_type = nullptr;
         auto  data_type = node.data_->resolved_type_->ReferenceUnwrap();
 
-        if (data_type->is("array") || data_type->is("arrayview")) {
+        if (data_type->Is("array") || data_type->Is("arrayview")) {
             if (auto parametric_type = dynamic_cast<ParametricType*>(data_type)) {
                 auto params_type = parametric_type->params_type();
                 if (!params_type.empty()) iter_type = params_type[0];
             }
         }
-        if (data_type->is("string") || data_type->is("stringview")) {
+        if (data_type->Is("string") || data_type->Is("stringview")) {
             iter_type = TypeTable::Lookup("char");
         }
-        if (data_type->is("range")) {
+        if (data_type->Is("range")) {
             if (auto parametric_type = dynamic_cast<ParametricType*>(data_type)) {
                 auto params_type = parametric_type->params_type();
                 if (!params_type.empty()) iter_type = params_type[0];
@@ -486,7 +486,7 @@ namespace sema {
 
         if (node.cond_) {
             Exec(*node.cond_);
-            if (node.cond_->resolved_type_ && !node.cond_->resolved_type_->is("bool")) {
+            if (node.cond_->resolved_type_ && !node.cond_->resolved_type_->Is("bool")) {
                 throw LogErr(LogModule::Sema, std::format(
                     "'condition' must be 'bool', not '{}'",
                     node.cond_->resolved_type_->name()

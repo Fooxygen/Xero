@@ -59,7 +59,7 @@ namespace xcompiler {
         llvm::Value*      ExprLoad(Expr& node);                                 // loading val from expr
 
         llvm::AllocaInst* SlotCreate(llvm::Type* type, const std::string& name);
-        bool              hasBlockTerm();
+        bool              HasBlockTerm();
         void              BlockTermCreate(llvm::BasicBlock* term);
         void              BlockTermCreate(std::function<void()> callback);
 
