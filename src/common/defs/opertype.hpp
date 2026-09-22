@@ -29,7 +29,7 @@ enum class OperType {
 
 inline static std::string OperTypeName(OperType type) {
     using enum OperType;
-    switch(type) {
+    switch (type) {
         case Plus:  return "Plus";
         case Minus: return "Minus";
         case Star:  return "Star";
@@ -38,11 +38,11 @@ inline static std::string OperTypeName(OperType type) {
         case ModT:  return "ModT";
         case ModF:  return "ModF";
 
-        case Gt:    return "Gt" ;
-        case Lt:    return "Lt" ;
-        case Ge:    return "Ge" ;
-        case Le:    return "Le" ;
-        case Eq:    return "Eq" ;
+        case Gt:    return "Gt";
+        case Lt:    return "Lt";
+        case Ge:    return "Ge";
+        case Le:    return "Le";
+        case Eq:    return "Eq";
         case Neq:   return "Neq";
 
         case And:   return "And";

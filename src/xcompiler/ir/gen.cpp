@@ -858,8 +858,8 @@ namespace xcompiler {
         // Body Block
         llvm_builder().SetInsertPoint(block_body);
         state_.loop_nextblocks_.emplace_back(State::LoopNextBlock{
-           .continue_ = block_cond,
-           .break_    = block_end
+            .continue_ = block_cond,
+            .break_    = block_end
         });
         Exec(*node.body_);
         state_.loop_nextblocks_.pop_back();

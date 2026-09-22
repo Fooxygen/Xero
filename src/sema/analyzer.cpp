@@ -306,6 +306,14 @@ namespace sema {
         auto& params_expr = node.params_->exprs_;
         std::vector<Type*> params_type = {};
         for (auto& e : params_expr) {
+
+            if (e->type_ != AstType::DeclExpr) {
+                throw LogErr(LogModule::Sema, std::format(
+                    "parameter of function must be a declaration, not '{}'",
+                    e->TypeName()
+                ), e->loc_);
+            }
+
             auto expr = (DeclExpr*)e.get();
             Exec(*expr->bind_type_);
             expr->resolved_type_ = expr->bind_type_->resolved_type_;
@@ -472,6 +480,13 @@ namespace sema {
                 auto params_type = parametric_type->params_type();
                 if (!params_type.empty()) iter_type = params_type[0];
             }
+        }
+
+        if (!iter_type) {
+            throw LogErr(LogModule::Sema, std::format(
+                "'iterated value type' must be iterable, not '{}'",
+                data_type->name()
+            ), node.data_->loc_);
         }
 
         Exec(*node.body_, [&]() {
