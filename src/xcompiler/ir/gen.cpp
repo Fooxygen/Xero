@@ -94,32 +94,38 @@ namespace xcompiler {
         using enum OperType;
 
         if (node.oper_type_ == Pick) {
-            auto target_type = node.lexpr_->resolved_type_;
-            auto target_impl = TypeImplTable::Lookup(target_type);
-            auto idx_type    = node.rexpr_->resolved_type_->ReferenceUnwrap();
+            auto caller_type      = node.lexpr_->resolved_type_;
+            auto caller_type_impl = TypeImplTable::Lookup(caller_type);
+            auto idx_type         = node.rexpr_->resolved_type_->ReferenceUnwrap();
 
-            llvm::Value* target_addr = nullptr;
-            if (auto idexpr = dynamic_cast<IdExpr*>(node.lexpr_.get())) {
-                target_addr = IdResolve(*idexpr);
+            llvm::Value* caller_addr = nullptr;
+            {
+                if (auto idexpr = dynamic_cast<IdExpr*>(node.lexpr_.get())) {
+                    caller_addr = IdResolve(*idexpr);
+                }
+                else if (dynamic_cast<sema::ReferenceType*>(node.lexpr_->resolved_type_)) {
+                    caller_addr = Exec(*node.lexpr_);
+                }
+                else {
+                    caller_addr = ValMaterialize(ExprLoad(*node.lexpr_), node.lexpr_->resolved_type_);
+                }
             }
-            else if (dynamic_cast<sema::ReferenceType*>(node.lexpr_->resolved_type_)) {
-                target_addr = Exec(*node.lexpr_);
-            }
-            else {
-                target_addr = ValMaterialize(ExprLoad(*node.lexpr_), node.lexpr_->resolved_type_);
-            }
-
-            auto target_arg = Arg(target_addr, sema::TypeTable::ReferenceTypeGet(target_type->ReferenceUnwrap()));
+            auto caller_arg = Arg(
+                caller_addr,
+                sema::TypeTable::ReferenceTypeGet(caller_type->ReferenceUnwrap())
+            );
 
             if (idx_type->Is("range")) {
-                return target_impl->MethodCall(*this, "@pick", {
-                    target_arg, Arg(ExprLoad(*node.rexpr_), idx_type)
+                return caller_type_impl->MethodCall(*this, "@pick", {
+                    caller_arg, Arg(ExprLoad(*node.rexpr_), idx_type)
                 });
             }
             else {
                 auto i64_    = sema::TypeTable::Lookup("i64");
                 auto idx_val = TypeImplTable::Cast(*this, ExprLoad(*node.rexpr_), idx_type, i64_);
-                return target_impl->MethodCall(*this, "@pick", { target_arg, Arg(idx_val, i64_) });
+                return caller_type_impl->MethodCall(
+                    *this, "@pick", { caller_arg, Arg(idx_val, i64_) }
+                );
             }
         }
 
@@ -144,7 +150,7 @@ namespace xcompiler {
         if (node.oper_type_ == OperType::And || node.oper_type_ == OperType::Or) {
 
             // Blocks
-            auto fn = llvm_builder().GetInsertBlock()->getParent();
+            auto fn         = llvm_builder().GetInsertBlock()->getParent();
             auto block_lval = llvm_builder().GetInsertBlock();
             auto block_rval = BlockCreate(".sc.rval", fn);
             auto block_end  = BlockCreate(".sc.end", fn);
@@ -188,8 +194,8 @@ namespace xcompiler {
 
         auto rval = ExprLoad(*node.rexpr_);
         {
-            auto ltype = node.lexpr_->resolved_type_->ReferenceUnwrap();
-            auto rtype = node.rexpr_->resolved_type_->ReferenceUnwrap();
+            auto ltype    = node.lexpr_->resolved_type_->ReferenceUnwrap();
+            auto rtype    = node.rexpr_->resolved_type_->ReferenceUnwrap();
             auto com_type = sema::TypeTable::Common({ ltype, rtype });
             if (!com_type) {
                 throw LogErr(LogModule::Xcompiler, std::format(
@@ -226,7 +232,8 @@ namespace xcompiler {
         // Value
         auto iter_type      = node.iter_type_;
         auto iter_llvm_type = LLVMType(iter_type);
-        auto left_val  = TypeImplTable::Cast(*this,
+
+        auto left_val = TypeImplTable::Cast(*this,
             ExprLoad(*node.lexpr_), node.lexpr_->resolved_type_->ReferenceUnwrap(), iter_type
         );
         auto right_val = TypeImplTable::Cast(*this,
@@ -358,31 +365,34 @@ namespace xcompiler {
     
     llvm::Value* IRGen::Exec(MethodCallExpr& node) {
         
-        // Target
-        auto target_type  = node.target_->resolved_type_;
-        auto target_basic = target_type->BasicTypeGet();
-        auto target_impl  = TypeImplTable::Lookup(target_basic);
+        // Caller
+        auto caller_type      = node.caller_->resolved_type_;
+        auto caller_type_impl = TypeImplTable::Lookup(caller_type->BasicTypeGet());
 
-        llvm::Value* target_addr = nullptr;
+        llvm::Value* caller_addr = nullptr;
+        {
+            // Variable as Caller
+            // a.len()
+            if (auto idexpr = dynamic_cast<IdExpr*>(node.caller_.get())) {
+                caller_addr = IdResolve(*idexpr);
+            }
+            else if (dynamic_cast<sema::ReferenceType*>(node.caller_->resolved_type_)) {
+                caller_addr = Exec(*node.caller_);
+            }
 
-        // Variable as Target
-        if (auto idexpr = dynamic_cast<IdExpr*>(node.target_.get())) {
-            target_addr = IdResolve(*idexpr);
-        }
-        else if (dynamic_cast<sema::ReferenceType*>(node.target_->resolved_type_)) {
-            target_addr = Exec(*node.target_);
-        }
-
-        // Value as Target
-        else {
-            target_addr = ValMaterialize(ExprLoad(*node.target_), node.target_->resolved_type_);
+            // Value as Caller
+            // 3.plus(4)
+            else {
+                caller_addr = ValMaterialize(ExprLoad(*node.caller_), node.caller_->resolved_type_);
+            }
         }
 
         // Args
         std::vector<Arg> args = {};
-        args.emplace_back(target_addr,
-            sema::TypeTable::ReferenceTypeGet(target_type->ReferenceUnwrap())
-        );
+        args.emplace_back(Arg{
+            caller_addr,
+            sema::TypeTable::ReferenceTypeGet(caller_type->ReferenceUnwrap())
+        });
         if (node.args_) {
             for (auto& e : node.args_->exprs_) {
                 args.emplace_back(Exec(*e), e->resolved_type_->ReferenceUnwrap());
@@ -390,7 +400,7 @@ namespace xcompiler {
         }
 
         // Call
-        return target_impl->MethodCall(
+        return caller_type_impl->MethodCall(
             *this, node.callee_->name_, args
         );
     }
@@ -601,7 +611,7 @@ namespace xcompiler {
     }
 
     llvm::Value* IRGen::Exec(CondStmt& node) {
-        auto fn = llvm_builder().GetInsertBlock()->getParent();
+        auto fn        = llvm_builder().GetInsertBlock()->getParent();
         auto block_end = BlockCreate(".cond.end", fn);
 
         std::function<void(CondStmt&)> emit = [&](CondStmt& node_sub) {
@@ -615,7 +625,7 @@ namespace xcompiler {
             auto cond_val = Exec(*node_sub.cond_);
 
             // Blocks
-            auto fn_sub = llvm_builder().GetInsertBlock()->getParent();
+            auto fn_sub     = llvm_builder().GetInsertBlock()->getParent();
             auto block_then = BlockCreate(".cond.then", fn_sub);
             auto block_else = BlockCreate(".cond.else", fn_sub);
 
@@ -721,7 +731,7 @@ namespace xcompiler {
         // range
         if      (node.data_->resolved_type_->Is("range")) {
             auto range_type     = (sema::ParametricType*)node.data_->resolved_type_->ReferenceUnwrap();
-            auto iter_type      = range_type->params_type()[0];
+            auto iter_type      = range_type->params()[0];
             auto iter_type_impl = TypeImplTable::Lookup(iter_type);
             auto left_val       = llvm_builder().CreateExtractValue(data, 0);
             auto right_val      = llvm_builder().CreateExtractValue(data, 1);
@@ -739,7 +749,7 @@ namespace xcompiler {
             llvm_builder().CreateStore(left_val, iter_slot);
 
             // Blocks
-            auto fn = llvm_builder().GetInsertBlock()->getParent();
+            auto fn         = llvm_builder().GetInsertBlock()->getParent();
             auto block_cond = BlockCreate(".for.cond", fn);
             auto block_body = BlockCreate(".for.body", fn);
             auto block_step = BlockCreate(".for.step", fn);
@@ -793,7 +803,7 @@ namespace xcompiler {
         // array
         else if (node.data_->resolved_type_->Is("array")) {
             auto array_type = (sema::ParametricType*)node.data_->resolved_type_->ReferenceUnwrap();
-            auto elem_type  = array_type->params_type()[0];
+            auto elem_type  = array_type->params()[0];
             iterate(
                 llvm_builder().CreateExtractValue(data, 0),
                 llvm_builder().getInt64(0),
@@ -805,7 +815,7 @@ namespace xcompiler {
         // arrayview
         else if (node.data_->resolved_type_->Is("arrayview")) {
             auto view_type = (sema::ParametricType*)node.data_->resolved_type_->ReferenceUnwrap();
-            auto elem_type = view_type->params_type()[0];
+            auto elem_type = view_type->params()[0];
             auto arr_val   = llvm_builder().CreateLoad(LLVMType(sema::TypeTable::Lookup("array")), llvm_builder().CreateExtractValue(data, 0));
             iterate(
                 llvm_builder().CreateExtractValue(arr_val, 0),
@@ -842,7 +852,7 @@ namespace xcompiler {
     llvm::Value* IRGen::Exec(WhileStmt& node) {
 
         // Blocks
-        auto fn = llvm_builder().GetInsertBlock()->getParent();
+        auto fn         = llvm_builder().GetInsertBlock()->getParent();
         auto block_cond = BlockCreate(".while.cond", fn);
         auto block_body = BlockCreate(".while.body", fn);
         auto block_end  = BlockCreate(".while.end", fn);

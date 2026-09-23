@@ -85,12 +85,12 @@ namespace xcompiler {
         // print and println
         {
             auto impl_print_one = [](IRGen& gen, const Arg& arg) {
-                auto  receive     = gen.ArgRefMake(arg.val(), arg.type());  // x -> &x, &x -> &x
+                auto  caller     = gen.ArgRefMake(arg.val(), arg.type());  // x -> &x, &x -> &x
                 auto  type        = arg.type();
                 auto& method      = ((sema::BasicType*)type->BasicTypeGet())->method_table().Lookup("@print");
-                auto  method_sign = method.SignLookup(receive.type(), {});
+                auto  method_sign = method.SignLookup(caller.type(), {});
                 auto  method_impl = TypeImplTable::Lookup(type)->MethodLookup(method_sign);
-                ((NativeFnImpl*)method_impl)->impl()(gen, { receive });
+                ((NativeFnImpl*)method_impl)->impl()(gen, { caller });
             };
 
             auto impl_print = [impl_print_one](IRGen& gen, const std::vector<Arg>& args) -> llvm::Value* {

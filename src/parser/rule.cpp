@@ -315,7 +315,7 @@ namespace parser {
         
         // Fn and Method
        
-        // └─ target.expr(exprs?) -> methodcallexpr
+        // └─ caller.expr(exprs?) -> methodcallexpr
         {
             RuleAdd(
                 PATS_INIT{

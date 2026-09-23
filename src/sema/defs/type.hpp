@@ -28,8 +28,8 @@ namespace sema {
         };
     
     private:
-        std::string     name_       = "";
-        Using           type_using_ = Using::Basic;
+        std::string name_       = "";
+        Using       type_using_ = Using::Basic;
 
         std::set<Type*>                          casts_;
         std::unordered_map<Type*, const FnSign*> casts_fnsign_;     // signature of cast method
@@ -65,9 +65,9 @@ namespace sema {
 
     class BasicType      : public Type {
     private:
-        size_t  params_cnt_ = 0;     // number of type parameters
-        std::vector<BindingType*> params_binding_ = {};
-        FnTable method_table_;
+        size_t                    params_cnt_     = 0;      // number of parameters in parametric type
+        std::vector<BindingType*> params_binding_ = {};     // binding types
+        FnTable                   method_table_;
 
     public:
         BasicType(std::string name, size_t params_cnt = 0)
@@ -77,9 +77,9 @@ namespace sema {
             method_table_.OwnerSet(this);
         }
 
-        size_t   params_cnt() const { return params_cnt_; }
-        std::vector<BindingType*>& params_binding() { return params_binding_; }
-        FnTable& method_table()     { return method_table_; }
+        size_t                     params_cnt() const { return params_cnt_; }
+        std::vector<BindingType*>& params_binding()   { return params_binding_; }
+        FnTable&                   method_table()     { return method_table_; }
     
     public:
         Type* BasicTypeGet()    override { return this; }
@@ -88,53 +88,52 @@ namespace sema {
 
     class ParametricType : public Type {
     private:
-        Type*              type_basic_  = nullptr;
-        std::vector<Type*> params_type_ = {};
+        Type*              basic_  = nullptr;
+        std::vector<Type*> params_ = {};
         FnTable            method_table_;
 
     public:
-        ParametricType(std::string name, Type* type_basic, const std::vector<Type*>& params_type)
+        ParametricType(std::string name, Type* basic_type, const std::vector<Type*>& params)
         :   Type(name, Using::Parametric),
-            type_basic_(type_basic),
-            params_type_(params_type)
+            basic_(basic_type),
+            params_(params)
         {
             method_table_.OwnerSet(this);
         }
-
         ParametricType(const ParametricType& other)
         :   Type(other.name(), Using::Parametric),
-            type_basic_(other.type_basic_),
-            params_type_(other.params_type_)
+            basic_(other.basic_),
+            params_(other.params_)
         {
             method_table_.OwnerSet(this);
         }
 
-        Type*               type_basic() const { return type_basic_; }
-        std::vector<Type*>& params_type()      { return params_type_; }
-        FnTable&            method_table()     { return method_table_; }
+        Type*               basic() const  { return basic_; }
+        std::vector<Type*>& params()       { return params_; }
+        FnTable&            method_table() { return method_table_; }
 
     public:
-        static std::string ParamsPrint(Type* basic_type, const std::vector<Type*>& params_type);
+        static std::string ParamsPrint(Type* basic_type, const std::vector<Type*>& params);
 
-        Type* BasicTypeGet()    override { return type_basic_; }
+        Type* BasicTypeGet()    override { return basic_; }
         Type* ReferenceUnwrap() override { return this; }
     };
 
     class ReferenceType  : public Type {
     private:
-        Type* type_referred_  = nullptr;
+        Type* referred_  = nullptr;
 
     public:
-        ReferenceType(std::string name, Type* type_referred)
+        ReferenceType(std::string name, Type* referred)
         :   Type(name, Using::Reference),
-            type_referred_(type_referred)
+            referred_(referred)
         {}
 
-        Type* type_referred() const { return type_referred_; }
+        Type* referred() const { return referred_; }
 
     public:
-        Type* BasicTypeGet()    override { return type_referred_->BasicTypeGet(); }
-        Type* ReferenceUnwrap() override { return type_referred_; }
+        Type* BasicTypeGet()    override { return referred_->BasicTypeGet(); }
+        Type* ReferenceUnwrap() override { return referred_; }
     };
 
     class TypeTable {
@@ -157,8 +156,9 @@ namespace sema {
 
         static bool   IsContainBindingType(Type* type);
         static bool   IsContainBindingType(const FnSign& sign);
-        static Type*  Substitute(Type* type, BasicType* base, const std::vector<Type*>& args);
-        static FnSign InstantiateSign(const FnSign& sign, BasicType* base, const std::vector<Type*>& args);
+        static Type*  BindingTypeReplace(Type* type, BasicType* owner, const std::vector<Type*>& params_replace);
+        static FnSign SignInstantiate(const FnSign& sign, BasicType* owner, const std::vector<Type*>& params_replace);
+        
         static Fn*    MethodLookup(Type* type, const std::string& name);
         static Fn*    MethodLookupTry(Type* type, const std::string& name);
 

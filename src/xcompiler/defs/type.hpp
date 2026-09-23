@@ -20,18 +20,18 @@ namespace xcompiler {
 
     class TypeImpl {
     private:
-        sema::Type* link_type_ = nullptr;
-        std::string name_      = "";
+        sema::Type* def_  = nullptr;
+        std::string name_ = "";
 
         // FnSign: Registed in Sema Stage, Linked to the unique implementation
         std::unordered_map<const sema::FnSign*, std::unique_ptr<FnImpl>> methods_;
 
     public:
-        TypeImpl(sema::Type* link_type)
-        :   link_type_(link_type), name_(link_type->name()) {}
+        TypeImpl(sema::Type* def)
+        :   def_(def), name_(def->name()) {}
 
-        sema::Type*        link_type() const { return link_type_; }
-        const std::string& name()      const { return name_; }
+        sema::Type*        def()  const { return def_; }
+        const std::string& name() const { return name_; }
 
     public:
         void    MethodAdd(const std::string& name, NativeFnImpl::Impl impl, const sema::FnSign& sign);
@@ -68,11 +68,11 @@ namespace xcompiler {
 
         static void         Init();
         static TypeImpl*    Set(TypeImpl&& type_impl) {
-            auto type = type_impl.link_type();
+            auto def  = type_impl.def();
             auto impl = table_.emplace(
-                type, std::make_unique<TypeImpl>(std::move(type_impl))
+                def, std::make_unique<TypeImpl>(std::move(type_impl))
             ).first->second.get();
-            table_reverse_[impl] = type;
+            table_reverse_[impl] = def;
             return impl;
         }
         

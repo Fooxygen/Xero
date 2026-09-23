@@ -16,42 +16,42 @@ namespace xcompiler {
     // TypeImpl
 
     void         TypeImpl::MethodAdd(const std::string& name, NativeFnImpl::Impl impl, const sema::FnSign& sign) {
-        auto  type_basic  = (sema::BasicType*)link_type_;
-        auto& method      = type_basic->method_table().Lookup(name);
+        auto  def_basic   = (sema::BasicType*)def_;
+        auto& method      = def_basic->method_table().Lookup(name);
         auto  method_sign = method.SignLookup(sign);
 
         auto it = methods_.find(method_sign);
         if (it != methods_.end()) {
             throw LogErr(LogModule::Xcompiler, std::format(
                 "redefinition implementation of method {} for type '{}', signature is {}",
-                name, type_basic->name(), sign.ParamsPrint()
+                name, def_basic->name(), sign.ParamsPrint()
             ));
         }
         methods_[method_sign] = std::make_unique<NativeFnImpl>(impl);
     }
     
     void         TypeImpl::MethodAdd(const std::string& name, LangFnImpl::Impl impl, const sema::FnSign& sign) {
-        auto  type_basic  = (sema::BasicType*)link_type_;
-        auto& method      = type_basic->method_table().Lookup(name);
+        auto  def_basic   = (sema::BasicType*)def_;
+        auto& method      = def_basic->method_table().Lookup(name);
         auto  method_sign = method.SignLookup(sign);
 
         auto it = methods_.find(method_sign);
         if (it != methods_.end()) {
             throw LogErr(LogModule::Xcompiler, std::format(
                 "redefinition implementation of method {} for type '{}', signature is {}",
-                name, type_basic->name(), sign.ParamsPrint()
+                name, def_basic->name(), sign.ParamsPrint()
             ));
         }
         methods_[method_sign] = std::make_unique<LangFnImpl>(impl);
     }
 
     FnImpl*      TypeImpl::MethodLookup(const sema::FnSign* sign) {
-        auto key = sign->TemplateSign();
+        auto key = sign->template_sign();
         auto it  = methods_.find(key);
         if (it == methods_.end()) {
             throw LogErr(LogModule::Xcompiler, std::format(
                 "undefined implementation of method {} for type '{}', signature it attempts to obtain is {}",
-                sign->name(), link_type_->name(), sign->ParamsPrint()
+                sign->name(), def_->name(), sign->ParamsPrint()
             ));
         }
         return it->second.get();
@@ -66,7 +66,7 @@ namespace xcompiler {
         auto  method = sema::TypeTable::MethodLookup(args[0].type(), name);
 
         std::vector<sema::Type*> args_type = {};
-        for (size_t i = 1; i < args.size(); i++) {      // elem 0 is target
+        for (size_t i = 1; i < args.size(); i++) {      // elem[0] is caller
             args_type.emplace_back(args[i].type());
         }
         
@@ -113,7 +113,7 @@ namespace xcompiler {
 
         if (auto from_parametric = dynamic_cast<sema::ParametricType*>(from)) {
             for (auto& [cast_type, sign] : from_basic->casts_fnsign()) {
-                auto resolved = sema::TypeTable::Substitute(cast_type, from_basic, from_parametric->params_type());
+                auto resolved = sema::TypeTable::BindingTypeReplace(cast_type, from_basic, from_parametric->params());
                 if (resolved == to) {
                     method_sign = sign;
                     break;
@@ -133,13 +133,13 @@ namespace xcompiler {
 
         auto from_impl   = TypeImplTable::Lookup(from_basic);
         auto method_impl = from_impl->MethodLookup(method_sign);
-        auto receive     = gen.ArgRefMake(val, from);
+        auto caller     = gen.ArgRefMake(val, from);
 
         if (auto native = dynamic_cast<NativeFnImpl*>(method_impl)) {
-            return native->impl()(gen, { receive });
+            return native->impl()(gen, { caller });
         }
         if (auto lang = dynamic_cast<LangFnImpl*>(method_impl)) {
-            return gen.llvm_builder().CreateCall(lang->impl(), { receive.val() });
+            return gen.llvm_builder().CreateCall(lang->impl(), { caller.val() });
         }
 
         std::unreachable();

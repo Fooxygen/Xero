@@ -18,8 +18,8 @@ namespace sema {
     
     // Modifier of Fn
     enum   FnModifier : int {
-        None    = 0,
-        Cast    = 1 << 0,       // type casting
+        None = 0,
+        Cast = 1 << 0,
     };
 
     inline FnModifier operator |(FnModifier a, FnModifier b) {
@@ -33,12 +33,12 @@ namespace sema {
     class  FnSign {
     private:
         Type*                return_type_     = nullptr;
-        Type*                receive_type_    = nullptr;
+        Type*                caller_type_     = nullptr;
         std::vector<Type*>   params_type_fix_ = {};
         std::optional<Type*> params_type_var_ = std::nullopt;
         FnModifier           modifier_        = FnModifier::None;
         std::string          name_            = "";
-        const FnSign*        template_        = nullptr;
+        const FnSign*        template_sign_   = nullptr;
 
     public:
         FnSign(
@@ -56,11 +56,12 @@ namespace sema {
         {}
 
         Type*                       return_type()     const { return return_type_; }
-        Type*                       receive_type()    const { return receive_type_; }
+        Type*                       caller_type()     const { return caller_type_; }
         const std::vector<Type*>&   params_type_fix() const { return params_type_fix_; }
         const std::optional<Type*>& params_type_var() const { return params_type_var_; }
         const FnModifier&           modifier()        const { return modifier_; }
         const std::string&          name()            const { return name_; }
+        const FnSign*               template_sign()   const { return template_sign_ ? template_sign_ : this; }
 
     public:
         void NameSet(const std::string& name) { name_ = name; }
@@ -70,11 +71,12 @@ namespace sema {
         bool IsSignEqual(const FnSign& sign);
         bool IsSignMatch(const std::vector<Type*>& args_type);      // implicit type cast
 
-        bool IsReceiveMatch(Type* type) const;
-        void ReceiveSet(Type* type) { receive_type_ = type; }
+        // As Method
 
-        const FnSign* TemplateSign() const { return template_ ? template_ : this; }
-        void          TemplateSet(const FnSign* sign) { template_ = sign; }
+        bool IsCallerMatch(Type* type) const;
+        void CallerSet(Type* type) { caller_type_ = type; }
+
+        void TemplateSignSet(const FnSign* sign) { template_sign_ = sign; }
     };
 
     // Definition of Fn
@@ -91,10 +93,10 @@ namespace sema {
     public:
         const FnSign* SignLookup(const FnSign& sign, std::optional<Loc> loc = std::nullopt) const;
         const FnSign* SignLookup(const std::vector<Type*>& args_type, std::optional<Loc> loc = std::nullopt);
-        const FnSign* SignLookup(Type* receive_type, const std::vector<Type*>& args_type, std::optional<Loc> loc = std::nullopt);
+        const FnSign* SignLookup(Type* caller_type, const std::vector<Type*>& args_type, std::optional<Loc> loc = std::nullopt);
         const FnSign* SignLookupTry(const FnSign& sign) const;
         const FnSign* SignLookupTry(const std::vector<Type*>& args_type);
-        const FnSign* SignLookupTry(Type* receive_type, const std::vector<Type*>& args_type);
+        const FnSign* SignLookupTry(Type* caller_type, const std::vector<Type*>& args_type);
 
         const FnSign* SignAdd(const std::string& name, const FnSign& sign);
     };
@@ -103,7 +105,7 @@ namespace sema {
     class  FnTable {
     private:
         std::unordered_map<std::string, Fn> table_;
-        Type* owner_ = nullptr;     // type attribution when used in a method table
+        Type* owner_ = nullptr;     // owner should be recorded when used in a type table
 
     public:
         std::unordered_map<std::string, Fn>& table() { return table_; }
@@ -126,7 +128,7 @@ namespace sema {
         const FnSign* Add(const std::string& name, const FnSign& sign) {
             auto& fn = table_.try_emplace(name, name).first->second;
             auto  sign_add = sign;
-            if (owner_) sign_add.ReceiveSet(owner_);
+            if (owner_) sign_add.CallerSet(owner_);
             return fn.SignAdd(name, sign_add);
         }
     

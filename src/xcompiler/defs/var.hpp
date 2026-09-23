@@ -26,9 +26,9 @@ namespace xcompiler {
         void Declare(const std::string& name, llvm::Value* value) { scopes_.back()[name] = value; }
 
         llvm::Value* Lookup(const std::string& name, std::optional<Loc> loc = std::nullopt) {
-            for (auto scp_it = scopes_.rbegin(); scp_it != scopes_.rend(); ++scp_it) {
-                auto val_it = scp_it->find(name);
-                if (val_it != scp_it->end()) return val_it->second;
+            for (auto scope_it = scopes_.rbegin(); scope_it != scopes_.rend(); ++scope_it) {
+                auto var_it = scope_it->find(name);
+                if (var_it != scope_it->end()) return var_it->second;
             }
             throw LogErr(LogModule::Xcompiler, std::format(
                 "undefined variable '{}'", name

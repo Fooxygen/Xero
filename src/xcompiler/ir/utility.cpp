@@ -57,7 +57,7 @@ namespace xcompiler {
         }
         if (type->Is("range")) {
             auto parametric_type = (sema::ParametricType*)type;
-            auto elem_type       = LLVMType(parametric_type->params_type()[0]);
+            auto elem_type       = LLVMType(parametric_type->params()[0]);
             return llvm::StructType::get(llvm_context(),
                 { elem_type, elem_type, elem_type, llvm_builder().getInt1Ty() }
             );
@@ -116,7 +116,7 @@ namespace xcompiler {
     llvm::Value*      IRGen::ArgLoad(const Arg& arg) {
         if (arg.IsReferenceType()) {
             auto reference_type = (sema::ReferenceType*)arg.type();
-            return llvm_builder().CreateLoad(LLVMType(reference_type->type_referred()), arg.val());
+            return llvm_builder().CreateLoad(LLVMType(reference_type->referred()), arg.val());
         }
         return arg.val();
     }

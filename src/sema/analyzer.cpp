@@ -46,24 +46,24 @@ namespace sema {
     }
 
     void Analyzer::Exec(TypeExpr& node) {
-        auto  type_basic    = TypeTable::Lookup(node.type_basic_, node.loc_);
-        Type* type_resolved = nullptr;
+        auto  basic_type = TypeTable::Lookup(node.basic_type_, node.loc_);
+        Type* resolved   = nullptr;
 
         // BasicType
         if (!node.params_) {
-            type_resolved = type_basic;
+            resolved = basic_type;
         }
 
         // ParametricType
         else {
-            std::vector<Type*> params_type = {};
+            std::vector<Type*> params = {};
             for (auto& e : node.params_->exprs_) {
                 if      (auto typeexpr = dynamic_cast<TypeExpr*>(e.get())) {
                     Exec(*typeexpr);
-                    params_type.emplace_back(typeexpr->resolved_type_);
+                    params.emplace_back(typeexpr->resolved_type_);
                 }
                 else if (auto idexpr   = dynamic_cast<IdExpr*>(e.get())) {
-                    params_type.emplace_back(TypeTable::Lookup(idexpr->name_, idexpr->loc_));
+                    params.emplace_back(TypeTable::Lookup(idexpr->name_, idexpr->loc_));
                 }
                 else {
                     throw LogErr(LogModule::Sema, std::format(
@@ -72,18 +72,18 @@ namespace sema {
                 }
             }
             
-            if (params_type.empty())
-                type_resolved = type_basic;
+            if (params.empty())
+                resolved = basic_type;
             else
-                type_resolved = TypeTable::ParametricTypeGet(type_basic, params_type, node.loc_);
+                resolved = TypeTable::ParametricTypeGet(basic_type, params, node.loc_);
         }
 
         // ReferenceType
         if (node.is_referred_) {
-            type_resolved = TypeTable::ReferenceTypeGet(type_resolved);
+            resolved = TypeTable::ReferenceTypeGet(resolved);
         }
 
-        node.resolved_type_ = type_resolved;
+        node.resolved_type_ = resolved;
     }
 
     void Analyzer::Exec(DeclExpr& node) {
@@ -91,6 +91,7 @@ namespace sema {
 
         // ReferenceType
         if (node.bind_type_->is_referred_) {
+            
             // x: i32&;
             if (!node.value_) {
                 throw LogErr(LogModule::Sema, "reference type must be initialized with a value", node.loc_);
@@ -136,11 +137,11 @@ namespace sema {
         {
             // Pick
             if (node.oper_type_ == Pick) {
-                auto target_type = node.lexpr_->resolved_type_;
+                auto caller_type = node.lexpr_->resolved_type_;
                 auto idx_type    = node.rexpr_->resolved_type_->ReferenceUnwrap();
 
-                auto method = TypeTable::MethodLookup(target_type, "@pick");
-                auto sign   = method->SignLookup(target_type, { idx_type }, node.loc_);
+                auto method = TypeTable::MethodLookup(caller_type, "@pick");
+                auto sign   = method->SignLookup(caller_type, { idx_type }, node.loc_);
                 node.resolved_type_ = sign->return_type();
                 
                 return;
@@ -227,7 +228,7 @@ namespace sema {
             }
         }
 
-        // Empty ArrayExpr
+        // XXX: Empty ArrayExpr
         std::vector<Type*> params = {};
         if (node.elem_type_) params.emplace_back(node.elem_type_);
 
@@ -270,10 +271,6 @@ namespace sema {
 
     void Analyzer::Exec(MethodCallExpr& node) {
         
-        // Target
-        Exec(*node.target_);
-        auto target_type = node.target_->resolved_type_;
-
         // Args Type
         std::vector<Type*> args_type = {};
         for (auto& e : node.args_->exprs_) {
@@ -281,10 +278,14 @@ namespace sema {
             args_type.emplace_back(e->resolved_type_);
         }
 
+        // Caller
+        Exec(*node.caller_);
+        auto caller_type = node.caller_->resolved_type_;
+
         // Callee
         auto  callee = node.callee_->name_;
-        auto  method = TypeTable::MethodLookup(target_type, callee);
-        auto  sign   = method->SignLookup(target_type, args_type, node.callee_->loc_);      // target_type -> receive_type
+        auto  method = TypeTable::MethodLookup(caller_type, callee);
+        auto  sign   = method->SignLookup(caller_type, args_type, node.callee_->loc_);
         
         node.resolved_type_ = sign->return_type();
         node.callee_fnsign_ = sign;
@@ -303,8 +304,8 @@ namespace sema {
         }
 
         // Params Type
-        auto& params_expr = node.params_->exprs_;
         std::vector<Type*> params_type = {};
+        auto& params_expr = node.params_->exprs_;
         for (auto& e : params_expr) {
 
             if (e->type_ != AstType::DeclExpr) {
@@ -468,8 +469,8 @@ namespace sema {
 
         if (data_type->Is("array") || data_type->Is("arrayview")) {
             if (auto parametric_type = dynamic_cast<ParametricType*>(data_type)) {
-                auto params_type = parametric_type->params_type();
-                if (!params_type.empty()) iter_type = params_type[0];
+                auto params = parametric_type->params();
+                if (!params.empty()) iter_type = params[0];
             }
         }
         if (data_type->Is("string") || data_type->Is("stringview")) {
@@ -477,8 +478,8 @@ namespace sema {
         }
         if (data_type->Is("range")) {
             if (auto parametric_type = dynamic_cast<ParametricType*>(data_type)) {
-                auto params_type = parametric_type->params_type();
-                if (!params_type.empty()) iter_type = params_type[0];
+                auto params = parametric_type->params();
+                if (!params.empty()) iter_type = params[0];
             }
         }
 

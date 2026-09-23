@@ -57,16 +57,16 @@ namespace sema {
         }
         
         const Var* Lookup(const std::string& name, std::optional<Loc> loc = std::nullopt) {
-            for (auto sit = scopes_.rbegin(); sit != scopes_.rend(); sit++) {
-                auto oit = sit->find(name);
-                if (oit != sit->end()) return &(*oit->second);
+            for (auto scope_it = scopes_.rbegin(); scope_it != scopes_.rend(); scope_it++) {
+                auto var_it = scope_it->find(name);
+                if (var_it != scope_it->end()) return &(*var_it->second);
             }
             throw LogErr(LogModule::Sema, std::format("undefined variable '{}'", name), loc);
         }
         const Var* LookupTry(const std::string& name) {
-            for (auto sit = scopes_.rbegin(); sit != scopes_.rend(); sit++) {
-                auto oit = sit->find(name);
-                if (oit != sit->end()) return &(*oit->second);
+            for (auto scope_it = scopes_.rbegin(); scope_it != scopes_.rend(); scope_it++) {
+                auto var_it = scope_it->find(name);
+                if (var_it != scope_it->end()) return &(*var_it->second);
             }
             return nullptr;
         }

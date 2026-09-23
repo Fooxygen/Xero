@@ -78,6 +78,7 @@ namespace lexer {
 
         std::vector<Token>& tokens() { return tokens_; }
 
+    public:
         bool  IsScanEnd()     const { return pos_ >= code_.length(); }
         bool  IsNextScanEnd() const { return pos_ + 1 >= code_.length(); }
         

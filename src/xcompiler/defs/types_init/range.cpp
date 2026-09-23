@@ -34,7 +34,7 @@ namespace xcompiler {
 
             auto  range_val      = gen.ArgLoad(args[0]);
             auto  range_type     = (sema::ParametricType*)args[0].ReferenceUnwrap();
-            auto  iter_type      = range_type->params_type()[0];
+            auto  iter_type      = range_type->params()[0];
             auto  iter_type_impl = TypeImplTable::Lookup(iter_type);
             auto  left_val       = builder.CreateExtractValue(range_val, 0);
             auto  right_val      = builder.CreateExtractValue(range_val, 1);

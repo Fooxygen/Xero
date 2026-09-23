@@ -274,17 +274,17 @@ public:
 };
 class TypeExpr          : public Expr {
 public:
-    std::string            type_basic_  = "";
+    std::string            basic_type_  = "";
     std::unique_ptr<Exprs> params_      = nullptr;
     bool                   is_referred_ = false;
 
 public:
     TypeExpr(
-        const std::string&     type_basic,
+        const std::string&     basic_type,
         std::unique_ptr<Exprs> params,
         bool                   is_referred
     )
-    :   type_basic_(type_basic),
+    :   basic_type_(basic_type),
         params_(std::move(params)),
         is_referred_(is_referred)
     {
@@ -296,8 +296,8 @@ public:
     }
 
     void PrintImpl(std::string prefix) override {
-        PrintLabel("type_basic", prefix); {
-            std::cerr << COLOR_BLUE << type_basic_ << COLOR_DEFAULT << std::endl;
+        PrintLabel("basic_type", prefix); {
+            std::cerr << COLOR_BLUE << basic_type_ << COLOR_DEFAULT << std::endl;
         }
         
         if (params_) params_->Print(prefix, "params");
@@ -311,7 +311,7 @@ public:
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<TypeExpr>(
-            type_basic_,
+            basic_type_,
             params_ ? std::unique_ptr<Exprs>((Exprs*)(params_->Clone().release())) : nullptr,
             is_referred_
         );
@@ -365,13 +365,13 @@ public:
 };
 class OperExpr          : public Expr {
 public:
-    OperType oper_type_ = OperType::Undefined;
-    std::unique_ptr<Expr> lexpr_ = nullptr;
-    std::unique_ptr<Expr> rexpr_ = nullptr;
+    OperType              oper_type_ = OperType::Undefined;
+    std::unique_ptr<Expr> lexpr_     = nullptr;
+    std::unique_ptr<Expr> rexpr_     = nullptr;
 
 public:
     OperExpr(
-        OperType oper_type,
+        OperType              oper_type,
         std::unique_ptr<Expr> lexpr,
         std::unique_ptr<Expr> rexpr
     )
@@ -536,7 +536,7 @@ public:
 };
 class MethodCallExpr    : public Expr {
 public:
-    std::unique_ptr<Expr>   target_ = nullptr;
+    std::unique_ptr<Expr>   caller_ = nullptr;
     std::unique_ptr<IdExpr> callee_ = nullptr;
     std::unique_ptr<Exprs>  args_   = nullptr;
 
@@ -545,11 +545,11 @@ public:
 
 public:
     MethodCallExpr(
-        std::unique_ptr<Expr>   target,
+        std::unique_ptr<Expr>   caller,
         std::unique_ptr<IdExpr> callee,
         std::unique_ptr<Exprs>  args
     )
-    :   target_(std::move(target)),
+    :   caller_(std::move(caller)),
         callee_(std::move(callee)),
         args_(std::move(args))
     {
@@ -561,14 +561,14 @@ public:
     }
 
     void PrintImpl(std::string prefix) override {
-        if (target_) target_->Print(prefix, "target");
+        if (caller_) caller_->Print(prefix, "caller");
         if (callee_) callee_->Print(prefix, "callee");
         if (args_)   args_->Print(prefix, "args");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<MethodCallExpr>(
-            std::unique_ptr<Expr>((Expr*)(target_->Clone().release())),
+            std::unique_ptr<Expr>((Expr*)(caller_->Clone().release())),
             std::make_unique<IdExpr>(callee_->name_),
             std::unique_ptr<Exprs>((Exprs*)(args_->Clone().release()))
         );

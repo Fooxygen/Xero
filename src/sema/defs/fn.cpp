@@ -56,6 +56,7 @@ namespace sema {
                 auto param = params_type_fix_[i];
                 auto arg   = args_type[i];
                 if (param) {
+                    
                     // Reference Param
                     if (dynamic_cast<ReferenceType*>(param)) {
                         // Pass: param i32&, arg i32&
@@ -94,9 +95,9 @@ namespace sema {
         return true;
     }
 
-    bool        FnSign::IsReceiveMatch(Type* type) const {
-        if (!receive_type_ || !type) return false;
-        return receive_type_->BasicTypeGet() == type->BasicTypeGet();
+    bool        FnSign::IsCallerMatch(Type* type) const {
+        if (!caller_type_ || !type) return false;
+        return caller_type_->BasicTypeGet() == type->BasicTypeGet();
     }
 
     // Fn
@@ -122,10 +123,10 @@ namespace sema {
     }
     
     const FnSign* Fn::SignLookup(
-        Type* receive_type, const std::vector<Type*>& args_type, std::optional<Loc> loc)
+        Type* caller_type, const std::vector<Type*>& args_type, std::optional<Loc> loc)
     {
         for (auto& s : signs_) {
-            if (s->IsReceiveMatch(receive_type) && s->IsSignMatch(args_type)) return s.get();
+            if (s->IsCallerMatch(caller_type) && s->IsSignMatch(args_type)) return s.get();
         }
         throw LogErr(LogModule::Sema, std::format(
             "undefined signature {} for method '{}'",
@@ -147,9 +148,9 @@ namespace sema {
         return nullptr;
     }
 
-    const FnSign* Fn::SignLookupTry(Type* receive_type, const std::vector<Type*>& args_type) {
+    const FnSign* Fn::SignLookupTry(Type* caller_type, const std::vector<Type*>& args_type) {
         for (auto& s : signs_) {
-            if (s->IsReceiveMatch(receive_type) && s->IsSignMatch(args_type)) return s.get();
+            if (s->IsCallerMatch(caller_type) && s->IsSignMatch(args_type)) return s.get();
         }
         return nullptr;
     }

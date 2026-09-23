@@ -20,8 +20,8 @@ namespace sema {
     bool Type::Is(std::string_view name) {
         if (this->name_ == name) return true;
 
-        Type* base_type = BasicTypeGet();
-        return base_type != this && base_type->Is(name);
+        Type* basic_type = BasicTypeGet();
+        return basic_type != this && basic_type->Is(name);
     }
 
     void Type::BasicTypeCheck() const {
@@ -34,9 +34,11 @@ namespace sema {
     
     // ParametricType
 
-    std::string ParametricType::ParamsPrint(Type* basic_type, const std::vector<Type*>& params_type) {
+    std::string ParametricType::ParamsPrint(
+        Type* basic_type, const std::vector<Type*>& params
+    ) {
         basic_type->BasicTypeCheck();
-        return basic_type->name() + format::JoinWithBoundary(params_type, [](Type* type) {
+        return basic_type->name() + format::JoinWithBoundary(params, [](Type* type) {
             return type->name();
         }, "[=", "=]");
     }
@@ -89,32 +91,32 @@ namespace sema {
         return it == table_.end() ? nullptr : it->second;
     }
     
-    Type*   TypeTable::ParametricTypeGet(Type* type, const std::vector<Type*>& params_type, std::optional<Loc> loc) {
+    Type*   TypeTable::ParametricTypeGet(Type* type, const std::vector<Type*>& params, std::optional<Loc> loc) {
         type->BasicTypeCheck();
-        if (params_type.empty()) return Lookup(type->name(), loc);
+        if (params.empty()) return Lookup(type->name(), loc);
 
-        auto base_type = (BasicType*)type;
-        if (base_type->params_cnt() != params_type.size()) {
+        auto basic_type = (BasicType*)type;
+        if (basic_type->params_cnt() != params.size()) {
             throw LogErr(LogModule::Sema, std::format(
                 "type '{}' expects {} type parameter(s), got {}",
-                base_type->name(), base_type->params_cnt(), params_type.size()
+                basic_type->name(), basic_type->params_cnt(), params.size()
             ), loc);
         }
         
-        auto name = ParametricType::ParamsPrint(base_type, params_type);
+        auto name = ParametricType::ParamsPrint(basic_type, params);
         auto it   = table_.find(name);
         if (it != table_.end()) return it->second;
 
         auto parametric_type = (ParametricType*)Set(ParametricType(
-            name, base_type, params_type
+            name, basic_type, params
         ));
 
-        for (auto& [method_name, method] : base_type->method_table().table()) {
+        for (auto& [method_name, method] : basic_type->method_table().table()) {
             for (auto& sign : method.signs()) {
                 if (!IsContainBindingType(*sign)) continue;
                 parametric_type->method_table().Add(
                     method_name,
-                    InstantiateSign(*sign, base_type, params_type)
+                    SignInstantiate(*sign, basic_type, params)
                 );
             }
         }
@@ -124,72 +126,94 @@ namespace sema {
     }
 
     bool    TypeTable::IsContainBindingType(Type* type) {
+
+        // T
         if (dynamic_cast<BindingType*>(type)) return true;
-        if (auto ref = dynamic_cast<ReferenceType*>(type))
-            return IsContainBindingType(ref->type_referred());
+
+        // T&
+        if (auto ref = dynamic_cast<ReferenceType*>(type)) {
+            return IsContainBindingType(ref->referred());
+        }
+
+        // array[=T, T=]
         if (auto par = dynamic_cast<ParametricType*>(type)) {
-            for (auto param : par->params_type())
+            for (auto param : par->params()) {
                 if (IsContainBindingType(param)) return true;
+            }
         }
         return false;
     }
 
     bool    TypeTable::IsContainBindingType(const FnSign& sign) {
         if (sign.return_type() && IsContainBindingType(sign.return_type())) return true;
-        for (auto param : sign.params_type_fix())
+        for (auto param : sign.params_type_fix()) {
             if (param && IsContainBindingType(param)) return true;
-        if (sign.params_type_var() && *sign.params_type_var())
+        }
+        if (sign.params_type_var() && *sign.params_type_var()) {
             if (IsContainBindingType(*sign.params_type_var())) return true;
+        }
         return false;
     }
 
-    Type*   TypeTable::Substitute(Type* type, BasicType* base, const std::vector<Type*>& args) {
-        if (auto binding = dynamic_cast<BindingType*>(type)) {
-            auto& decl = base->params_binding();
-            for (size_t i = 0; i < decl.size(); i++)
-                if (decl[i] == binding) return args[i];
-            return binding;
+    Type*   TypeTable::BindingTypeReplace(Type* type, BasicType* owner, const std::vector<Type*>& params_replace) {
+        
+        // T
+        if (auto binding_type = dynamic_cast<BindingType*>(type)) {
+            auto& params_binding = owner->params_binding();
+            for (size_t i = 0; i < params_binding.size(); i++) {
+                if (params_binding[i] == binding_type) return params_replace[i];
+            }
+            return binding_type;
         }
-        if (auto ref = dynamic_cast<ReferenceType*>(type))
-            return ReferenceTypeGet(Substitute(ref->type_referred(), base, args));
-        if (auto par = dynamic_cast<ParametricType*>(type)) {
+
+        // T&
+        if (auto reference_type = dynamic_cast<ReferenceType*>(type)) {
+            return ReferenceTypeGet(BindingTypeReplace(
+                reference_type->referred(), owner, params_replace
+            ));
+        }
+
+        // array[=T, T=]
+        if (auto parametric_type = dynamic_cast<ParametricType*>(type)) {
             std::vector<Type*> params = {};
-            for (auto param : par->params_type())
-                params.emplace_back(Substitute(param, base, args));
-            return ParametricTypeGet(par->type_basic(), params);
+            for (auto param : parametric_type->params()) {
+                params.emplace_back(BindingTypeReplace(param, owner, params_replace));
+            }
+            return ParametricTypeGet(parametric_type->basic(), params);
         }
+        
         return type;
     }
 
-    FnSign  TypeTable::InstantiateSign(const FnSign& sign, BasicType* base, const std::vector<Type*>& args) {
-        std::vector<Type*> params_fix = {};
+    FnSign  TypeTable::SignInstantiate(const FnSign& sign, BasicType* owner, const std::vector<Type*>& params_replace) {
+        std::vector<Type*> params_type_fix = {};
         for (auto param : sign.params_type_fix())
-            params_fix.emplace_back(param ? Substitute(param, base, args) : nullptr);
+            params_type_fix.emplace_back(param ? BindingTypeReplace(param, owner, params_replace) : nullptr);
 
-        std::optional<Type*> params_var = std::nullopt;
+        std::optional<Type*> params_type_var = std::nullopt;
         if (sign.params_type_var())
-            params_var = *sign.params_type_var() ? Substitute(*sign.params_type_var(), base, args) : nullptr;
+            params_type_var = *sign.params_type_var() ? BindingTypeReplace(*sign.params_type_var(), owner, params_replace) : nullptr;
 
         FnSign res(
-            Substitute(sign.return_type(), base, args),
-            params_fix, params_var, sign.modifier(), sign.name()
+            BindingTypeReplace(sign.return_type(), owner, params_replace),
+            params_type_fix, params_type_var, sign.modifier(), sign.name()
         );
-        res.TemplateSet(&sign);
+        res.TemplateSignSet(&sign);
         return res;
     }
 
     Fn*     TypeTable::MethodLookup(Type* type, const std::string& name) {
         auto type_unwrap = type->ReferenceUnwrap();
-        if (auto par = dynamic_cast<ParametricType*>(type_unwrap)) {
-            if (auto fn = par->method_table().LookupTry(name)) return fn;
+        if (auto parametric_type = dynamic_cast<ParametricType*>(type_unwrap)) {
+            if (auto fn = parametric_type->method_table().LookupTry(name)) return fn;
         }
         return &((BasicType*)type_unwrap->BasicTypeGet())->method_table().Lookup(name);
     }
 
     Fn*     TypeTable::MethodLookupTry(Type* type, const std::string& name) {
         auto type_unwrap = type->ReferenceUnwrap();
-        if (auto par = dynamic_cast<ParametricType*>(type_unwrap)) {
-            if (auto fn = par->method_table().LookupTry(name)) return fn;
+        if (auto parametric_type = dynamic_cast<ParametricType*>(type_unwrap)) {
+            if (auto fn = parametric_type->method_table().LookupTry(name)) return fn;
         }
         return ((BasicType*)type_unwrap->BasicTypeGet())->method_table().LookupTry(name);
     }

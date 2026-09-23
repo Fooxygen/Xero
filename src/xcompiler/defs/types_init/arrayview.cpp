@@ -259,7 +259,7 @@ namespace xcompiler {
             auto  view    = view_load(gen, args[0]);
 
             auto  view_type      = (sema::ParametricType*)args[0].ReferenceUnwrap();
-            auto  elem_type      = view_type->params_type()[0];
+            auto  elem_type      = view_type->params()[0];
             auto  elem_type_impl = TypeImplTable::Lookup(elem_type);
             auto  elem_size      = gen.llvm_module()->getDataLayout().getTypeAllocSize(gen.LLVMType(elem_type));
 
@@ -333,7 +333,7 @@ namespace xcompiler {
             auto  value_len  = builder.CreateExtractValue(value, 1);
 
             auto  view_type      = (sema::ParametricType*)args[0].ReferenceUnwrap();
-            auto  elem_type      = view_type->params_type()[0];
+            auto  elem_type      = view_type->params()[0];
             auto  elem_type_impl = TypeImplTable::Lookup(elem_type);
             auto  elem_size      = gen.llvm_module()->getDataLayout().getTypeAllocSize(gen.LLVMType(elem_type));
 
@@ -350,7 +350,7 @@ namespace xcompiler {
             auto  right_len  = right.len;
 
             auto  view_type      = (sema::ParametricType*)args[0].ReferenceUnwrap();
-            auto  elem_type      = view_type->params_type()[0];
+            auto  elem_type      = view_type->params()[0];
             auto  elem_type_impl = TypeImplTable::Lookup(elem_type);
             auto  elem_size      = gen.llvm_module()->getDataLayout().getTypeAllocSize(gen.LLVMType(elem_type));
 
@@ -363,7 +363,7 @@ namespace xcompiler {
             auto  value   = gen.ArgLoad(args[1]);
 
             auto  view_type      = (sema::ParametricType*)args[0].ReferenceUnwrap();
-            auto  elem_type      = view_type->params_type()[0];
+            auto  elem_type      = view_type->params()[0];
             auto  elem_type_impl = TypeImplTable::Lookup(elem_type);
             auto  elem_size      = gen.llvm_module()->getDataLayout().getTypeAllocSize(gen.LLVMType(elem_type));
 
@@ -412,7 +412,7 @@ namespace xcompiler {
             auto  view    = view_load(gen, args[0]);
 
             auto  view_type      = (sema::ParametricType*)args[0].ReferenceUnwrap();
-            auto  elem_type      = view_type->params_type()[0];
+            auto  elem_type      = view_type->params()[0];
             auto  elem_type_impl = TypeImplTable::Lookup(elem_type);
             auto  elem_size      = gen.llvm_module()->getDataLayout().getTypeAllocSize(gen.LLVMType(elem_type));
 
@@ -495,7 +495,7 @@ namespace xcompiler {
             auto  idx     = gen.ArgLoad(args[1]);
 
             auto  view_type = (sema::ParametricType*)args[0].ReferenceUnwrap();
-            auto  elem_type = view_type->params_type()[0];
+            auto  elem_type = view_type->params()[0];
             auto  elem_size = gen.llvm_module()->getDataLayout().getTypeAllocSize(gen.LLVMType(elem_type));
 
             auto arr_val = builder.CreateLoad(gen.LLVMType(array_), view.org);
@@ -532,7 +532,7 @@ namespace xcompiler {
             auto  view    = view_load(gen, args[0]);
 
             auto  view_type      = (sema::ParametricType*)args[0].ReferenceUnwrap();
-            auto  elem_type      = view_type->params_type()[0];
+            auto  elem_type      = view_type->params()[0];
             auto  elem_type_impl = TypeImplTable::Lookup(elem_type);
             auto  elem_size      = gen.llvm_module()->getDataLayout().getTypeAllocSize(gen.LLVMType(elem_type));
 

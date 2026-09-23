@@ -42,7 +42,7 @@ namespace xcompiler {
             auto addr           = gen.ArgAddr(arg);
             auto type           = (sema::ParametricType*)arg.ReferenceUnwrap();
             auto llvm_type      = gen.LLVMType(type->BasicTypeGet());
-            auto elem_type      = type->params_type()[0];
+            auto elem_type      = type->params()[0];
             auto elem_type_impl = TypeImplTable::Lookup(elem_type);
             auto elem_size      = module.getDataLayout().getTypeAllocSize(gen.LLVMType(elem_type));
             auto val            = builder.CreateLoad(llvm_type, addr);
