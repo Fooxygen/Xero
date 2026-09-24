@@ -6,83 +6,49 @@
 #pragma once
 
 #include <cstdint>
-#include <memory>
 #include <format>
 
 #include "common/log.hpp"
 
 class UTF8 {
+private:
+    struct Invalid {};
+
 public:
-    static size_t CharBytesGet(uint8_t first_byte, LogModule log_module) {
+    static size_t BytesCntGet(uint8_t bytes_first, LogModule log_module) {
         try {
-            if (first_byte < 0x80) return 1;
-            if (first_byte < 0xc0) throw  0;
-            if (first_byte < 0xe0) return 2;
-            if (first_byte < 0xf0) return 3;
-            if (first_byte < 0xf8) return 4;
-            throw 0;
-        } catch (...) {
+            if (bytes_first < 0x80) return 1;
+            if (bytes_first < 0xc0) throw  Invalid{};
+            if (bytes_first < 0xe0) return 2;
+            if (bytes_first < 0xf0) return 3;
+            if (bytes_first < 0xf8) return 4;
+            throw Invalid{};
+        } catch (const Invalid&) {
             throw LogErr(log_module, std::format(
-                "invalid utf8 leading byte 0x{:02x}", first_byte
+                "invalid utf8 leading byte 0x{:02x}", bytes_first
             ));
         }
     }
 
-    static void   Encode(uint32_t codepoint, uint8_t*& out_bytes, size_t& out_bytes_len, LogModule log_module) {
+    static void   Decode(const uint8_t* bytes, size_t bytes_cnt, uint32_t& out_codepoint, LogModule log_module) {
         try {
-                 if (codepoint < 0x80) {
-                out_bytes = (uint8_t*)malloc(sizeof(uint8_t));
-                out_bytes[0] = (uint8_t)codepoint;
-                out_bytes_len = 1;
-            }
-            else if (codepoint < 0x800) {
-                out_bytes = (uint8_t*)malloc(sizeof(uint8_t) * 2);
-                out_bytes[0] = 0xc0 | (codepoint >> 6);
-                out_bytes[1] = 0x80 | (codepoint &  0x3f);
-                out_bytes_len = 2;
-            }
-            else if (codepoint < 0x10000) {
-                out_bytes = (uint8_t*)malloc(sizeof(uint8_t) * 3);
-                out_bytes[0] = 0xe0 | (codepoint  >> 12);
-                out_bytes[1] = 0x80 | ((codepoint >> 6) & 0x3f);
-                out_bytes[2] = 0x80 | (codepoint  &  0x3f);
-                out_bytes_len = 3;
-            }
-            else if (codepoint < 0x110000) {
-                out_bytes = (uint8_t*)malloc(sizeof(uint8_t) * 4);
-                out_bytes[0] = 0xf0 | (codepoint  >> 18);
-                out_bytes[1] = 0x80 | ((codepoint >> 12) & 0x3f);
-                out_bytes[2] = 0x80 | ((codepoint >> 6)  & 0x3f);
-                out_bytes[3] = 0x80 | (codepoint  &  0x3f);
-                out_bytes_len = 4;
-            }
-            else throw 0;
-            
-        } catch(...) {
-            throw LogErr(log_module, std::format(
-                "invalid unicode codepoint U+{:X}", codepoint
-            ));
-        }
-    }
+            if (bytes_cnt == 0) throw Invalid{};
 
-    static void   Decode(const uint8_t* bytes, size_t bytes_len, uint32_t& out_codepoint, LogModule log_module) {
-        try {
-            if (bytes_len == 0) throw 0;
-            auto bytes_get = CharBytesGet(bytes[0], log_module);
-            if (bytes_get > bytes_len) throw 0;
+            auto cnt = BytesCntGet(bytes[0], log_module);
+            if (cnt > bytes_cnt) throw Invalid{};
 
-            uint8_t first_masks[] = {
+            uint8_t bytes_first_mask[] = {
                 0x7f, 0x1f, 0x0f, 0x07
             };
-            out_codepoint = bytes[0] & first_masks[bytes_get - 1];
+            out_codepoint = bytes[0] & bytes_first_mask[cnt - 1];
 
-            for (size_t i = 1; i < bytes_get; i++) {
-                if ((bytes[i] & 0xc0) != 0x80) throw 0;
+            for (size_t i = 1; i < cnt; i++) {
+                if ((bytes[i] & 0xc0) != 0x80) throw Invalid{};
                 out_codepoint <<= 6;
                 out_codepoint |= bytes[i] & 0x3f;
             }
 
-        } catch(...) {
+        } catch (const Invalid&) {
             throw LogErr(log_module, "invalid utf8 sequence");
         }
     }

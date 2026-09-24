@@ -513,7 +513,7 @@ namespace xcompiler {
             // getting bytes_len from the first byte
 
             auto&  codepoint = codepoints.emplace_back(0);
-            size_t bytes_len = UTF8::CharBytesGet((uint8_t)str[i], LogModule::Xcompiler);
+            size_t bytes_len = UTF8::BytesCntGet((uint8_t)str[i], LogModule::Xcompiler);
             UTF8::Decode((const uint8_t *)str.data() + i, str.size() - i, codepoint, LogModule::Xcompiler);
             i += bytes_len;
         }

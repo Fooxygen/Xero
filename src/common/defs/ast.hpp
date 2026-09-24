@@ -63,7 +63,7 @@ enum class AstType {
     Exprs,              //  list of expr
 };
 
-inline static AstType BaseOfAstType(AstType type) {
+inline AstType BaseOfAstType(AstType type) {
     using enum AstType;
     switch (type) {
         case NumConst:
@@ -101,7 +101,7 @@ inline static AstType BaseOfAstType(AstType type) {
     }
 }
 
-inline static bool    IsAstTypeCompatible(AstType expected, AstType actual) {
+inline bool    IsAstTypeCompatible(AstType expected, AstType actual) {
     if (expected == AstType::Undefined ||
         actual   == AstType::Undefined) return false;
     if (expected == actual) return true;
@@ -110,6 +110,14 @@ inline static bool    IsAstTypeCompatible(AstType expected, AstType actual) {
 
 // Node of Abstract Syntax Tree
 class AstNode {
+protected:
+    template <typename T>
+    static std::unique_ptr<T> ChildClone(const std::unique_ptr<T>& child) {
+        return child
+            ? std::unique_ptr<T>(static_cast<T*>(child->Clone().release()))
+            : nullptr;
+    }
+
 public:
     AstType     type_          = AstType::Undefined;
     Loc         loc_;
@@ -128,7 +136,7 @@ public:
 
     // Print
 
-    virtual void PrintImpl(std::string) = 0;
+    virtual void PrintImpl(const std::string&) = 0;
     void         Print(std::string prefix = "", std::string alias = "", bool is_begin_node = false) {
         std::cerr << prefix;
         if (!is_begin_node) std::cerr << "└── ";
@@ -163,7 +171,7 @@ class Stmt              : public AstNode {
 
 class Exprs             : public AstNode {
 public:
-    std::vector<std::unique_ptr<Expr>> exprs_;
+    std::vector<std::unique_ptr<Expr>> exprs_ = {};
 
 public:
     Exprs(std::vector<std::unique_ptr<Expr>>& exprs) : exprs_(std::move(exprs)) {
@@ -174,14 +182,14 @@ public:
         return "Exprs";
     }
 
-    void PrintImpl(std::string prefix) override {
+    void PrintImpl(const std::string& prefix) override {
         for (auto& e : exprs_) e->Print(prefix);
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        std::vector<std::unique_ptr<Expr>> exprs;
+        std::vector<std::unique_ptr<Expr>> exprs = {};
         for (auto& e : exprs_) {
-            exprs.emplace_back((Expr*)(e->Clone().release()));
+            exprs.emplace_back(ChildClone(e));
         }
         
         auto node = std::make_unique<Exprs>(exprs);
@@ -195,7 +203,7 @@ public:
 
 class BlockExpr         : public Expr {
 public:
-    std::vector<std::unique_ptr<AstNode>> children_;
+    std::vector<std::unique_ptr<AstNode>> children_ = {};
 
 public:
     BlockExpr(std::vector<std::unique_ptr<AstNode>>& children)
@@ -208,14 +216,14 @@ public:
         return "BlockExpr";
     }
 
-    void PrintImpl(std::string prefix) override {
+    void PrintImpl(const std::string& prefix) override {
         for (auto& child : children_) child->Print(prefix);
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        std::vector<std::unique_ptr<AstNode>> children;
+        std::vector<std::unique_ptr<AstNode>> children = {};
         for (auto& child : children_) {
-            children.emplace_back(child->Clone());
+            children.emplace_back(ChildClone(child));
         }
         
         auto node = std::make_unique<BlockExpr>(children);
@@ -237,7 +245,7 @@ public:
         return "IdExpr";
     }
 
-    void PrintImpl(std::string prefix) override {
+    void PrintImpl(const std::string& prefix) override {
         PrintLabel("name", prefix);
         std::cerr << COLOR_BLUE << name_ << COLOR_DEFAULT << std::endl;
     }
@@ -262,14 +270,12 @@ public:
         return "RefExpr";
     }
 
-    void PrintImpl(std::string prefix) override {
+    void PrintImpl(const std::string& prefix) override {
         if (target_) target_->Print(prefix, "target");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        auto node = std::make_unique<RefExpr>(
-            std::unique_ptr<Expr>((Expr*)(target_->Clone().release()))
-        );
+        auto node = std::make_unique<RefExpr>(ChildClone(target_));
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
@@ -298,7 +304,7 @@ public:
         return "TypeExpr";
     }
 
-    void PrintImpl(std::string prefix) override {
+    void PrintImpl(const std::string& prefix) override {
         PrintLabel("basic_type", prefix); {
             std::cerr << COLOR_BLUE << basic_type_ << COLOR_DEFAULT << std::endl;
         }
@@ -315,7 +321,7 @@ public:
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<TypeExpr>(
             basic_type_,
-            params_ ? std::unique_ptr<Exprs>((Exprs*)(params_->Clone().release())) : nullptr,
+            ChildClone(params_),
             is_referred_
         );
         node->resolved_type_ = resolved_type_;
@@ -346,7 +352,7 @@ public:
         return "DeclExpr";
     }
 
-    void PrintImpl(std::string prefix) override {
+    void PrintImpl(const std::string& prefix) override {
         PrintLabel("id", prefix); {
             std::cerr << COLOR_BLUE << id_ << COLOR_DEFAULT << std::endl;
         }
@@ -358,8 +364,8 @@ public:
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<DeclExpr>(
             id_,
-            bind_type_ ? std::unique_ptr<TypeExpr>((TypeExpr*)(bind_type_->Clone().release())) : nullptr,
-            value_ ? std::unique_ptr<Expr>((Expr*)(value_->Clone().release())) : nullptr
+            ChildClone(bind_type_),
+            ChildClone(value_)
         );
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
@@ -389,7 +395,7 @@ public:
         return "OperExpr";
     }
     
-    void PrintImpl(std::string prefix) override {
+    void PrintImpl(const std::string& prefix) override {
         PrintLabel("type", prefix); {
             std::cerr << COLOR_MAGENTA;
             std::cerr << OperTypeName(oper_type_);
@@ -403,8 +409,8 @@ public:
     std::unique_ptr<AstNode> Clone() const override {
         auto node =  std::make_unique<OperExpr>(
             oper_type_,
-            std::unique_ptr<Expr>((Expr*)(lexpr_->Clone().release())),
-            rexpr_ ? std::unique_ptr<Expr>((Expr*)(rexpr_->Clone().release())) : nullptr
+            ChildClone(lexpr_),
+            ChildClone(rexpr_)
         );
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
@@ -440,7 +446,7 @@ public:
         return "RangeExpr";
     }
 
-    void PrintImpl(std::string prefix) override {
+    void PrintImpl(const std::string& prefix) override {
         PrintLabel("type", prefix); {
             std::cerr << COLOR_MAGENTA;
             if (is_closed_)  Token::TypePrint(Token::Type::DotDotEq);
@@ -455,9 +461,9 @@ public:
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<RangeExpr>(
-            std::unique_ptr<Expr>((Expr*)(lexpr_->Clone().release())),
-            std::unique_ptr<Expr>((Expr*)(rexpr_->Clone().release())),
-            step_ ? std::unique_ptr<Expr>((Expr*)(step_->Clone().release())) : nullptr,
+            ChildClone(lexpr_),
+            ChildClone(rexpr_),
+            ChildClone(step_),
             is_closed_
         );
         node->iter_type_ = iter_type_;
@@ -484,14 +490,12 @@ public:
         return "ArrayExpr";
     }
 
-    void PrintImpl(std::string prefix) override {
+    void PrintImpl(const std::string& prefix) override {
         if (elems_) elems_->Print(prefix, "elems");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        auto node = std::make_unique<ArrayExpr>(
-            std::unique_ptr<Exprs>((Exprs*)(elems_->Clone().release()))
-        );
+        auto node = std::make_unique<ArrayExpr>(ChildClone(elems_));
         node->elem_type_ = elem_type_;
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
@@ -521,15 +525,15 @@ public:
         return "FnCallExpr";
     }
 
-    void PrintImpl(std::string prefix) override {
+    void PrintImpl(const std::string& prefix) override {
         if (callee_) callee_->Print(prefix, "callee");
         if (args_)   args_->Print(prefix, "args");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<FnCallExpr>(
-            std::make_unique<IdExpr>(callee_->name_),
-            std::unique_ptr<Exprs>((Exprs*)(args_->Clone().release()))
+            ChildClone(callee_),
+            ChildClone(args_)
         );
         node->callee_fnsign_ = callee_fnsign_;
         node->resolved_type_ = resolved_type_;
@@ -563,7 +567,7 @@ public:
         return "MethodCallExpr";
     }
 
-    void PrintImpl(std::string prefix) override {
+    void PrintImpl(const std::string& prefix) override {
         if (caller_) caller_->Print(prefix, "caller");
         if (callee_) callee_->Print(prefix, "callee");
         if (args_)   args_->Print(prefix, "args");
@@ -571,9 +575,9 @@ public:
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<MethodCallExpr>(
-            std::unique_ptr<Expr>((Expr*)(caller_->Clone().release())),
-            std::make_unique<IdExpr>(callee_->name_),
-            std::unique_ptr<Exprs>((Exprs*)(args_->Clone().release()))
+            ChildClone(caller_),
+            ChildClone(callee_),
+            ChildClone(args_)
         );
         node->callee_fnsign_ = callee_fnsign_;
         node->resolved_type_ = resolved_type_;
@@ -611,7 +615,7 @@ public:
         return "FnExpr";
     }
 
-    void PrintImpl(std::string prefix) override {
+    void PrintImpl(const std::string& prefix) override {
         PrintLabel("name", prefix); {
             std::cerr << COLOR_BLUE << name_ << COLOR_DEFAULT << std::endl;
         }
@@ -627,9 +631,9 @@ public:
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<FnExpr>(
             name_,
-            return_type_ ? std::unique_ptr<TypeExpr>((TypeExpr*)(return_type_->Clone().release())) : nullptr,
-            params_ ? std::unique_ptr<Exprs>((Exprs*)(params_->Clone().release())) : nullptr,
-            body_ ? std::unique_ptr<BlockExpr>((BlockExpr*)(body_->Clone().release())) : nullptr
+            ChildClone(return_type_),
+            ChildClone(params_),
+            ChildClone(body_)
         );
 
         node->ret_resolved_type_ = ret_resolved_type_;
@@ -664,7 +668,7 @@ public:
         return "NumConst";
     }
 
-    void PrintImpl(std::string prefix) override {
+    void PrintImpl(const std::string& prefix) override {
         PrintLabel("value", prefix);
         std::cerr << COLOR_ORANGE << value_ << COLOR_DEFAULT << std::endl;
     }
@@ -692,7 +696,7 @@ public:
         return "BoolConst";
     }
 
-    void PrintImpl(std::string prefix) override {
+    void PrintImpl(const std::string& prefix) override {
         PrintLabel("value", prefix);
         if (value_)
             std::cerr << COLOR_GREEN << "true" << COLOR_DEFAULT << std::endl;
@@ -723,7 +727,7 @@ public:
         return "CharConst";
     }
 
-    void PrintImpl(std::string prefix) override {
+    void PrintImpl(const std::string& prefix) override {
         PrintLabel("format", prefix);
         std::cerr << COLOR_GREEN << "'" <<
             format::ContainedEscapePrint(format_)
@@ -752,7 +756,7 @@ public:
         return "StringConst";
     }
 
-    void PrintImpl(std::string prefix) override {
+    void PrintImpl(const std::string& prefix) override {
         PrintLabel("value", prefix);
         std::cerr << COLOR_GREEN << "\"" <<
             format::ContainedEscapePrint(value_)
@@ -784,14 +788,12 @@ public:
         return "ExprStmt";
     }
 
-    void PrintImpl(std::string prefix) override {
+    void PrintImpl(const std::string& prefix) override {
         if (expr_) expr_->Print(prefix, "expr");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        auto node = std::make_unique<ExprStmt>(
-            std::unique_ptr<Expr>((Expr*)(expr_->Clone().release()))
-        );
+        auto node = std::make_unique<ExprStmt>(ChildClone(expr_));
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
@@ -817,15 +819,15 @@ public:
         return "AssignStmt";
     }
 
-    void PrintImpl(std::string prefix) override {
+    void PrintImpl(const std::string& prefix) override {
         if (target_) target_->Print(prefix, "target");
         if (value_)  value_->Print(prefix, "value");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<AssignStmt>(
-            std::unique_ptr<Expr>((Expr*)(target_->Clone().release())),
-            std::unique_ptr<Expr>((Expr*)(value_->Clone().release()))
+            ChildClone(target_),
+            ChildClone(value_)
         );
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
@@ -855,7 +857,7 @@ public:
         return "CondStmt";
     }
 
-    void PrintImpl(std::string prefix) override {
+    void PrintImpl(const std::string& prefix) override {
         if (cond_) cond_->Print(prefix, "cond");
         if (then_) then_->Print(prefix, "then");
         if (next_) next_->Print(prefix, "next");
@@ -863,9 +865,9 @@ public:
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<CondStmt>(
-            cond_ ? std::unique_ptr<Expr>((Expr*)(cond_->Clone().release())) : nullptr,
-            std::unique_ptr<BlockExpr>((BlockExpr*)(then_->Clone().release())),
-            next_ ? std::unique_ptr<CondStmt>((CondStmt*)(next_->Clone().release())) : nullptr
+            ChildClone(cond_),
+            ChildClone(then_),
+            ChildClone(next_)
         );
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
@@ -887,7 +889,7 @@ public:
         return "LoopSignalStmt";
     }
 
-    void PrintImpl(std::string prefix) override {
+    void PrintImpl(const std::string& prefix) override {
         PrintLabel("signal", prefix);
         std::cerr << COLOR_MAGENTA;
         switch (signal_) {
@@ -920,14 +922,12 @@ public:
         return "ReturnSignalStmt";
     }
 
-    void PrintImpl(std::string prefix) override {
+    void PrintImpl(const std::string& prefix) override {
         if (value_) value_->Print(prefix, "value");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        auto node = std::make_unique<ReturnSignalStmt>(
-            value_ ? std::unique_ptr<Expr>((Expr*)(value_->Clone().release())) : nullptr
-        );
+        auto node = std::make_unique<ReturnSignalStmt>(ChildClone(value_));
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
@@ -956,7 +956,7 @@ public:
         return "ForStmt";
     }
 
-    void PrintImpl(std::string prefix) override {
+    void PrintImpl(const std::string& prefix) override {
         if (iter_) iter_->Print(prefix, "iter");
         if (data_) data_->Print(prefix, "data");
         if (body_) body_->Print(prefix, "body");
@@ -964,9 +964,9 @@ public:
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<ForStmt>(
-            std::make_unique<IdExpr>(iter_->name_),
-            std::unique_ptr<Expr>((Expr*)(data_->Clone().release())),
-            std::unique_ptr<BlockExpr>((BlockExpr*)(body_->Clone().release()))
+            ChildClone(iter_),
+            ChildClone(data_),
+            ChildClone(body_)
         );
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
@@ -993,15 +993,15 @@ public:
         return "WhileStmt";
     }
 
-    void PrintImpl(std::string prefix) override {
+    void PrintImpl(const std::string& prefix) override {
         if (cond_) cond_->Print(prefix, "cond");
         if (body_) body_->Print(prefix, "body");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<WhileStmt>(
-            std::unique_ptr<Expr>((Expr*)(cond_->Clone().release())),
-            std::unique_ptr<BlockExpr>((BlockExpr*)(body_->Clone().release()))
+            ChildClone(cond_),
+            ChildClone(body_)
         );
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
@@ -1025,9 +1025,9 @@ public:
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        std::vector<std::unique_ptr<AstNode>> children;
+        std::vector<std::unique_ptr<AstNode>> children = {};
         for (auto& child : children_) {
-            children.emplace_back(child->Clone());
+            children.emplace_back(ChildClone(child));
         }
         
         auto node = std::make_unique<Program>(children);
