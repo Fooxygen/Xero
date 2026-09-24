@@ -52,6 +52,8 @@ public:
         loc_(loc)
     {}
 
+    virtual ~Log() = default;
+
     std::string ModulePrint() const {
         using enum LogModule;
         switch (module_) {

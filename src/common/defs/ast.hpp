@@ -116,6 +116,9 @@ public:
     sema::Type* resolved_type_ = nullptr;
 
 public:
+    virtual ~AstNode() = default;
+
+public:
     // Type
 
     virtual std::string TypeName()  const = 0;
