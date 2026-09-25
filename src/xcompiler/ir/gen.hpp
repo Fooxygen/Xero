@@ -65,7 +65,7 @@ namespace xcompiler {
 
         // Exec
 
-        llvm::Value* Exec(BlockExpr& node, std::function<void()> on_scope_ready = nullptr);
+        llvm::Value* Exec(BlockExpr& node, const std::function<void()>& on_scope_ready = nullptr);
         llvm::Value* Exec(IdExpr& node);
         llvm::Value* Exec(RefExpr& node);
         llvm::Value* Exec(DeclExpr& node);

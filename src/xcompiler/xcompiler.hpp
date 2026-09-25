@@ -7,6 +7,8 @@
 
 #include <filesystem>
 
+#include "llvm/Support/Program.h"
+
 #include "common/defs/ast.hpp"
 #include "sema/defs/fn.hpp"
 #include "xcompiler/backend/backend.hpp"

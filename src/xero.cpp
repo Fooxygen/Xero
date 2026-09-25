@@ -12,8 +12,6 @@
 #include <sstream>
 #include <fstream>
 
-#include "llvm/Support/Program.h"
-
 #include "build.hpp"
 #include "common/log.hpp"
 #include "lexer/lexer.hpp"

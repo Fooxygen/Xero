@@ -18,7 +18,7 @@ namespace xcompiler {
 
     // Expr
 
-    llvm::Value* IRGen::Exec(BlockExpr& node, std::function<void()> on_scope_ready) {
+    llvm::Value* IRGen::Exec(BlockExpr& node, const std::function<void()>& on_scope_ready) {
         var_table_.ScopePush();
         if (on_scope_ready) on_scope_ready();
 
