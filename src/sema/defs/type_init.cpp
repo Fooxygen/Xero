@@ -11,25 +11,25 @@ namespace sema {
 
     void  TypeTable::Init() {
 
-        auto none_          = (BasicType*)TypeTable::Set(BasicType("none"));
-        auto bool_          = (BasicType*)TypeTable::Set(BasicType("bool"));
-        auto i32_           = (BasicType*)TypeTable::Set(BasicType("i32"));
-        auto i64_           = (BasicType*)TypeTable::Set(BasicType("i64"));
-        auto f32_           = (BasicType*)TypeTable::Set(BasicType("f32"));
-        auto f64_           = (BasicType*)TypeTable::Set(BasicType("f64"));
-        auto char_          = (BasicType*)TypeTable::Set(BasicType("char"));
-        auto string_        = (BasicType*)TypeTable::Set(BasicType("string"));
-        auto stringview_    = (BasicType*)TypeTable::Set(BasicType("stringview"));
-        auto array_         = (BasicType*)TypeTable::Set(BasicType("array", 1));
+        auto none_          = TypeTable::Set(BasicType("none"));
+        auto bool_          = TypeTable::Set(BasicType("bool"));
+        auto i32_           = TypeTable::Set(BasicType("i32"));
+        auto i64_           = TypeTable::Set(BasicType("i64"));
+        auto f32_           = TypeTable::Set(BasicType("f32"));
+        auto f64_           = TypeTable::Set(BasicType("f64"));
+        auto char_          = TypeTable::Set(BasicType("char"));
+        auto string_        = TypeTable::Set(BasicType("string"));
+        auto stringview_    = TypeTable::Set(BasicType("stringview"));
+        auto array_         = TypeTable::Set(BasicType("array", 1));
         {
             array_->params_binding().emplace_back(new BindingType("array.T"));
         }
-        auto arrayview_     = (BasicType*)TypeTable::Set(BasicType("arrayview", 1));
+        auto arrayview_     = TypeTable::Set(BasicType("arrayview", 1));
         {
             arrayview_->params_binding().emplace_back(new BindingType("arrayview.T"));
         }
-        auto range_         = (BasicType*)TypeTable::Set(BasicType("range", 1));
-        /*auto function_      = (BasicType*)*/TypeTable::Set(BasicType("function"));
+        auto range_         = TypeTable::Set(BasicType("range", 1));
+        /*auto function_      = */TypeTable::Set(BasicType("function"));
 
         // @cast
         {

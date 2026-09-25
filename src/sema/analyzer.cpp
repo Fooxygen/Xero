@@ -164,7 +164,7 @@ namespace sema {
             }
 
             // Arith
-            node.resolved_type_ = TypeTable::Common({
+            node.resolved_type_ = TypeTable::CommonTypeGet({
                 node.lexpr_->resolved_type_->ReferenceUnwrap(),
                 node.rexpr_->resolved_type_->ReferenceUnwrap()
             });
@@ -184,7 +184,7 @@ namespace sema {
         // Boundary
         Exec(*node.lexpr_);
         Exec(*node.rexpr_);
-        auto boundary_type = TypeTable::Common({
+        auto boundary_type = TypeTable::CommonTypeGet({
             node.lexpr_->resolved_type_->ReferenceUnwrap(),
             node.rexpr_->resolved_type_->ReferenceUnwrap()
         });
@@ -197,7 +197,7 @@ namespace sema {
         if (node.step_) {
             Exec(*node.step_);
             step_type = node.step_->resolved_type_->ReferenceUnwrap();
-            if (TypeTable::Common({ step_type, boundary_type }) != boundary_type) {
+            if (TypeTable::CommonTypeGet({ step_type, boundary_type }) != boundary_type) {
                 throw LogErr(LogModule::Sema, "'step type of range' must be compatible with 'boundary type of range'", node.loc_);
             }
         }

@@ -6,12 +6,15 @@
 #pragma once
 
 #include <cstddef>
+#include <memory>
 #include <string>
 #include <vector>
 #include <set>
 #include <map>
 #include <unordered_map>
 #include <utility>
+#include <algorithm>
+#include <iterator>
 
 #include "common/log.hpp"
 #include "sema/defs/fn.hpp"
@@ -38,6 +41,8 @@ namespace sema {
         Type(std::string name, Using type_using)
         :   name_(name), type_using_(type_using) {}
         
+        virtual ~Type() = default;
+
         const std::string& name()       const { return name_; }
         Using              type_using() const { return type_using_; }
 
@@ -100,17 +105,11 @@ namespace sema {
         {
             method_table_.OwnerSet(this);
         }
-        ParametricType(const ParametricType& other)
-        :   Type(other.name(), Using::Parametric),
-            basic_(other.basic_),
-            params_(other.params_)
-        {
-            method_table_.OwnerSet(this);
-        }
 
-        Type*               basic() const  { return basic_; }
-        std::vector<Type*>& params()       { return params_; }
-        FnTable&            method_table() { return method_table_; }
+        Type*                     basic()  const { return basic_; }
+        std::vector<Type*>&       params()       { return params_; }
+        const std::vector<Type*>& params() const { return params_; }
+        FnTable&                  method_table() { return method_table_; }
 
     public:
         static std::string ParamsPrint(Type* basic_type, const std::vector<Type*>& params);
@@ -138,16 +137,16 @@ namespace sema {
 
     class TypeTable {
     private:
-        static inline std::unordered_map<std::string, Type*> table_;
-        static inline std::multimap<Type*, Type*>            casts_;
-        static inline std::map<std::set<Type*>, Type*>       common_cache_;
+        static inline std::unordered_map<std::string, std::unique_ptr<Type>> table_;
+        static inline std::map<std::set<Type*>, Type*>                       commons_cache_;
 
     public:
-        static void  Init();
+        static void   Init();
 
-        static Type*  Set(const BasicType& t);
-        static Type*  Set(const ParametricType& t);
-        static Type*  Set(const ReferenceType& t);
+        static BasicType*      Set(const BasicType& t);
+        static ParametricType* Set(const ParametricType& t);
+        static ReferenceType*  Set(const ReferenceType& t);
+
         static Type*  Lookup(std::string_view name, std::optional<Loc> loc = std::nullopt);
         static Type*  LookupTry(std::string_view name);
         
@@ -163,58 +162,6 @@ namespace sema {
         static Fn*    MethodLookupTry(Type* type, const std::string& name);
 
         static void   CastRecompute();
-        static Type*  Common(std::set<Type*> ts) {
-            if (ts.size() == 1) return *ts.begin();
-            
-            // Search Cache
-            auto it = common_cache_.find(ts);
-            if (it != common_cache_.end()) return it->second;
-
-            // Get Common
-            std::set<Type*> common;
-            {
-                bool is_first_add = false;
-                for (auto t : ts) {
-                    if (!is_first_add) {
-                        is_first_add = true;
-                        common = t->casts();
-                        continue;
-                    }
-
-                    std::set<Type*> tmp;
-                    std::set_intersection(
-                        common.begin(), common.end(),
-                        t->casts().begin(), t->casts().end(),
-                        std::inserter(tmp, tmp.begin())
-                    );
-                    common = std::move(tmp);
-
-                    if (common.empty()) {
-                        common_cache_[ts] = nullptr;
-                        return nullptr;
-                    }
-                }
-            }
-
-            // Find Minimal
-            for (auto& i : common) {
-                bool is_find = true;
-
-                for (auto& j : common) {
-                    if (i == j) continue;
-                    if (j->casts().contains(i)) {
-                        is_find = false;
-                        break;
-                    }
-                }
-
-                if (is_find) {
-                    common_cache_[ts] = i;
-                    return i;
-                }
-            }
-
-            return nullptr;
-        }
+        static Type*  CommonTypeGet(std::set<Type*> ts);
     };
 }

@@ -34,9 +34,7 @@ namespace sema {
     
     // ParametricType
 
-    std::string ParametricType::ParamsPrint(
-        Type* basic_type, const std::vector<Type*>& params
-    ) {
+    std::string ParametricType::ParamsPrint(Type* basic_type, const std::vector<Type*>& params) {
         basic_type->BasicTypeCheck();
         return basic_type->name() + format::JoinWithBoundary(params, [](Type* type) {
             return type->name();
@@ -45,50 +43,50 @@ namespace sema {
 
     // TypeTable
 
-    Type*   TypeTable::Set(const BasicType& type) {
-        if (!table_.contains(std::string(type.name()))) {
-            auto set = table_.emplace(
-                type.name(), 
-                new BasicType(type.name(), type.params_cnt())
-            );
-            return set.first->second;
+    BasicType*      TypeTable::Set(const BasicType& type) {
+        auto [it, is_inserted] = table_.try_emplace(
+            type.name(),
+            std::make_unique<BasicType>(type.name(), type.params_cnt())
+        );
+        if (!is_inserted) {
+            throw LogErr(LogModule::Sema, std::format("redefinition of type '{}'", type.name()));
         }
-        else throw LogErr(LogModule::Sema, std::format("redefinition of type '{}'", type.name()));
+        return (BasicType*)it->second.get();
     }
 
-    Type*   TypeTable::Set(const ParametricType& type) {
-        if (!table_.contains(std::string(type.name()))) {
-            auto set = table_.emplace(
-                type.name(),
-                new ParametricType(type)
-            );
-            return set.first->second;
+    ParametricType* TypeTable::Set(const ParametricType& type) {
+        auto [it, is_inserted] = table_.try_emplace(
+            type.name(),
+            std::make_unique<ParametricType>(type.name(), type.basic(), type.params())
+        );
+        if (!is_inserted) {
+            throw LogErr(LogModule::Sema, std::format("redefinition of type '{}'", type.name()));
         }
-        else throw LogErr(LogModule::Sema, std::format("redefinition of type '{}'", type.name()));
+        return (ParametricType*)it->second.get();
     }
 
-    Type*   TypeTable::Set(const ReferenceType& type) {
-        if (!table_.contains(std::string(type.name()))) {
-            auto set = table_.emplace(
-                type.name(),
-                new ReferenceType(type)
-            );
-            return set.first->second;
+    ReferenceType*  TypeTable::Set(const ReferenceType& type) {
+        auto [it, is_inserted] = table_.try_emplace(
+            type.name(),
+            std::make_unique<ReferenceType>(type.name(), type.referred())
+        );
+        if (!is_inserted) {
+            throw LogErr(LogModule::Sema, std::format("redefinition of type '{}'", type.name()));
         }
-        else throw LogErr(LogModule::Sema, std::format("redefinition of type '{}'", type.name()));
+        return (ReferenceType*)it->second.get();
     }
     
     Type*   TypeTable::Lookup(std::string_view name, std::optional<Loc> loc) {
         auto it = table_.find(std::string(name));
         if (it != table_.end()) {
-            return it->second;
+            return it->second.get();
         }
         throw LogErr(LogModule::Sema, std::format("undefined type '{}'", name), loc);
     }
 
     Type*   TypeTable::LookupTry(std::string_view name) {
         auto it = table_.find(std::string(name));
-        return it == table_.end() ? nullptr : it->second;
+        return it == table_.end() ? nullptr : it->second.get();
     }
     
     Type*   TypeTable::ParametricTypeGet(Type* type, const std::vector<Type*>& params, std::optional<Loc> loc) {
@@ -105,9 +103,9 @@ namespace sema {
         
         auto name = ParametricType::ParamsPrint(basic_type, params);
         auto it   = table_.find(name);
-        if (it != table_.end()) return it->second;
+        if (it != table_.end()) return it->second.get();
 
-        auto parametric_type = (ParametricType*)Set(ParametricType(
+        auto parametric_type = Set(ParametricType(
             name, basic_type, params
         ));
 
@@ -221,7 +219,7 @@ namespace sema {
     Type*   TypeTable::ReferenceTypeGet(Type* type) {
         auto name = type->name() + '&';
         auto it   = table_.find(name);
-        if (it != table_.end()) return it->second;
+        if (it != table_.end()) return it->second.get();
         return Set(ReferenceType(name, type));
     }
 
@@ -231,12 +229,12 @@ namespace sema {
         for (auto& [type_name, type] : table_) {
             type->casts().clear();
             type->casts_fnsign().clear();
-            type->casts().emplace(type);
+            type->casts().emplace(type.get());
         }
 
         // Recompute
         for (auto& [type_name, type] : table_) {
-            if (auto basic_type = dynamic_cast<BasicType*>(type)) {
+            if (auto basic_type = dynamic_cast<BasicType*>(type.get())) {
                 auto& method_table = basic_type->method_table();
                 for (auto& [method_name, method] : method_table.table()) {
                     for (auto& sign : method.signs()) {
@@ -248,5 +246,61 @@ namespace sema {
                 }
             }
         }
+
+        commons_cache_.clear();
+    }
+
+    Type*   TypeTable::CommonTypeGet(std::set<Type*> ts) {
+        if (ts.size() == 1) return *ts.begin();
+        
+        // Search Cache
+        auto it = commons_cache_.find(ts);
+        if (it != commons_cache_.end()) return it->second;
+
+        // Get Common
+        std::set<Type*> common;
+        {
+            bool is_first_add = false;
+            for (auto t : ts) {
+                if (!is_first_add) {
+                    is_first_add = true;
+                    common = t->casts();
+                    continue;
+                }
+
+                std::set<Type*> tmp;
+                std::set_intersection(
+                    common.begin(), common.end(),
+                    t->casts().begin(), t->casts().end(),
+                    std::inserter(tmp, tmp.begin())
+                );
+                common = std::move(tmp);
+
+                if (common.empty()) {
+                    commons_cache_[ts] = nullptr;
+                    return nullptr;
+                }
+            }
+        }
+
+        // Find Minimal
+        for (auto& i : common) {
+            bool is_find = true;
+
+            for (auto& j : common) {
+                if (i == j) continue;
+                if (j->casts().contains(i)) {
+                    is_find = false;
+                    break;
+                }
+            }
+
+            if (is_find) {
+                commons_cache_[ts] = i;
+                return i;
+            }
+        }
+
+        return nullptr;
     }
 }

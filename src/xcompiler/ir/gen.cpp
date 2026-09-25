@@ -196,7 +196,7 @@ namespace xcompiler {
         {
             auto ltype    = node.lexpr_->resolved_type_->ReferenceUnwrap();
             auto rtype    = node.rexpr_->resolved_type_->ReferenceUnwrap();
-            auto com_type = sema::TypeTable::Common({ ltype, rtype });
+            auto com_type = sema::TypeTable::CommonTypeGet({ ltype, rtype });
             if (!com_type) {
                 throw LogErr(LogModule::Xcompiler, std::format(
                     "cannot make type '{}' compatible with '{}'",
