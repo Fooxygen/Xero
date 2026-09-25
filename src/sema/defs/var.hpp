@@ -45,10 +45,8 @@ namespace sema {
             }
             
             auto& scope = ScopeGet();
-            if (!scope.contains(var->name_)) {
-                scope[var->name_] = std::move(var);
-            }
-            else {
+            auto [it, is_declared] = scope.try_emplace(var->name_, std::move(var));
+            if (!is_declared) {
                 throw LogErr(LogModule::Sema, std::format(
                     "redefinition of variable '{}' in same scope",
                     var->name_

@@ -49,49 +49,45 @@ namespace sema {
     }
 
     bool        FnSign::IsSignMatch(const std::vector<Type*>& args_type) {
-        try {
-            // Fixed Params
-            if (args_type.size() < params_type_fix_.size()) throw 0;
-            for (size_t i = 0; i < params_type_fix_.size(); i++) {
-                auto param = params_type_fix_[i];
+
+        // Fixed Params
+        if (args_type.size() < params_type_fix_.size()) return false;
+        for (size_t i = 0; i < params_type_fix_.size(); i++) {
+            auto param = params_type_fix_[i];
+            auto arg   = args_type[i];
+            if (param) {
+                
+                // Reference Param
+                if (dynamic_cast<ReferenceType*>(param)) {
+                    // Pass: param i32&, arg i32&
+                    if (arg != param) return false;
+                }
+                
+                // Non-Reference Param
+                else {
+                    // Pass: param i32,   arg i32&
+                    //       param f64,   arg i32
+                    //       param range, arg range[=i32=]
+                    auto arg_unwrap = arg->ReferenceUnwrap();
+                    if (arg_unwrap != param && !arg_unwrap->Is(param->name()) && !arg->casts().contains(param)) return false;
+                }
+            }
+        }
+
+        // Variable Params
+        if (params_type_var_) {
+            for (size_t i = params_type_fix_.size(); i < args_type.size(); i++) {
+                auto param = *params_type_var_;
                 auto arg   = args_type[i];
                 if (param) {
-                    
-                    // Reference Param
-                    if (dynamic_cast<ReferenceType*>(param)) {
-                        // Pass: param i32&, arg i32&
-                        if (arg != param) throw 0;
-                    }
-                    
-                    // Non-Reference Param
-                    else {
-                        // Pass: param i32,   arg i32&
-                        //       param f64,   arg i32
-                        //       param range, arg range[=i32=]
-                        auto arg_unwrap = arg->ReferenceUnwrap();
-                        if (arg_unwrap != param && !arg_unwrap->Is(param->name()) && !arg->casts().contains(param)) throw 0;
-                    }
+                    if (arg->ReferenceUnwrap() != param && !arg->casts().contains(param)) return false;
                 }
             }
+        }
+        else {
+            if (args_type.size() > params_type_fix_.size()) return false;
+        }
 
-            // Variable Params
-            if (params_type_var_) {
-                for (size_t i = params_type_fix_.size(); i < args_type.size(); i++) {
-                    auto param = *params_type_var_;
-                    auto arg   = args_type[i];
-                    if (param) {
-                        if (arg->ReferenceUnwrap() != param && !arg->casts().contains(param)) throw 0;
-                    }
-                }
-            }
-            else {
-                if (args_type.size() > params_type_fix_.size()) throw 0;
-            }
-        }
-        catch (...) {
-            return false;
-        }
-        
         return true;
     }
 

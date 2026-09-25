@@ -9,7 +9,7 @@ namespace sema {
 
     // Expr
 
-    void Analyzer::Exec(BlockExpr& node, std::function<void()> on_scope_ready) {
+    void Analyzer::Exec(BlockExpr& node, const std::function<void()>& on_scope_ready) {
         node.resolved_type_ = TypeTable::Lookup("none");
 
         var_table_.ScopePush();
@@ -38,10 +38,11 @@ namespace sema {
     }
 
     void Analyzer::Exec(RefExpr& node) {
-        Exec(*node.target_);
         if (!dynamic_cast<IdExpr*>(node.target_.get())) {
             throw LogErr(LogModule::Sema, "cannot reference a non-referenceable value", node.loc_);
         }
+
+        Exec(*node.target_);
         node.resolved_type_ = TypeTable::ReferenceTypeGet(node.target_->resolved_type_->ReferenceUnwrap());
     }
 

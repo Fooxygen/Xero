@@ -23,7 +23,7 @@ namespace sema {
 
         // Exec
 
-        void Exec(BlockExpr& node, std::function<void()> on_scope_ready = nullptr);
+        void Exec(BlockExpr& node, const std::function<void()>& on_scope_ready = nullptr);
         void Exec(IdExpr& node);
         void Exec(RefExpr& node);
         void Exec(TypeExpr& node);
