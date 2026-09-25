@@ -432,7 +432,9 @@ namespace xcompiler {
                 builder.CreateSub(arr.len, idx),
                 arr.elem_size
             );
-            builder.CreateStore(args[2].val(), elem_get(gen, result_data, arr.elem_size, idx));
+            auto value_ref = gen.ArgRefMake(args[2].val(), arr.elem_type);
+            auto copied    = arr.elem_type_impl->MethodCall(gen, "@copy", { value_ref });
+            builder.CreateStore(copied, elem_get(gen, result_data, arr.elem_size, idx));
             array_store(gen, arr.addr, result_data, arr.llvm_type, result_len);
             return nullptr;
         }, sema::FnSign(none_, { i64_, nullptr }));
@@ -459,7 +461,9 @@ namespace xcompiler {
             auto  result_len  = builder.CreateAdd(arr.len, builder.getInt64(1));
             auto  result_data = array_realloc(gen, arr.data, arr.elem_size, result_len);
 
-            builder.CreateStore(args[1].val(), elem_get(
+            auto value_ref = gen.ArgRefMake(args[1].val(), arr.elem_type);
+            auto copied    = arr.elem_type_impl->MethodCall(gen, "@copy", { value_ref });
+            builder.CreateStore(copied, elem_get(
                 gen, result_data, arr.elem_size, arr.len
             ));
             array_store(gen, arr.addr, result_data, arr.llvm_type, result_len);
@@ -478,7 +482,9 @@ namespace xcompiler {
                 elem_get(gen, result_data, arr.elem_size, one),
                 result_data, arr.len, arr.elem_size
             );
-            builder.CreateStore(args[1].val(), elem_get(gen, result_data, arr.elem_size, builder.getInt64(0)));
+            auto value_ref = gen.ArgRefMake(args[1].val(), arr.elem_type);
+            auto copied    = arr.elem_type_impl->MethodCall(gen, "@copy", { value_ref });
+            builder.CreateStore(copied, elem_get(gen, result_data, arr.elem_size, builder.getInt64(0)));
             array_store(gen, arr.addr, result_data, arr.llvm_type, result_len);
             return nullptr;
         }, sema::FnSign(none_, { nullptr }));
