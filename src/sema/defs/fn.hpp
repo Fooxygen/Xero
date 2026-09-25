@@ -111,14 +111,14 @@ namespace sema {
         std::unordered_map<std::string, Fn>& table() { return table_; }
 
     public:
-        Fn&  Lookup(const std::string& name, std::optional<Loc> loc = std::nullopt) {
-            auto it = table_.find(name);
-            if (it == table_.end()) {
+        Fn*  Lookup(const std::string& name, std::optional<Loc> loc = std::nullopt) {
+            auto fn = LookupTry(name);
+            if (!fn) {
                 throw LogErr(LogModule::Sema, std::format(
                     "undefined function '{}'", name
                 ), loc);
             }
-            return it->second;
+            return fn;
         }
         Fn*  LookupTry(const std::string& name) {
             auto it = table_.find(name);

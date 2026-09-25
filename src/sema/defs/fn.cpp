@@ -98,41 +98,42 @@ namespace sema {
 
     // Fn
 
-    const FnSign* Fn::SignLookup(const FnSign& sign, std::optional<Loc> loc) const {
-        for (auto& s : signs_) {
-            if (s->IsSignEqual(sign)) return s.get();
+    const FnSign* Fn::SignLookup(const FnSign& sign_reference, std::optional<Loc> loc) const {
+        auto sign = SignLookupTry(sign_reference);
+        if (!sign) {
+            throw LogErr(LogModule::Sema, std::format(
+                "undefined signature {} for function '{}'",
+                sign_reference.ParamsPrint(), name_
+            ), loc);
         }
-        throw LogErr(LogModule::Sema, std::format(
-            "undefined signature {} for function '{}'",
-            sign.ParamsPrint(), name_
-        ), loc);
+        return sign;
     }
     
     const FnSign* Fn::SignLookup(const std::vector<Type*>& args_type, std::optional<Loc> loc) {
-        for (auto& s : signs_) {
-            if (s->IsSignMatch(args_type)) return s.get();
+        auto sign = SignLookupTry(args_type);
+        if (!sign) {
+            throw LogErr(LogModule::Sema, std::format(
+                "undefined signature {} for function '{}'",
+                FnSign(nullptr, args_type).ParamsPrint(), name_
+            ), loc);
         }
-        throw LogErr(LogModule::Sema, std::format(
-            "undefined signature {} for function '{}'",
-            FnSign(nullptr, args_type).ParamsPrint(), name_
-        ), loc);
+        return sign;
     }
     
-    const FnSign* Fn::SignLookup(
-        Type* caller_type, const std::vector<Type*>& args_type, std::optional<Loc> loc)
-    {
-        for (auto& s : signs_) {
-            if (s->IsCallerMatch(caller_type) && s->IsSignMatch(args_type)) return s.get();
+    const FnSign* Fn::SignLookup(Type* caller_type, const std::vector<Type*>& args_type, std::optional<Loc> loc) {
+        auto sign = SignLookupTry(caller_type, args_type);
+        if (!sign) {
+            throw LogErr(LogModule::Sema, std::format(
+                "undefined signature {} for method '{}'",
+                FnSign(nullptr, args_type).ParamsPrint(), name_
+            ), loc);
         }
-        throw LogErr(LogModule::Sema, std::format(
-            "undefined signature {} for method '{}'",
-            FnSign(nullptr, args_type).ParamsPrint(), name_
-        ), loc);
+        return sign;
     }
 
-    const FnSign* Fn::SignLookupTry(const FnSign& sign) const {
+    const FnSign* Fn::SignLookupTry(const FnSign& sign_reference) const {
         for (auto& s : signs_) {
-            if (s->IsSignEqual(sign)) return s.get();
+            if (s->IsSignEqual(sign_reference)) return s.get();
         }
         return nullptr;
     }

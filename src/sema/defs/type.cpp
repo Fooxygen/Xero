@@ -77,11 +77,11 @@ namespace sema {
     }
     
     Type*   TypeTable::Lookup(std::string_view name, std::optional<Loc> loc) {
-        auto it = table_.find(std::string(name));
-        if (it != table_.end()) {
-            return it->second.get();
+        auto type = LookupTry(name);
+        if (!type) {
+            throw LogErr(LogModule::Sema, std::format("undefined type '{}'", name), loc);
         }
-        throw LogErr(LogModule::Sema, std::format("undefined type '{}'", name), loc);
+        return type;
     }
 
     Type*   TypeTable::LookupTry(std::string_view name) {
@@ -201,11 +201,13 @@ namespace sema {
     }
 
     Fn*     TypeTable::MethodLookup(Type* type, const std::string& name) {
-        auto type_unwrap = type->ReferenceUnwrap();
-        if (auto parametric_type = dynamic_cast<ParametricType*>(type_unwrap)) {
-            if (auto fn = parametric_type->method_table().LookupTry(name)) return fn;
+        auto method = MethodLookupTry(type, name);
+        if (!method) {
+            throw LogErr(LogModule::Sema, std::format(
+                "undefined method '{}'", name
+            ));
         }
-        return &((BasicType*)type_unwrap->BasicTypeGet())->method_table().Lookup(name);
+        return method;
     }
 
     Fn*     TypeTable::MethodLookupTry(Type* type, const std::string& name) {

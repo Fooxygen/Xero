@@ -85,11 +85,11 @@ namespace xcompiler {
         // print and println
         {
             auto impl_print_one = [](IRGen& gen, const Arg& arg) {
-                auto  caller     = gen.ArgRefMake(arg.val(), arg.type());  // x -> &x, &x -> &x
-                auto  type        = arg.type();
-                auto& method      = ((sema::BasicType*)type->BasicTypeGet())->method_table().Lookup("@print");
-                auto  method_sign = method.SignLookup(caller.type(), {});
-                auto  method_impl = TypeImplTable::Lookup(type)->MethodLookup(method_sign);
+                auto caller     = gen.ArgRefMake(arg.val(), arg.type());  // x -> &x, &x -> &x
+                auto type        = arg.type();
+                auto method      = ((sema::BasicType*)type->BasicTypeGet())->method_table().Lookup("@print");
+                auto method_sign = method->SignLookup(caller.type(), {});
+                auto method_impl = TypeImplTable::Lookup(type)->MethodLookup(method_sign);
                 ((NativeFnImpl*)method_impl)->impl()(gen, { caller });
             };
 
@@ -117,8 +117,8 @@ namespace xcompiler {
                 return nullptr;
             };
 
-            auto sign_print   = fn_table.Lookup("print").SignLookup(sema::FnSign(none_, {}, nullptr, {}, "print"));
-            auto sign_println = fn_table.Lookup("println").SignLookup(sema::FnSign(none_, {}, nullptr, {}, "println"));
+            auto sign_print   = fn_table.Lookup("print")->SignLookup(sema::FnSign(none_, {}, nullptr, {}, "print"));
+            auto sign_println = fn_table.Lookup("println")->SignLookup(sema::FnSign(none_, {}, nullptr, {}, "println"));
             FnImplTable::Add("print", sign_print,   std::make_unique<NativeFnImpl>(impl_print));
             FnImplTable::Add("println", sign_println, std::make_unique<NativeFnImpl>(impl_println));
         }

@@ -16,9 +16,9 @@ namespace xcompiler {
     // TypeImpl
 
     void         TypeImpl::MethodAdd(const std::string& name, NativeFnImpl::Impl impl, const sema::FnSign& sign) {
-        auto  def_basic   = (sema::BasicType*)def_;
-        auto& method      = def_basic->method_table().Lookup(name);
-        auto  method_sign = method.SignLookup(sign);
+        auto def_basic   = (sema::BasicType*)def_;
+        auto method      = def_basic->method_table().Lookup(name);
+        auto method_sign = method->SignLookup(sign);
 
         auto it = methods_.find(method_sign);
         if (it != methods_.end()) {
@@ -31,9 +31,9 @@ namespace xcompiler {
     }
     
     void         TypeImpl::MethodAdd(const std::string& name, LangFnImpl::Impl impl, const sema::FnSign& sign) {
-        auto  def_basic   = (sema::BasicType*)def_;
-        auto& method      = def_basic->method_table().Lookup(name);
-        auto  method_sign = method.SignLookup(sign);
+        auto def_basic   = (sema::BasicType*)def_;
+        auto method      = def_basic->method_table().Lookup(name);
+        auto method_sign = method->SignLookup(sign);
 
         auto it = methods_.find(method_sign);
         if (it != methods_.end()) {
@@ -46,19 +46,18 @@ namespace xcompiler {
     }
 
     FnImpl*      TypeImpl::MethodLookup(const sema::FnSign* sign) {
-        auto key = sign->template_sign();
-        auto it  = methods_.find(key);
-        if (it == methods_.end()) {
+        auto fnimpl = MethodLookupTry(sign);
+        if (!fnimpl) {
             throw LogErr(LogModule::Xcompiler, std::format(
                 "undefined implementation of method {} for type '{}', signature it attempts to obtain is {}",
                 sign->name(), def_->name(), sign->ParamsPrint()
             ));
         }
-        return it->second.get();
+        return fnimpl;
     }
 
     FnImpl*      TypeImpl::MethodLookupTry(const sema::FnSign* sign) {
-        auto it = methods_.find(sign);
+        auto it = methods_.find(sign->template_sign());
         return it == methods_.end() ? nullptr : it->second.get();
     }
 
