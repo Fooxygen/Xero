@@ -1,0 +1,19 @@
+
+name    = "example"
+entry   = "main.xe"
+profile = "debug"
+
+[profiles.debug]
+opt_level = "o0"
+
+[profiles.release]
+opt_level = "o3"
+
+[output]
+path_build = "build"
+emit_ir    = true
+emit_obj   = true
+
+[diag]
+print_tokens = false
+print_ast    = false
