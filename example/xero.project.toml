@@ -1,4 +1,7 @@
 
+#   xero.project.toml
+#   Comment shows the default
+
 name    = "example"
 entry   = "main.xe"
 profile = "debug"

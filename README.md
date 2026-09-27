@@ -26,13 +26,14 @@
 
 ## 关于项目
 
-Xero 是一门静态类型编程语言。你可以在 `example/main.xe` 找到部分示例源代码.
+Xero 是一门静态类型编程语言。
 
-项目包含 Xero 的设计文档及其工具链。
+项目包含 Xero 的工具链及其设计文档，你可以：
 
-要执行程序，请参阅下文的 **编译与启动**。
+- 在 `example/` 中浏览示例项目；
+- 在 [Wiki](https://github.com/Fooxygen/Xero/wiki) 中获取更多内容来了解 Xero；
 
-你可以在 [Wiki](https://github.com/Fooxygen/Xero/wiki) 中获取更多内容来了解 Xero。
+要执行程序，请参阅下文的 **编译与运行**。
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
@@ -67,68 +68,38 @@ Xero 是一门静态类型编程语言。你可以在 `example/main.xe` 找到�
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
-## 编译与启动
+## 编译与运行
 
 > 暂只提供 **Visual Studio Code** 环境的参考步骤。
 
-Debug 与 Release 使用不同的 CMake 配置，分别输出到 `build-debug/` 与 `build-release/`。
+### 编译
 
-以下任务均以 `example/main.xe` 作为源代码文件，编译成功后自动启动生成的程序。你可以参照这些任务并仿写。
+分为 **Debug** 和 **Release** 预设。
 
-### `Debug Xero`：
-```json
-{
-    "label": "Debug Xero",
-    "type": "shell",
-    "command": [
-        "${workspaceFolder}/build-debug/bin/xero.exe",
-        "${workspaceFolder}/example/main.xe",
-        "&&",
-        "${workspaceFolder}/build-debug/bin/build/main/main.exe"
-    ],
-    "options": {
-        "cwd": "${workspaceFolder}/build-debug/bin",
-        "shell": {
-            "executable": "cmd.exe",
-            "args": ["/d", "/c"]
-        }
-    }
-}
-```
+- **Debug**：可执行程序位于 `build-debug/bin/xero.exe`；
+- **Release**：可执行程序位于 `build-release/bin/xero.exe`；
 
-### `Debug Xero (Token and Ast)`：
+### 运行
 
-需要输出 Token 流与抽象语法树时使用
+使用示例项目 `example/` 展示 Xero 编译的方式和产物，结构如下。
 
-```json
-{
-    "label": "Debug Xero (Token and Ast)",
-    "type": "shell",
-    "command": [
-        "${workspaceFolder}/build-debug/bin/xero.exe",
-        "${workspaceFolder}/example/main.xe",
-        "--tok",
-        "--ast",
-        "&&",
-        "${workspaceFolder}/build-debug/bin/build/main/main.exe"
-    ],
-    "options": {
-        "cwd": "${workspaceFolder}/build-debug/bin",
-        "shell": {
-            "executable": "cmd.exe",
-            "args": ["/d", "/c"]
-        }
-    }
-}
-```
+- `main.xe`：源代码文件；
+- `xero.project.toml`：项目配置文件；
 
-Release 版本对应 `Release Xero` 与 `Release Xero (Token and Ast)` 任务。
+#### 编译示例项目
 
-### 输出
+使用 `tasks.json` 中的任务：
+- **Xero Debug**：使用 **Debug** 预设的 Xero 编译示例项目；
+- **Xero Release**：使用 **Release** 预设的 Xero 编译示例项目；
 
-可执行文件位于 `build-release/bin/xero.exe`。
+#### 运行示例产物
 
-编译产物输出到 `build-<config>/bin/build/main/main.exe`。
+使用 `tasks.json` 中的任务：
+- **Example Debug**：快捷启动 `example/build/debug/example.exe`；
+- **Example Release**：快捷启动 `example/build/release/example.exe`；
+
+> [!WARNING]
+> 项目配置文件里的 `profile` 决定优化级别与产物目录，与用哪个 Xero 预设编译无关。
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
