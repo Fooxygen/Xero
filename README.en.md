@@ -35,17 +35,6 @@ You can find more information about Xero on the [Wiki](https://github.com/Fooxyg
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
-## Build Stack
-
-| Category       | Technology | Version |
-| -              | -          | -       |
-| Language       | C++        | 23      |
-| Build System   | CMake      | 3.21+   |
-| Build Tools    | Ninja      | 1.13.2   |
-| Xcompiler       | MinGW-w64  | 16.1.0  |
-
-<p align="right"><a href="#readme-top">⭱ Back to top</a></p>
-
 ## Architecture
 
 | Module | Task |
@@ -57,17 +46,29 @@ You can find more information about Xero on the [Wiki](https://github.com/Fooxyg
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
-## Framework
+## Build
+
+| Category       | Technology | Version |
+| -              | -          | -       |
+| Language       | C++        | 23      |
+| Build System   | CMake      | 3.21+   |
+| Build Tools    | Ninja      | 1.13.2   |
+| Xcompiler       | MinGW-w64  | 16.1.0  |
+
+<p align="right"><a href="#readme-top">⭱ Back to top</a></p>
+
+## Dependency
 
 | Module | Task | Version |
 | - | - | - |
-| LLVM | IR optimization, object file generation | 22.1.8 |
+| LLVM | IR Optimization, Object File Generation | 22.1.8 |
+| toml++ | Configuration File Parsing | 3.4.0 |
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
 ## Build & Run
 
-> The following steps assume a Visual Studio Code environment.
+> The following steps assume a **Visual Studio Code** environment.
 
 Debug and Release use different CMake configurations, outputting to `build-debug/` and `build-release/` respectively.
 

@@ -36,17 +36,6 @@ Xero 是一门静态类型编程语言。你可以在 `example/main.xe` 找到�
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
-## 构建技术
-
-| 类别 | 技术 | 版本 |
-| - | - | - |
-| 开发语言 | C++ | 23 |
-| 构建系统 | CMake | 3.21+ |
-| 构建工具 | Ninja | 1.13.2 |
-| 编译工具链 | MinGW-w64 | 16.1.0 |
-
-<p align="right"><a href="#readme-top">⭱ Back to top</a></p>
-
 ## 架构
 
 | 模块 | 任务 |
@@ -58,16 +47,29 @@ Xero 是一门静态类型编程语言。你可以在 `example/main.xe` 找到�
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
-## 框架
+## 构建
+
+| 类别 | 技术 | 版本 |
+| - | - | - |
+| 开发语言 | C++ | 23 |
+| 构建系统 | CMake | 3.21+ |
+| 构建工具 | Ninja | 1.13.2 |
+| 编译工具链 | MinGW-w64 | 16.1.0 |
+
+<p align="right"><a href="#readme-top">⭱ Back to top</a></p>
+
+## 依赖
+
 | 模块 | 任务 | 版本 |
 | - | - | - |
 | LLVM | IR 优化、目标文件生成 | 22.1.8 |
+| toml++ | 配置文件解析 | 3.4.0 |
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
 ## 编译与启动
 
-> 暂只提供 Visual Studio Code 环境的参考步骤。
+> 暂只提供 **Visual Studio Code** 环境的参考步骤。
 
 Debug 与 Release 使用不同的 CMake 配置，分别输出到 `build-debug/` 与 `build-release/`。
 
