@@ -25,13 +25,14 @@ English |
 
 ## About
 
-Xero is a statically typed programming language. You can find some sample source code at `example/main.xe`.
+Xero is a statically typed programming language.
 
-The repository includes the language specification and its toolchain.
+The project includes Xero's toolchain and its design documents. You can:
 
-To execute a program, refer to **Build & Run** below.
+- browse the sample project in `example/`;
+- find more information about Xero on the [Wiki](https://github.com/Fooxygen/Xero/wiki);
 
-You can find more information about Xero on the [Wiki](https://github.com/Fooxygen/Xero/wiki).
+To run a program, refer to **Build & Run** below.
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
@@ -70,64 +71,34 @@ You can find more information about Xero on the [Wiki](https://github.com/Fooxyg
 
 > The following steps assume a **Visual Studio Code** environment.
 
-Debug and Release use different CMake configurations, outputting to `build-debug/` and `build-release/` respectively.
+### Build
 
-The following tasks all use `example/main.xe` as the source file and automatically launch the generated program once compilation succeeds. You can refer to these tasks and write your own.
+Available as the **Debug** and **Release** presets.
 
-### `Debug Xero`:
-```json
-{
-    "label": "Debug Xero",
-    "type": "shell",
-    "command": [
-        "${workspaceFolder}/build-debug/bin/xero.exe",
-        "${workspaceFolder}/example/main.xe",
-        "&&",
-        "${workspaceFolder}/build-debug/bin/build/main/main.exe"
-    ],
-    "options": {
-        "cwd": "${workspaceFolder}/build-debug/bin",
-        "shell": {
-            "executable": "cmd.exe",
-            "args": ["/d", "/c"]
-        }
-    }
-}
-```
+- **Debug**: the executable is located at `build-debug/bin/xero.exe`;
+- **Release**: the executable is located at `build-release/bin/xero.exe`;
 
-### `Debug Xero (Token and Ast)`:
+### Run
 
-Use this when the token stream and the abstract syntax tree need to be printed.
+The sample project `example/` is used to demonstrate how Xero compiles and what it produces; its structure is as follows.
 
-```json
-{
-    "label": "Debug Xero (Token and Ast)",
-    "type": "shell",
-    "command": [
-        "${workspaceFolder}/build-debug/bin/xero.exe",
-        "${workspaceFolder}/example/main.xe",
-        "--tok",
-        "--ast",
-        "&&",
-        "${workspaceFolder}/build-debug/bin/build/main/main.exe"
-    ],
-    "options": {
-        "cwd": "${workspaceFolder}/build-debug/bin",
-        "shell": {
-            "executable": "cmd.exe",
-            "args": ["/d", "/c"]
-        }
-    }
-}
-```
+- `main.xe`: source file;
+- `xero.project.toml`: project configuration file;
 
-The Release build corresponds to the `Release Xero` and `Release Xero (Token and Ast)` tasks.
+#### Compile the Sample Project
 
-### Output
+Using the tasks in `tasks.json`:
+- **Xero Debug**: compile the sample project with the **Debug** preset of Xero;
+- **Xero Release**: compile the sample project with the **Release** preset of Xero;
 
-The executable is located at `build-release/bin/xero.exe`.
+#### Run the Sample Output
 
-The compiled program is output to `build-<config>/bin/build/main/main.exe`.
+Using the tasks in `tasks.json`:
+- **Example Debug**: quickly launch `example/build/debug/example.exe`;
+- **Example Release**: quickly launch `example/build/release/example.exe`;
+
+> [!WARNING]
+> The `profile` in the project configuration file determines the optimization level and the output directory, independent of which Xero preset is used to compile.
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
