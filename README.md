@@ -62,7 +62,7 @@ Xero 是一门静态类型编程语言。你可以在 `example/main.xe` 找到�
 
 | 模块 | 任务 | 版本 |
 | - | - | - |
-| LLVM | IR 优化、目标文件生成 | 22.1.8 |
+| LLVM | IR 优化、目标代码生成 | 22.1.8 |
 | toml++ | 配置文件解析 | 3.4.0 |
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>

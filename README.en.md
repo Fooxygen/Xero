@@ -61,7 +61,7 @@ You can find more information about Xero on the [Wiki](https://github.com/Fooxyg
 
 | Module | Task | Version |
 | - | - | - |
-| LLVM | IR Optimization, Object File Generation | 22.1.8 |
+| LLVM | IR Optimization, Object Code Generation | 22.1.8 |
 | toml++ | Configuration File Parsing | 3.4.0 |
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>

@@ -9,6 +9,8 @@
 
 #include "llvm/Support/Program.h"
 
+#include "common/config.hpp"
+#include "common/log.hpp"
 #include "common/defs/ast.hpp"
 #include "sema/defs/fn.hpp"
 #include "xcompiler/backend/backend.hpp"
@@ -21,17 +23,13 @@ namespace xcompiler {
 
     class Xcompiler {
     public:
-        void Run(const std::string& module_name, AstNode& node, sema::FnTable& fn_table) {
+        void Run(const Config& config, AstNode& node, sema::FnTable& fn_table) {
 
             // Directories
-            auto path = std::filesystem::path(std::format(
-                "build/{}", module_name
-            ));
-
-            auto path_ir  = path / "ir";
-            auto path_obj = path / "obj";
-            std::filesystem::create_directories(path_ir);
-            std::filesystem::create_directories(path_obj);
+            auto module_name = config.project_.name_;
+            auto path =
+                config.project_.build_.path_ /
+                config.project_.profile_.name_;
 
             // TypeImpl
             TypeImplTable::Init();
@@ -43,16 +41,23 @@ namespace xcompiler {
             Backend backend;
 
             // IR Gen and Output
+            auto path_ir = path / "ir";
             IRGen irgen(module_name);
             backend.ModuleSet(*irgen.llvm_module());
             irgen.Exec(node);
-            backend.IROutput((path_ir / (module_name + ".ll")).string(), *irgen.llvm_module());
+
+            if (config.project_.build_.emit_ir_) {
+                std::filesystem::create_directories(path_ir);
+                backend.IROutput((path_ir / (module_name + ".ll")).string(), *irgen.llvm_module());
+            }
 
             // IR Optimize
             Optimizer optimizer;
-            optimizer.Run(*irgen.llvm_module(), llvm::OptimizationLevel::O2);
+            optimizer.Run(*irgen.llvm_module(), config.project_.profile_.opt_level_);
 
             // Object Code Gen and Output
+            auto path_obj = path / "obj";
+            std::filesystem::create_directories(path_obj);
             backend.ObjectCodeOutput((path_obj / (module_name + ".o")).string(), *irgen.llvm_module());
 
             // Linker
@@ -61,7 +66,7 @@ namespace xcompiler {
                 throw LogErr(LogModule::Xcompiler, "failed to find g++");
             }
             
-            auto link_status =  llvm::sys::ExecuteAndWait(*gpp, {
+            auto link_status = llvm::sys::ExecuteAndWait(*gpp, {
                 *gpp, (path_obj / (module_name + ".o")).string(),
                 "-o", (path / (module_name + ".exe")).string(),
             });

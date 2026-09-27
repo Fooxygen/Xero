@@ -49,8 +49,8 @@ add_executable(xero
 
 target_include_directories(xero PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(xero SYSTEM PRIVATE
+    ${XERO_ROOT}
     ${LLVM_INCLUDE_DIRS}
-    "${XERO_ROOT}/deps/vendor"
 )
 target_link_libraries(xero PRIVATE ${XERO_LLVM_LIBS} ${LLVM_SYSTEM_LIBS})
 target_compile_options(xero PRIVATE

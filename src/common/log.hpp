@@ -25,6 +25,7 @@
 enum class LogModule {
     Undefined,
     File,
+    Config,
     Lexer,
     Parser,
     Sema,
@@ -58,6 +59,7 @@ public:
         using enum LogModule;
         switch (module_) {
             case File:      return "file";
+            case Config:    return "config";
             case Lexer:     return "lexer";
             case Parser:    return "parser";
             case Sema:      return "sema";

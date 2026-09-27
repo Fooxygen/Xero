@@ -1,7 +1,20 @@
+
+# IDE
+
 .vscode/
 !.vscode/launch.json
 !.vscode/settings.json
 !.vscode/tasks.json
+
+# Build
+
 build-release/
 build-debug/
+
+# CMake
+
 src/CMakeUserPresets.json
+
+# Example
+
+example/build/
