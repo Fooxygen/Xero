@@ -24,11 +24,11 @@
   
 </div>
 
-## 关于项目
+## 关于仓库
 
 Xero 是一门静态类型编程语言。
 
-项目包含 Xero 的工具链及其设计文档，你可以：
+仓库包含 Xero 的工具链及其设计文档，你可以：
 
 - 在 `example/` 中浏览示例项目；
 - 在 [Wiki](https://github.com/Fooxygen/Xero/wiki) 中获取更多内容来了解 Xero；
@@ -81,7 +81,7 @@ Xero 是一门静态类型编程语言。
 
 ### 运行
 
-使用示例项目 `example/` 展示 Xero 编译的方式和产物，结构如下。
+使用示例项目 `example/` 展示编译 Xero 项目的方式与产物，结构如下。
 
 - `main.xe`：源代码文件；
 - `xero.project.toml`：项目配置文件；
