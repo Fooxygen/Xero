@@ -23,11 +23,11 @@ English |
   </p>
 </div>
 
-## About
+## About the Repository
 
 Xero is a statically typed programming language.
 
-The project includes Xero's toolchain and its design documents. You can:
+The repository includes Xero's toolchain and its design documents. You can:
 
 - browse the sample project in `example/`;
 - find more information about Xero on the [Wiki](https://github.com/Fooxygen/Xero/wiki);
@@ -80,7 +80,7 @@ Available as the **Debug** and **Release** presets.
 
 ### Run
 
-The sample project `example/` is used to demonstrate how Xero compiles and what it produces; its structure is as follows.
+The sample project `example/` demonstrates how to compile a Xero project and what it produces; its structure is as follows.
 
 - `main.xe`: source file;
 - `xero.project.toml`: project configuration file;
