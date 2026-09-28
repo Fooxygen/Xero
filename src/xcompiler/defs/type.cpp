@@ -107,6 +107,16 @@ namespace xcompiler {
     llvm::Value* TypeImplTable::Cast(IRGen& gen, llvm::Value* val, sema::Type* from, sema::Type* to) {
         if (from == to) return val;
 
+        // Fail to cast parameterizable basic type to parametric type
+        // Return val
+        // e.g. array -> array[=i32=]
+        if (from->type_using() == sema::Type::Using::Basic &&
+            to->type_using()   == sema::Type::Using::Parametric &&
+            to->BasicTypeGet() == from)
+        {
+            return val;
+        }
+
         auto from_basic = (sema::BasicType*)from->BasicTypeGet();
         const sema::FnSign* method_sign = nullptr;
 

@@ -272,36 +272,56 @@ namespace xcompiler {
 
     llvm::Value* IRGen::Exec(ArrayExpr& node) {
         auto& exprs = node.elems_->exprs_;
-        
-        // Elem
-        size_t len       = exprs.size();
-        size_t size_elem = llvm_module()->getDataLayout().getTypeAllocSize(
-            LLVMType(node.elem_type_)
-        );
-        size_t size      = len * size_elem;
 
-        // Data
-        auto data = llvm_builder().CreateCall(LibC_malloc(*this), {
-            llvm_builder().getInt64(size)
-        });
-        for (size_t i = 0; i < len; i++) {
-            auto addr = llvm_builder().CreateInBoundsGEP(
-                llvm_builder().getInt8Ty(), data, {
-                    llvm_builder().getInt64(i * size_elem)
-                }
+        // Empty
+        if (!node.elem_type_) {
+            auto gen_type  = LLVMType(node.resolved_type_);
+            auto gen_val   = (llvm::Value*)llvm::UndefValue::get(gen_type);
+            auto null_data = llvm::ConstantPointerNull::get(
+                llvm::PointerType::get(llvm_context(), 0)
             );
-            llvm_builder().CreateStore(ExprLoad(*exprs[i]), addr);
+
+            gen_val = llvm_builder().CreateInsertValue(gen_val, null_data, 0);
+            gen_val = llvm_builder().CreateInsertValue(
+                gen_val, llvm_builder().getInt64(0), 1
+            );
+            
+            return gen_val;
         }
 
-        // Generated Value
-        auto gen_type = LLVMType(node.resolved_type_);
-        auto gen_val  = (llvm::Value*)llvm::UndefValue::get(gen_type);
-        gen_val = llvm_builder().CreateInsertValue(gen_val, data, 0);
-        gen_val = llvm_builder().CreateInsertValue(
-            gen_val, llvm_builder().getInt64(len), 1
-        );
-        
-        return gen_val;
+        // Non-Empty
+        else {
+
+            // Elem
+            size_t len       = exprs.size();
+            size_t size_elem = llvm_module()->getDataLayout().getTypeAllocSize(
+                LLVMType(node.elem_type_)
+            );
+            size_t size      = len * size_elem;
+
+            // Data
+            auto data = llvm_builder().CreateCall(LibC_malloc(*this), {
+                llvm_builder().getInt64(size)
+            });
+            for (size_t i = 0; i < len; i++) {
+                auto addr = llvm_builder().CreateInBoundsGEP(
+                    llvm_builder().getInt8Ty(), data, {
+                        llvm_builder().getInt64(i * size_elem)
+                    }
+                );
+                llvm_builder().CreateStore(ExprLoad(*exprs[i]), addr);
+            }
+
+            // Generated Value
+            auto gen_type = LLVMType(node.resolved_type_);
+            auto gen_val  = (llvm::Value*)llvm::UndefValue::get(gen_type);
+            gen_val = llvm_builder().CreateInsertValue(gen_val, data, 0);
+            gen_val = llvm_builder().CreateInsertValue(
+                gen_val, llvm_builder().getInt64(len), 1
+            );
+            
+            return gen_val;
+        }
     }
 
     llvm::Value* IRGen::Exec(FnCallExpr& node) {

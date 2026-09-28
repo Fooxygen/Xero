@@ -39,13 +39,20 @@ namespace xcompiler {
             auto& builder  = gen.llvm_builder();
             auto& module   = *gen.llvm_module();
 
-            auto addr           = gen.ArgAddr(arg);
-            auto type           = (sema::ParametricType*)arg.ReferenceUnwrap();
-            auto llvm_type      = gen.LLVMType(type->BasicTypeGet());
-            auto elem_type      = type->params()[0];
-            auto elem_type_impl = TypeImplTable::Lookup(elem_type);
-            auto elem_size      = module.getDataLayout().getTypeAllocSize(gen.LLVMType(elem_type));
-            auto val            = builder.CreateLoad(llvm_type, addr);
+            auto addr      = gen.ArgAddr(arg);
+            auto type      = arg.ReferenceUnwrap();
+            auto llvm_type = gen.LLVMType(type->BasicTypeGet());
+            auto val       = builder.CreateLoad(llvm_type, addr);
+
+            sema::Type* elem_type      = nullptr;
+            TypeImpl*   elem_type_impl = nullptr;
+            size_t      elem_size      = 0;
+
+            if (auto parametric_type = dynamic_cast<sema::ParametricType*>(type)) {
+                elem_type      = parametric_type->params()[0];
+                elem_type_impl = TypeImplTable::Lookup(elem_type);
+                elem_size      = module.getDataLayout().getTypeAllocSize(gen.LLVMType(elem_type));
+            }
             
             return {
                 addr, type, llvm_type, elem_type, elem_type_impl, elem_size,
