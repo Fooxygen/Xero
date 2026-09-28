@@ -7,15 +7,15 @@ entry   = "main.xe"
 profile = "debug"
 
 [profiles.debug]
-opt_level = "o0"
+opt_level = "o0"        # "o0"
 
 [profiles.release]
 opt_level = "o3"
 
 [build]
-path    = "build"
-emit_ir = true
+path    = "build"       # "build"
+emit_ir = true          # true
 
 [diag]
-print_tokens = false
-print_ast    = false
+print_tokens = false    # false
+print_ast    = false    # false
