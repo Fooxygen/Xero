@@ -11,7 +11,7 @@ jobs:
     build-windows:
         runs-on: windows-latest
         steps:
-            -   uses: actions/checkout@v4
+            -   uses: actions/checkout@v7
 
             -   uses: msys2/setup-msys2@v2
                 with:
@@ -37,7 +37,7 @@ jobs:
                     zip -j xero-windows-x64.zip build/bin/xero.exe
 
             -   name: Create Draft Release
-                uses: softprops/action-gh-release@v2
+                uses: softprops/action-gh-release@v3
                 with:
                     files: |
                         xero-windows-x64.tar.gz
