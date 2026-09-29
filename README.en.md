@@ -71,6 +71,10 @@ To run a program, refer to **Build & Run** below.
 
 > The following steps assume a **Visual Studio Code** environment.
 
+### Setup
+
+Copy `src/CMakeUserPresets.json.example` to `src/CMakeUserPresets.json`, and fill in the machine-specific `CMAKE_CXX_COMPILER` and `LLVM_DIR`.
+
 ### Build
 
 Available as the **Debug** and **Release** presets.

@@ -72,6 +72,10 @@ Xero 是一门静态类型编程语言。
 
 > 暂只提供 **Visual Studio Code** 环境的参考步骤。
 
+### 准备
+
+复制 `src/CMakeUserPresets.json.example` 为 `src/CMakeUserPresets.json`，填入本机的 `CMAKE_CXX_COMPILER` 与 `LLVM_DIR`。
+
 ### 编译
 
 分为 **Debug** 和 **Release** 预设。

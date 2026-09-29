@@ -21,10 +21,8 @@ namespace xcompiler {
     {
         // Configure
         
-        llvm::InitializeAllTargetInfos();
-        llvm::InitializeAllTargets();
-        llvm::InitializeAllTargetMCs();
-        llvm::InitializeAllAsmPrinters();
+        llvm::InitializeNativeTarget();
+        llvm::InitializeNativeTargetAsmPrinter();
         
         // └─ Target
         std::string target_err = "";

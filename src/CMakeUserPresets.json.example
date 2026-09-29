@@ -1,0 +1,33 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "mingw-debug-x64",
+            "inherits": "mingw-debug-x64-template",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "",
+                "LLVM_DIR": ""
+            }
+        },
+        {
+            "name": "mingw-release-x64",
+            "inherits": "mingw-release-x64-template",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "",
+                "LLVM_DIR": ""
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "mingw-debug-x64",
+            "inherits": "mingw-debug-x64-template",
+            "configurePreset": "mingw-debug-x64"
+        },
+        {
+            "name": "mingw-release-x64",
+            "inherits": "mingw-release-x64-template",
+            "configurePreset": "mingw-release-x64"
+        }
+    ]
+}

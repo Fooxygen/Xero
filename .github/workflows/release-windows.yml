@@ -15,11 +15,12 @@ jobs:
 
             -   uses: msys2/setup-msys2@v2
                 with:
-                    msystem: MINGW64
+                    msystem: UCRT64
                     install: >-
-                        mingw-w64-x86_64-gcc
-                        mingw-w64-x86_64-cmake
-                        mingw-w64-x86_64-ninja
+                        mingw-w64-ucrt-x86_64-gcc
+                        mingw-w64-ucrt-x86_64-cmake
+                        mingw-w64-ucrt-x86_64-ninja
+                        mingw-w64-ucrt-x86_64-llvm
                         zip
 
             -   name: Configure and Build
@@ -27,14 +28,23 @@ jobs:
                 run: |
                     cmake -S src -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
                         -DCMAKE_CXX_COMPILER=g++ \
+                        -DLLVM_DIR="$MINGW_PREFIX/lib/cmake/llvm" \
                         -DCMAKE_EXE_LINKER_FLAGS="-static -static-libgcc -static-libstdc++"
                     cmake --build build
 
             -   name: Package
                 shell: msys2 {0}
                 run: |
-                    tar -czf xero-windows-x64.tar.gz -C build/bin xero.exe
-                    zip -j xero-windows-x64.zip build/bin/xero.exe
+                    mkdir -p dist
+                    cp build/bin/xero.exe dist/
+                    objdump -p build/bin/xero.exe | sed -n 's/.*DLL Name: //p' | while read -r dll; do
+                        if [ -f "$MINGW_PREFIX/bin/$dll" ]; then
+                            cp "$MINGW_PREFIX/bin/$dll" dist/
+                        fi
+                    done
+                    ls -l dist/
+                    tar -czf xero-windows-x64.tar.gz -C dist .
+                    zip -j xero-windows-x64.zip dist/*
 
             -   name: Create Draft Release
                 uses: softprops/action-gh-release@v3

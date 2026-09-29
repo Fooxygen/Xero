@@ -14,10 +14,10 @@ public:
     };
 
     inline static const Channel     channel_       = Channel::Beta;
-    inline static const std::string channel_iter_  = "2";
+    inline static const std::string channel_iter_  = "1";
 
     inline static const std::string version_major_ = "2026";
-    inline static const std::string version_minor_ = "0";
+    inline static const std::string version_minor_ = "1";
     inline static const std::string version_patch_ = "0";
 
     static std::string ChannelPrint() {
