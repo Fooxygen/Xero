@@ -41,7 +41,7 @@ namespace sema {
 
         void   Declare(std::unique_ptr<Var>&& var) {
             if (var->name_.empty()) {
-                throw LogErr(LogModule::Sema, "empty variable declared name");
+                throw LogErr(LogModule::Sema, "empty variable declared name", var->loc_);
             }
             
             auto& scope = ScopeGet();

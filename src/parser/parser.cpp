@@ -153,7 +153,8 @@ namespace parser {
                     (const uint8_t*)token.lexeme_.data(),
                     token.lexeme_.length(),
                     codepoint,
-                    LogModule::Parser
+                    LogModule::Parser,
+                    token.loc_
                 );
                 sym = Symbol(std::make_unique<CharConst>(codepoint, token.lexeme_), token.loc_);
                 break;

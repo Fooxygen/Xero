@@ -72,7 +72,7 @@ namespace xcompiler {
     //      IdResolve(x): getting address of x
     //      IdResolve(z): getting address of x actually
     llvm::Value*      IRGen::IdResolve(IdExpr& node) {
-        auto var = var_table_.Lookup(node.name_);
+        auto var = var_table_.Lookup(node.name_, node.loc_);
 
         // ReferenceType
         if (dynamic_cast<sema::ReferenceType*>(node.resolved_type_)) {

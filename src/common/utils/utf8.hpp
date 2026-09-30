@@ -15,7 +15,10 @@ private:
     struct Invalid {};
 
 public:
-    static size_t BytesCntGet(uint8_t bytes_first, LogModule log_module) {
+    static size_t BytesCntGet(
+        uint8_t bytes_first,
+        LogModule log_module, std::optional<Loc> loc = std::nullopt
+    ) {
         try {
             if (bytes_first < 0x80) return 1;
             if (bytes_first < 0xc0) throw  Invalid{};
@@ -26,15 +29,18 @@ public:
         } catch (const Invalid&) {
             throw LogErr(log_module, std::format(
                 "invalid utf8 leading byte 0x{:02x}", bytes_first
-            ));
+            ), loc);
         }
     }
 
-    static void   Decode(const uint8_t* bytes, size_t bytes_cnt, uint32_t& out_codepoint, LogModule log_module) {
+    static void   Decode(
+        const uint8_t* bytes, size_t bytes_cnt, uint32_t& out_codepoint,
+        LogModule log_module, std::optional<Loc> loc = std::nullopt
+    ) {
         try {
             if (bytes_cnt == 0) throw Invalid{};
 
-            auto cnt = BytesCntGet(bytes[0], log_module);
+            auto cnt = BytesCntGet(bytes[0], log_module, loc);
             if (cnt > bytes_cnt) throw Invalid{};
 
             uint8_t bytes_first_mask[] = {
@@ -49,7 +55,7 @@ public:
             }
 
         } catch (const Invalid&) {
-            throw LogErr(log_module, "invalid utf8 sequence");
+            throw LogErr(log_module, "invalid utf8 sequence", loc);
         }
     }
 };

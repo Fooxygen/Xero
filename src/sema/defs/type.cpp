@@ -24,11 +24,11 @@ namespace sema {
         return basic_type != this && basic_type->Is(name);
     }
 
-    void Type::BasicTypeCheck() const {
+    void Type::BasicTypeCheck(std::optional<Loc> loc) const {
         if (type_using_ != Using::Basic) {
             throw LogErr(LogModule::Sema, std::format(
                 "invalid basic type '{}'", name_
-            ));
+            ), loc);
         }
     }
     
@@ -90,7 +90,7 @@ namespace sema {
     }
     
     Type*   TypeTable::ParametricTypeGet(Type* type, const std::vector<Type*>& params, std::optional<Loc> loc) {
-        type->BasicTypeCheck();
+        type->BasicTypeCheck(loc);
         if (params.empty()) return Lookup(type->name(), loc);
 
         auto basic_type = (BasicType*)type;
@@ -200,12 +200,12 @@ namespace sema {
         return res;
     }
 
-    Fn*     TypeTable::MethodLookup(Type* type, const std::string& name) {
+    Fn*     TypeTable::MethodLookup(Type* type, const std::string& name, std::optional<Loc> loc) {
         auto method = MethodLookupTry(type, name);
         if (!method) {
             throw LogErr(LogModule::Sema, std::format(
                 "undefined method '{}'", name
-            ));
+            ), loc);
         }
         return method;
     }

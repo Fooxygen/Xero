@@ -54,7 +54,7 @@ namespace sema {
         bool Is(std::string_view name);
 
         virtual Type* BasicTypeGet() = 0;
-        void          BasicTypeCheck() const;
+        void          BasicTypeCheck(std::optional<Loc> loc = std::nullopt) const;
 
         virtual Type* ReferenceUnwrap() = 0;
     };
@@ -158,7 +158,7 @@ namespace sema {
         static Type*  BindingTypeReplace(Type* type, BasicType* owner, const std::vector<Type*>& params_replace);
         static FnSign SignInstantiate(const FnSign& sign, BasicType* owner, const std::vector<Type*>& params_replace);
         
-        static Fn*    MethodLookup(Type* type, const std::string& name);
+        static Fn*    MethodLookup(Type* type, const std::string& name, std::optional<Loc> loc = std::nullopt);
         static Fn*    MethodLookupTry(Type* type, const std::string& name);
 
         static void   CastRecompute();

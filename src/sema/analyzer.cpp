@@ -122,8 +122,8 @@ namespace sema {
         {
             if (node.oper_type_ == Neg) {
                 auto ltype  = node.lexpr_->resolved_type_->ReferenceUnwrap();
-                auto method = TypeTable::MethodLookup(ltype, "@neg");
-                auto sign   = method->SignLookup(ltype, {});
+                auto method = TypeTable::MethodLookup(ltype, "@neg", node.loc_);
+                auto sign   = method->SignLookup(ltype, {}, node.loc_);
                 node.resolved_type_ = sign->return_type();
                 return;
             }
@@ -141,7 +141,7 @@ namespace sema {
                 auto caller_type = node.lexpr_->resolved_type_;
                 auto idx_type    = node.rexpr_->resolved_type_->ReferenceUnwrap();
 
-                auto method = TypeTable::MethodLookup(caller_type, "@pick");
+                auto method = TypeTable::MethodLookup(caller_type, "@pick", node.loc_);
                 auto sign   = method->SignLookup(caller_type, { idx_type }, node.loc_);
                 node.resolved_type_ = sign->return_type();
                 
@@ -285,7 +285,7 @@ namespace sema {
 
         // Callee
         auto  callee = node.callee_->name_;
-        auto  method = TypeTable::MethodLookup(caller_type, callee);
+        auto  method = TypeTable::MethodLookup(caller_type, callee, node.callee_->loc_);
         auto  sign   = method->SignLookup(caller_type, args_type, node.callee_->loc_);
         
         node.resolved_type_ = sign->return_type();

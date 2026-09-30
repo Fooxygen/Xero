@@ -45,13 +45,13 @@ namespace xcompiler {
         methods_[method_sign] = std::make_unique<LangFnImpl>(impl);
     }
 
-    FnImpl*      TypeImpl::MethodLookup(const sema::FnSign* sign) {
+    FnImpl*      TypeImpl::MethodLookup(const sema::FnSign* sign, std::optional<Loc> loc) {
         auto fnimpl = MethodLookupTry(sign);
         if (!fnimpl) {
             throw LogErr(LogModule::Xcompiler, std::format(
                 "undefined implementation of method {} for type '{}', signature it attempts to obtain is {}",
                 sign->name(), def_->name(), sign->ParamsPrint()
-            ));
+            ), loc);
         }
         return fnimpl;
     }
@@ -61,16 +61,19 @@ namespace xcompiler {
         return it == methods_.end() ? nullptr : it->second.get();
     }
 
-    llvm::Value* TypeImpl::MethodCall(IRGen& gen, const std::string& name, const std::vector<Arg>& args) {
-        auto  method = sema::TypeTable::MethodLookup(args[0].type(), name);
+    llvm::Value* TypeImpl::MethodCall(
+        IRGen& gen, const std::string& name, const std::vector<Arg>& args,
+        std::optional<Loc> loc
+    ) {
+        auto  method = sema::TypeTable::MethodLookup(args[0].type(), name, loc);
 
         std::vector<sema::Type*> args_type = {};
         for (size_t i = 1; i < args.size(); i++) {      // elem[0] is caller
             args_type.emplace_back(args[i].type());
         }
         
-        auto  method_sign = method->SignLookup(args[0].type(), args_type);
-        auto  method_impl = MethodLookup(method_sign);
+        auto  method_sign = method->SignLookup(args[0].type(), args_type, loc);
+        auto  method_impl = MethodLookup(method_sign, loc);
 
         if (auto native = dynamic_cast<NativeFnImpl*>(method_impl)) {
             return native->impl()(gen, args);
@@ -85,7 +88,7 @@ namespace xcompiler {
 
         throw LogErr(LogModule::Xcompiler, std::format(
             "unsupported method '{}'", name
-        ));
+        ), loc);
     }
 
     // TypeImplTable
@@ -104,7 +107,11 @@ namespace xcompiler {
         Init_range();
     }
 
-    llvm::Value* TypeImplTable::Cast(IRGen& gen, llvm::Value* val, sema::Type* from, sema::Type* to) {
+    llvm::Value* TypeImplTable::Cast(
+        IRGen& gen, llvm::Value* val,
+        sema::Type* from, sema::Type* to,
+        std::optional<Loc> loc
+    ) {
         if (from == to) return val;
 
         // Fail to cast parameterizable basic type to parametric type
@@ -137,11 +144,11 @@ namespace xcompiler {
         if (!method_sign) {
             throw LogErr(LogModule::Xcompiler, std::format(
                 "cannot cast type from '{}' to '{}'", from->name(), to->name()
-            ));
+            ), loc);
         }
 
-        auto from_impl   = TypeImplTable::Lookup(from_basic);
-        auto method_impl = from_impl->MethodLookup(method_sign);
+        auto from_impl   = TypeImplTable::Lookup(from_basic, loc);
+        auto method_impl = from_impl->MethodLookup(method_sign, loc);
         auto caller     = gen.ArgRefMake(val, from);
 
         if (auto native = dynamic_cast<NativeFnImpl*>(method_impl)) {

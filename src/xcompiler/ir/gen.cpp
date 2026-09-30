@@ -71,7 +71,7 @@ namespace xcompiler {
                 auto val_type    = node.value_->resolved_type_->ReferenceUnwrap();
 
                 if (auto idexpr = dynamic_cast<IdExpr*>(node.value_.get())) {
-                    val = TypeImplTable::Lookup(val_type)->MethodCall(*this, "@copy", {
+                    val = TypeImplTable::Lookup(val_type, node.loc_)->MethodCall(*this, "@copy", {
                         Arg(IdResolve(*idexpr), sema::TypeTable::ReferenceTypeGet(val_type))
                     });
                 }
@@ -80,7 +80,7 @@ namespace xcompiler {
                 }
 
                 llvm_builder().CreateStore(
-                    TypeImplTable::Cast(*this, val, val_type, var_type),
+                    TypeImplTable::Cast(*this, val, val_type, var_type, node.loc_),
                     var_slot
                 );
             }
@@ -95,7 +95,7 @@ namespace xcompiler {
 
         if (node.oper_type_ == Pick) {
             auto caller_type      = node.lexpr_->resolved_type_;
-            auto caller_type_impl = TypeImplTable::Lookup(caller_type);
+            auto caller_type_impl = TypeImplTable::Lookup(caller_type, node.loc_);
             auto idx_type         = node.rexpr_->resolved_type_->ReferenceUnwrap();
 
             llvm::Value* caller_addr = nullptr;
@@ -118,19 +118,19 @@ namespace xcompiler {
             if (idx_type->Is("range")) {
                 return caller_type_impl->MethodCall(*this, "@pick", {
                     caller_arg, Arg(ExprLoad(*node.rexpr_), idx_type)
-                });
+                }, node.loc_);
             }
             else {
                 auto i64_    = sema::TypeTable::Lookup("i64");
-                auto idx_val = TypeImplTable::Cast(*this, ExprLoad(*node.rexpr_), idx_type, i64_);
-                return caller_type_impl->MethodCall(
-                    *this, "@pick", { caller_arg, Arg(idx_val, i64_) }
-                );
+                auto idx_val = TypeImplTable::Cast(*this, ExprLoad(*node.rexpr_), idx_type, i64_, node.loc_);
+                return caller_type_impl->MethodCall(*this, "@pick", {
+                    caller_arg, Arg(idx_val, i64_)
+                }, node.loc_);
             }
         }
 
         auto call = [&](sema::Type* type, const std::string& name, std::vector<Arg> args) {
-            return TypeImplTable::Lookup(type)->MethodCall(*this, name, std::move(args));
+            return TypeImplTable::Lookup(type, node.loc_)->MethodCall(*this, name, std::move(args), node.loc_);
         };
 
         // Unary
@@ -204,8 +204,8 @@ namespace xcompiler {
                 ), node.loc_);
             }
 
-            lval = TypeImplTable::Cast(*this, lval, ltype, com_type);
-            rval = TypeImplTable::Cast(*this, rval, rtype, com_type);
+            lval = TypeImplTable::Cast(*this, lval, ltype, com_type, node.loc_);
+            rval = TypeImplTable::Cast(*this, rval, rtype, com_type, node.loc_);
 
             switch (node.oper_type_) {
                 case Plus:  return call(com_type, "@plus",  { ArgRefMake(lval, com_type), Arg(rval, com_type) });
@@ -234,15 +234,17 @@ namespace xcompiler {
         auto iter_llvm_type = LLVMType(iter_type);
 
         auto left_val = TypeImplTable::Cast(*this,
-            ExprLoad(*node.lexpr_), node.lexpr_->resolved_type_->ReferenceUnwrap(), iter_type
+            ExprLoad(*node.lexpr_), node.lexpr_->resolved_type_->ReferenceUnwrap(), iter_type, node.loc_
         );
         auto right_val = TypeImplTable::Cast(*this,
-            ExprLoad(*node.rexpr_), node.rexpr_->resolved_type_->ReferenceUnwrap(), iter_type
+            ExprLoad(*node.rexpr_), node.rexpr_->resolved_type_->ReferenceUnwrap(), iter_type, node.loc_
         );
         
         llvm::Value* step_val = nullptr;
         if (node.step_) {
-            step_val = TypeImplTable::Cast(*this, Exec(*node.step_), node.step_->resolved_type_->ReferenceUnwrap(), iter_type);
+            step_val = TypeImplTable::Cast(*this,
+                Exec(*node.step_), node.step_->resolved_type_->ReferenceUnwrap(), iter_type, node.loc_
+            );
         }
         else {
             if (iter_type->Is("i32") || iter_type->Is("i64")) {
@@ -387,7 +389,7 @@ namespace xcompiler {
         
         // Caller
         auto caller_type      = node.caller_->resolved_type_;
-        auto caller_type_impl = TypeImplTable::Lookup(caller_type->BasicTypeGet());
+        auto caller_type_impl = TypeImplTable::Lookup(caller_type->BasicTypeGet(), node.loc_);
 
         llvm::Value* caller_addr = nullptr;
         {
@@ -421,7 +423,7 @@ namespace xcompiler {
 
         // Call
         return caller_type_impl->MethodCall(
-            *this, node.callee_->name_, args
+            *this, node.callee_->name_, args, node.loc_
         );
     }
 
@@ -533,8 +535,14 @@ namespace xcompiler {
             // getting bytes_len from the first byte
 
             auto&  codepoint = codepoints.emplace_back(0);
-            size_t bytes_len = UTF8::BytesCntGet((uint8_t)str[i], LogModule::Xcompiler);
-            UTF8::Decode((const uint8_t *)str.data() + i, str.size() - i, codepoint, LogModule::Xcompiler);
+            size_t bytes_len = UTF8::BytesCntGet((uint8_t)str[i], LogModule::Xcompiler, node.loc_);
+            UTF8::Decode(
+                (const uint8_t *)str.data() + i,
+                str.size() - i,
+                codepoint,
+                LogModule::Xcompiler,
+                node.loc_
+            );
             i += bytes_len;
         }
 
@@ -584,10 +592,10 @@ namespace xcompiler {
             auto val_type = node.value_->resolved_type_->ReferenceUnwrap();
             auto val      = ExprLoad(*node.value_);
 
-            TypeImplTable::Lookup(target_type)->MethodCall(*this, "@assign", {
+            TypeImplTable::Lookup(target_type, node.loc_)->MethodCall(*this, "@assign", {
                 Arg(target_addr, sema::TypeTable::ReferenceTypeGet(target_type)),
                 Arg(val, val_type)
-            });
+            }, node.loc_);
             return nullptr;
         }
 
@@ -608,22 +616,22 @@ namespace xcompiler {
             llvm::Value* val = nullptr;
             auto val_type    = node.value_->resolved_type_->ReferenceUnwrap();
             if (auto idexpr = dynamic_cast<IdExpr*>(node.value_.get())) {
-                val = TypeImplTable::Lookup(val_type)->MethodCall(*this, "@copy", {
+                val = TypeImplTable::Lookup(val_type, node.loc_)->MethodCall(*this, "@copy", {
                     Arg(IdResolve(*idexpr), sema::TypeTable::ReferenceTypeGet(val_type))
-                });
+                }, node.loc_);
             }
             else {
                 val = ExprLoad(*node.value_);
             }
 
             // Release Var's Value
-            TypeImplTable::Lookup(target_type)->MethodCall(*this, "@release", {
+            TypeImplTable::Lookup(target_type, node.loc_)->MethodCall(*this, "@release", {
                 Arg(target_addr, sema::TypeTable::ReferenceTypeGet(target_type))
-            });
+            }, node.loc_);
 
             // Assign
             llvm_builder().CreateStore(
-                TypeImplTable::Cast(*this, val, val_type, target_type),
+                TypeImplTable::Cast(*this, val, val_type, target_type, node.loc_),
                 target_addr
             );
             return nullptr;
@@ -688,7 +696,7 @@ namespace xcompiler {
             auto val = ExprLoad(*node.value_);
             llvm_builder().CreateRet(
                 TypeImplTable::Cast(*this, val,
-                    node.value_->resolved_type_->ReferenceUnwrap(), state_.fn_return_type_
+                    node.value_->resolved_type_->ReferenceUnwrap(), state_.fn_return_type_, node.loc_
                 )
             );
         }
@@ -752,7 +760,7 @@ namespace xcompiler {
         if      (node.data_->resolved_type_->Is("range")) {
             auto range_type     = (sema::ParametricType*)node.data_->resolved_type_->ReferenceUnwrap();
             auto iter_type      = range_type->params()[0];
-            auto iter_type_impl = TypeImplTable::Lookup(iter_type);
+            auto iter_type_impl = TypeImplTable::Lookup(iter_type, node.loc_);
             auto left_val       = llvm_builder().CreateExtractValue(data, 0);
             auto right_val      = llvm_builder().CreateExtractValue(data, 1);
             auto step_val       = llvm_builder().CreateExtractValue(data, 2);
@@ -761,7 +769,7 @@ namespace xcompiler {
             auto cmp = [&](const std::string& name, llvm::Value* a, llvm::Value* b) {
                 return iter_type_impl->MethodCall(*this, name, {
                     ArgRefMake(a, iter_type), Arg(b, iter_type)
-                });
+                }, node.loc_);
             };
 
             // Iterator

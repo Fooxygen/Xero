@@ -37,16 +37,18 @@ namespace xcompiler {
         void    MethodAdd(const std::string& name, NativeFnImpl::Impl impl, const sema::FnSign& sign);
         void    MethodAdd(const std::string& name, LangFnImpl::Impl   impl, const sema::FnSign& sign);
         
-        FnImpl* MethodLookup(const sema::FnSign* sign);
+        FnImpl* MethodLookup(const sema::FnSign* sign, std::optional<Loc> loc = std::nullopt);
         FnImpl* MethodLookupTry(const sema::FnSign* sign);
     
-        llvm::Value* MethodCall(IRGen& gen, const std::string& name, const std::vector<Arg>& args);
+        llvm::Value* MethodCall(
+            IRGen& gen, const std::string& name, const std::vector<Arg>& args,
+            std::optional<Loc> loc = std::nullopt
+        );
     };
 
     class TypeImplTable {
     private:
         static inline std::unordered_map<sema::Type*, std::unique_ptr<TypeImpl>> table_;
-        static inline std::unordered_map<TypeImpl*, sema::Type*>                 table_reverse_;
 
     private:
         // Init
@@ -72,29 +74,22 @@ namespace xcompiler {
             auto impl = table_.emplace(
                 def, std::make_unique<TypeImpl>(std::move(type_impl))
             ).first->second.get();
-            table_reverse_[impl] = def;
             return impl;
         }
-        
-        static TypeImpl*    Lookup(sema::Type* type) {
+        static TypeImpl*    Lookup(sema::Type* type, std::optional<Loc> loc = std::nullopt) {
             auto it = table_.find(type->BasicTypeGet());
             if (it == table_.end()) {
                 throw LogErr(LogModule::Xcompiler, std::format(
                     "undefined implementation of type '{}'", type->name()
-                ));
+                ), loc);
             }
             return it->second.get();
         }
-        static sema::Type*  Lookup(TypeImpl* type_impl) {
-            auto it = table_reverse_.find(type_impl);
-            if (it == table_reverse_.end()) {
-                throw LogErr(LogModule::Xcompiler, std::format(
-                    "undefined type with implementation '{}'", type_impl->name()
-                ));
-            }
-            return it->second;
-        }
     
-        static llvm::Value* Cast(IRGen& gen, llvm::Value* val, sema::Type* from, sema::Type* to);
+        static llvm::Value* Cast(
+            IRGen& gen, llvm::Value* val,
+            sema::Type* from, sema::Type* to,
+            std::optional<Loc> loc = std::nullopt
+        );
     };
 }
