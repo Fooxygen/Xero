@@ -9,7 +9,7 @@ English |
   <img src="https://cdn.jsdelivr.net/gh/Fooxygen/Xero@main/docs/images/brand_xero.png" style="margin=0">
   <h3 align="center">Xero</h3>
   <p align="center">
-    Statically typed programming language & toolchain
+    Statically typed programming language & compiler
     <br /><br />
     <a href="https://github.com/Fooxygen/Xero">
       <strong>» Read Wiki</strong>
@@ -25,9 +25,7 @@ English |
 
 ## About the Repository
 
-Xero is a statically typed programming language.
-
-The repository includes Xero's toolchain and its design documents. You can:
+Xero is a statically typed programming language. The repository mainly contains its compiler. You can:
 
 - browse the sample project in `example/`;
 - find more information about Xero on the [Wiki](https://github.com/Fooxygen/Xero/wiki);
@@ -39,22 +37,22 @@ To run a program, refer to **Build & Run** below.
 ## Architecture
 
 | Module | Task |
-| - | - |
-| Lexer | Lexical analysis |
-| Parser | Syntax analysis |
-| Sema | Semantic analysis |
-| Xcompiler | Compiler: IR generation, object file linking, executable generation |
+| -         | - |
+| Lexer     | Lexical analysis |
+| Parser    | Syntax analysis |
+| Sema      | Semantic analysis |
+| Xcompiler | Code generation: IR generation, object file linking, executable generation |
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
 ## Build
 
-| Category       | Technology | Version |
-| -              | -          | -       |
-| Language       | C++        | 23      |
-| Build System   | CMake      | 3.21+   |
-| Build Tools    | Ninja      | 1.13.2   |
-| Xcompiler       | MinGW-w64  | 16.1.0  |
+| Category        | Technology | Version |
+| -               | -          | -       |
+| Language        | C++        | 23      |
+| Build System    | CMake      | 3.21+   |
+| Build Tools     | Ninja      | 1.13.2  |
+| Build Toolchain | MinGW-w64  | 16.1.0  |
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 

@@ -9,7 +9,7 @@
   <img src="https://cdn.jsdelivr.net/gh/Fooxygen/Xero@main/docs/images/brand_xero.png" style="margin=0">
   <h3 align="center">Xero</h3>
   <p align="center">
-    静态类型编程语言及其工具链
+    静态类型编程语言及其编译器
     <br /><br />
     <a href="https://github.com/Fooxygen/Xero">
       <strong>» 阅读 Wiki</strong>
@@ -26,9 +26,7 @@
 
 ## 关于仓库
 
-Xero 是一门静态类型编程语言。
-
-仓库包含 Xero 的工具链及其设计文档，你可以：
+Xero 是一门静态类型编程语言。仓库主要包含其编译器，你可以：
 
 - 在 `example/` 中浏览示例项目；
 - 在 [Wiki](https://github.com/Fooxygen/Xero/wiki) 中获取更多内容来了解 Xero；
@@ -44,7 +42,7 @@ Xero 是一门静态类型编程语言。
 | Lexer | 词法分析 |
 | Parser | 语法分析 |
 | Sema | 语义分析 |
-| Xcompiler | 编译器：IR 生成、目标文件链接、可执行文件生成 |
+| Xcompiler | 代码生成：IR 生成、目标文件链接、可执行文件生成 |
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
@@ -55,7 +53,7 @@ Xero 是一门静态类型编程语言。
 | 开发语言 | C++ | 23 |
 | 构建系统 | CMake | 3.21+ |
 | 构建工具 | Ninja | 1.13.2 |
-| 编译工具链 | MinGW-w64 | 16.1.0 |
+| 构建工具链 | MinGW-w64 | 16.1.0 |
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
