@@ -1,64 +1,82 @@
 
-fn test_string() {
-    s: string = "Hello Xero";
+fn test_array() {
+    a: array[=i32=] = [1, 2, 3];
 
-    println(s);                     # Hello Xero
-    println(s.len());               # 10
-    println(s[0]);                  # H
-    println(s[6..10]);              # Xero
-    println(-s);                    # oreX olleH
-    println(s + "!");               # Hello Xero!
-    println(s == "Hello Xero");     # true
-    println(s != "hello");          # true
+    println(a);                     # [1, 2, 3]
+    println(a.len());               # 3
+    println(a[0]);                  # 1
+    println(a[0..2]);               # [1, 2]
+    println(-a);                    # [3, 2, 1]
 
-    for (c in s) print(c);
-    println();                      # Hello Xero
+    b: array[=i32=] = [4, 5];
+    println(a + b);                 # [1, 2, 3, 4, 5]
 
-    t: string = "Bye";
-    t = s;
-    println(t);                     # Hello Xero
-    t.clear();
-    println(t.len());               # 0
+    for (x in a) print(x);
+    println();                      # 123
+
+    a.push_back(4);                 # [1, 2, 3, 4]
+    a.push_front(0);                # [0, 1, 2, 3, 4]
+    a.pop_back();                   # [0, 1, 2, 3]
+    a.pop_front();                  # [1, 2, 3]
+    println(a);
+
+    i: i64 = 1;
+    a.insert(i, 9);                 # [1, 9, 2, 3]
+    println(a);
+    a.remove(i);                    # [1, 2, 3]
+    println(a);
+
+    c: array[=i32=] = [7];
+    d: array[=i32=] = c;
+    d.push_back(8);
+    println(c);                     # [7]
+    println(d);                     # [7, 8]
+
+    c.clear();
+    println(c.len());               # 0
 }
 
-fn test_stringview() {
-    s: string     = "Hello Xero";
-    v: stringview = s[6..10];
+fn test_arrayview() {
+    a: array[=i32=]     = [1, 2, 3, 4, 5];
+    v: arrayview[=i32=] = a[1..4];
 
-    println(v);                     # Xero
-    println(v.len());               # 4
-    println(v[0]);                  # X
-    println(v[1..3]);               # er
-    println(-v);                    # oreX
-    println(v == "Xero");           # true
-    println(v != "Oops");           # true
+    println(v);                     # [2, 3, 4]
+    println(v.len());               # 3
+    println(v[0]);                  # 2
+    println(v[0..2]);               # [2, 3]
+    println(-v);                    # [4, 3, 2]
 
-    t: string = v;
-    println(t);                     # Xero
+    t: array[=i32=] = v;
+    println(t);                     # [2, 3, 4]
 
-    for (c in v) print(c);
-    println();                      # Xero
+    for (x in v) print(x);
+    println();                      # 234
 
-    a: string = "Hello Xero";
-    u: stringview = a[0..5];
-    u = "Wow";
-    println(a);                     # Wow Xero
+    b: array[=i32=]     = [10, 11, 12, 13, 14];
+    w: arrayview[=i32=] = b[0..3];
+    w = [7, 8, 9];
+    println(b);                     # [7, 8, 9, 13, 14]
 
-    b: string = "Hello Xero";
-    w: stringview = b[0..5];
-    w = 'X';
-    println(b);                     # XXXXX Xero
-    w = "XX";
-    println(b);                     # XX Xero
+    c: array[=i32=]      = [10, 20, 30, 40];
+    cv: arrayview[=i32=] = c[1..3];
+    cv = 0;                         # [10, 0, 0, 40]
+    println(c);
+    cv = [0, 0, 0];                 # [10, 0, 0, 0, 40]
+    println(c);
 
-    c:  string = "AAAA BBBB";
-    cv: stringview = c[5..9];
-    rv: stringview = c[0..4];
-    cv = rv;
-    println(c);                     # AAAA AAAA
+    d: array[=i32=]      = [1, 2, 3, 4];
+    dv: arrayview[=i32=] = d[1..3];
+    rv: arrayview[=i32=] = d[0..2];
+    dv = rv;
+    println(d);                     # [1, 1, 2, 4]
+
+    e: array[=i32=] = [10, 20, 30, 40];
+    e[0] = 99;
+    e[1..2] = [88, 77];
+    println(e);                     # [99, 88, 77, 30, 40]
 }
 
 fn main() {
-    test_string();
-    test_stringview();
+    test_array();
+    test_arrayview();
 }

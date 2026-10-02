@@ -491,7 +491,7 @@ namespace xcompiler {
 
         // @cast
 
-        impl->MethodAdd("@cast",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@cast",    [string_](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  view    = Load_stringview(gen, args[0]);
 
@@ -501,7 +501,7 @@ namespace xcompiler {
             auto  src = Get_char(gen, view.data, view.offset);
             builder.CreateCall(LibC_memmove(gen), { new_data, src, new_size });
 
-            auto  gen_type = gen.LLVMType(sema::TypeTable::Lookup("string"));
+            auto  gen_type = gen.LLVMType(string_);
             auto  gen_val  = (llvm::Value*)llvm::UndefValue::get(gen_type);
             gen_val = builder.CreateInsertValue(gen_val, new_data, 0);
             gen_val = builder.CreateInsertValue(gen_val, view.len,  1);
