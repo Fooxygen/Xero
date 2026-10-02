@@ -30,7 +30,7 @@ Xero is a statically typed programming language. The repository mainly contains 
 - browse the sample project in `example/`;
 - find more information about Xero on the [Wiki](https://github.com/Fooxygen/Xero/wiki);
 
-To run a program, refer to **Build & Run** below.
+To build the compiler, refer to **Build & Run** below.
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
@@ -101,6 +101,17 @@ Using the tasks in `tasks.json`:
 
 > [!WARNING]
 > The `profile` in the project configuration file determines the optimization level and the output directory, independent of which Xero preset is used to compile.
+
+<p align="right"><a href="#readme-top">⭱ Back to top</a></p>
+
+## LLM-friendly
+
+Xero provides support for LLMs and coding agents:
+
+- [`AGENTS.md`](./AGENTS.md): an agent-facing manual for this repository, covering build commands, code style, testing notes, project structure, and boundaries;
+- [`AGENTS.zh.md`](./AGENTS.zh.md): the Chinese translation of `AGENTS.md`;
+
+Agents should read `AGENTS.md` before working on this repository.
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 

@@ -31,7 +31,7 @@ Xero 是一门静态类型编程语言。仓库主要包含其编译器，你可
 - 在 `example/` 中浏览示例项目；
 - 在 [Wiki](https://github.com/Fooxygen/Xero/wiki) 中获取更多内容来了解 Xero；
 
-要执行程序，请参阅下文的 **编译与运行**。
+要构建编译器，请参阅下文的 **编译与运行**。
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
@@ -102,6 +102,17 @@ Xero 是一门静态类型编程语言。仓库主要包含其编译器，你可
 
 > [!WARNING]
 > 项目配置文件里的 `profile` 决定优化级别与产物目录，与用哪个 Xero 预设编译无关。
+
+<p align="right"><a href="#readme-top">⭱ Back to top</a></p>
+
+## 面向 LLM
+
+Xero 为 LLM 与编码 Agent 提供辅助支持：
+
+- [`AGENTS.md`](./AGENTS.md)：面向 Agent 的仓库操作手册，涵盖构建命令、代码风格、测试说明、项目结构与行为边界；
+- [`AGENTS.zh.md`](./AGENTS.zh.md)：`AGENTS.md` 的中文译本；
+
+Agent 在开始工作前，请先阅读 `AGENTS.md`。
 
 <p align="right"><a href="#readme-top">⭱ Back to top</a></p>
 
