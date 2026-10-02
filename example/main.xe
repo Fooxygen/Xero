@@ -1,23 +1,64 @@
 
-fn abs(x: i32) -> i32 {
-    if (x < 0) return -x;
-    return x;
+fn test_string() {
+    s: string = "Hello Xero";
+
+    println(s);                     # Hello Xero
+    println(s.len());               # 10
+    println(s[0]);                  # H
+    println(s[6..10]);              # Xero
+    println(-s);                    # oreX olleH
+    println(s + "!");               # Hello Xero!
+    println(s == "Hello Xero");     # true
+    println(s != "hello");          # true
+
+    for (c in s) print(c);
+    println();                      # Hello Xero
+
+    t: string = "Bye";
+    t = s;
+    println(t);                     # Hello Xero
+    t.clear();
+    println(t.len());               # 0
+}
+
+fn test_stringview() {
+    s: string     = "Hello Xero";
+    v: stringview = s[6..10];
+
+    println(v);                     # Xero
+    println(v.len());               # 4
+    println(v[0]);                  # X
+    println(v[1..3]);               # er
+    println(-v);                    # oreX
+    println(v == "Xero");           # true
+    println(v != "Oops");           # true
+
+    t: string = v;
+    println(t);                     # Xero
+
+    for (c in v) print(c);
+    println();                      # Xero
+
+    a: string = "Hello Xero";
+    u: stringview = a[0..5];
+    u = "Wow";
+    println(a);                     # Wow Xero
+
+    b: string = "Hello Xero";
+    w: stringview = b[0..5];
+    w = 'X';
+    println(b);                     # XXXXX Xero
+    w = "XX";
+    println(b);                     # XX Xero
+
+    c:  string = "AAAA BBBB";
+    cv: stringview = c[5..9];
+    rv: stringview = c[0..4];
+    cv = rv;
+    println(c);                     # AAAA AAAA
 }
 
 fn main() {
-    r: i32 = 3;
-
-    for (x in -r..=r) {
-        s: i32 = r - abs(x);
-        
-        for (y in 0..s) print(' ');
-        print('O');
-
-        if (x != 0) {
-            for (y in 0..(2 * r + 1 - 2 * s - 2)) print(' ');
-            print('O');
-        }
-
-        print('\n');
-    }
+    test_string();
+    test_stringview();
 }
