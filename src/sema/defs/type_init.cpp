@@ -206,6 +206,10 @@ namespace sema {
                 stringview_->method_table().Add("@pick",    FnSign(ReferenceTypeGet(char_), { i64_ }));
                 stringview_->method_table().Add("@pick",    FnSign(stringview_, { range_ }));
                 stringview_->method_table().Add("@neg",     FnSign(string_));
+                stringview_->method_table().Add("@gt",      FnSign(bool_, { stringview_ }));
+                stringview_->method_table().Add("@lt",      FnSign(bool_, { stringview_ }));
+                stringview_->method_table().Add("@ge",      FnSign(bool_, { stringview_ }));
+                stringview_->method_table().Add("@le",      FnSign(bool_, { stringview_ }));
                 stringview_->method_table().Add("@eq",      FnSign(bool_, { stringview_ }));
                 stringview_->method_table().Add("@neq",     FnSign(bool_, { stringview_ }));
                 stringview_->method_table().Add("len",      FnSign(i64_));
