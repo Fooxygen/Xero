@@ -152,8 +152,8 @@ namespace xcompiler {
             // Blocks
             auto fn         = llvm_builder().GetInsertBlock()->getParent();
             auto block_lval = llvm_builder().GetInsertBlock();
-            auto block_rval = BlockCreate(".sc.rval", fn);
-            auto block_end  = BlockCreate(".sc.end", fn);
+            auto block_rval = BlockCreate(".shortcircuit.rval", fn);
+            auto block_end  = BlockCreate(".shortcircuit.end", fn);
 
             // Lval Block: Add Jump Instruction
             if (node.oper_type_ == OperType::And) {
@@ -442,7 +442,7 @@ namespace xcompiler {
             node.name_,
             llvm_module()
         );
-        auto block = BlockCreate("entry", fn);
+        auto block = BlockCreate(".entry", fn);
         llvm_builder().SetInsertPoint(block);
 
         // Processing Fn

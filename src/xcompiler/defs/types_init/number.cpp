@@ -59,9 +59,9 @@ namespace xcompiler {
 
             auto fn          = builder.GetInsertBlock()->getParent();
             auto block_entry = builder.GetInsertBlock();
-            auto block_cond  = gen.BlockCreate(".number.cond", fn);
-            auto block_body  = gen.BlockCreate(".number.body", fn);
-            auto block_end   = gen.BlockCreate(".number.end",  fn);
+            auto block_cond  = gen.BlockCreate(".number.encode.cond", fn);
+            auto block_body  = gen.BlockCreate(".number.encode.body", fn);
+            auto block_end   = gen.BlockCreate(".number.encode.end",  fn);
 
             // Cond Block
             builder.CreateBr(block_cond);

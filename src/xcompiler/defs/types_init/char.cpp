@@ -66,17 +66,17 @@ namespace xcompiler {
 
             // Blocks
             auto fn              = builder.GetInsertBlock()->getParent();
-            auto block_write1    = gen.BlockCreate(".char.write1", fn);
-            auto block_write2    = gen.BlockCreate(".char.write2", fn);
-            auto block_write3    = gen.BlockCreate(".char.write3", fn);
-            auto block_write4    = gen.BlockCreate(".char.write4", fn);
-            auto block_or2or3or4 = gen.BlockCreate(".char.or2or3or4", fn);
-            auto block_or3or4    = gen.BlockCreate(".char.or3or4", fn);
-            auto block_end       = gen.BlockCreate(".char.end", fn);
+            auto block_encode_1     = gen.BlockCreate(".char.encode.1", fn);
+            auto block_encode_2     = gen.BlockCreate(".char.encode.2", fn);
+            auto block_encode_3     = gen.BlockCreate(".char.encode.3", fn);
+            auto block_encode_4     = gen.BlockCreate(".char.encode.4", fn);
+            auto block_encode_or234 = gen.BlockCreate(".char.encode.or234", fn);
+            auto block_encode_or34  = gen.BlockCreate(".char.encode.or34", fn);
+            auto block_end          = gen.BlockCreate(".char.print.end", fn);
 
             // 1 Byte Block
-            builder.CreateCondBr(builder.CreateICmpULT(codepoint, builder.getInt32(0x80)), block_write1, block_or2or3or4);
-            builder.SetInsertPoint(block_write1);
+            builder.CreateCondBr(builder.CreateICmpULT(codepoint, builder.getInt32(0x80)), block_encode_1, block_encode_or234);
+            builder.SetInsertPoint(block_encode_1);
             {
                 store_byte(codepoint, 0);
                 store_null(1);
@@ -84,9 +84,9 @@ namespace xcompiler {
             }
 
             // 2 Bytes Block
-            builder.SetInsertPoint(block_or2or3or4);
-            builder.CreateCondBr(builder.CreateICmpULT(codepoint, builder.getInt32(0x800)), block_write2, block_or3or4);
-            builder.SetInsertPoint(block_write2);
+            builder.SetInsertPoint(block_encode_or234);
+            builder.CreateCondBr(builder.CreateICmpULT(codepoint, builder.getInt32(0x800)), block_encode_2, block_encode_or34);
+            builder.SetInsertPoint(block_encode_2);
             {
                 store_byte(builder.CreateOr(builder.getInt32(0xc0), builder.CreateLShr(codepoint, builder.getInt32(6))), 0);
                 store_byte(builder.CreateOr(builder.getInt32(0x80), builder.CreateAnd(codepoint, builder.getInt32(0x3f))), 1);
@@ -95,9 +95,9 @@ namespace xcompiler {
             }
 
             // 3 Bytes Block
-            builder.SetInsertPoint(block_or3or4);
-            builder.CreateCondBr(builder.CreateICmpULT(codepoint, builder.getInt32(0x10000)), block_write3, block_write4);
-            builder.SetInsertPoint(block_write3);
+            builder.SetInsertPoint(block_encode_or34);
+            builder.CreateCondBr(builder.CreateICmpULT(codepoint, builder.getInt32(0x10000)), block_encode_3, block_encode_4);
+            builder.SetInsertPoint(block_encode_3);
             {
                 store_byte(builder.CreateOr(builder.getInt32(0xe0), builder.CreateLShr(codepoint, builder.getInt32(12))), 0);
                 store_byte(builder.CreateOr(builder.getInt32(0x80),
@@ -109,7 +109,7 @@ namespace xcompiler {
             }
 
             // 4 Bytes Block
-            builder.SetInsertPoint(block_write4);
+            builder.SetInsertPoint(block_encode_4);
             {
                 store_byte(builder.CreateOr(builder.getInt32(0xf0), builder.CreateLShr(codepoint, builder.getInt32(18))), 0);
                 store_byte(builder.CreateOr(builder.getInt32(0x80),
