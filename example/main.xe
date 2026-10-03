@@ -1,6 +1,13 @@
 
 fn main() {
-    a: bool = true;
-    b: bool = false;
-    println(a.to_string() + b.to_string());
+    x: i32 = 3;
+    y: i64 = 40000000000;
+    z: f32 = 3.14;
+    w: f64 = 3.141592654;
+    println(
+        x.to_string(),
+        y.to_string(),
+        z.to_string(),
+        w.to_string()
+    );
 }

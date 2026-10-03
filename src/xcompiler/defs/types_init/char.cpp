@@ -50,8 +50,8 @@ namespace xcompiler {
             auto  codepoint = gen.ArgLoad(args[0]);
 
             // Buffer
-            auto buf = builder.CreateAlloca(
-                llvm::ArrayType::get(builder.getInt8Ty(), 5), nullptr, ".char.buf"
+            auto buf = gen.SlotCreate(
+                llvm::ArrayType::get(builder.getInt8Ty(), 5), ".char.buf"
             );
 
             // Store

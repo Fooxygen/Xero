@@ -17,7 +17,7 @@ namespace xcompiler {
         auto  bool_   = sema::TypeTable::Lookup("bool");
         auto  string_ = sema::TypeTable::Lookup("string");
 
-        auto  impl  = TypeImplTable::Set(TypeImpl(bool_));
+        auto  impl    = TypeImplTable::Set(TypeImpl(bool_));
                 
         // @copy and @release
 
