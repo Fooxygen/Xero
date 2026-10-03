@@ -14,31 +14,38 @@ namespace xcompiler {
 
     namespace {
 
+        struct MemoryInfo {
+            llvm::Value* data = nullptr;
+            llvm::Value* len  = nullptr;
+        };
+
         struct StringInfo {
             llvm::Value* addr      = nullptr;
             llvm::Value* org       = nullptr;
-            llvm::Value* data      = nullptr;
             llvm::Value* offset    = nullptr;
-            llvm::Value* len       = nullptr;
             llvm::Type*  llvm_type = nullptr;
+            MemoryInfo   memory    = {};
         };
 
-        StringInfo   Load_string(IRGen& gen, const Arg& arg) {
+        StringInfo   StringLoad(IRGen& gen, const Arg& arg) {
             auto& builder   = gen.llvm_builder();
             auto  addr      = gen.ArgAddr(arg);
             auto  llvm_type = gen.LLVMType(arg.ReferenceUnwrap());
             auto  val       = builder.CreateLoad(llvm_type, addr);
 
-            return {
-                addr, addr,
-                builder.CreateExtractValue(val, 0),
-                builder.getInt64(0),
-                builder.CreateExtractValue(val, 1),
-                llvm_type
+            return StringInfo{
+                .addr      = addr,
+                .org       = addr,
+                .offset    = builder.getInt64(0),
+                .llvm_type = llvm_type,
+                .memory    = MemoryInfo{
+                    .data = builder.CreateExtractValue(val, 0),
+                    .len  = builder.CreateExtractValue(val, 1)
+                }
             };
         }
 
-        StringInfo   Load_stringview(IRGen& gen, const Arg& arg) {
+        StringInfo   StringViewLoad(IRGen& gen, const Arg& arg) {
             auto& builder   = gen.llvm_builder();
             auto  addr      = gen.ArgAddr(arg);
             auto  llvm_type = gen.LLVMType(arg.ReferenceUnwrap());
@@ -51,37 +58,42 @@ namespace xcompiler {
             auto  org_val   = builder.CreateLoad(gen.LLVMType(sema::TypeTable::Lookup("string")), org);
             auto  data      = builder.CreateExtractValue(org_val, 0);
 
-            return { addr, org, data, offset, len, llvm_type };
+            return StringInfo{
+                .addr      = addr,
+                .org       = org,
+                .offset    = offset,
+                .llvm_type = llvm_type,
+                .memory    = MemoryInfo{ data, len }
+            };
         }
 
-        void         Store_string(
-            IRGen& gen, llvm::Value* addr, llvm::Value* data,
-            llvm::Type* llvm_type, llvm::Value* len
+        void         Store(
+            IRGen& gen, llvm::Value* addr, const MemoryInfo& memory,
+            llvm::Type* llvm_type
         ) {
-            auto& builder = gen.llvm_builder();
-            builder.CreateStore(
-                gen.ValueStructCreate(llvm_type, { data, len }),
+            gen.llvm_builder().CreateStore(
+                gen.ValueStructCreate(llvm_type, { memory.data, memory.len }),
                 addr
             );
         }
 
-        llvm::Value* Get_char(IRGen& gen, llvm::Value* data, llvm::Value* idx) {
+        llvm::Value* CharGet(IRGen& gen, llvm::Value* data, llvm::Value* idx) {
             return gen.llvm_builder().CreateInBoundsGEP(
                 gen.llvm_builder().getInt32Ty(), data, { idx }
             );
         }
 
-        llvm::Value* Compare_string(
+        llvm::Value* Compare(
             IRGen& gen,
             const StringInfo& lval, const StringInfo& rval
         ) {
             auto& builder = gen.llvm_builder();
             auto  fn      = builder.GetInsertBlock()->getParent();
 
-            auto  ldata   = Get_char(gen, lval.data, lval.offset);
-            auto  rdata   = Get_char(gen, rval.data, rval.offset);
-            auto  llen    = lval.len;
-            auto  rlen    = rval.len;
+            auto  lval_data = CharGet(gen, lval.memory.data, lval.offset);
+            auto  rval_data = CharGet(gen, rval.memory.data, rval.offset);
+            auto  llen      = lval.memory.len;
+            auto  rlen      = rval.memory.len;
 
             // Blocks
             auto  block_entry = builder.GetInsertBlock();
@@ -109,8 +121,8 @@ namespace xcompiler {
 
             // Body Block
             builder.SetInsertPoint(block_body);
-            auto lchar = builder.CreateLoad(builder.getInt32Ty(), Get_char(gen, ldata, counter));
-            auto rchar = builder.CreateLoad(builder.getInt32Ty(), Get_char(gen, rdata, counter));
+            auto lchar = builder.CreateLoad(builder.getInt32Ty(), CharGet(gen, lval_data, counter));
+            auto rchar = builder.CreateLoad(builder.getInt32Ty(), CharGet(gen, rval_data, counter));
             builder.CreateCondBr(
                 builder.CreateICmpEQ(lchar, rchar), block_next, block_diff
             );
@@ -151,16 +163,16 @@ namespace xcompiler {
             return result;
         }
 
-        llvm::Value* Print_string(IRGen& gen, const StringInfo& info) {
+        llvm::Value* Print(IRGen& gen, const StringInfo& info) {
             auto& builder = gen.llvm_builder();
             auto  char_   = sema::TypeTable::Lookup("char");
 
             // Blocks
-            auto fn          = builder.GetInsertBlock()->getParent();
-            auto block_entry = builder.GetInsertBlock();
-            auto block_cond  = gen.BlockCreate(".string.print.cond", fn);
-            auto block_body  = gen.BlockCreate(".string.print.body", fn);
-            auto block_end   = gen.BlockCreate(".string.print.end",  fn);
+            auto  fn          = builder.GetInsertBlock()->getParent();
+            auto  block_entry = builder.GetInsertBlock();
+            auto  block_cond  = gen.BlockCreate(".string.print.cond", fn);
+            auto  block_body  = gen.BlockCreate(".string.print.body", fn);
+            auto  block_end   = gen.BlockCreate(".string.print.end",  fn);
 
             // Cond Block
             builder.CreateBr(block_cond);
@@ -169,14 +181,14 @@ namespace xcompiler {
             {
                 counter->addIncoming(builder.getInt64(0), block_entry);
                 builder.CreateCondBr(
-                    builder.CreateICmpSLT(counter, info.len), block_body, block_end
+                    builder.CreateICmpSLT(counter, info.memory.len), block_body, block_end
                 );
             }
 
             // Body Block
             builder.SetInsertPoint(block_body);
             {
-                auto elem = Get_char(gen, info.data, builder.CreateAdd(counter, info.offset));
+                auto elem = CharGet(gen, info.memory.data, builder.CreateAdd(counter, info.offset));
                 TypeImplTable::Lookup(char_)->MethodCall(gen, "@print", {
                     Arg(elem, sema::TypeTable::ReferenceTypeGet(char_))
                 });
@@ -191,21 +203,21 @@ namespace xcompiler {
             return nullptr;
         }
 
-        llvm::Value* Pick_char(IRGen& gen, const StringInfo& info, llvm::Value* idx) {
+        llvm::Value* PickIndex(IRGen& gen, const StringInfo& info, llvm::Value* idx) {
             auto& builder = gen.llvm_builder();
-            return Get_char(gen, info.data, builder.CreateAdd(info.offset, idx));
+            return CharGet(gen, info.memory.data, builder.CreateAdd(info.offset, idx));
         }
 
-        llvm::Value* Pick_stringview(IRGen& gen, const StringInfo& info, llvm::Value* range) {
-            auto& builder  = gen.llvm_builder();
+        llvm::Value* PickRange(IRGen& gen, const StringInfo& info, llvm::Value* range) {
+            auto& builder   = gen.llvm_builder();
 
-            auto left      = builder.CreateIntCast(builder.CreateExtractValue(range, 0), builder.getInt64Ty(), true);
-            auto right     = builder.CreateIntCast(builder.CreateExtractValue(range, 1), builder.getInt64Ty(), true);
-            auto is_closed = builder.CreateExtractValue(range, 3);
+            auto  left      = builder.CreateIntCast(builder.CreateExtractValue(range, 0), builder.getInt64Ty(), true);
+            auto  right     = builder.CreateIntCast(builder.CreateExtractValue(range, 1), builder.getInt64Ty(), true);
+            auto  is_closed = builder.CreateExtractValue(range, 3);
 
-            auto diff      = builder.CreateSub(right, left);
-            auto len       = builder.CreateSelect(is_closed, builder.CreateAdd(diff, builder.getInt64(1)), diff);
-            auto offset    = builder.CreateAdd(info.offset, left);
+            auto  diff      = builder.CreateSub(right, left);
+            auto  len       = builder.CreateSelect(is_closed, builder.CreateAdd(diff, builder.getInt64(1)), diff);
+            auto  offset    = builder.CreateAdd(info.offset, left);
 
             return gen.ValueStructCreate(
                 gen.LLVMType(sema::TypeTable::Lookup("stringview")),
@@ -213,31 +225,31 @@ namespace xcompiler {
             );
         }
 
-        llvm::Value* Reverse_string(IRGen& gen, const StringInfo& info) {
-            auto& builder = gen.llvm_builder();
+        llvm::Value* Reverse(IRGen& gen, const StringInfo& info) {
+            auto& builder     = gen.llvm_builder();
 
-            auto result_size = builder.CreateMul(info.len, builder.getInt64(4));
-            auto result_data = builder.CreateCall(LibC_malloc(gen), { result_size });
+            auto  result_size = builder.CreateMul(info.memory.len, builder.getInt64(4));
+            auto  result_data = builder.CreateCall(LibC_malloc(gen), { result_size });
 
-            auto fn          = builder.GetInsertBlock()->getParent();
-            auto block_entry = builder.GetInsertBlock();
-            auto block_cond  = gen.BlockCreate(".string.reverse.cond", fn);
-            auto block_body  = gen.BlockCreate(".string.reverse.body", fn);
-            auto block_end   = gen.BlockCreate(".string.reverse.end",  fn);
+            auto  fn          = builder.GetInsertBlock()->getParent();
+            auto  block_entry = builder.GetInsertBlock();
+            auto  block_cond  = gen.BlockCreate(".string.reverse.cond", fn);
+            auto  block_body  = gen.BlockCreate(".string.reverse.body", fn);
+            auto  block_end   = gen.BlockCreate(".string.reverse.end",  fn);
 
             builder.CreateBr(block_cond);
             builder.SetInsertPoint(block_cond);
             auto counter = builder.CreatePHI(builder.getInt64Ty(), 2);
             {
                 counter->addIncoming(builder.getInt64(0), block_entry);
-                builder.CreateCondBr(builder.CreateICmpSLT(counter, info.len), block_body, block_end);
+                builder.CreateCondBr(builder.CreateICmpSLT(counter, info.memory.len), block_body, block_end);
             }
 
             builder.SetInsertPoint(block_body);
             {
-                auto src_idx = builder.CreateSub(builder.CreateSub(info.len, builder.getInt64(1)), counter);
-                auto src     = Get_char(gen, info.data, builder.CreateAdd(info.offset, src_idx));
-                auto dst     = Get_char(gen, result_data, counter);
+                auto src_idx = builder.CreateSub(builder.CreateSub(info.memory.len, builder.getInt64(1)), counter);
+                auto src     = CharGet(gen, info.memory.data, builder.CreateAdd(info.offset, src_idx));
+                auto dst     = CharGet(gen, result_data, counter);
                 builder.CreateStore(builder.CreateLoad(builder.getInt32Ty(), src), dst);
 
                 auto next = builder.CreateAdd(counter, builder.getInt64(1));
@@ -249,50 +261,50 @@ namespace xcompiler {
 
             return gen.ValueStructCreate(
                 gen.LLVMType(sema::TypeTable::Lookup("string")),
-                { result_data, info.len }
+                { result_data, info.memory.len }
             );
         }
 
-        llvm::Value* Realloc_string(IRGen& gen, llvm::Value* data, llvm::Value* new_len) {
+        llvm::Value* Realloc(IRGen& gen, llvm::Value* data, llvm::Value* new_len) {
             auto& builder = gen.llvm_builder();
             auto  size    = builder.CreateMul(new_len, builder.getInt64(4));
             return builder.CreateCall(LibC_realloc(gen), { data, size });
         }
 
-        void         Move_string(IRGen& gen, llvm::Value* dst, llvm::Value* src, llvm::Value* cnt) {
+        void         Copy(IRGen& gen, llvm::Value* dst, llvm::Value* src, llvm::Value* cnt) {
             auto& builder = gen.llvm_builder();
             auto  bytes   = builder.CreateMul(cnt, builder.getInt64(4));
             builder.CreateCall(LibC_memmove(gen), { dst, src, bytes });
         }
 
-        void         Write_string(
+        void         Write(
             IRGen& gen,
-            const StringInfo& lval, llvm::Value* rval_data, llvm::Value* rval_len
+            const StringInfo& lval, const MemoryInfo& rval
         ) {
             auto& builder   = gen.llvm_builder();
             auto  string_   = sema::TypeTable::Lookup("string");
 
-            auto  arr_val   = builder.CreateLoad(gen.LLVMType(string_), lval.org);
-            auto  arr_data  = builder.CreateExtractValue(arr_val, 0);
-            auto  arr_len   = builder.CreateExtractValue(arr_val, 1);
+            auto  lval_load = builder.CreateLoad(gen.LLVMType(string_), lval.org);
+            auto  lval_data = builder.CreateExtractValue(lval_load, 0);
+            auto  lval_len  = builder.CreateExtractValue(lval_load, 1);
 
-            auto  temp_size = builder.CreateMul(rval_len, builder.getInt64(4));
+            auto  temp_size = builder.CreateMul(rval.len, builder.getInt64(4));
             auto  temp_data = builder.CreateCall(LibC_malloc(gen), { temp_size });
-            builder.CreateCall(LibC_memmove(gen), { temp_data, rval_data, temp_size });
+            builder.CreateCall(LibC_memmove(gen), { temp_data, rval.data, temp_size });
 
-            auto common = builder.CreateSelect(
-                builder.CreateICmpSLT(lval.len, rval_len), lval.len, rval_len
+            auto len_common = builder.CreateSelect(
+                builder.CreateICmpSLT(lval.memory.len, rval.len), lval.memory.len, rval.len
             );
 
-            Move_string(
+            Copy(
                 gen,
-                Get_char(gen, arr_data, lval.offset),
-                temp_data, common
+                CharGet(gen, lval_data, lval.offset),
+                temp_data, len_common
             );
 
             auto fn           = builder.GetInsertBlock()->getParent();
-            auto is_equal     = builder.CreateICmpEQ(rval_len, lval.len);
-            auto is_shrink    = builder.CreateICmpSLT(rval_len, lval.len);
+            auto is_equal     = builder.CreateICmpEQ(rval.len, lval.memory.len);
+            auto is_shrink    = builder.CreateICmpSLT(rval.len, lval.memory.len);
 
             auto block_diff   = gen.BlockCreate(".string.write.diff",   fn);
             auto block_shrink = gen.BlockCreate(".string.write.shrink", fn);
@@ -301,20 +313,22 @@ namespace xcompiler {
 
             builder.CreateCondBr(is_equal, block_adjust, block_diff);
 
+            // Diff Block
             builder.SetInsertPoint(block_diff);
             builder.CreateCondBr(is_shrink, block_shrink, block_grow);
 
+            // Shrink Block
             builder.SetInsertPoint(block_shrink);
             {
-                Move_string(
+                Copy(
                     gen,
-                    Get_char(gen, arr_data, builder.CreateAdd(lval.offset, rval_len)),
-                    Get_char(gen, arr_data, builder.CreateAdd(lval.offset, lval.len)),
-                    builder.CreateSub(builder.CreateSub(arr_len, lval.offset), lval.len)
+                    CharGet(gen, lval_data, builder.CreateAdd(lval.offset, rval.len)),
+                    CharGet(gen, lval_data, builder.CreateAdd(lval.offset, lval.memory.len)),
+                    builder.CreateSub(builder.CreateSub(lval_len, lval.offset), lval.memory.len)
                 );
 
-                auto new_len  = builder.CreateSub(arr_len, builder.CreateSub(lval.len, rval_len));
-                auto new_data = Realloc_string(gen, arr_data, new_len);
+                auto new_len  = builder.CreateSub(lval_len, builder.CreateSub(lval.memory.len, rval.len));
+                auto new_data = Realloc(gen, lval_data, new_len);
 
                 builder.CreateStore(
                     gen.ValueStructCreate(gen.LLVMType(string_), { new_data, new_len }),
@@ -323,22 +337,23 @@ namespace xcompiler {
                 builder.CreateBr(block_adjust);
             }
 
+            // Grow Block
             builder.SetInsertPoint(block_grow);
             {
-                auto new_len  = builder.CreateAdd(arr_len, builder.CreateSub(rval_len, lval.len));
-                auto new_data = Realloc_string(gen, arr_data, new_len);
+                auto new_len  = builder.CreateAdd(lval_len, builder.CreateSub(rval.len, lval.memory.len));
+                auto new_data = Realloc(gen, lval_data, new_len);
 
-                Move_string(
+                Copy(
                     gen,
-                    Get_char(gen, new_data, builder.CreateAdd(lval.offset, rval_len)),
-                    Get_char(gen, new_data, builder.CreateAdd(lval.offset, lval.len)),
-                    builder.CreateSub(builder.CreateSub(arr_len, lval.offset), lval.len)
+                    CharGet(gen, new_data, builder.CreateAdd(lval.offset, rval.len)),
+                    CharGet(gen, new_data, builder.CreateAdd(lval.offset, lval.memory.len)),
+                    builder.CreateSub(builder.CreateSub(lval_len, lval.offset), lval.memory.len)
                 );
-                Move_string(
+                Copy(
                     gen,
-                    Get_char(gen, new_data, builder.CreateAdd(lval.offset, common)),
-                    Get_char(gen, temp_data, common),
-                    builder.CreateSub(rval_len, common)
+                    CharGet(gen, new_data, builder.CreateAdd(lval.offset, len_common)),
+                    CharGet(gen, temp_data, len_common),
+                    builder.CreateSub(rval.len, len_common)
                 );
 
                 builder.CreateStore(
@@ -348,6 +363,7 @@ namespace xcompiler {
                 builder.CreateBr(block_adjust);
             }
 
+            // Adjust Block
             builder.SetInsertPoint(block_adjust);
             builder.CreateCall(LibC_free(gen), { temp_data });
         }
@@ -372,126 +388,126 @@ namespace xcompiler {
 
         impl->MethodAdd("@copy",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
-            auto  str     = Load_string(gen, args[0]);
+            auto  str     = StringLoad(gen, args[0]);
 
             // Result
-            auto result_size = builder.CreateMul(str.len, builder.getInt64(4));
+            auto result_size = builder.CreateMul(str.memory.len, builder.getInt64(4));
             auto result_data = builder.CreateCall(LibC_malloc(gen), { result_size });
-            builder.CreateCall(LibC_memmove(gen), { result_data, str.data, result_size });
+            builder.CreateCall(LibC_memmove(gen), { result_data, str.memory.data, result_size });
 
-            // Generated Value
+            // Package
             return gen.ValueStructCreate(
-                str.llvm_type, { result_data, str.len }
+                str.llvm_type, { result_data, str.memory.len }
             );
         }, sema::FnSign(string_));
         impl->MethodAdd("@release", [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto str = Load_string(gen, args[0]);
-            gen.llvm_builder().CreateCall(LibC_free(gen), { str.data });
+            auto str = StringLoad(gen, args[0]);
+            gen.llvm_builder().CreateCall(LibC_free(gen), { str.memory.data });
             return nullptr;
         }, sema::FnSign(none_));
 
         // Other
 
         impl->MethodAdd("@print",   [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return Print_string(gen, Load_string(gen, args[0]));
+            return Print(gen, StringLoad(gen, args[0]));
         }, sema::FnSign(none_));
         impl->MethodAdd("@pick",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return Pick_char(gen, Load_string(gen, args[0]), gen.ArgLoad(args[1]));
+            return PickIndex(gen, StringLoad(gen, args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(sema::TypeTable::ReferenceTypeGet(char_), { i64_ }));
         impl->MethodAdd("@pick",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return Pick_stringview(gen, Load_string(gen, args[0]), gen.ArgLoad(args[1]));
+            return PickRange(gen, StringLoad(gen, args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(stringview_, { range_ }));
         impl->MethodAdd("@plus",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
-            auto  lstr    = Load_string(gen, args[0]);
-            auto  rstr    = Load_string(gen, args[1]);
+            auto  lval    = StringLoad(gen, args[0]);
+            auto  rval    = StringLoad(gen, args[1]);
 
-            auto result_len  = builder.CreateAdd(lstr.len, rstr.len);
+            auto result_len  = builder.CreateAdd(lval.memory.len, rval.memory.len);
             auto result_size = builder.CreateMul(result_len, builder.getInt64(4));
             auto result_data = builder.CreateCall(LibC_malloc(gen), { result_size });
 
-            // Copy lstr
+            // Copy lval
             builder.CreateCall(LibC_memmove(gen), {
-                result_data, lstr.data, builder.CreateMul(lstr.len, builder.getInt64(4))
+                result_data, lval.memory.data, builder.CreateMul(lval.memory.len, builder.getInt64(4))
             });
 
-            // Copy rstr
-            auto rstr_dst = builder.CreateInBoundsGEP(
-                builder.getInt32Ty(), result_data, { lstr.len }
+            // Copy rval
+            auto rval_dst = builder.CreateInBoundsGEP(
+                builder.getInt32Ty(), result_data, { lval.memory.len }
             );
             builder.CreateCall(LibC_memmove(gen), {
-                rstr_dst, rstr.data, builder.CreateMul(rstr.len, builder.getInt64(4))
+                rval_dst, rval.memory.data, builder.CreateMul(rval.memory.len, builder.getInt64(4))
             });
 
             return gen.ValueStructCreate(
-                lstr.llvm_type, { result_data, result_len }
+                lval.llvm_type, { result_data, result_len }
             );
         }, sema::FnSign(string_, { string_ }));
         impl->MethodAdd("@neg",     [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return Reverse_string(gen, Load_string(gen, args[0]));
+            return Reverse(gen, StringLoad(gen, args[0]));
         }, sema::FnSign(string_));
         impl->MethodAdd("@gt",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto lstr = Load_string(gen, args[0]);
-            auto rstr = Load_string(gen, args[1]);
+            auto lval = StringLoad(gen, args[0]);
+            auto rval = StringLoad(gen, args[1]);
             return gen.llvm_builder().CreateICmpSGT(
-                Compare_string(gen, lstr, rstr),
+                Compare(gen, lval, rval),
                 gen.llvm_builder().getInt32(0)
             );
         }, sema::FnSign(bool_, { string_ }));
         impl->MethodAdd("@lt",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto lstr = Load_string(gen, args[0]);
-            auto rstr = Load_string(gen, args[1]);
+            auto lval = StringLoad(gen, args[0]);
+            auto rval = StringLoad(gen, args[1]);
             return gen.llvm_builder().CreateICmpSLT(
-                Compare_string(gen, lstr, rstr),
+                Compare(gen, lval, rval),
                 gen.llvm_builder().getInt32(0)
             );
         }, sema::FnSign(bool_, { string_ }));
         impl->MethodAdd("@ge",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto lstr = Load_string(gen, args[0]);
-            auto rstr = Load_string(gen, args[1]);
+            auto lval = StringLoad(gen, args[0]);
+            auto rval = StringLoad(gen, args[1]);
             return gen.llvm_builder().CreateICmpSGE(
-                Compare_string(gen, lstr, rstr),
+                Compare(gen, lval, rval),
                 gen.llvm_builder().getInt32(0)
             );
         }, sema::FnSign(bool_, { string_ }));
         impl->MethodAdd("@le",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto lstr = Load_string(gen, args[0]);
-            auto rstr = Load_string(gen, args[1]);
+            auto lval = StringLoad(gen, args[0]);
+            auto rval = StringLoad(gen, args[1]);
             return gen.llvm_builder().CreateICmpSLE(
-                Compare_string(gen, lstr, rstr),
+                Compare(gen, lval, rval),
                 gen.llvm_builder().getInt32(0)
             );
         }, sema::FnSign(bool_, { string_ }));
         impl->MethodAdd("@eq",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto lstr = Load_string(gen, args[0]);
-            auto rstr = Load_string(gen, args[1]);
+            auto lval = StringLoad(gen, args[0]);
+            auto rval = StringLoad(gen, args[1]);
             return gen.llvm_builder().CreateICmpEQ(
-                Compare_string(gen, lstr, rstr),
+                Compare(gen, lval, rval),
                 gen.llvm_builder().getInt32(0)
             );
         }, sema::FnSign(bool_, { string_ }));
         impl->MethodAdd("@neq",     [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto lstr = Load_string(gen, args[0]);
-            auto rstr = Load_string(gen, args[1]);
+            auto lval = StringLoad(gen, args[0]);
+            auto rval = StringLoad(gen, args[1]);
             return gen.llvm_builder().CreateICmpNE(
-                Compare_string(gen, lstr, rstr),
+                Compare(gen, lval, rval),
                 gen.llvm_builder().getInt32(0)
             );
         }, sema::FnSign(bool_, { string_ }));
 
         impl->MethodAdd("len",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return Load_string(gen, args[0]).len;
+            return StringLoad(gen, args[0]).memory.len;
         }, sema::FnSign(i64_));
         impl->MethodAdd("clear",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
-            auto  str     = Load_string(gen, args[0]);
+            auto  str     = StringLoad(gen, args[0]);
 
-            builder.CreateCall(LibC_free(gen), { str.data });
+            builder.CreateCall(LibC_free(gen), { str.memory.data });
 
             auto null_data = llvm::ConstantPointerNull::get(
                 llvm::PointerType::get(gen.llvm_context(), 0)
             );
-            Store_string(gen, str.addr, null_data, str.llvm_type, builder.getInt64(0));
+            Store(gen, str.addr, { null_data, builder.getInt64(0) }, str.llvm_type);
             return nullptr;
         }, sema::FnSign(none_));
     }
@@ -524,16 +540,16 @@ namespace xcompiler {
 
         impl->MethodAdd("@cast",    [string_](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
-            auto  view    = Load_stringview(gen, args[0]);
+            auto  view    = StringViewLoad(gen, args[0]);
 
-            auto  new_size = builder.CreateMul(view.len, builder.getInt64(4));
+            auto  new_size = builder.CreateMul(view.memory.len, builder.getInt64(4));
             auto  new_data = builder.CreateCall(LibC_malloc(gen), { new_size });
 
-            auto  src = Get_char(gen, view.data, view.offset);
+            auto  src = CharGet(gen, view.memory.data, view.offset);
             builder.CreateCall(LibC_memmove(gen), { new_data, src, new_size });
 
             return gen.ValueStructCreate(
-                gen.LLVMType(string_), { new_data, view.len }
+                gen.LLVMType(string_), { new_data, view.memory.len }
             );
         }, sema::FnSign(string_, {}, std::nullopt, sema::FnModifier::Cast));
 
@@ -541,25 +557,25 @@ namespace xcompiler {
 
         impl->MethodAdd("@assign",  [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder   = gen.llvm_builder();
-            auto  lval      = Load_stringview(gen, args[0]);
+            auto  lval      = StringViewLoad(gen, args[0]);
 
             auto  rval      = gen.ArgLoad(args[1]);
             auto  rval_data = builder.CreateExtractValue(rval, 0);
             auto  rval_len  = builder.CreateExtractValue(rval, 1);
 
-            Write_string(gen, lval, rval_data, rval_len);
+            Write(gen, lval, { rval_data, rval_len });
             return nullptr;
         }, sema::FnSign(none_, { string_ }));
         impl->MethodAdd("@assign",  [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto lval = Load_stringview(gen, args[0]);
-            auto rval = Load_stringview(gen, args[1]);
+            auto lval = StringViewLoad(gen, args[0]);
+            auto rval = StringViewLoad(gen, args[1]);
 
-            Write_string(gen, lval, rval.data, rval.len);
+            Write(gen, lval, rval.memory);
             return nullptr;
         }, sema::FnSign(none_, { stringview_ }));
         impl->MethodAdd("@assign",  [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
-            auto  lval    = Load_stringview(gen, args[0]);
+            auto  lval    = StringViewLoad(gen, args[0]);
             auto  rval    = gen.ArgLoad(args[1]);
 
             // Blocks
@@ -574,13 +590,13 @@ namespace xcompiler {
             auto counter = builder.CreatePHI(builder.getInt64Ty(), 2);
             {
                 counter->addIncoming(builder.getInt64(0), block_entry);
-                builder.CreateCondBr(builder.CreateICmpSLT(counter, lval.len), block_body, block_end);
+                builder.CreateCondBr(builder.CreateICmpSLT(counter, lval.memory.len), block_body, block_end);
             }
 
             builder.SetInsertPoint(block_body);
             {
                 auto idx = builder.CreateAdd(lval.offset, counter);
-                auto dst = builder.CreateInBoundsGEP(builder.getInt32Ty(), lval.data, { idx });
+                auto dst = builder.CreateInBoundsGEP(builder.getInt32Ty(), lval.memory.data, { idx });
                 builder.CreateStore(rval, dst);
 
                 auto next = builder.CreateAdd(counter, builder.getInt64(1));
@@ -595,68 +611,68 @@ namespace xcompiler {
         // Other
 
         impl->MethodAdd("@print",   [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return Print_string(gen, Load_stringview(gen, args[0]));
+            return Print(gen, StringViewLoad(gen, args[0]));
         }, sema::FnSign(none_));
         impl->MethodAdd("@pick",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return Pick_char(gen, Load_stringview(gen, args[0]), gen.ArgLoad(args[1]));
+            return PickIndex(gen, StringViewLoad(gen, args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(sema::TypeTable::ReferenceTypeGet(char_), { i64_ }));
         impl->MethodAdd("@pick",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return Pick_stringview(gen, Load_stringview(gen, args[0]), gen.ArgLoad(args[1]));
+            return PickRange(gen, StringViewLoad(gen, args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(stringview_, { range_ }));
         impl->MethodAdd("@neg",     [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return Reverse_string(gen, Load_stringview(gen, args[0]));
+            return Reverse(gen, StringViewLoad(gen, args[0]));
         }, sema::FnSign(string_));
         impl->MethodAdd("@gt",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto lval = Load_stringview(gen, args[0]);
-            auto rval = Load_stringview(gen, args[1]);
+            auto lval = StringViewLoad(gen, args[0]);
+            auto rval = StringViewLoad(gen, args[1]);
             return gen.llvm_builder().CreateICmpSGT(
-                Compare_string(gen, lval, rval),
+                Compare(gen, lval, rval),
                 gen.llvm_builder().getInt32(0)
             );
         }, sema::FnSign(bool_, { stringview_ }));
         impl->MethodAdd("@lt",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto lval = Load_stringview(gen, args[0]);
-            auto rval = Load_stringview(gen, args[1]);
+            auto lval = StringViewLoad(gen, args[0]);
+            auto rval = StringViewLoad(gen, args[1]);
             return gen.llvm_builder().CreateICmpSLT(
-                Compare_string(gen, lval, rval),
+                Compare(gen, lval, rval),
                 gen.llvm_builder().getInt32(0)
             );
         }, sema::FnSign(bool_, { stringview_ }));
         impl->MethodAdd("@ge",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto lval = Load_stringview(gen, args[0]);
-            auto rval = Load_stringview(gen, args[1]);
+            auto lval = StringViewLoad(gen, args[0]);
+            auto rval = StringViewLoad(gen, args[1]);
             return gen.llvm_builder().CreateICmpSGE(
-                Compare_string(gen, lval, rval),
+                Compare(gen, lval, rval),
                 gen.llvm_builder().getInt32(0)
             );
         }, sema::FnSign(bool_, { stringview_ }));
         impl->MethodAdd("@le",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto lval = Load_stringview(gen, args[0]);
-            auto rval = Load_stringview(gen, args[1]);
+            auto lval = StringViewLoad(gen, args[0]);
+            auto rval = StringViewLoad(gen, args[1]);
             return gen.llvm_builder().CreateICmpSLE(
-                Compare_string(gen, lval, rval),
+                Compare(gen, lval, rval),
                 gen.llvm_builder().getInt32(0)
             );
         }, sema::FnSign(bool_, { stringview_ }));
         impl->MethodAdd("@eq",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto lval = Load_stringview(gen, args[0]);
-            auto rval = Load_stringview(gen, args[1]);
+            auto lval = StringViewLoad(gen, args[0]);
+            auto rval = StringViewLoad(gen, args[1]);
             return gen.llvm_builder().CreateICmpEQ(
-                Compare_string(gen, lval, rval),
+                Compare(gen, lval, rval),
                 gen.llvm_builder().getInt32(0)
             );
         }, sema::FnSign(bool_, { stringview_ }));
         impl->MethodAdd("@neq",     [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto lval = Load_stringview(gen, args[0]);
-            auto rval = Load_stringview(gen, args[1]);
+            auto lval = StringViewLoad(gen, args[0]);
+            auto rval = StringViewLoad(gen, args[1]);
             return gen.llvm_builder().CreateICmpNE(
-                Compare_string(gen, lval, rval),
+                Compare(gen, lval, rval),
                 gen.llvm_builder().getInt32(0)
             );
         }, sema::FnSign(bool_, { stringview_ }));
 
         impl->MethodAdd("len",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return Load_stringview(gen, args[0]).len;
+            return StringViewLoad(gen, args[0]).memory.len;
         }, sema::FnSign(i64_));
     }
 }

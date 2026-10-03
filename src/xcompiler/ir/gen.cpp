@@ -257,7 +257,7 @@ namespace xcompiler {
 
         auto is_closed_val = llvm_builder().getInt1(node.is_closed_);
 
-        // Generated Value
+        // Package
         auto gen_type = llvm::StructType::get(
             llvm_context(),
             // left, right, step, is_closed
@@ -306,7 +306,7 @@ namespace xcompiler {
                 llvm_builder().CreateStore(ExprLoad(*exprs[i]), addr);
             }
 
-            // Generated Value
+            // Package
             return ValueStructCreate(
                 LLVMType(node.resolved_type_),
                 { data, llvm_builder().getInt64(len) }
@@ -551,7 +551,7 @@ namespace xcompiler {
             );
         }
 
-        // Generated Value
+        // Package
         return ValueStructCreate(
             LLVMType(node.resolved_type_),
             { data, llvm_builder().getInt64(len) }
