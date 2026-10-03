@@ -437,10 +437,7 @@ namespace xcompiler {
                     auto new_len  = builder.CreateSub(lval_len, builder.CreateSub(lval.memory.len, rval.len));
                     auto new_data = Realloc(gen, lval_data, elem_size, new_len);
 
-                    builder.CreateStore(
-                        gen.StructTypeValCreate(array_llvm_type, { new_data, new_len }),
-                        lval.org
-                    );
+                    Store(gen, lval.org, { new_data, new_len }, array_llvm_type);
                     builder.CreateBr(block_adjust);
                 }
             }
@@ -490,10 +487,7 @@ namespace xcompiler {
 
                 builder.SetInsertPoint(block_cp_end);
                 {
-                    builder.CreateStore(
-                        gen.StructTypeValCreate(array_llvm_type, { new_data, new_len }),
-                        lval.org
-                    );
+                    Store(gen, lval.org, { new_data, new_len }, array_llvm_type);
                     builder.CreateBr(block_adjust);
                 }
             }
@@ -549,12 +543,15 @@ namespace xcompiler {
             // Body Block
             builder.SetInsertPoint(block_body);
             {
-                auto elem_src    = ElemGet(gen, arr.memory.data, arr.elem_size, counter);
-                auto elem_dst    = ElemGet(gen, result_data, arr.elem_size, counter);
-                auto elem_copied = arr.elem_type_impl->MethodCall(gen, "@copy", {
-                    Arg(elem_src, sema::TypeTable::ReferenceTypeGet(arr.elem_type))
-                });
-                builder.CreateStore(elem_copied, elem_dst);
+                auto src = ElemGet(gen, arr.memory.data, arr.elem_size, counter);
+                auto dst = ElemGet(gen, result_data, arr.elem_size, counter);
+
+                builder.CreateStore(
+                    arr.elem_type_impl->MethodCall(gen, "@copy", {
+                        Arg(src, sema::TypeTable::ReferenceTypeGet(arr.elem_type))
+                    }),
+                    dst
+                );
 
                 auto next = builder.CreateAdd(counter, builder.getInt64(1));
                 builder.CreateBr(block_cond);
@@ -643,6 +640,7 @@ namespace xcompiler {
             auto  block_l_body = gen.BlockCreate(".array.plus.l.body", fn);
             auto  block_l_end  = gen.BlockCreate(".array.plus.l.end",  fn);
 
+            // Left Cond Block
             builder.CreateBr(block_l_cond);
             builder.SetInsertPoint(block_l_cond);
             auto l_counter = builder.CreatePHI(builder.getInt64Ty(), 2);
@@ -651,6 +649,7 @@ namespace xcompiler {
                 builder.CreateCondBr(builder.CreateICmpSLT(l_counter, lval.memory.len), block_l_body, block_l_end);
             }
 
+            // Left Body Block
             builder.SetInsertPoint(block_l_body);
             {
                 auto src = ElemGet(gen, lval.memory.data, lval.elem_size, l_counter);
@@ -668,12 +667,14 @@ namespace xcompiler {
                 l_counter->addIncoming(next, builder.GetInsertBlock());
             }
 
+            // Left End Block
             builder.SetInsertPoint(block_l_end);
 
             auto block_r_cond = gen.BlockCreate(".array.plus.r.cond", fn);
             auto block_r_body = gen.BlockCreate(".array.plus.r.body", fn);
             auto block_r_end  = gen.BlockCreate(".array.plus.r.end",  fn);
 
+            // Right Cond Block
             builder.CreateBr(block_r_cond);
             builder.SetInsertPoint(block_r_cond);
             auto r_counter = builder.CreatePHI(builder.getInt64Ty(), 2);
@@ -682,10 +683,12 @@ namespace xcompiler {
                 builder.CreateCondBr(builder.CreateICmpSLT(r_counter, rval.memory.len), block_r_body, block_r_end);
             }
 
+            // Right Body Block
             builder.SetInsertPoint(block_r_body);
             {
                 auto src = ElemGet(gen, rval.memory.data, rval.elem_size, r_counter);
                 auto dst = ElemGet(gen, result_data, rval.elem_size, builder.CreateAdd(lval.memory.len, r_counter));
+                
                 builder.CreateStore(
                     rval.elem_type_impl->MethodCall(gen, "@copy", {
                         Arg(src, sema::TypeTable::ReferenceTypeGet(rval.elem_type))
@@ -698,6 +701,7 @@ namespace xcompiler {
                 r_counter->addIncoming(next, builder.GetInsertBlock());
             }
 
+            // Right End Block
             builder.SetInsertPoint(block_r_end);
 
             return gen.StructTypeValCreate(
@@ -740,9 +744,12 @@ namespace xcompiler {
                 builder.CreateSub(arr.memory.len, idx),
                 arr.elem_size
             );
-            auto value_ref = gen.ArgRefMake(args[2].val(), arr.elem_type);
-            auto copied    = arr.elem_type_impl->MethodCall(gen, "@copy", { value_ref });
-            builder.CreateStore(copied, ElemGet(gen, result_data, arr.elem_size, idx));
+            auto val_insert = gen.ArgRefMake(args[2].val(), arr.elem_type);
+            builder.CreateStore(
+                arr.elem_type_impl->MethodCall(gen, "@copy", { val_insert }),
+                ElemGet(gen, result_data, arr.elem_size, idx)
+            );
+
             Store(gen, arr.addr, { result_data, result_len }, arr.llvm_type);
             return nullptr;
         }, sema::FnSign(none_, { i64_, nullptr }));
@@ -769,11 +776,11 @@ namespace xcompiler {
             auto  result_len  = builder.CreateAdd(arr.memory.len, builder.getInt64(1));
             auto  result_data = Realloc(gen, arr.memory.data, arr.elem_size, result_len);
 
-            auto value_ref    = gen.ArgRefMake(args[1].val(), arr.elem_type);
-            auto copied       = arr.elem_type_impl->MethodCall(gen, "@copy", { value_ref });
-            builder.CreateStore(copied, ElemGet(
-                gen, result_data, arr.elem_size, arr.memory.len
-            ));
+            auto val_insert   = gen.ArgRefMake(args[1].val(), arr.elem_type);
+            builder.CreateStore(
+                arr.elem_type_impl->MethodCall(gen, "@copy", { val_insert }),
+                ElemGet(gen, result_data, arr.elem_size, arr.memory.len)
+            );
             Store(gen, arr.addr, { result_data, result_len }, arr.llvm_type);
             return nullptr;
         }, sema::FnSign(none_, { nullptr }));
@@ -790,9 +797,11 @@ namespace xcompiler {
                 ElemGet(gen, result_data, arr.elem_size, one),
                 result_data, arr.memory.len, arr.elem_size
             );
-            auto value_ref    = gen.ArgRefMake(args[1].val(), arr.elem_type);
-            auto copied       = arr.elem_type_impl->MethodCall(gen, "@copy", { value_ref });
-            builder.CreateStore(copied, ElemGet(gen, result_data, arr.elem_size, builder.getInt64(0)));
+            auto val_insert = gen.ArgRefMake(args[1].val(), arr.elem_type);
+            builder.CreateStore(
+                arr.elem_type_impl->MethodCall(gen, "@copy", { val_insert }),
+                ElemGet(gen, result_data, arr.elem_size, builder.getInt64(0))
+            );
             Store(gen, arr.addr, { result_data, result_len }, arr.llvm_type);
             return nullptr;
         }, sema::FnSign(none_, { nullptr }));
@@ -927,6 +936,7 @@ namespace xcompiler {
             auto block_body  = gen.BlockCreate(".arrayview.fill.body", fn);
             auto block_end   = gen.BlockCreate(".arrayview.fill.end",  fn);
 
+            // Cond Block
             builder.CreateBr(block_cond);
             builder.SetInsertPoint(block_cond);
             auto counter = builder.CreatePHI(builder.getInt64Ty(), 2);
@@ -935,6 +945,7 @@ namespace xcompiler {
                 builder.CreateCondBr(builder.CreateICmpSLT(counter, lval.memory.len), block_body, block_end);
             }
 
+            // Body Block
             builder.SetInsertPoint(block_body);
             {
                 auto idx = builder.CreateAdd(lval.offset, counter);
@@ -953,6 +964,7 @@ namespace xcompiler {
                 counter->addIncoming(next, builder.GetInsertBlock());
             }
 
+            // End Block
             builder.SetInsertPoint(block_end);
             return nullptr;
         }, sema::FnSign(none_, { T }));

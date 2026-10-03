@@ -290,7 +290,7 @@ namespace xcompiler {
 
             auto  temp_size = builder.CreateMul(rval.len, builder.getInt64(4));
             auto  temp_data = builder.CreateCall(LibC_malloc(gen), { temp_size });
-            builder.CreateCall(LibC_memmove(gen), { temp_data, rval.data, temp_size });
+            Copy(gen, temp_data, rval.data, rval.len);
 
             auto len_common = builder.CreateSelect(
                 builder.CreateICmpSLT(lval.memory.len, rval.len), lval.memory.len, rval.len
@@ -330,10 +330,7 @@ namespace xcompiler {
                 auto new_len  = builder.CreateSub(lval_len, builder.CreateSub(lval.memory.len, rval.len));
                 auto new_data = Realloc(gen, lval_data, new_len);
 
-                builder.CreateStore(
-                    gen.StructTypeValCreate(gen.LLVMType(string_), { new_data, new_len }),
-                    lval.org
-                );
+                Store(gen, lval.org, { new_data, new_len }, gen.LLVMType(string_));
                 builder.CreateBr(block_adjust);
             }
 
@@ -356,10 +353,7 @@ namespace xcompiler {
                     builder.CreateSub(rval.len, len_common)
                 );
 
-                builder.CreateStore(
-                    gen.StructTypeValCreate(gen.LLVMType(string_), { new_data, new_len }),
-                    lval.org
-                );
+                Store(gen, lval.org, { new_data, new_len }, gen.LLVMType(string_));
                 builder.CreateBr(block_adjust);
             }
 
@@ -393,7 +387,7 @@ namespace xcompiler {
             // Result
             auto result_size = builder.CreateMul(str.memory.len, builder.getInt64(4));
             auto result_data = builder.CreateCall(LibC_malloc(gen), { result_size });
-            builder.CreateCall(LibC_memmove(gen), { result_data, str.memory.data, result_size });
+            Copy(gen, result_data, str.memory.data, str.memory.len);
 
             // Package
             return gen.StructTypeValCreate(
@@ -428,17 +422,11 @@ namespace xcompiler {
             auto result_data = builder.CreateCall(LibC_malloc(gen), { result_size });
 
             // Copy lval
-            builder.CreateCall(LibC_memmove(gen), {
-                result_data, lval.memory.data, builder.CreateMul(lval.memory.len, builder.getInt64(4))
-            });
+            Copy(gen, result_data, lval.memory.data, lval.memory.len);
 
             // Copy rval
-            auto rval_dst = builder.CreateInBoundsGEP(
-                builder.getInt32Ty(), result_data, { lval.memory.len }
-            );
-            builder.CreateCall(LibC_memmove(gen), {
-                rval_dst, rval.memory.data, builder.CreateMul(rval.memory.len, builder.getInt64(4))
-            });
+            auto rval_dst = CharGet(gen, result_data, lval.memory.len);
+            Copy(gen, rval_dst, rval.memory.data, rval.memory.len);
 
             return gen.StructTypeValCreate(
                 lval.llvm_type, { result_data, result_len }
@@ -550,7 +538,7 @@ namespace xcompiler {
             auto  new_data = builder.CreateCall(LibC_malloc(gen), { new_size });
 
             auto  src = CharGet(gen, view.memory.data, view.offset);
-            builder.CreateCall(LibC_memmove(gen), { new_data, src, new_size });
+            Copy(gen, new_data, src, view.memory.len);
 
             return gen.StructTypeValCreate(
                 gen.LLVMType(string_), { new_data, view.memory.len }
@@ -600,7 +588,7 @@ namespace xcompiler {
             builder.SetInsertPoint(block_body);
             {
                 auto idx = builder.CreateAdd(lval.offset, counter);
-                auto dst = builder.CreateInBoundsGEP(builder.getInt32Ty(), lval.memory.data, { idx });
+                auto dst = CharGet(gen, lval.memory.data, idx);
                 builder.CreateStore(rval, dst);
 
                 auto next = builder.CreateAdd(counter, builder.getInt64(1));
