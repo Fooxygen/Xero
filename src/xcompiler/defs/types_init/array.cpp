@@ -93,10 +93,10 @@ namespace xcompiler {
             llvm::Type* llvm_type, llvm::Value* len
         ) {
             auto& builder = gen.llvm_builder();
-            auto  gen_val = (llvm::Value*)llvm::UndefValue::get(llvm_type);
-            gen_val = builder.CreateInsertValue(gen_val, data, 0);
-            gen_val = builder.CreateInsertValue(gen_val, len, 1);
-            builder.CreateStore(gen_val, addr);
+            builder.CreateStore(
+                gen.ValueStructCreate(llvm_type, { data, len }),
+                addr
+            );
         }
 
         llvm::Value* Get_elem(IRGen& gen, llvm::Value* data, size_t elem_size, llvm::Value* idx) {
@@ -205,12 +205,10 @@ namespace xcompiler {
             auto len       = builder.CreateSelect(is_closed, builder.CreateAdd(diff, builder.getInt64(1)), diff);
             auto offset    = builder.CreateAdd(info.offset, left);
 
-            auto view_type = gen.LLVMType(sema::TypeTable::Lookup("arrayview"));
-            auto gen_val   = (llvm::Value*)llvm::UndefValue::get(view_type);
-            gen_val = builder.CreateInsertValue(gen_val, info.org, 0);
-            gen_val = builder.CreateInsertValue(gen_val, offset,   1);
-            gen_val = builder.CreateInsertValue(gen_val, len,      2);
-            return gen_val;
+            return gen.ValueStructCreate(
+                gen.LLVMType(sema::TypeTable::Lookup("arrayview")),
+                { info.org, offset, len }
+            );
         }
 
         llvm::Value* Reverse_array(IRGen& gen, const ArrayInfo& info) {
@@ -258,12 +256,10 @@ namespace xcompiler {
             builder.SetInsertPoint(block_end);
 
             // Generated Value
-            auto gen_val = (llvm::Value*)llvm::UndefValue::get(
-                gen.LLVMType(sema::TypeTable::Lookup("array"))
+            return gen.ValueStructCreate(
+                gen.LLVMType(sema::TypeTable::Lookup("array")),
+                { result_data, info.len }
             );
-            gen_val = builder.CreateInsertValue(gen_val, result_data, 0);
-            gen_val = builder.CreateInsertValue(gen_val, info.len,    1);
-            return gen_val;
         }
 
         void Write_array(
@@ -399,10 +395,10 @@ namespace xcompiler {
                     auto new_len  = builder.CreateSub(arr_len, builder.CreateSub(view.len, right_len));
                     auto new_data = Realloc_array(gen, arr_data, elem_size, new_len);
 
-                    auto gen_val = (llvm::Value*)llvm::UndefValue::get(gen.LLVMType(array_));
-                    gen_val = builder.CreateInsertValue(gen_val, new_data, 0);
-                    gen_val = builder.CreateInsertValue(gen_val, new_len,  1);
-                    builder.CreateStore(gen_val, view.org);
+                    builder.CreateStore(
+                        gen.ValueStructCreate(gen.LLVMType(array_), { new_data, new_len }),
+                        view.org
+                    );
                     builder.CreateBr(block_adjust);
                 }
             }
@@ -448,10 +444,10 @@ namespace xcompiler {
 
                 builder.SetInsertPoint(block_cp_end);
                 {
-                    auto gen_val = (llvm::Value*)llvm::UndefValue::get(gen.LLVMType(array_));
-                    gen_val = builder.CreateInsertValue(gen_val, new_data, 0);
-                    gen_val = builder.CreateInsertValue(gen_val, new_len,  1);
-                    builder.CreateStore(gen_val, view.org);
+                    builder.CreateStore(
+                        gen.ValueStructCreate(gen.LLVMType(array_), { new_data, new_len }),
+                        view.org
+                    );
                     builder.CreateBr(block_adjust);
                 }
             }
@@ -522,10 +518,9 @@ namespace xcompiler {
             builder.SetInsertPoint(block_end);
 
             // Generated Value
-            auto gen_val = (llvm::Value*)llvm::UndefValue::get(arr.llvm_type);
-            gen_val = builder.CreateInsertValue(gen_val, result_data, 0);
-            gen_val = builder.CreateInsertValue(gen_val, arr.len,  1);
-            return gen_val;
+            return gen.ValueStructCreate(
+                arr.llvm_type, { result_data, arr.len }
+            );
         }, sema::FnSign(sema::TypeTable::ParametricTypeGet(array_, { T })));
         impl->MethodAdd("@release",     [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder     = gen.llvm_builder();
@@ -654,10 +649,9 @@ namespace xcompiler {
 
             builder.SetInsertPoint(block_r_end);
 
-            auto gen_val = (llvm::Value*)llvm::UndefValue::get(larr.llvm_type);
-            gen_val = builder.CreateInsertValue(gen_val, result_data, 0);
-            gen_val = builder.CreateInsertValue(gen_val, result_len,  1);
-            return gen_val;
+            return gen.ValueStructCreate(
+                larr.llvm_type, { result_data, result_len }
+            );
         }, sema::FnSign(sema::TypeTable::ParametricTypeGet(array_, { T }), { sema::TypeTable::ParametricTypeGet(array_, { T }) }));
 
         impl->MethodAdd("len",          [](IRGen& gen, ARGS& args) -> llvm::Value* {
@@ -834,11 +828,9 @@ namespace xcompiler {
             // End Block
             builder.SetInsertPoint(block_end);
 
-            auto gen_type = gen.LLVMType(array_);
-            auto gen_val  = (llvm::Value*)llvm::UndefValue::get(gen_type);
-            gen_val = builder.CreateInsertValue(gen_val, new_data, 0);
-            gen_val = builder.CreateInsertValue(gen_val, view.len,  1);
-            return gen_val;
+            return gen.ValueStructCreate(
+                gen.LLVMType(array_), { new_data, view.len }
+            );
         }, sema::FnSign(sema::TypeTable::ParametricTypeGet(array_, { T }), {}, std::nullopt, sema::FnModifier::Cast));
 
         // @copy and @release

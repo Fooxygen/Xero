@@ -8,6 +8,8 @@
 
 namespace xcompiler {
 
+    // Type
+
     llvm::Type*       IRGen::LLVMType(sema::Type* type) {
         if (dynamic_cast<sema::ReferenceType*>(type)) {
             return llvm::PointerType::get(llvm_context(), 0);
@@ -68,6 +70,35 @@ namespace xcompiler {
         ));
     }
 
+    // IR
+
+    llvm::AllocaInst* IRGen::SlotCreate(llvm::Type* type, const std::string& name) {
+        llvm::IRBuilder<> builder_alloc(
+            &state_.fn_->getEntryBlock(), state_.fn_->getEntryBlock().begin()
+        );
+        return builder_alloc.CreateAlloca(type, nullptr, name);
+    }
+
+    bool              IRGen::HasBlockTerm() {
+        // Program is a top-level node and has no BasicBlock
+        auto block = llvm_builder().GetInsertBlock();
+        return block && block->getTerminator() != nullptr;
+    }
+
+    llvm::BasicBlock* IRGen::BlockCreate(const std::string& name, llvm::Function* fn) {
+        return llvm::BasicBlock::Create(llvm_context(), name, fn);
+    }
+
+    void              IRGen::BlockTermCreate(llvm::BasicBlock* term) {
+        if (!HasBlockTerm()) llvm_builder().CreateBr(term);
+    }
+
+    void              IRGen::BlockTermCreate(std::function<void()> callback) {
+        if (!HasBlockTerm()) callback();
+    }
+
+    // Value
+
     // e.g. x: i32 = 3; z: i32& = x;
     //      IdResolve(x): getting address of x
     //      IdResolve(z): getting address of x actually
@@ -107,6 +138,17 @@ namespace xcompiler {
         return val;
     }
     
+    llvm::Value*      IRGen::ValueStructCreate(llvm::Type* type, llvm::ArrayRef<llvm::Value*> fields) {
+        auto value = (llvm::Value*)llvm::PoisonValue::get(type);
+        int  idx   = 0;
+        for (auto field : fields) {
+            value = llvm_builder().CreateInsertValue(value, field, idx++);
+        }
+        return value;
+    }
+
+    // Fn
+
     Arg               IRGen::ArgRefMake(llvm::Value* val, sema::Type* type) {
         // RefArg
         if (dynamic_cast<sema::ReferenceType*>(type)) return Arg(val, type);
@@ -124,30 +166,5 @@ namespace xcompiler {
     llvm::Value*      IRGen::ArgAddr(const Arg& arg) {
         if (arg.IsReferenceType()) return arg.val();
         return ValMaterialize(arg.val(), arg.type());
-    }
-
-    llvm::AllocaInst* IRGen::SlotCreate(llvm::Type* type, const std::string& name) {
-        llvm::IRBuilder<> builder_alloc(
-            &state_.fn_->getEntryBlock(), state_.fn_->getEntryBlock().begin()
-        );
-        return builder_alloc.CreateAlloca(type, nullptr, name);
-    }
-
-    bool              IRGen::HasBlockTerm() {
-        // Program is a top-level node and has no BasicBlock
-        auto block = llvm_builder().GetInsertBlock();
-        return block && block->getTerminator() != nullptr;
-    }
-
-    llvm::BasicBlock* IRGen::BlockCreate(const std::string& name, llvm::Function* fn) {
-        return llvm::BasicBlock::Create(llvm_context(), name, fn);
-    }
-
-    void              IRGen::BlockTermCreate(llvm::BasicBlock* term) {
-        if (!HasBlockTerm()) llvm_builder().CreateBr(term);
-    }
-
-    void              IRGen::BlockTermCreate(std::function<void()> callback) {
-        if (!HasBlockTerm()) callback();
     }
 }

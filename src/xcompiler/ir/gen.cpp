@@ -263,13 +263,10 @@ namespace xcompiler {
             // left, right, step, is_closed
             { iter_llvm_type, iter_llvm_type, iter_llvm_type, llvm_builder().getInt1Ty() }
         );
-        auto gen_val  = (llvm::Value*)llvm::UndefValue::get(gen_type);
-        gen_val = llvm_builder().CreateInsertValue(gen_val, left_val, 0);
-        gen_val = llvm_builder().CreateInsertValue(gen_val, right_val, 1);
-        gen_val = llvm_builder().CreateInsertValue(gen_val, step_val, 2);
-        gen_val = llvm_builder().CreateInsertValue(gen_val, is_closed_val, 3);
-
-        return gen_val;
+        return ValueStructCreate(
+            gen_type,
+            { left_val, right_val, step_val, is_closed_val }
+        );
     }
 
     llvm::Value* IRGen::Exec(ArrayExpr& node) {
@@ -277,18 +274,13 @@ namespace xcompiler {
 
         // Empty
         if (!node.elem_type_) {
-            auto gen_type  = LLVMType(node.resolved_type_);
-            auto gen_val   = (llvm::Value*)llvm::UndefValue::get(gen_type);
             auto null_data = llvm::ConstantPointerNull::get(
                 llvm::PointerType::get(llvm_context(), 0)
             );
-
-            gen_val = llvm_builder().CreateInsertValue(gen_val, null_data, 0);
-            gen_val = llvm_builder().CreateInsertValue(
-                gen_val, llvm_builder().getInt64(0), 1
+            return ValueStructCreate(
+                LLVMType(node.resolved_type_),
+                { null_data, llvm_builder().getInt64(0) }
             );
-            
-            return gen_val;
         }
 
         // Non-Empty
@@ -315,14 +307,10 @@ namespace xcompiler {
             }
 
             // Generated Value
-            auto gen_type = LLVMType(node.resolved_type_);
-            auto gen_val  = (llvm::Value*)llvm::UndefValue::get(gen_type);
-            gen_val = llvm_builder().CreateInsertValue(gen_val, data, 0);
-            gen_val = llvm_builder().CreateInsertValue(
-                gen_val, llvm_builder().getInt64(len), 1
+            return ValueStructCreate(
+                LLVMType(node.resolved_type_),
+                { data, llvm_builder().getInt64(len) }
             );
-            
-            return gen_val;
         }
     }
 
@@ -564,14 +552,10 @@ namespace xcompiler {
         }
 
         // Generated Value
-        auto gen_type = LLVMType(node.resolved_type_);
-        auto gen_val  = (llvm::Value*)llvm::UndefValue::get(gen_type);
-        gen_val = llvm_builder().CreateInsertValue(gen_val, data, 0);
-        gen_val = llvm_builder().CreateInsertValue(
-            gen_val, llvm_builder().getInt64(len), 1
+        return ValueStructCreate(
+            LLVMType(node.resolved_type_),
+            { data, llvm_builder().getInt64(len) }
         );
-        
-        return gen_val;
     }
 
     // Stmt

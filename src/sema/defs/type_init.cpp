@@ -92,12 +92,13 @@ namespace sema {
         {
             // bool
             {
-                bool_->method_table().Add("@print", FnSign(none_));
-                bool_->method_table().Add("@eq",    FnSign(bool_, { bool_ }));
-                bool_->method_table().Add("@neq",   FnSign(bool_, { bool_ }));
-                bool_->method_table().Add("@and",   FnSign(bool_, { bool_ }));
-                bool_->method_table().Add("@or",    FnSign(bool_, { bool_ }));
-                bool_->method_table().Add("@not",   FnSign(bool_));
+                bool_->method_table().Add("@print",     FnSign(none_));
+                bool_->method_table().Add("@to_string", FnSign(string_));
+                bool_->method_table().Add("@eq",        FnSign(bool_, { bool_ }));
+                bool_->method_table().Add("@neq",       FnSign(bool_, { bool_ }));
+                bool_->method_table().Add("@and",       FnSign(bool_, { bool_ }));
+                bool_->method_table().Add("@or",        FnSign(bool_, { bool_ }));
+                bool_->method_table().Add("@not",       FnSign(bool_));
             }
 
             // i32
@@ -174,13 +175,14 @@ namespace sema {
 
             // char
             {
-                char_->method_table().Add("@print", FnSign(none_));
-                char_->method_table().Add("@gt",    FnSign(bool_, { char_ }));
-                char_->method_table().Add("@lt",    FnSign(bool_, { char_ }));
-                char_->method_table().Add("@ge",    FnSign(bool_, { char_ }));
-                char_->method_table().Add("@le",    FnSign(bool_, { char_ }));
-                char_->method_table().Add("@eq",    FnSign(bool_, { char_ }));
-                char_->method_table().Add("@neq",   FnSign(bool_, { char_ }));
+                char_->method_table().Add("@print",     FnSign(none_));
+                char_->method_table().Add("@to_string", FnSign(string_));
+                char_->method_table().Add("@gt",        FnSign(bool_, { char_ }));
+                char_->method_table().Add("@lt",        FnSign(bool_, { char_ }));
+                char_->method_table().Add("@ge",        FnSign(bool_, { char_ }));
+                char_->method_table().Add("@le",        FnSign(bool_, { char_ }));
+                char_->method_table().Add("@eq",        FnSign(bool_, { char_ }));
+                char_->method_table().Add("@neq",       FnSign(bool_, { char_ }));
             }
             
             // string

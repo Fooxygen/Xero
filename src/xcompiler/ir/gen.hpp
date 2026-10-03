@@ -54,9 +54,13 @@ namespace xcompiler {
     private:
         // Utility
 
+        // └─ Value
+
         llvm::Value*      IdResolve(IdExpr& node);                              // getting val's addr from id
         llvm::Value*      ValMaterialize(llvm::Value* val, sema::Type* type);   // allocating memory for val to store
         llvm::Value*      ExprLoad(Expr& node);                                 // loading val from expr
+
+        // └─ IR
 
         llvm::AllocaInst* SlotCreate(llvm::Type* type, const std::string& name);
         bool              HasBlockTerm();
@@ -103,16 +107,20 @@ namespace xcompiler {
         // Utility
         // └─ Type
 
-        llvm::Type*  LLVMType(sema::Type* type);
+        llvm::Type*       LLVMType(sema::Type* type);
 
-        // └─ Allocate
+        // └─ IR
 
         llvm::BasicBlock* BlockCreate(const std::string& name, llvm::Function* fn);     // create basic block
 
+        // └─ Value
+
+        llvm::Value*      ValueStructCreate(llvm::Type* type, llvm::ArrayRef<llvm::Value*> fields);
+
         // └─ Fn
-        Arg          ArgRefMake(llvm::Value* val, sema::Type* type);                    // wrap value as ref arg
-        llvm::Value* ArgLoad(const Arg& arg);                                           // take value   from arg
-        llvm::Value* ArgAddr(const Arg& arg);                                           // take address from arg
+        Arg               ArgRefMake(llvm::Value* val, sema::Type* type);               // wrap value as ref arg
+        llvm::Value*      ArgLoad(const Arg& arg);                                      // take value   from arg
+        llvm::Value*      ArgAddr(const Arg& arg);                                      // take address from arg
 
         // Exec
 

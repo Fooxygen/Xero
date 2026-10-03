@@ -59,10 +59,10 @@ namespace xcompiler {
             llvm::Type* llvm_type, llvm::Value* len
         ) {
             auto& builder = gen.llvm_builder();
-            auto  gen_val = (llvm::Value*)llvm::UndefValue::get(llvm_type);
-            gen_val = builder.CreateInsertValue(gen_val, data, 0);
-            gen_val = builder.CreateInsertValue(gen_val, len, 1);
-            builder.CreateStore(gen_val, addr);
+            builder.CreateStore(
+                gen.ValueStructCreate(llvm_type, { data, len }),
+                addr
+            );
         }
 
         llvm::Value* Get_char(IRGen& gen, llvm::Value* data, llvm::Value* idx) {
@@ -207,12 +207,10 @@ namespace xcompiler {
             auto len       = builder.CreateSelect(is_closed, builder.CreateAdd(diff, builder.getInt64(1)), diff);
             auto offset    = builder.CreateAdd(info.offset, left);
 
-            auto view_type = gen.LLVMType(sema::TypeTable::Lookup("stringview"));
-            auto gen_val   = (llvm::Value*)llvm::UndefValue::get(view_type);
-            gen_val = builder.CreateInsertValue(gen_val, info.org, 0);
-            gen_val = builder.CreateInsertValue(gen_val, offset,   1);
-            gen_val = builder.CreateInsertValue(gen_val, len,      2);
-            return gen_val;
+            return gen.ValueStructCreate(
+                gen.LLVMType(sema::TypeTable::Lookup("stringview")),
+                { info.org, offset, len }
+            );
         }
 
         llvm::Value* Reverse_string(IRGen& gen, const StringInfo& info) {
@@ -249,12 +247,10 @@ namespace xcompiler {
 
             builder.SetInsertPoint(block_end);
 
-            auto gen_val = (llvm::Value*)llvm::UndefValue::get(
-                gen.LLVMType(sema::TypeTable::Lookup("string"))
+            return gen.ValueStructCreate(
+                gen.LLVMType(sema::TypeTable::Lookup("string")),
+                { result_data, info.len }
             );
-            gen_val = builder.CreateInsertValue(gen_val, result_data, 0);
-            gen_val = builder.CreateInsertValue(gen_val, info.len,    1);
-            return gen_val;
         }
 
         llvm::Value* Realloc_string(IRGen& gen, llvm::Value* data, llvm::Value* new_len) {
@@ -320,10 +316,10 @@ namespace xcompiler {
                 auto new_len  = builder.CreateSub(arr_len, builder.CreateSub(lval.len, rval_len));
                 auto new_data = Realloc_string(gen, arr_data, new_len);
 
-                auto gen_val  = (llvm::Value*)llvm::UndefValue::get(gen.LLVMType(string_));
-                gen_val = builder.CreateInsertValue(gen_val, new_data, 0);
-                gen_val = builder.CreateInsertValue(gen_val, new_len,  1);
-                builder.CreateStore(gen_val, lval.org);
+                builder.CreateStore(
+                    gen.ValueStructCreate(gen.LLVMType(string_), { new_data, new_len }),
+                    lval.org
+                );
                 builder.CreateBr(block_adjust);
             }
 
@@ -345,10 +341,10 @@ namespace xcompiler {
                     builder.CreateSub(rval_len, common)
                 );
 
-                auto gen_val = (llvm::Value*)llvm::UndefValue::get(gen.LLVMType(string_));
-                gen_val = builder.CreateInsertValue(gen_val, new_data, 0);
-                gen_val = builder.CreateInsertValue(gen_val, new_len,  1);
-                builder.CreateStore(gen_val, lval.org);
+                builder.CreateStore(
+                    gen.ValueStructCreate(gen.LLVMType(string_), { new_data, new_len }),
+                    lval.org
+                );
                 builder.CreateBr(block_adjust);
             }
 
@@ -384,10 +380,9 @@ namespace xcompiler {
             builder.CreateCall(LibC_memmove(gen), { result_data, str.data, result_size });
 
             // Generated Value
-            auto gen_val = (llvm::Value*)llvm::UndefValue::get(str.llvm_type);
-            gen_val = builder.CreateInsertValue(gen_val, result_data, 0);
-            gen_val = builder.CreateInsertValue(gen_val, str.len,  1);
-            return gen_val;
+            return gen.ValueStructCreate(
+                str.llvm_type, { result_data, str.len }
+            );
         }, sema::FnSign(string_));
         impl->MethodAdd("@release", [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto str = Load_string(gen, args[0]);
@@ -428,10 +423,9 @@ namespace xcompiler {
                 rstr_dst, rstr.data, builder.CreateMul(rstr.len, builder.getInt64(4))
             });
 
-            auto gen_val = (llvm::Value*)llvm::UndefValue::get(lstr.llvm_type);
-            gen_val = builder.CreateInsertValue(gen_val, result_data, 0);
-            gen_val = builder.CreateInsertValue(gen_val, result_len,  1);
-            return gen_val;
+            return gen.ValueStructCreate(
+                lstr.llvm_type, { result_data, result_len }
+            );
         }, sema::FnSign(string_, { string_ }));
         impl->MethodAdd("@neg",     [](IRGen& gen, ARGS& args) -> llvm::Value* {
             return Reverse_string(gen, Load_string(gen, args[0]));
@@ -538,11 +532,9 @@ namespace xcompiler {
             auto  src = Get_char(gen, view.data, view.offset);
             builder.CreateCall(LibC_memmove(gen), { new_data, src, new_size });
 
-            auto  gen_type = gen.LLVMType(string_);
-            auto  gen_val  = (llvm::Value*)llvm::UndefValue::get(gen_type);
-            gen_val = builder.CreateInsertValue(gen_val, new_data, 0);
-            gen_val = builder.CreateInsertValue(gen_val, view.len,  1);
-            return gen_val;
+            return gen.ValueStructCreate(
+                gen.LLVMType(string_), { new_data, view.len }
+            );
         }, sema::FnSign(string_, {}, std::nullopt, sema::FnModifier::Cast));
 
         // @assign
