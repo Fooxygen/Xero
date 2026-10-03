@@ -22,16 +22,16 @@ namespace xcompiler {
 
         // @copy and @release
 
-        impl->MethodAdd("@copy",      [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@copy",        [](IRGen& gen, ARGS& args) {
             return gen.ArgLoad(args[0]);
         }, sema::FnSign(char_));
-        impl->MethodAdd("@release",   [](IRGen&, ARGS&) -> llvm::Value* {
+        impl->MethodAdd("@release",     [](IRGen&, ARGS&) -> llvm::Value* {
             return nullptr;
         }, sema::FnSign(none_));
 
         // @cast
 
-        impl->MethodAdd("@cast",      [string_](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@cast",        [string_](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder   = gen.llvm_builder();
             auto  codepoint = gen.ArgLoad(args[0]);
 
@@ -45,7 +45,7 @@ namespace xcompiler {
 
         // Other
 
-        impl->MethodAdd("@print",     [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@print",       [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder   = gen.llvm_builder();
             auto  codepoint = gen.ArgLoad(args[0]);
 
@@ -132,7 +132,27 @@ namespace xcompiler {
 
             return nullptr;                    
         }, sema::FnSign(none_));
-        impl->MethodAdd("@to_string", [string_](IRGen& gen, ARGS& args) -> llvm::Value* {
+
+        impl->MethodAdd("@gt",          [](IRGen& gen, ARGS& args) {
+            return gen.llvm_builder().CreateICmpSGT(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
+        }, sema::FnSign(bool_, { char_ }));
+        impl->MethodAdd("@lt",          [](IRGen& gen, ARGS& args) {
+            return gen.llvm_builder().CreateICmpSLT(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
+        }, sema::FnSign(bool_, { char_ }));
+        impl->MethodAdd("@ge",          [](IRGen& gen, ARGS& args) {
+            return gen.llvm_builder().CreateICmpSGE(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
+        }, sema::FnSign(bool_, { char_ }));
+        impl->MethodAdd("@le",          [](IRGen& gen, ARGS& args) {
+            return gen.llvm_builder().CreateICmpSLE(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
+        }, sema::FnSign(bool_, { char_ }));
+        impl->MethodAdd("@eq",          [](IRGen& gen, ARGS& args) {
+            return gen.llvm_builder().CreateICmpEQ(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
+        }, sema::FnSign(bool_, { char_ }));
+        impl->MethodAdd("@neq",         [](IRGen& gen, ARGS& args) {
+            return gen.llvm_builder().CreateICmpNE(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
+        }, sema::FnSign(bool_, { char_ }));
+
+        impl->MethodAdd("to_string",    [string_](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder   = gen.llvm_builder();
             auto  codepoint = gen.ArgLoad(args[0]);
 
@@ -143,24 +163,5 @@ namespace xcompiler {
                 gen.LLVMType(string_), { data, builder.getInt64(1) }
             );
         }, sema::FnSign(string_));
-
-        impl->MethodAdd("@gt",        [](IRGen& gen, ARGS& args) {
-            return gen.llvm_builder().CreateICmpSGT(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
-        }, sema::FnSign(bool_, { char_ }));
-        impl->MethodAdd("@lt",        [](IRGen& gen, ARGS& args) {
-            return gen.llvm_builder().CreateICmpSLT(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
-        }, sema::FnSign(bool_, { char_ }));
-        impl->MethodAdd("@ge",        [](IRGen& gen, ARGS& args) {
-            return gen.llvm_builder().CreateICmpSGE(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
-        }, sema::FnSign(bool_, { char_ }));
-        impl->MethodAdd("@le",        [](IRGen& gen, ARGS& args) {
-            return gen.llvm_builder().CreateICmpSLE(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
-        }, sema::FnSign(bool_, { char_ }));
-        impl->MethodAdd("@eq",        [](IRGen& gen, ARGS& args) {
-            return gen.llvm_builder().CreateICmpEQ(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
-        }, sema::FnSign(bool_, { char_ }));
-        impl->MethodAdd("@neq",       [](IRGen& gen, ARGS& args) {
-            return gen.llvm_builder().CreateICmpNE(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
-        }, sema::FnSign(bool_, { char_ }));
     }
 }

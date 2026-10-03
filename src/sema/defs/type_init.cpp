@@ -93,12 +93,12 @@ namespace sema {
             // bool
             {
                 bool_->method_table().Add("@print",     FnSign(none_));
-                bool_->method_table().Add("@to_string", FnSign(string_));
                 bool_->method_table().Add("@eq",        FnSign(bool_, { bool_ }));
                 bool_->method_table().Add("@neq",       FnSign(bool_, { bool_ }));
                 bool_->method_table().Add("@and",       FnSign(bool_, { bool_ }));
                 bool_->method_table().Add("@or",        FnSign(bool_, { bool_ }));
                 bool_->method_table().Add("@not",       FnSign(bool_));
+                bool_->method_table().Add("to_string",  FnSign(string_));
             }
 
             // i32
@@ -176,45 +176,47 @@ namespace sema {
             // char
             {
                 char_->method_table().Add("@print",     FnSign(none_));
-                char_->method_table().Add("@to_string", FnSign(string_));
                 char_->method_table().Add("@gt",        FnSign(bool_, { char_ }));
                 char_->method_table().Add("@lt",        FnSign(bool_, { char_ }));
                 char_->method_table().Add("@ge",        FnSign(bool_, { char_ }));
                 char_->method_table().Add("@le",        FnSign(bool_, { char_ }));
                 char_->method_table().Add("@eq",        FnSign(bool_, { char_ }));
                 char_->method_table().Add("@neq",       FnSign(bool_, { char_ }));
+                char_->method_table().Add("to_string",  FnSign(string_));
             }
             
             // string
             {
-                string_->method_table().Add("@print",   FnSign(none_));
-                string_->method_table().Add("@pick",    FnSign(ReferenceTypeGet(char_), { i64_ }));
-                string_->method_table().Add("@pick",    FnSign(stringview_, { range_ }));
-                string_->method_table().Add("@plus",    FnSign(string_, { string_ }));
-                string_->method_table().Add("@neg",     FnSign(string_));
-                string_->method_table().Add("@gt",      FnSign(bool_, { string_ }));
-                string_->method_table().Add("@lt",      FnSign(bool_, { string_ }));
-                string_->method_table().Add("@ge",      FnSign(bool_, { string_ }));
-                string_->method_table().Add("@le",      FnSign(bool_, { string_ }));
-                string_->method_table().Add("@eq",      FnSign(bool_, { string_ }));
-                string_->method_table().Add("@neq",     FnSign(bool_, { string_ }));
-                string_->method_table().Add("len",      FnSign(i64_));
-                string_->method_table().Add("clear",    FnSign(none_));
+                string_->method_table().Add("@print",     FnSign(none_));
+                string_->method_table().Add("@pick",      FnSign(ReferenceTypeGet(char_), { i64_ }));
+                string_->method_table().Add("@pick",      FnSign(stringview_, { range_ }));
+                string_->method_table().Add("@plus",      FnSign(string_, { string_ }));
+                string_->method_table().Add("@neg",       FnSign(string_));
+                string_->method_table().Add("@gt",        FnSign(bool_, { string_ }));
+                string_->method_table().Add("@lt",        FnSign(bool_, { string_ }));
+                string_->method_table().Add("@ge",        FnSign(bool_, { string_ }));
+                string_->method_table().Add("@le",        FnSign(bool_, { string_ }));
+                string_->method_table().Add("@eq",        FnSign(bool_, { string_ }));
+                string_->method_table().Add("@neq",       FnSign(bool_, { string_ }));
+                string_->method_table().Add("len",        FnSign(i64_));
+                string_->method_table().Add("clear",      FnSign(none_));
+                string_->method_table().Add("to_string",  FnSign(string_));
             }
 
             // stringview
             {
-                stringview_->method_table().Add("@print",   FnSign(none_));
-                stringview_->method_table().Add("@pick",    FnSign(ReferenceTypeGet(char_), { i64_ }));
-                stringview_->method_table().Add("@pick",    FnSign(stringview_, { range_ }));
-                stringview_->method_table().Add("@neg",     FnSign(string_));
-                stringview_->method_table().Add("@gt",      FnSign(bool_, { stringview_ }));
-                stringview_->method_table().Add("@lt",      FnSign(bool_, { stringview_ }));
-                stringview_->method_table().Add("@ge",      FnSign(bool_, { stringview_ }));
-                stringview_->method_table().Add("@le",      FnSign(bool_, { stringview_ }));
-                stringview_->method_table().Add("@eq",      FnSign(bool_, { stringview_ }));
-                stringview_->method_table().Add("@neq",     FnSign(bool_, { stringview_ }));
-                stringview_->method_table().Add("len",      FnSign(i64_));
+                stringview_->method_table().Add("@print",     FnSign(none_));
+                stringview_->method_table().Add("@pick",      FnSign(ReferenceTypeGet(char_), { i64_ }));
+                stringview_->method_table().Add("@pick",      FnSign(stringview_, { range_ }));
+                stringview_->method_table().Add("@neg",       FnSign(string_));
+                stringview_->method_table().Add("@gt",        FnSign(bool_, { stringview_ }));
+                stringview_->method_table().Add("@lt",        FnSign(bool_, { stringview_ }));
+                stringview_->method_table().Add("@ge",        FnSign(bool_, { stringview_ }));
+                stringview_->method_table().Add("@le",        FnSign(bool_, { stringview_ }));
+                stringview_->method_table().Add("@eq",        FnSign(bool_, { stringview_ }));
+                stringview_->method_table().Add("@neq",       FnSign(bool_, { stringview_ }));
+                stringview_->method_table().Add("len",        FnSign(i64_));
+                stringview_->method_table().Add("to_string",  FnSign(string_));
             }
             
             // array
