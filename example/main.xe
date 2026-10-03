@@ -1,12 +1,11 @@
 
 fn main() {
-    println("abc" == "abc");        # true
-    println("abc" != "abd");        # true
-    println("abc" <  "abd");        # true
-    println("abc" <= "abc");        # true
-    println("abd" >  "abc");        # true
-    println("abc" >= "ab");         # true
-    println("a"   <  "aa");         # true
-    println(""    <  "a");          # true
-    println("Z"   <  "a");          # true
+    println(1 + 2);             # 3
+    println(10 / 3);            # 3
+    println(10 % 3);            # 1
+    println(-5 %% 3);           # 1
+    println(1 < 2);             # true
+    println(5000000000);        # 5000000000
+    println(1.5 + 2.25);        # 3.750000
+    println(1.0 < 2.0);         # true
 }

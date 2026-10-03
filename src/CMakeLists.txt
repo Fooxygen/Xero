@@ -31,10 +31,7 @@ add_executable(xero
     xcompiler/defs/fn.cpp
     xcompiler/defs/type.cpp
     xcompiler/defs/types_init/bool.cpp
-    xcompiler/defs/types_init/i32.cpp
-    xcompiler/defs/types_init/i64.cpp
-    xcompiler/defs/types_init/f32.cpp
-    xcompiler/defs/types_init/f64.cpp
+    xcompiler/defs/types_init/number.cpp
     xcompiler/defs/types_init/char.cpp
     xcompiler/defs/types_init/string.cpp
     xcompiler/defs/types_init/array.cpp
