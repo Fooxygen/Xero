@@ -43,7 +43,7 @@ namespace xcompiler {
             }
         }
 
-        llvm::Value* NumberEncode(IRGen& gen, llvm::Value* value, llvm::Value* fmt) {
+        llvm::Value* NumberToString(IRGen& gen, llvm::Value* value, llvm::Value* fmt) {
             auto& builder = gen.llvm_builder();
 
             auto buf   = gen.SlotCreate(
@@ -185,7 +185,7 @@ namespace xcompiler {
         
 
         impl->MethodAdd("to_string",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return NumberEncode(gen, gen.ArgLoad(args[0]),
+            return NumberToString(gen, gen.ArgLoad(args[0]),
                 gen.llvm_builder().CreateGlobalString("%d", ".fmt.i32"));
         }, sema::FnSign(string_));
     }
@@ -273,7 +273,7 @@ namespace xcompiler {
         }, sema::FnSign(bool_, { i64_ }));
 
         impl->MethodAdd("to_string",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return NumberEncode(gen, gen.ArgLoad(args[0]),
+            return NumberToString(gen, gen.ArgLoad(args[0]),
                 gen.llvm_builder().CreateGlobalString("%lld", ".fmt.i64"));
         }, sema::FnSign(string_));
     }
@@ -361,7 +361,7 @@ namespace xcompiler {
 
         impl->MethodAdd("to_string",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
-            return NumberEncode(gen,
+            return NumberToString(gen,
                 builder.CreateFPExt(gen.ArgLoad(args[0]), builder.getDoubleTy()),
                 builder.CreateGlobalString("%g", ".fmt.f32"));
         }, sema::FnSign(string_));
@@ -439,7 +439,7 @@ namespace xcompiler {
         }, sema::FnSign(bool_, { f64_ }));
 
         impl->MethodAdd("to_string",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return NumberEncode(gen, gen.ArgLoad(args[0]),
+            return NumberToString(gen, gen.ArgLoad(args[0]),
                 gen.llvm_builder().CreateGlobalString("%g", ".fmt.f64"));
         }, sema::FnSign(string_));
     }
