@@ -38,7 +38,7 @@ namespace xcompiler {
             auto  data = builder.CreateCall(LibC_malloc(gen), { builder.getInt64(4) });
             builder.CreateStore(codepoint, data);
 
-            return gen.ValueStructCreate(
+            return gen.StructTypeValCreate(
                 gen.LLVMType(string_), { data, builder.getInt64(1) }
             );
         }, sema::FnSign(string_, {}, std::nullopt, sema::FnModifier::Cast));
@@ -159,7 +159,7 @@ namespace xcompiler {
             auto data = builder.CreateCall(LibC_malloc(gen), { builder.getInt64(4) });
             builder.CreateStore(codepoint, data);
 
-            return gen.ValueStructCreate(
+            return gen.StructTypeValCreate(
                 gen.LLVMType(string_), { data, builder.getInt64(1) }
             );
         }, sema::FnSign(string_));

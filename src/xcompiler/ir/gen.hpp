@@ -52,21 +52,6 @@ namespace xcompiler {
         VarTable var_table_;
 
     private:
-        // Utility
-
-        // └─ Value
-
-        llvm::Value*      IdResolve(IdExpr& node);                              // getting val's addr from id
-        llvm::Value*      ValMaterialize(llvm::Value* val, sema::Type* type);   // allocating memory for val to store
-        llvm::Value*      ExprLoad(Expr& node);                                 // loading val from expr
-
-        // └─ IR
-
-        llvm::AllocaInst* SlotCreate(llvm::Type* type, const std::string& name);
-        bool              HasBlockTerm();
-        void              BlockTermCreate(llvm::BasicBlock* term);
-        void              BlockTermCreate(std::function<void()> callback);
-
         // Exec
 
         llvm::Value* Exec(BlockExpr& node, const std::function<void()>& on_scope_ready = nullptr);
@@ -105,19 +90,29 @@ namespace xcompiler {
 
     public:
         // Utility
+
         // └─ Type
 
         llvm::Type*       LLVMType(sema::Type* type);
 
         // └─ IR
 
+        llvm::AllocaInst* SlotCreate(llvm::Type* type, const std::string& name);
         llvm::BasicBlock* BlockCreate(const std::string& name, llvm::Function* fn);     // create basic block
+        void              BlockTermCreate(llvm::BasicBlock* term);
+        void              BlockTermCreate(std::function<void()> callback);
+        bool              HasBlockTerm();
+        llvm::Value*      StructTypeValCreate(llvm::Type* type, llvm::ArrayRef<llvm::Value*> fields);
 
-        // └─ Value
+        // └─ Expr
 
-        llvm::Value*      ValueStructCreate(llvm::Type* type, llvm::ArrayRef<llvm::Value*> fields);
-
-        // └─ Fn
+        // e.g. x: i32 = 3; z: i32& = x;
+        //      IdResolve(x): getting address of x
+        //      IdResolve(z): getting address of x actually
+        llvm::Value*      IdResolve(IdExpr& node);
+        
+        llvm::Value*      ValMaterialize(llvm::Value* val, sema::Type* type);           // allocating memory for val to store
+        llvm::Value*      ExprLoad(Expr& node);                                         // loading val from expr
         Arg               ArgRefMake(llvm::Value* val, sema::Type* type);               // wrap value as ref arg
         llvm::Value*      ArgLoad(const Arg& arg);                                      // take value   from arg
         llvm::Value*      ArgAddr(const Arg& arg);                                      // take address from arg

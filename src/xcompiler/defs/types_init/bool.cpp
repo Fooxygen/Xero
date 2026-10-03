@@ -73,7 +73,7 @@ namespace xcompiler {
             store(builder.CreateSelect(cond, builder.getInt32(0),   builder.getInt32('e')), 4);
             auto len = builder.CreateSelect(cond, builder.getInt64(4), builder.getInt64(5));
 
-            return gen.ValueStructCreate(
+            return gen.StructTypeValCreate(
                 gen.LLVMType(string_), { data, len }
             );
         }, sema::FnSign(string_));

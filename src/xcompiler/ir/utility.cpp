@@ -79,12 +79,6 @@ namespace xcompiler {
         return builder_alloc.CreateAlloca(type, nullptr, name);
     }
 
-    bool              IRGen::HasBlockTerm() {
-        // Program is a top-level node and has no BasicBlock
-        auto block = llvm_builder().GetInsertBlock();
-        return block && block->getTerminator() != nullptr;
-    }
-
     llvm::BasicBlock* IRGen::BlockCreate(const std::string& name, llvm::Function* fn) {
         return llvm::BasicBlock::Create(llvm_context(), name, fn);
     }
@@ -97,11 +91,23 @@ namespace xcompiler {
         if (!HasBlockTerm()) callback();
     }
 
-    // Value
+    bool              IRGen::HasBlockTerm() {
+        // Program is a top-level node and has no BasicBlock
+        auto block = llvm_builder().GetInsertBlock();
+        return block && block->getTerminator() != nullptr;
+    }
 
-    // e.g. x: i32 = 3; z: i32& = x;
-    //      IdResolve(x): getting address of x
-    //      IdResolve(z): getting address of x actually
+    llvm::Value*      IRGen::StructTypeValCreate(llvm::Type* type, llvm::ArrayRef<llvm::Value*> fields) {
+        auto value = (llvm::Value*)llvm::PoisonValue::get(type);
+        int  idx   = 0;
+        for (auto field : fields) {
+            value = llvm_builder().CreateInsertValue(value, field, idx++);
+        }
+        return value;
+    }
+
+    // Expr
+
     llvm::Value*      IRGen::IdResolve(IdExpr& node) {
         auto var = var_table_.Lookup(node.name_, node.loc_);
 
@@ -137,17 +143,6 @@ namespace xcompiler {
         }
         return val;
     }
-    
-    llvm::Value*      IRGen::ValueStructCreate(llvm::Type* type, llvm::ArrayRef<llvm::Value*> fields) {
-        auto value = (llvm::Value*)llvm::PoisonValue::get(type);
-        int  idx   = 0;
-        for (auto field : fields) {
-            value = llvm_builder().CreateInsertValue(value, field, idx++);
-        }
-        return value;
-    }
-
-    // Fn
 
     Arg               IRGen::ArgRefMake(llvm::Value* val, sema::Type* type) {
         // RefArg

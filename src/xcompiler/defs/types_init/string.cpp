@@ -72,7 +72,7 @@ namespace xcompiler {
             llvm::Type* llvm_type
         ) {
             gen.llvm_builder().CreateStore(
-                gen.ValueStructCreate(llvm_type, { memory.data, memory.len }),
+                gen.StructTypeValCreate(llvm_type, { memory.data, memory.len }),
                 addr
             );
         }
@@ -219,7 +219,7 @@ namespace xcompiler {
             auto  len       = builder.CreateSelect(is_closed, builder.CreateAdd(diff, builder.getInt64(1)), diff);
             auto  offset    = builder.CreateAdd(info.offset, left);
 
-            return gen.ValueStructCreate(
+            return gen.StructTypeValCreate(
                 gen.LLVMType(sema::TypeTable::Lookup("stringview")),
                 { info.org, offset, len }
             );
@@ -259,7 +259,7 @@ namespace xcompiler {
 
             builder.SetInsertPoint(block_end);
 
-            return gen.ValueStructCreate(
+            return gen.StructTypeValCreate(
                 gen.LLVMType(sema::TypeTable::Lookup("string")),
                 { result_data, info.memory.len }
             );
@@ -331,7 +331,7 @@ namespace xcompiler {
                 auto new_data = Realloc(gen, lval_data, new_len);
 
                 builder.CreateStore(
-                    gen.ValueStructCreate(gen.LLVMType(string_), { new_data, new_len }),
+                    gen.StructTypeValCreate(gen.LLVMType(string_), { new_data, new_len }),
                     lval.org
                 );
                 builder.CreateBr(block_adjust);
@@ -357,7 +357,7 @@ namespace xcompiler {
                 );
 
                 builder.CreateStore(
-                    gen.ValueStructCreate(gen.LLVMType(string_), { new_data, new_len }),
+                    gen.StructTypeValCreate(gen.LLVMType(string_), { new_data, new_len }),
                     lval.org
                 );
                 builder.CreateBr(block_adjust);
@@ -396,7 +396,7 @@ namespace xcompiler {
             builder.CreateCall(LibC_memmove(gen), { result_data, str.memory.data, result_size });
 
             // Package
-            return gen.ValueStructCreate(
+            return gen.StructTypeValCreate(
                 str.llvm_type, { result_data, str.memory.len }
             );
         }, sema::FnSign(string_));
@@ -440,7 +440,7 @@ namespace xcompiler {
                 rval_dst, rval.memory.data, builder.CreateMul(rval.memory.len, builder.getInt64(4))
             });
 
-            return gen.ValueStructCreate(
+            return gen.StructTypeValCreate(
                 lval.llvm_type, { result_data, result_len }
             );
         }, sema::FnSign(string_, { string_ }));
@@ -552,7 +552,7 @@ namespace xcompiler {
             auto  src = CharGet(gen, view.memory.data, view.offset);
             builder.CreateCall(LibC_memmove(gen), { new_data, src, new_size });
 
-            return gen.ValueStructCreate(
+            return gen.StructTypeValCreate(
                 gen.LLVMType(string_), { new_data, view.memory.len }
             );
         }, sema::FnSign(string_, {}, std::nullopt, sema::FnModifier::Cast));

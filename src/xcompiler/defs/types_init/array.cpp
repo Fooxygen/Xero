@@ -119,7 +119,7 @@ namespace xcompiler {
             llvm::Type* llvm_type
         ) {
             gen.llvm_builder().CreateStore(
-                gen.ValueStructCreate(llvm_type, { memory.data, memory.len }),
+                gen.StructTypeValCreate(llvm_type, { memory.data, memory.len }),
                 addr
             );
         }
@@ -177,7 +177,7 @@ namespace xcompiler {
             builder.SetInsertPoint(block_end);
 
             // Package
-            return gen.ValueStructCreate(
+            return gen.StructTypeValCreate(
                 gen.LLVMType(sema::TypeTable::Lookup("array")),
                 { result_data, info.memory.len }
             );
@@ -281,7 +281,7 @@ namespace xcompiler {
             auto  len       = builder.CreateSelect(is_closed, builder.CreateAdd(diff, builder.getInt64(1)), diff);
             auto  offset    = builder.CreateAdd(info.offset, left);
 
-            return gen.ValueStructCreate(
+            return gen.StructTypeValCreate(
                 gen.LLVMType(sema::TypeTable::Lookup("arrayview")),
                 { info.org, offset, len }
             );
@@ -438,7 +438,7 @@ namespace xcompiler {
                     auto new_data = Realloc(gen, lval_data, elem_size, new_len);
 
                     builder.CreateStore(
-                        gen.ValueStructCreate(array_llvm_type, { new_data, new_len }),
+                        gen.StructTypeValCreate(array_llvm_type, { new_data, new_len }),
                         lval.org
                     );
                     builder.CreateBr(block_adjust);
@@ -491,7 +491,7 @@ namespace xcompiler {
                 builder.SetInsertPoint(block_cp_end);
                 {
                     builder.CreateStore(
-                        gen.ValueStructCreate(array_llvm_type, { new_data, new_len }),
+                        gen.StructTypeValCreate(array_llvm_type, { new_data, new_len }),
                         lval.org
                     );
                     builder.CreateBr(block_adjust);
@@ -565,7 +565,7 @@ namespace xcompiler {
             builder.SetInsertPoint(block_end);
 
             // Package
-            return gen.ValueStructCreate(
+            return gen.StructTypeValCreate(
                 arr.llvm_type, { result_data, arr.memory.len }
             );
         }, sema::FnSign(sema::TypeTable::ParametricTypeGet(array_, { T })));
@@ -700,7 +700,7 @@ namespace xcompiler {
 
             builder.SetInsertPoint(block_r_end);
 
-            return gen.ValueStructCreate(
+            return gen.StructTypeValCreate(
                 lval.llvm_type, { result_data, result_len }
             );
         }, sema::FnSign(sema::TypeTable::ParametricTypeGet(array_, { T }), { sema::TypeTable::ParametricTypeGet(array_, { T }) }));
@@ -880,7 +880,7 @@ namespace xcompiler {
             // End Block
             builder.SetInsertPoint(block_end);
 
-            return gen.ValueStructCreate(
+            return gen.StructTypeValCreate(
                 gen.LLVMType(array_), { new_data, view.memory.len }
             );
         }, sema::FnSign(sema::TypeTable::ParametricTypeGet(array_, { T }), {}, std::nullopt, sema::FnModifier::Cast));

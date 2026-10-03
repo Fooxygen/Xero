@@ -263,7 +263,7 @@ namespace xcompiler {
             // left, right, step, is_closed
             { iter_llvm_type, iter_llvm_type, iter_llvm_type, llvm_builder().getInt1Ty() }
         );
-        return ValueStructCreate(
+        return StructTypeValCreate(
             gen_type,
             { left_val, right_val, step_val, is_closed_val }
         );
@@ -277,7 +277,7 @@ namespace xcompiler {
             auto null_data = llvm::ConstantPointerNull::get(
                 llvm::PointerType::get(llvm_context(), 0)
             );
-            return ValueStructCreate(
+            return StructTypeValCreate(
                 LLVMType(node.resolved_type_),
                 { null_data, llvm_builder().getInt64(0) }
             );
@@ -307,7 +307,7 @@ namespace xcompiler {
             }
 
             // Package
-            return ValueStructCreate(
+            return StructTypeValCreate(
                 LLVMType(node.resolved_type_),
                 { data, llvm_builder().getInt64(len) }
             );
@@ -552,7 +552,7 @@ namespace xcompiler {
         }
 
         // Package
-        return ValueStructCreate(
+        return StructTypeValCreate(
             LLVMType(node.resolved_type_),
             { data, llvm_builder().getInt64(len) }
         );
