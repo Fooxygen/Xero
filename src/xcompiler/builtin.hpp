@@ -16,7 +16,6 @@ namespace xcompiler {
 
     llvm::Function* LibCLookup(IRGen& gen, const std::string& name, llvm::FunctionType* fntype);
     llvm::Function* LibC_printf(IRGen& gen);
-    llvm::Function* LibC_snprintf(IRGen& gen);
     llvm::Function* LibC_malloc(IRGen& gen);
     llvm::Function* LibC_realloc(IRGen& gen);
     llvm::Function* LibC_free(IRGen& gen);

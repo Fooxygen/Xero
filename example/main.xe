@@ -1,13 +1,23 @@
 
+fn abs(x: i32) -> i32 {
+    if (x < 0) return -x;
+    return x;
+}
+
 fn main() {
-    x: i32 = 3;
-    y: i64 = 40000000000;
-    z: f32 = 3.14;
-    w: f64 = 3.141592654;
-    println(
-        x.to_string(),
-        y.to_string(),
-        z.to_string(),
-        w.to_string()
-    );
+    r: i32 = 3;
+
+    for (x in -r..=r) {
+        s: i32 = r - abs(x);
+        
+        for (y in 0..s) print(' ');
+        print('O');
+
+        if (x != 0) {
+            for (y in 0..(2 * r + 1 - 2 * s - 2)) print(' ');
+            print('O');
+        }
+
+        print('\n');
+    }
 }

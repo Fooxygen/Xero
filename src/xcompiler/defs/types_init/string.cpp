@@ -366,7 +366,7 @@ namespace xcompiler {
     // string
 
     void TypeImplTable::Init_string() {
-        using ARGS    = const std::vector<Arg>&;
+        using ARGS        = const std::vector<Arg>&;
 
         auto  none_       = sema::TypeTable::Lookup("none");
         auto  bool_       = sema::TypeTable::Lookup("bool");
@@ -380,7 +380,7 @@ namespace xcompiler {
 
         // @copy and @release
 
-        impl->MethodAdd("@copy",        [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@copy",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  str     = StringLoad(gen, args[0]);
 
@@ -394,7 +394,7 @@ namespace xcompiler {
                 str.llvm_type, { result_data, str.memory.len }
             );
         }, sema::FnSign(string_));
-        impl->MethodAdd("@release",     [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@release", [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto str = StringLoad(gen, args[0]);
             gen.llvm_builder().CreateCall(LibC_free(gen), { str.memory.data });
             return nullptr;
@@ -402,17 +402,17 @@ namespace xcompiler {
 
         // Other
 
-        impl->MethodAdd("@print",       [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@print",   [](IRGen& gen, ARGS& args) -> llvm::Value* {
             return Print(gen, StringLoad(gen, args[0]));
         }, sema::FnSign(none_));
         
-        impl->MethodAdd("@pick",        [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@pick",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
             return PickIndex(gen, StringLoad(gen, args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(sema::TypeTable::ReferenceTypeGet(char_), { i64_ }));
-        impl->MethodAdd("@pick",        [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@pick",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
             return PickRange(gen, StringLoad(gen, args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(stringview_, { range_ }));
-        impl->MethodAdd("@plus",        [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@plus",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  lval    = StringLoad(gen, args[0]);
             auto  rval    = StringLoad(gen, args[1]);
@@ -432,10 +432,10 @@ namespace xcompiler {
                 lval.llvm_type, { result_data, result_len }
             );
         }, sema::FnSign(string_, { string_ }));
-        impl->MethodAdd("@neg",         [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@neg",     [](IRGen& gen, ARGS& args) -> llvm::Value* {
             return Reverse(gen, StringLoad(gen, args[0]));
         }, sema::FnSign(string_));
-        impl->MethodAdd("@gt",          [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@gt",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto lval = StringLoad(gen, args[0]);
             auto rval = StringLoad(gen, args[1]);
             return gen.llvm_builder().CreateICmpSGT(
@@ -443,7 +443,7 @@ namespace xcompiler {
                 gen.llvm_builder().getInt32(0)
             );
         }, sema::FnSign(bool_, { string_ }));
-        impl->MethodAdd("@lt",          [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@lt",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto lval = StringLoad(gen, args[0]);
             auto rval = StringLoad(gen, args[1]);
             return gen.llvm_builder().CreateICmpSLT(
@@ -451,7 +451,7 @@ namespace xcompiler {
                 gen.llvm_builder().getInt32(0)
             );
         }, sema::FnSign(bool_, { string_ }));
-        impl->MethodAdd("@ge",          [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@ge",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto lval = StringLoad(gen, args[0]);
             auto rval = StringLoad(gen, args[1]);
             return gen.llvm_builder().CreateICmpSGE(
@@ -459,7 +459,7 @@ namespace xcompiler {
                 gen.llvm_builder().getInt32(0)
             );
         }, sema::FnSign(bool_, { string_ }));
-        impl->MethodAdd("@le",          [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@le",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto lval = StringLoad(gen, args[0]);
             auto rval = StringLoad(gen, args[1]);
             return gen.llvm_builder().CreateICmpSLE(
@@ -467,7 +467,7 @@ namespace xcompiler {
                 gen.llvm_builder().getInt32(0)
             );
         }, sema::FnSign(bool_, { string_ }));
-        impl->MethodAdd("@eq",          [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@eq",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto lval = StringLoad(gen, args[0]);
             auto rval = StringLoad(gen, args[1]);
             return gen.llvm_builder().CreateICmpEQ(
@@ -475,7 +475,7 @@ namespace xcompiler {
                 gen.llvm_builder().getInt32(0)
             );
         }, sema::FnSign(bool_, { string_ }));
-        impl->MethodAdd("@neq",         [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@neq",     [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto lval = StringLoad(gen, args[0]);
             auto rval = StringLoad(gen, args[1]);
             return gen.llvm_builder().CreateICmpNE(
@@ -484,10 +484,10 @@ namespace xcompiler {
             );
         }, sema::FnSign(bool_, { string_ }));
 
-        impl->MethodAdd("len",          [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("len",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
             return StringLoad(gen, args[0]).memory.len;
         }, sema::FnSign(i64_));
-        impl->MethodAdd("clear",        [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("clear",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  str     = StringLoad(gen, args[0]);
 
@@ -499,15 +499,12 @@ namespace xcompiler {
             Store(gen, str.addr, { null_data, builder.getInt64(0) }, str.llvm_type);
             return nullptr;
         }, sema::FnSign(none_));
-        impl->MethodAdd("to_string",    [impl](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return impl->MethodCall(gen, "@copy", { args[0] });
-        }, sema::FnSign(string_));
     }
 
     // stringview
 
     void TypeImplTable::Init_stringview() {
-        using ARGS    = const std::vector<Arg>&;
+        using ARGS        = const std::vector<Arg>&;
 
         auto  none_       = sema::TypeTable::Lookup("none");
         auto  bool_       = sema::TypeTable::Lookup("bool");
@@ -521,16 +518,16 @@ namespace xcompiler {
 
         // @copy and @release
 
-        impl->MethodAdd("@copy",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@copy",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
             return gen.ArgLoad(args[0]);
         }, sema::FnSign(stringview_));
-        impl->MethodAdd("@release",   [](IRGen&, ARGS&) -> llvm::Value* {
+        impl->MethodAdd("@release", [](IRGen&, ARGS&) -> llvm::Value* {
             return nullptr;
         }, sema::FnSign(none_));
 
         // @cast
 
-        impl->MethodAdd("@cast",      [string_](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@cast",    [string_](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  view    = StringViewLoad(gen, args[0]);
 
@@ -547,7 +544,7 @@ namespace xcompiler {
 
         // @assign
 
-        impl->MethodAdd("@assign",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@assign",  [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder   = gen.llvm_builder();
             auto  lval      = StringViewLoad(gen, args[0]);
 
@@ -558,14 +555,14 @@ namespace xcompiler {
             Write(gen, lval, { rval_data, rval_len });
             return nullptr;
         }, sema::FnSign(none_, { string_ }));
-        impl->MethodAdd("@assign",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@assign",  [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto lval = StringViewLoad(gen, args[0]);
             auto rval = StringViewLoad(gen, args[1]);
 
             Write(gen, lval, rval.memory);
             return nullptr;
         }, sema::FnSign(none_, { stringview_ }));
-        impl->MethodAdd("@assign",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@assign",  [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  lval    = StringViewLoad(gen, args[0]);
             auto  rval    = gen.ArgLoad(args[1]);
@@ -602,20 +599,20 @@ namespace xcompiler {
 
         // Other
 
-        impl->MethodAdd("@print",     [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@print",   [](IRGen& gen, ARGS& args) -> llvm::Value* {
             return Print(gen, StringViewLoad(gen, args[0]));
         }, sema::FnSign(none_));
         
-        impl->MethodAdd("@pick",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@pick",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
             return PickIndex(gen, StringViewLoad(gen, args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(sema::TypeTable::ReferenceTypeGet(char_), { i64_ }));
-        impl->MethodAdd("@pick",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@pick",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
             return PickRange(gen, StringViewLoad(gen, args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(stringview_, { range_ }));
-        impl->MethodAdd("@neg",       [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@neg",     [](IRGen& gen, ARGS& args) -> llvm::Value* {
             return Reverse(gen, StringViewLoad(gen, args[0]));
         }, sema::FnSign(string_));
-        impl->MethodAdd("@gt",        [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@gt",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto lval = StringViewLoad(gen, args[0]);
             auto rval = StringViewLoad(gen, args[1]);
             return gen.llvm_builder().CreateICmpSGT(
@@ -623,7 +620,7 @@ namespace xcompiler {
                 gen.llvm_builder().getInt32(0)
             );
         }, sema::FnSign(bool_, { stringview_ }));
-        impl->MethodAdd("@lt",        [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@lt",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto lval = StringViewLoad(gen, args[0]);
             auto rval = StringViewLoad(gen, args[1]);
             return gen.llvm_builder().CreateICmpSLT(
@@ -631,7 +628,7 @@ namespace xcompiler {
                 gen.llvm_builder().getInt32(0)
             );
         }, sema::FnSign(bool_, { stringview_ }));
-        impl->MethodAdd("@ge",        [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@ge",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto lval = StringViewLoad(gen, args[0]);
             auto rval = StringViewLoad(gen, args[1]);
             return gen.llvm_builder().CreateICmpSGE(
@@ -639,7 +636,7 @@ namespace xcompiler {
                 gen.llvm_builder().getInt32(0)
             );
         }, sema::FnSign(bool_, { stringview_ }));
-        impl->MethodAdd("@le",        [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@le",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto lval = StringViewLoad(gen, args[0]);
             auto rval = StringViewLoad(gen, args[1]);
             return gen.llvm_builder().CreateICmpSLE(
@@ -647,7 +644,7 @@ namespace xcompiler {
                 gen.llvm_builder().getInt32(0)
             );
         }, sema::FnSign(bool_, { stringview_ }));
-        impl->MethodAdd("@eq",        [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@eq",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto lval = StringViewLoad(gen, args[0]);
             auto rval = StringViewLoad(gen, args[1]);
             return gen.llvm_builder().CreateICmpEQ(
@@ -655,7 +652,7 @@ namespace xcompiler {
                 gen.llvm_builder().getInt32(0)
             );
         }, sema::FnSign(bool_, { stringview_ }));
-        impl->MethodAdd("@neq",       [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@neq",     [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto lval = StringViewLoad(gen, args[0]);
             auto rval = StringViewLoad(gen, args[1]);
             return gen.llvm_builder().CreateICmpNE(
@@ -664,11 +661,8 @@ namespace xcompiler {
             );
         }, sema::FnSign(bool_, { stringview_ }));
 
-        impl->MethodAdd("len",        [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("len",      [](IRGen& gen, ARGS& args) -> llvm::Value* {
             return StringViewLoad(gen, args[0]).memory.len;
         }, sema::FnSign(i64_));
-        impl->MethodAdd("to_string", [impl](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return impl->MethodCall(gen, "@cast", { args[0] });
-        }, sema::FnSign(string_));
     }
 }

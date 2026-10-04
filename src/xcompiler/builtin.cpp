@@ -36,19 +36,6 @@ namespace xcompiler {
         ));
     }
 
-    llvm::Function* LibC_snprintf(IRGen& gen) {
-        auto context = &gen.llvm_module()->getContext();
-        return LibCLookup(gen, "snprintf", llvm::FunctionType::get(
-            llvm::Type::getInt32Ty(*context),
-            {
-                llvm::PointerType::getUnqual(*context),     // buf
-                llvm::Type::getInt64Ty(*context),           // size
-                llvm::PointerType::getUnqual(*context)      // fmt
-            },
-            true
-        ));
-    }
-
     llvm::Function* LibC_malloc(IRGen& gen) {
         auto context = &gen.llvm_module()->getContext();
         return LibCLookup(gen, "malloc", llvm::FunctionType::get(

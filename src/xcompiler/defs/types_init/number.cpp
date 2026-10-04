@@ -42,75 +42,21 @@ namespace xcompiler {
                 return builder.CreateAdd(modt, builder.CreateSelect(has_revise, rval, zero));
             }
         }
-
-        llvm::Value* NumberToString(IRGen& gen, llvm::Value* value, llvm::Value* fmt) {
-            auto& builder = gen.llvm_builder();
-
-            auto buf   = gen.SlotCreate(
-                llvm::ArrayType::get(builder.getInt8Ty(), 64), ".number.buf"
-            );
-            auto len32 = builder.CreateCall(LibC_snprintf(gen), {
-                buf, builder.getInt64(64), fmt, value
-            });
-            auto len   = builder.CreateIntCast(len32, builder.getInt64Ty(), false);
-            auto data  = builder.CreateCall(LibC_malloc(gen), {
-                builder.CreateMul(len, builder.getInt64(4))
-            });
-
-            auto fn          = builder.GetInsertBlock()->getParent();
-            auto block_entry = builder.GetInsertBlock();
-            auto block_cond  = gen.BlockCreate(".number.encode.cond", fn);
-            auto block_body  = gen.BlockCreate(".number.encode.body", fn);
-            auto block_end   = gen.BlockCreate(".number.encode.end",  fn);
-
-            // Cond Block
-            builder.CreateBr(block_cond);
-            builder.SetInsertPoint(block_cond);
-            auto counter = builder.CreatePHI(builder.getInt64Ty(), 2);
-            {
-                counter->addIncoming(builder.getInt64(0), block_entry);
-                builder.CreateCondBr(builder.CreateICmpSLT(counter, len), block_body, block_end);
-            }
-
-            // Body Block
-            builder.SetInsertPoint(block_body);
-            {
-                auto byte = builder.CreateLoad(builder.getInt8Ty(), builder.CreateInBoundsGEP(
-                    builder.getInt8Ty(), buf, { counter }
-                ));
-                builder.CreateStore(
-                    builder.CreateZExt(byte, builder.getInt32Ty()),
-                    builder.CreateInBoundsGEP(builder.getInt32Ty(), data, { counter })
-                );
-                auto next = builder.CreateAdd(counter, builder.getInt64(1));
-                builder.CreateBr(block_cond);
-                counter->addIncoming(next, builder.GetInsertBlock());
-            }
-
-            // End Block
-            builder.SetInsertPoint(block_end);
-
-            return gen.StructTypeValCreate(
-                gen.LLVMType(sema::TypeTable::Lookup("string")),
-                { data, len }
-            );
-        }
     }
 
     // i32
 
     void TypeImplTable::Init_i32() {
-        using ARGS    = const std::vector<Arg>&;
+        using ARGS  = const std::vector<Arg>&;
 
-        auto  none_   = sema::TypeTable::Lookup("none");
-        auto  bool_   = sema::TypeTable::Lookup("bool");
-        auto  i32_    = sema::TypeTable::Lookup("i32");
-        auto  i64_    = sema::TypeTable::Lookup("i64");
-        auto  f32_    = sema::TypeTable::Lookup("f32");
-        auto  f64_    = sema::TypeTable::Lookup("f64");
-        auto  string_ = sema::TypeTable::Lookup("string");
+        auto  none_ = sema::TypeTable::Lookup("none");
+        auto  bool_ = sema::TypeTable::Lookup("bool");
+        auto  i32_  = sema::TypeTable::Lookup("i32");
+        auto  i64_  = sema::TypeTable::Lookup("i64");
+        auto  f32_  = sema::TypeTable::Lookup("f32");
+        auto  f64_  = sema::TypeTable::Lookup("f64");
 
-        auto  impl    = TypeImplTable::Set(TypeImpl(i32_));
+        auto  impl  = TypeImplTable::Set(TypeImpl(i32_));
 
         // @copy and @release
 
@@ -123,192 +69,179 @@ namespace xcompiler {
 
         // @cast
 
-        impl->MethodAdd("@cast",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@cast",    [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateSExt(gen.ArgLoad(args[0]), gen.llvm_builder().getInt64Ty());
         }, sema::FnSign(i64_, {}, std::nullopt, sema::FnModifier::Cast));
-        impl->MethodAdd("@cast",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@cast",    [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateSIToFP(gen.ArgLoad(args[0]), gen.llvm_builder().getFloatTy());
         }, sema::FnSign(f32_, {}, std::nullopt, sema::FnModifier::Cast));
-        impl->MethodAdd("@cast",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@cast",    [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateSIToFP(gen.ArgLoad(args[0]), gen.llvm_builder().getDoubleTy());
         }, sema::FnSign(f64_, {}, std::nullopt, sema::FnModifier::Cast));
 
         // Other
 
-        impl->MethodAdd("@print",       [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@print",   [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  str_fmt = builder.CreateGlobalString("%d", ".fmt.i32");
             builder.CreateCall(LibC_printf(gen), { str_fmt, gen.ArgLoad(args[0]) });
             return nullptr;
         }, sema::FnSign(none_));
         
-        impl->MethodAdd("@plus",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@plus",    [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateAdd(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(i32_,  { i32_ }));
-        impl->MethodAdd("@minus",       [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@minus",   [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateSub(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(i32_,  { i32_ }));
-        impl->MethodAdd("@star",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@star",    [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateMul(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(i32_,  { i32_ }));
-        impl->MethodAdd("@slash",       [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@slash",   [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateSDiv(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(i32_,  { i32_ }));
-        impl->MethodAdd("@neg",         [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@neg",     [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateNeg(gen.ArgLoad(args[0]));
         }, sema::FnSign(i32_));
-        impl->MethodAdd("@modt",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@modt",    [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateSRem(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(i32_,  { i32_ }));
-        impl->MethodAdd("@modf",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@modf",    [](IRGen& gen, ARGS& args) {
             return Modf(gen, args);
         }, sema::FnSign(i32_,  { i32_ }));
         
-        impl->MethodAdd("@gt",          [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@gt",      [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateICmpSGT(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { i32_ }));
-        impl->MethodAdd("@lt",          [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@lt",      [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateICmpSLT(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { i32_ }));
-        impl->MethodAdd("@ge",          [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@ge",      [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateICmpSGE(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { i32_ }));
-        impl->MethodAdd("@le",          [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@le",      [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateICmpSLE(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { i32_ }));
-        impl->MethodAdd("@eq",          [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@eq",      [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateICmpEQ(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { i32_ }));
-        impl->MethodAdd("@neq",         [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@neq",     [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateICmpNE(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { i32_ }));
-        
-
-        impl->MethodAdd("to_string",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return NumberToString(gen, gen.ArgLoad(args[0]),
-                gen.llvm_builder().CreateGlobalString("%d", ".fmt.i32"));
-        }, sema::FnSign(string_));
     }
 
     // i64
 
     void TypeImplTable::Init_i64() {
-        using ARGS    = const std::vector<Arg>&;
+        using ARGS  = const std::vector<Arg>&;
 
-        auto  none_   = sema::TypeTable::Lookup("none");
-        auto  bool_   = sema::TypeTable::Lookup("bool");
-        auto  i64_    = sema::TypeTable::Lookup("i64");
-        auto  f32_    = sema::TypeTable::Lookup("f32");
-        auto  f64_    = sema::TypeTable::Lookup("f64");
-        auto  string_ = sema::TypeTable::Lookup("string");
+        auto  none_ = sema::TypeTable::Lookup("none");
+        auto  bool_ = sema::TypeTable::Lookup("bool");
+        auto  i64_  = sema::TypeTable::Lookup("i64");
+        auto  f32_  = sema::TypeTable::Lookup("f32");
+        auto  f64_  = sema::TypeTable::Lookup("f64");
 
-        auto  impl    = TypeImplTable::Set(TypeImpl(i64_));
+        auto  impl  = TypeImplTable::Set(TypeImpl(i64_));
 
         // @copy and @release
 
-        impl->MethodAdd("@copy",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@copy",    [](IRGen& gen, ARGS& args) {
             return gen.ArgLoad(args[0]);
         }, sema::FnSign(i64_));
-        impl->MethodAdd("@release",     [](IRGen&, ARGS&) -> llvm::Value* {
+        impl->MethodAdd("@release", [](IRGen&, ARGS&) -> llvm::Value* {
             return nullptr;
         }, sema::FnSign(none_));
 
         // @cast
 
-        impl->MethodAdd("@cast",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@cast",    [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateSIToFP(gen.ArgLoad(args[0]), gen.llvm_builder().getFloatTy());
         }, sema::FnSign(f32_, {}, std::nullopt, sema::FnModifier::Cast));
-        impl->MethodAdd("@cast",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@cast",    [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateSIToFP(gen.ArgLoad(args[0]), gen.llvm_builder().getDoubleTy());
         }, sema::FnSign(f64_, {}, std::nullopt, sema::FnModifier::Cast));
 
         // Other
 
-        impl->MethodAdd("@print",       [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@print",   [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  str_fmt = builder.CreateGlobalString("%lld", ".fmt.i64");
             builder.CreateCall(LibC_printf(gen), { str_fmt, gen.ArgLoad(args[0]) });
             return nullptr;
         }, sema::FnSign(none_));
         
-        impl->MethodAdd("@plus",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@plus",    [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateAdd(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(i64_,  { i64_ }));
-        impl->MethodAdd("@minus",       [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@minus",   [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateSub(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(i64_,  { i64_ }));
-        impl->MethodAdd("@star",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@star",    [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateMul(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(i64_,  { i64_ }));
-        impl->MethodAdd("@slash",       [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@slash",   [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateSDiv(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(i64_,  { i64_ }));
-        impl->MethodAdd("@neg",         [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@neg",     [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateNeg(gen.ArgLoad(args[0]));
         }, sema::FnSign(i64_));
-        impl->MethodAdd("@modt",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@modt",    [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateSRem(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(i64_,  { i64_ }));
-        impl->MethodAdd("@modf",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@modf",    [](IRGen& gen, ARGS& args) {
             return Modf(gen, args);
         }, sema::FnSign(i64_,  { i64_ }));
         
-        impl->MethodAdd("@gt",          [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@gt",      [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateICmpSGT(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { i64_ }));
-        impl->MethodAdd("@lt",          [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@lt",      [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateICmpSLT(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { i64_ }));
-        impl->MethodAdd("@ge",          [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@ge",      [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateICmpSGE(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { i64_ }));
-        impl->MethodAdd("@le",          [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@le",      [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateICmpSLE(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { i64_ }));
-        impl->MethodAdd("@eq",          [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@eq",      [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateICmpEQ(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { i64_ }));
-        impl->MethodAdd("@neq",         [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@neq",     [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateICmpNE(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { i64_ }));
-
-        impl->MethodAdd("to_string",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return NumberToString(gen, gen.ArgLoad(args[0]),
-                gen.llvm_builder().CreateGlobalString("%lld", ".fmt.i64"));
-        }, sema::FnSign(string_));
     }
 
     // f32
 
     void TypeImplTable::Init_f32() {
-        using ARGS    = const std::vector<Arg>&;
+        using ARGS  = const std::vector<Arg>&;
 
-        auto  none_   = sema::TypeTable::Lookup("none");
-        auto  bool_   = sema::TypeTable::Lookup("bool");
-        auto  f32_    = sema::TypeTable::Lookup("f32");
-        auto  f64_    = sema::TypeTable::Lookup("f64");
-        auto  string_ = sema::TypeTable::Lookup("string");
+        auto  none_ = sema::TypeTable::Lookup("none");
+        auto  bool_ = sema::TypeTable::Lookup("bool");
+        auto  f32_  = sema::TypeTable::Lookup("f32");
+        auto  f64_  = sema::TypeTable::Lookup("f64");
 
-        auto  impl    = TypeImplTable::Set(TypeImpl(f32_));
+        auto  impl  = TypeImplTable::Set(TypeImpl(f32_));
 
         // @copy and @release
 
-        impl->MethodAdd("@copy",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@copy",    [](IRGen& gen, ARGS& args) {
             return gen.ArgLoad(args[0]);
         }, sema::FnSign(f32_));
-        impl->MethodAdd("@release",     [](IRGen&, ARGS&) -> llvm::Value* {
+        impl->MethodAdd("@release", [](IRGen&, ARGS&) -> llvm::Value* {
             return nullptr;
         }, sema::FnSign(none_));
 
         // @cast
 
-        impl->MethodAdd("@cast",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@cast",    [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFPExt(gen.ArgLoad(args[0]), gen.llvm_builder().getDoubleTy());
         }, sema::FnSign(f64_, {}, std::nullopt, sema::FnModifier::Cast));
 
         // Other
 
-        impl->MethodAdd("@print",       [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@print",   [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  str_fmt = builder.CreateGlobalString("%f", ".fmt.f32");
             builder.CreateCall(LibC_printf(gen), {
@@ -318,129 +251,116 @@ namespace xcompiler {
             return nullptr;
         }, sema::FnSign(none_));
     
-        impl->MethodAdd("@plus",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@plus",    [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFAdd(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(f32_,  { f32_ }));
-        impl->MethodAdd("@minus",       [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@minus",   [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFSub(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(f32_,  { f32_ }));
-        impl->MethodAdd("@star",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@star",    [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFMul(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(f32_,  { f32_ }));
-        impl->MethodAdd("@slash",       [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@slash",   [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFDiv(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(f32_,  { f32_ }));
-        impl->MethodAdd("@neg",         [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@neg",     [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFNeg(gen.ArgLoad(args[0]));
         }, sema::FnSign(f32_));
-        impl->MethodAdd("@modt",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@modt",    [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFRem(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(f32_,  { f32_ }));
-        impl->MethodAdd("@modf",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@modf",    [](IRGen& gen, ARGS& args) {
             return Modf(gen, args);
         }, sema::FnSign(f32_,  { f32_ }));
         
-        impl->MethodAdd("@gt",          [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@gt",      [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFCmpOGT(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { f32_ }));
-        impl->MethodAdd("@lt",          [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@lt",      [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFCmpOLT(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { f32_ }));
-        impl->MethodAdd("@ge",          [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@ge",      [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFCmpOGE(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { f32_ }));
-        impl->MethodAdd("@le",          [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@le",      [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFCmpOLE(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { f32_ }));
-        impl->MethodAdd("@eq",          [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@eq",      [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFCmpOEQ(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { f32_ }));
-        impl->MethodAdd("@neq",         [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@neq",     [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFCmpONE(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { f32_ }));
-
-        impl->MethodAdd("to_string",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            auto& builder = gen.llvm_builder();
-            return NumberToString(gen,
-                builder.CreateFPExt(gen.ArgLoad(args[0]), builder.getDoubleTy()),
-                builder.CreateGlobalString("%g", ".fmt.f32"));
-        }, sema::FnSign(string_));
     }
 
     // f64
 
     void TypeImplTable::Init_f64() {
-        using ARGS    = const std::vector<Arg>&;
+        using ARGS  = const std::vector<Arg>&;
 
-        auto  none_   = sema::TypeTable::Lookup("none");
-        auto  bool_   = sema::TypeTable::Lookup("bool");
-        auto  f64_    = sema::TypeTable::Lookup("f64");
-        auto  string_ = sema::TypeTable::Lookup("string");
+        auto  none_ = sema::TypeTable::Lookup("none");
+        auto  bool_ = sema::TypeTable::Lookup("bool");
+        auto  f64_  = sema::TypeTable::Lookup("f64");
 
-        auto  impl    = TypeImplTable::Set(TypeImpl(f64_));
+        auto  impl  = TypeImplTable::Set(TypeImpl(f64_));
 
         // @copy and @release
 
-        impl->MethodAdd("@copy",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@copy",    [](IRGen& gen, ARGS& args) {
             return gen.ArgLoad(args[0]);
         }, sema::FnSign(f64_));
-        impl->MethodAdd("@release",     [](IRGen&, ARGS&) -> llvm::Value* {
+        impl->MethodAdd("@release", [](IRGen&, ARGS&) -> llvm::Value* {
             return nullptr;
         }, sema::FnSign(none_));
 
         // Other
 
-        impl->MethodAdd("@print",       [](IRGen& gen, ARGS& args) -> llvm::Value* {
+        impl->MethodAdd("@print",   [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  str_fmt = builder.CreateGlobalString("%f", ".fmt.f64");
             builder.CreateCall(LibC_printf(gen), { str_fmt, gen.ArgLoad(args[0]) });
             return nullptr;
         }, sema::FnSign(none_));
 
-        impl->MethodAdd("@plus",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@plus",    [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFAdd(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(f64_,  { f64_ }));
-        impl->MethodAdd("@minus",       [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@minus",   [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFSub(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(f64_,  { f64_ }));
-        impl->MethodAdd("@star",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@star",    [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFMul(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(f64_,  { f64_ }));
-        impl->MethodAdd("@slash",       [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@slash",   [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFDiv(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(f64_,  { f64_ }));
-        impl->MethodAdd("@neg",         [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@neg",     [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFNeg(gen.ArgLoad(args[0]));
         }, sema::FnSign(f64_));
-        impl->MethodAdd("@modt",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@modt",    [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFRem(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(f64_,  { f64_ }));
-        impl->MethodAdd("@modf",        [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@modf",    [](IRGen& gen, ARGS& args) {
             return Modf(gen, args);
         }, sema::FnSign(f64_,  { f64_ }));
         
-        impl->MethodAdd("@gt",          [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@gt",      [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFCmpOGT(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { f64_ }));
-        impl->MethodAdd("@lt",          [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@lt",      [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFCmpOLT(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { f64_ }));
-        impl->MethodAdd("@ge",          [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@ge",      [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFCmpOGE(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { f64_ }));
-        impl->MethodAdd("@le",          [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@le",      [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFCmpOLE(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { f64_ }));
-        impl->MethodAdd("@eq",          [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@eq",      [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFCmpOEQ(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { f64_ }));
-        impl->MethodAdd("@neq",         [](IRGen& gen, ARGS& args) {
+        impl->MethodAdd("@neq",     [](IRGen& gen, ARGS& args) {
             return gen.llvm_builder().CreateFCmpONE(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
         }, sema::FnSign(bool_, { f64_ }));
-
-        impl->MethodAdd("to_string",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return NumberToString(gen, gen.ArgLoad(args[0]),
-                gen.llvm_builder().CreateGlobalString("%g", ".fmt.f64"));
-        }, sema::FnSign(string_));
     }
 }

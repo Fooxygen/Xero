@@ -92,135 +92,127 @@ namespace sema {
         {
             // bool
             {
-                bool_->method_table().Add("@print",     FnSign(none_));
-                bool_->method_table().Add("@eq",        FnSign(bool_, { bool_ }));
-                bool_->method_table().Add("@neq",       FnSign(bool_, { bool_ }));
-                bool_->method_table().Add("@and",       FnSign(bool_, { bool_ }));
-                bool_->method_table().Add("@or",        FnSign(bool_, { bool_ }));
-                bool_->method_table().Add("@not",       FnSign(bool_));
-                bool_->method_table().Add("to_string",  FnSign(string_));
+                bool_->method_table().Add("@print", FnSign(none_));
+                bool_->method_table().Add("@eq",    FnSign(bool_, { bool_ }));
+                bool_->method_table().Add("@neq",   FnSign(bool_, { bool_ }));
+                bool_->method_table().Add("@and",   FnSign(bool_, { bool_ }));
+                bool_->method_table().Add("@or",    FnSign(bool_, { bool_ }));
+                bool_->method_table().Add("@not",   FnSign(bool_));
             }
 
             // i32
             {
-                i32_->method_table().Add("@print",      FnSign(none_));
-                i32_->method_table().Add("@plus",       FnSign(i32_,  { i32_ }));
-                i32_->method_table().Add("@minus",      FnSign(i32_,  { i32_ }));
-                i32_->method_table().Add("@star",       FnSign(i32_,  { i32_ }));
-                i32_->method_table().Add("@slash",      FnSign(i32_,  { i32_ }));
-                i32_->method_table().Add("@neg",        FnSign(i32_));
-                i32_->method_table().Add("@modt",       FnSign(i32_,  { i32_ }));
-                i32_->method_table().Add("@modf",       FnSign(i32_,  { i32_ }));
-                i32_->method_table().Add("@gt",         FnSign(bool_, { i32_ }));
-                i32_->method_table().Add("@lt",         FnSign(bool_, { i32_ }));
-                i32_->method_table().Add("@ge",         FnSign(bool_, { i32_ }));
-                i32_->method_table().Add("@le",         FnSign(bool_, { i32_ }));
-                i32_->method_table().Add("@eq",         FnSign(bool_, { i32_ }));
-                i32_->method_table().Add("@neq",        FnSign(bool_, { i32_ }));
-                i32_->method_table().Add("to_string",   FnSign(string_));
+                i32_->method_table().Add("@print",  FnSign(none_));
+                i32_->method_table().Add("@plus",   FnSign(i32_,  { i32_ }));
+                i32_->method_table().Add("@minus",  FnSign(i32_,  { i32_ }));
+                i32_->method_table().Add("@star",   FnSign(i32_,  { i32_ }));
+                i32_->method_table().Add("@slash",  FnSign(i32_,  { i32_ }));
+                i32_->method_table().Add("@neg",    FnSign(i32_));
+                i32_->method_table().Add("@modt",   FnSign(i32_,  { i32_ }));
+                i32_->method_table().Add("@modf",   FnSign(i32_,  { i32_ }));
+                i32_->method_table().Add("@gt",     FnSign(bool_, { i32_ }));
+                i32_->method_table().Add("@lt",     FnSign(bool_, { i32_ }));
+                i32_->method_table().Add("@ge",     FnSign(bool_, { i32_ }));
+                i32_->method_table().Add("@le",     FnSign(bool_, { i32_ }));
+                i32_->method_table().Add("@eq",     FnSign(bool_, { i32_ }));
+                i32_->method_table().Add("@neq",    FnSign(bool_, { i32_ }));
             }
 
             // i64
             {
-                i64_->method_table().Add("@print",      FnSign(none_));
-                i64_->method_table().Add("@plus",       FnSign(i64_,  { i64_ }));
-                i64_->method_table().Add("@minus",      FnSign(i64_,  { i64_ }));
-                i64_->method_table().Add("@star",       FnSign(i64_,  { i64_ }));
-                i64_->method_table().Add("@slash",      FnSign(i64_,  { i64_ }));
-                i64_->method_table().Add("@neg",        FnSign(i64_));
-                i64_->method_table().Add("@modt",       FnSign(i64_,  { i64_ }));
-                i64_->method_table().Add("@modf",       FnSign(i64_,  { i64_ }));
-                i64_->method_table().Add("@gt",         FnSign(bool_, { i64_ }));
-                i64_->method_table().Add("@lt",         FnSign(bool_, { i64_ }));
-                i64_->method_table().Add("@ge",         FnSign(bool_, { i64_ }));
-                i64_->method_table().Add("@le",         FnSign(bool_, { i64_ }));
-                i64_->method_table().Add("@eq",         FnSign(bool_, { i64_ }));
-                i64_->method_table().Add("@neq",        FnSign(bool_, { i64_ }));
-                i64_->method_table().Add("to_string",   FnSign(string_));
+                i64_->method_table().Add("@print",  FnSign(none_));
+                i64_->method_table().Add("@plus",   FnSign(i64_,  { i64_ }));
+                i64_->method_table().Add("@minus",  FnSign(i64_,  { i64_ }));
+                i64_->method_table().Add("@star",   FnSign(i64_,  { i64_ }));
+                i64_->method_table().Add("@slash",  FnSign(i64_,  { i64_ }));
+                i64_->method_table().Add("@neg",    FnSign(i64_));
+                i64_->method_table().Add("@modt",   FnSign(i64_,  { i64_ }));
+                i64_->method_table().Add("@modf",   FnSign(i64_,  { i64_ }));
+                i64_->method_table().Add("@gt",     FnSign(bool_, { i64_ }));
+                i64_->method_table().Add("@lt",     FnSign(bool_, { i64_ }));
+                i64_->method_table().Add("@ge",     FnSign(bool_, { i64_ }));
+                i64_->method_table().Add("@le",     FnSign(bool_, { i64_ }));
+                i64_->method_table().Add("@eq",     FnSign(bool_, { i64_ }));
+                i64_->method_table().Add("@neq",    FnSign(bool_, { i64_ }));
             }
 
             // f32
             {
-                f32_->method_table().Add("@print",      FnSign(none_));
-                f32_->method_table().Add("@plus",       FnSign(f32_,  { f32_ }));
-                f32_->method_table().Add("@minus",      FnSign(f32_,  { f32_ }));
-                f32_->method_table().Add("@star",       FnSign(f32_,  { f32_ }));
-                f32_->method_table().Add("@slash",      FnSign(f32_,  { f32_ }));
-                f32_->method_table().Add("@neg",        FnSign(f32_));
-                f32_->method_table().Add("@modt",       FnSign(f32_,  { f32_ }));
-                f32_->method_table().Add("@modf",       FnSign(f32_,  { f32_ }));
-                f32_->method_table().Add("@gt",         FnSign(bool_, { f32_ }));
-                f32_->method_table().Add("@lt",         FnSign(bool_, { f32_ }));
-                f32_->method_table().Add("@ge",         FnSign(bool_, { f32_ }));
-                f32_->method_table().Add("@le",         FnSign(bool_, { f32_ }));
-                f32_->method_table().Add("@eq",         FnSign(bool_, { f32_ }));
-                f32_->method_table().Add("@neq",        FnSign(bool_, { f32_ }));
-                f32_->method_table().Add("to_string",   FnSign(string_));
+                f32_->method_table().Add("@print",  FnSign(none_));
+                f32_->method_table().Add("@plus",   FnSign(f32_,  { f32_ }));
+                f32_->method_table().Add("@minus",  FnSign(f32_,  { f32_ }));
+                f32_->method_table().Add("@star",   FnSign(f32_,  { f32_ }));
+                f32_->method_table().Add("@slash",  FnSign(f32_,  { f32_ }));
+                f32_->method_table().Add("@neg",    FnSign(f32_));
+                f32_->method_table().Add("@modt",   FnSign(f32_,  { f32_ }));
+                f32_->method_table().Add("@modf",   FnSign(f32_,  { f32_ }));
+                f32_->method_table().Add("@gt",     FnSign(bool_, { f32_ }));
+                f32_->method_table().Add("@lt",     FnSign(bool_, { f32_ }));
+                f32_->method_table().Add("@ge",     FnSign(bool_, { f32_ }));
+                f32_->method_table().Add("@le",     FnSign(bool_, { f32_ }));
+                f32_->method_table().Add("@eq",     FnSign(bool_, { f32_ }));
+                f32_->method_table().Add("@neq",    FnSign(bool_, { f32_ }));
             }
 
             // f64
             {
-                f64_->method_table().Add("@print",      FnSign(none_));
-                f64_->method_table().Add("@plus",       FnSign(f64_,  { f64_ }));
-                f64_->method_table().Add("@minus",      FnSign(f64_,  { f64_ }));
-                f64_->method_table().Add("@star",       FnSign(f64_,  { f64_ }));
-                f64_->method_table().Add("@slash",      FnSign(f64_,  { f64_ }));
-                f64_->method_table().Add("@neg",        FnSign(f64_));
-                f64_->method_table().Add("@modt",       FnSign(f64_,  { f64_ }));
-                f64_->method_table().Add("@modf",       FnSign(f64_,  { f64_ }));
-                f64_->method_table().Add("@gt",         FnSign(bool_, { f64_ }));
-                f64_->method_table().Add("@lt",         FnSign(bool_, { f64_ }));
-                f64_->method_table().Add("@ge",         FnSign(bool_, { f64_ }));
-                f64_->method_table().Add("@le",         FnSign(bool_, { f64_ }));
-                f64_->method_table().Add("@eq",         FnSign(bool_, { f64_ }));
-                f64_->method_table().Add("@neq",        FnSign(bool_, { f64_ }));
-                f64_->method_table().Add("to_string",   FnSign(string_));
+                f64_->method_table().Add("@print",  FnSign(none_));
+                f64_->method_table().Add("@plus",   FnSign(f64_,  { f64_ }));
+                f64_->method_table().Add("@minus",  FnSign(f64_,  { f64_ }));
+                f64_->method_table().Add("@star",   FnSign(f64_,  { f64_ }));
+                f64_->method_table().Add("@slash",  FnSign(f64_,  { f64_ }));
+                f64_->method_table().Add("@neg",    FnSign(f64_));
+                f64_->method_table().Add("@modt",   FnSign(f64_,  { f64_ }));
+                f64_->method_table().Add("@modf",   FnSign(f64_,  { f64_ }));
+                f64_->method_table().Add("@gt",     FnSign(bool_, { f64_ }));
+                f64_->method_table().Add("@lt",     FnSign(bool_, { f64_ }));
+                f64_->method_table().Add("@ge",     FnSign(bool_, { f64_ }));
+                f64_->method_table().Add("@le",     FnSign(bool_, { f64_ }));
+                f64_->method_table().Add("@eq",     FnSign(bool_, { f64_ }));
+                f64_->method_table().Add("@neq",    FnSign(bool_, { f64_ }));
             }
 
             // char
             {
-                char_->method_table().Add("@print",     FnSign(none_));
-                char_->method_table().Add("@gt",        FnSign(bool_, { char_ }));
-                char_->method_table().Add("@lt",        FnSign(bool_, { char_ }));
-                char_->method_table().Add("@ge",        FnSign(bool_, { char_ }));
-                char_->method_table().Add("@le",        FnSign(bool_, { char_ }));
-                char_->method_table().Add("@eq",        FnSign(bool_, { char_ }));
-                char_->method_table().Add("@neq",       FnSign(bool_, { char_ }));
-                char_->method_table().Add("to_string",  FnSign(string_));
+                char_->method_table().Add("@print", FnSign(none_));
+                char_->method_table().Add("@gt",    FnSign(bool_, { char_ }));
+                char_->method_table().Add("@lt",    FnSign(bool_, { char_ }));
+                char_->method_table().Add("@ge",    FnSign(bool_, { char_ }));
+                char_->method_table().Add("@le",    FnSign(bool_, { char_ }));
+                char_->method_table().Add("@eq",    FnSign(bool_, { char_ }));
+                char_->method_table().Add("@neq",   FnSign(bool_, { char_ }));
             }
             
             // string
             {
-                string_->method_table().Add("@print",     FnSign(none_));
-                string_->method_table().Add("@pick",      FnSign(ReferenceTypeGet(char_), { i64_ }));
-                string_->method_table().Add("@pick",      FnSign(stringview_, { range_ }));
-                string_->method_table().Add("@plus",      FnSign(string_, { string_ }));
-                string_->method_table().Add("@neg",       FnSign(string_));
-                string_->method_table().Add("@gt",        FnSign(bool_, { string_ }));
-                string_->method_table().Add("@lt",        FnSign(bool_, { string_ }));
-                string_->method_table().Add("@ge",        FnSign(bool_, { string_ }));
-                string_->method_table().Add("@le",        FnSign(bool_, { string_ }));
-                string_->method_table().Add("@eq",        FnSign(bool_, { string_ }));
-                string_->method_table().Add("@neq",       FnSign(bool_, { string_ }));
-                string_->method_table().Add("len",        FnSign(i64_));
-                string_->method_table().Add("clear",      FnSign(none_));
-                string_->method_table().Add("to_string",  FnSign(string_));
+                string_->method_table().Add("@print",   FnSign(none_));
+                string_->method_table().Add("@pick",    FnSign(ReferenceTypeGet(char_), { i64_ }));
+                string_->method_table().Add("@pick",    FnSign(stringview_, { range_ }));
+                string_->method_table().Add("@plus",    FnSign(string_, { string_ }));
+                string_->method_table().Add("@neg",     FnSign(string_));
+                string_->method_table().Add("@gt",      FnSign(bool_, { string_ }));
+                string_->method_table().Add("@lt",      FnSign(bool_, { string_ }));
+                string_->method_table().Add("@ge",      FnSign(bool_, { string_ }));
+                string_->method_table().Add("@le",      FnSign(bool_, { string_ }));
+                string_->method_table().Add("@eq",      FnSign(bool_, { string_ }));
+                string_->method_table().Add("@neq",     FnSign(bool_, { string_ }));
+                string_->method_table().Add("len",      FnSign(i64_));
+                string_->method_table().Add("clear",    FnSign(none_));
             }
 
             // stringview
             {
-                stringview_->method_table().Add("@print",     FnSign(none_));
-                stringview_->method_table().Add("@pick",      FnSign(ReferenceTypeGet(char_), { i64_ }));
-                stringview_->method_table().Add("@pick",      FnSign(stringview_, { range_ }));
-                stringview_->method_table().Add("@neg",       FnSign(string_));
-                stringview_->method_table().Add("@gt",        FnSign(bool_, { stringview_ }));
-                stringview_->method_table().Add("@lt",        FnSign(bool_, { stringview_ }));
-                stringview_->method_table().Add("@ge",        FnSign(bool_, { stringview_ }));
-                stringview_->method_table().Add("@le",        FnSign(bool_, { stringview_ }));
-                stringview_->method_table().Add("@eq",        FnSign(bool_, { stringview_ }));
-                stringview_->method_table().Add("@neq",       FnSign(bool_, { stringview_ }));
-                stringview_->method_table().Add("len",        FnSign(i64_));
-                stringview_->method_table().Add("to_string",  FnSign(string_));
+                stringview_->method_table().Add("@print",   FnSign(none_));
+                stringview_->method_table().Add("@pick",    FnSign(ReferenceTypeGet(char_), { i64_ }));
+                stringview_->method_table().Add("@pick",    FnSign(stringview_, { range_ }));
+                stringview_->method_table().Add("@neg",     FnSign(string_));
+                stringview_->method_table().Add("@gt",      FnSign(bool_, { stringview_ }));
+                stringview_->method_table().Add("@lt",      FnSign(bool_, { stringview_ }));
+                stringview_->method_table().Add("@ge",      FnSign(bool_, { stringview_ }));
+                stringview_->method_table().Add("@le",      FnSign(bool_, { stringview_ }));
+                stringview_->method_table().Add("@eq",      FnSign(bool_, { stringview_ }));
+                stringview_->method_table().Add("@neq",     FnSign(bool_, { stringview_ }));
+                stringview_->method_table().Add("len",      FnSign(i64_));
             }
             
             // array
@@ -242,11 +234,11 @@ namespace sema {
 
             // arrayview
             {
-                arrayview_->method_table().Add("@print",   FnSign(none_));
-                arrayview_->method_table().Add("@pick",    FnSign(ReferenceTypeGet(arrayview_->params_binding()[0]), { i64_ }));
-                arrayview_->method_table().Add("@pick",    FnSign(ParametricTypeGet(arrayview_, { arrayview_->params_binding()[0] }), { range_ }));
-                arrayview_->method_table().Add("@neg",     FnSign(ParametricTypeGet(array_, { arrayview_->params_binding()[0] })));
-                arrayview_->method_table().Add("len",      FnSign(i64_));
+                arrayview_->method_table().Add("@print",    FnSign(none_));
+                arrayview_->method_table().Add("@pick",     FnSign(ReferenceTypeGet(arrayview_->params_binding()[0]), { i64_ }));
+                arrayview_->method_table().Add("@pick",     FnSign(ParametricTypeGet(arrayview_, { arrayview_->params_binding()[0] }), { range_ }));
+                arrayview_->method_table().Add("@neg",      FnSign(ParametricTypeGet(array_, { arrayview_->params_binding()[0] })));
+                arrayview_->method_table().Add("len",       FnSign(i64_));
             }
 
             // range
