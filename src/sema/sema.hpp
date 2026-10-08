@@ -32,7 +32,7 @@ namespace sema {
 
             // AstNode
             for (auto& module : modules) analyzer_.Declare(*module.root());
-            for (auto& module : modules) analyzer_.Exec(*module.root());
+            for (auto& module : modules) analyzer_.Process(*module.root());
         }
     };
 }

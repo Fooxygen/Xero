@@ -64,33 +64,33 @@ namespace xcompiler {
 
         void Declare(Program& node);
 
-        // Exec
+        // Process
 
-        llvm::Value* Exec(BlockExpr& node, const std::function<void()>& on_scope_ready = nullptr);
-        llvm::Value* Exec(IdExpr& node);
-        llvm::Value* Exec(RefExpr& node);
-        llvm::Value* Exec(DeclExpr& node);
-        llvm::Value* Exec(OperExpr& node);
-        llvm::Value* Exec(RangeExpr& node);
-        llvm::Value* Exec(ArrayExpr& node);
-        llvm::Value* Exec(FnCallExpr& node);
-        llvm::Value* Exec(MethodCallExpr& node);
-        llvm::Value* Exec(FnExpr& node);
+        llvm::Value* Process(BlockExpr& node, const std::function<void()>& on_scope_ready = nullptr);
+        llvm::Value* Process(IdExpr& node);
+        llvm::Value* Process(RefExpr& node);
+        llvm::Value* Process(DeclExpr& node);
+        llvm::Value* Process(OperExpr& node);
+        llvm::Value* Process(RangeExpr& node);
+        llvm::Value* Process(ArrayExpr& node);
+        llvm::Value* Process(FnCallExpr& node);
+        llvm::Value* Process(MethodCallExpr& node);
+        llvm::Value* Process(FnExpr& node);
 
-        llvm::Value* Exec(NumConst& node);
-        llvm::Value* Exec(BoolConst& node);
-        llvm::Value* Exec(CharConst& node);
-        llvm::Value* Exec(StringConst& node);
+        llvm::Value* Process(NumConst& node);
+        llvm::Value* Process(BoolConst& node);
+        llvm::Value* Process(CharConst& node);
+        llvm::Value* Process(StringConst& node);
 
-        llvm::Value* Exec(ExprStmt& node);
-        llvm::Value* Exec(AssignStmt& node);
-        llvm::Value* Exec(CondStmt& node);
-        llvm::Value* Exec(LoopSignalStmt& node);
-        llvm::Value* Exec(ReturnSignalStmt& node);
-        llvm::Value* Exec(ForStmt& node);
-        llvm::Value* Exec(WhileStmt& node);
+        llvm::Value* Process(ExprStmt& node);
+        llvm::Value* Process(AssignStmt& node);
+        llvm::Value* Process(CondStmt& node);
+        llvm::Value* Process(LoopSignalStmt& node);
+        llvm::Value* Process(ReturnSignalStmt& node);
+        llvm::Value* Process(ForStmt& node);
+        llvm::Value* Process(WhileStmt& node);
 
-        llvm::Value* Exec(Program& node);
+        llvm::Value* Process(Program& node);
 
     public:
         IRGen(std::string_view module_name)
@@ -141,35 +141,35 @@ namespace xcompiler {
             }
         }
 
-        // Exec
+        // Process
 
-        llvm::Value* Exec(AstNode& node) {
+        llvm::Value* Process(AstNode& node) {
             switch (node.type_) {
-                case AstType::BlockExpr:        return Exec((BlockExpr&)node);
-                case AstType::IdExpr:           return Exec((IdExpr&)node);
-                case AstType::RefExpr:          return Exec((RefExpr&)node);
-                case AstType::DeclExpr:         return Exec((DeclExpr&)node);
-                case AstType::OperExpr:         return Exec((OperExpr&)node);
-                case AstType::RangeExpr:        return Exec((RangeExpr&)node);
-                case AstType::ArrayExpr:        return Exec((ArrayExpr&)node);
-                case AstType::FnCallExpr:       return Exec((FnCallExpr&)node);
-                case AstType::MethodCallExpr:   return Exec((MethodCallExpr&)node);
-                case AstType::FnExpr:           return Exec((FnExpr&)node);
+                case AstType::BlockExpr:        return Process((BlockExpr&)node);
+                case AstType::IdExpr:           return Process((IdExpr&)node);
+                case AstType::RefExpr:          return Process((RefExpr&)node);
+                case AstType::DeclExpr:         return Process((DeclExpr&)node);
+                case AstType::OperExpr:         return Process((OperExpr&)node);
+                case AstType::RangeExpr:        return Process((RangeExpr&)node);
+                case AstType::ArrayExpr:        return Process((ArrayExpr&)node);
+                case AstType::FnCallExpr:       return Process((FnCallExpr&)node);
+                case AstType::MethodCallExpr:   return Process((MethodCallExpr&)node);
+                case AstType::FnExpr:           return Process((FnExpr&)node);
                 
-                case AstType::NumConst:         return Exec((NumConst&)node);
-                case AstType::BoolConst:        return Exec((BoolConst&)node);
-                case AstType::CharConst:        return Exec((CharConst&)node);
-                case AstType::StringConst:      return Exec((StringConst&)node);
+                case AstType::NumConst:         return Process((NumConst&)node);
+                case AstType::BoolConst:        return Process((BoolConst&)node);
+                case AstType::CharConst:        return Process((CharConst&)node);
+                case AstType::StringConst:      return Process((StringConst&)node);
                 
-                case AstType::ExprStmt:         return Exec((ExprStmt&)node);
-                case AstType::AssignStmt:       return Exec((AssignStmt&)node);
-                case AstType::CondStmt:         return Exec((CondStmt&)node);
-                case AstType::LoopSignalStmt:   return Exec((LoopSignalStmt&)node);
-                case AstType::ReturnSignalStmt: return Exec((ReturnSignalStmt&)node);
-                case AstType::ForStmt:          return Exec((ForStmt&)node);
-                case AstType::WhileStmt:        return Exec((WhileStmt&)node);
+                case AstType::ExprStmt:         return Process((ExprStmt&)node);
+                case AstType::AssignStmt:       return Process((AssignStmt&)node);
+                case AstType::CondStmt:         return Process((CondStmt&)node);
+                case AstType::LoopSignalStmt:   return Process((LoopSignalStmt&)node);
+                case AstType::ReturnSignalStmt: return Process((ReturnSignalStmt&)node);
+                case AstType::ForStmt:          return Process((ForStmt&)node);
+                case AstType::WhileStmt:        return Process((WhileStmt&)node);
 
-                case AstType::Program:          return Exec((Program&)node);
+                case AstType::Program:          return Process((Program&)node);
 
                 default: return nullptr;
             }

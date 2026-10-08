@@ -373,7 +373,7 @@ namespace parser {
         ASTNODE& root() { return root_; }
 
     public:
-        void Execute();
+        void Run(bool is_print = false);
     
         void RuleAdd(
             PATS_INIT               patterns,

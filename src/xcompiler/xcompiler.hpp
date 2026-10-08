@@ -51,7 +51,7 @@ namespace xcompiler {
             backend.ModuleSet(*irgen.llvm_module());
             
             for (auto& module : modules) irgen.Declare(*module.root());
-            for (auto& module : modules) irgen.Exec(*module.root());
+            for (auto& module : modules) irgen.Process(*module.root());
 
             if (config.project_.build_.emit_ir_) {
                 std::filesystem::create_directories(ir_path);

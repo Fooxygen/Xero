@@ -26,33 +26,33 @@ namespace sema {
 
         void Declare(Program& node);
 
-        // Exec
+        // Process
 
-        void Exec(BlockExpr& node, const std::function<void()>& on_scope_ready = nullptr);
-        void Exec(IdExpr& node);
-        void Exec(RefExpr& node);
-        void Exec(TypeExpr& node);
-        void Exec(DeclExpr& node);
-        void Exec(OperExpr& node);
-        void Exec(RangeExpr& node);
-        void Exec(ArrayExpr& node);
-        void Exec(FnCallExpr& node);
-        void Exec(MethodCallExpr& node);
-        void Exec(FnExpr& node);
+        void Process(BlockExpr& node, const std::function<void()>& on_scope_ready = nullptr);
+        void Process(IdExpr& node);
+        void Process(RefExpr& node);
+        void Process(TypeExpr& node);
+        void Process(DeclExpr& node);
+        void Process(OperExpr& node);
+        void Process(RangeExpr& node);
+        void Process(ArrayExpr& node);
+        void Process(FnCallExpr& node);
+        void Process(MethodCallExpr& node);
+        void Process(FnExpr& node);
 
-        void Exec(NumConst& node);
-        void Exec(BoolConst& node);
-        void Exec(CharConst& node);
-        void Exec(StringConst& node);
+        void Process(NumConst& node);
+        void Process(BoolConst& node);
+        void Process(CharConst& node);
+        void Process(StringConst& node);
 
-        void Exec(ExprStmt& node);
-        void Exec(AssignStmt& node);
-        void Exec(CondStmt& node);
-        void Exec(ReturnSignalStmt& node);
-        void Exec(ForStmt& node);
-        void Exec(WhileStmt& node);
+        void Process(ExprStmt& node);
+        void Process(AssignStmt& node);
+        void Process(CondStmt& node);
+        void Process(ReturnSignalStmt& node);
+        void Process(ForStmt& node);
+        void Process(WhileStmt& node);
 
-        void Exec(Program& node);
+        void Process(Program& node);
 
     public:
         Analyzer(FnTable& fn_table) : fn_table_(fn_table) {}
@@ -74,35 +74,35 @@ namespace sema {
             }
         }
 
-        // Exec
+        // Process
 
-        void Exec(AstNode& node) {
+        void Process(AstNode& node) {
             switch (node.type_) {
-                case AstType::BlockExpr:        Exec((BlockExpr&)node);         return;
-                case AstType::IdExpr:           Exec((IdExpr&)node);            return;
-                case AstType::RefExpr:          Exec((RefExpr&)node);           return;
-                case AstType::TypeExpr:         Exec((TypeExpr&)node);          return;
-                case AstType::DeclExpr:         Exec((DeclExpr&)node);          return;
-                case AstType::OperExpr:         Exec((OperExpr&)node);          return;
-                case AstType::RangeExpr:        Exec((RangeExpr&)node);         return;
-                case AstType::ArrayExpr:        Exec((ArrayExpr&)node);         return;
-                case AstType::FnCallExpr:       Exec((FnCallExpr&)node);        return;
-                case AstType::MethodCallExpr:   Exec((MethodCallExpr&)node);    return;
-                case AstType::FnExpr:           Exec((FnExpr&)node);            return;
+                case AstType::BlockExpr:        Process((BlockExpr&)node);         return;
+                case AstType::IdExpr:           Process((IdExpr&)node);            return;
+                case AstType::RefExpr:          Process((RefExpr&)node);           return;
+                case AstType::TypeExpr:         Process((TypeExpr&)node);          return;
+                case AstType::DeclExpr:         Process((DeclExpr&)node);          return;
+                case AstType::OperExpr:         Process((OperExpr&)node);          return;
+                case AstType::RangeExpr:        Process((RangeExpr&)node);         return;
+                case AstType::ArrayExpr:        Process((ArrayExpr&)node);         return;
+                case AstType::FnCallExpr:       Process((FnCallExpr&)node);        return;
+                case AstType::MethodCallExpr:   Process((MethodCallExpr&)node);    return;
+                case AstType::FnExpr:           Process((FnExpr&)node);            return;
 
-                case AstType::NumConst:         Exec((NumConst&)node);          return;
-                case AstType::BoolConst:        Exec((BoolConst&)node);         return;
-                case AstType::CharConst:        Exec((CharConst&)node);         return;
-                case AstType::StringConst:      Exec((StringConst&)node);       return;
+                case AstType::NumConst:         Process((NumConst&)node);          return;
+                case AstType::BoolConst:        Process((BoolConst&)node);         return;
+                case AstType::CharConst:        Process((CharConst&)node);         return;
+                case AstType::StringConst:      Process((StringConst&)node);       return;
 
-                case AstType::ExprStmt:         Exec((ExprStmt&)node);          return;
-                case AstType::AssignStmt:       Exec((AssignStmt&)node);        return;
-                case AstType::CondStmt:         Exec((CondStmt&)node);          return;
-                case AstType::ReturnSignalStmt: Exec((ReturnSignalStmt&)node);  return;
-                case AstType::ForStmt:          Exec((ForStmt&)node);           return;
-                case AstType::WhileStmt:        Exec((WhileStmt&)node);         return;
+                case AstType::ExprStmt:         Process((ExprStmt&)node);          return;
+                case AstType::AssignStmt:       Process((AssignStmt&)node);        return;
+                case AstType::CondStmt:         Process((CondStmt&)node);          return;
+                case AstType::ReturnSignalStmt: Process((ReturnSignalStmt&)node);  return;
+                case AstType::ForStmt:          Process((ForStmt&)node);           return;
+                case AstType::WhileStmt:        Process((WhileStmt&)node);         return;
 
-                case AstType::Program:          Exec((Program&)node);           return;
+                case AstType::Program:          Process((Program&)node);           return;
 
                 default: return;
             }

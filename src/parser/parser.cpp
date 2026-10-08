@@ -9,7 +9,7 @@
 
 namespace parser {
 
-    void   Parser::Execute() {
+    void   Parser::Run(bool is_print) {
         symbols_.clear();
         scopes_brace_.clear();
 
@@ -64,14 +64,17 @@ namespace parser {
                     ));
                 }
             }
-
             if (independent_sym_cnt > 0) {
                 throw LogErr(LogModule::Parser, std::format(
                     "reduce failed with '{}' symbols unprocessed", independent_sym_cnt
                 ));
             }
 
+            // Create
             root_ = std::make_unique<Program>(program_children);
+            if (is_print) {
+                root_->Print("", "", true);
+            }
         }
     }
 

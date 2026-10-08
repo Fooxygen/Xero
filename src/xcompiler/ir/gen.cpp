@@ -64,18 +64,18 @@ namespace xcompiler {
         }
     }
 
-    // Exec
+    // Process
 
     // └─ Expr
 
-    llvm::Value* IRGen::Exec(BlockExpr& node, const std::function<void()>& on_scope_ready) {
+    llvm::Value* IRGen::Process(BlockExpr& node, const std::function<void()>& on_scope_ready) {
         slot_table_.ScopePush();
         if (on_scope_ready) on_scope_ready();
 
         try {
             for (auto& child : node.children_) {
                 if (HasBlockTerm()) continue;   // invalid stmts come after term
-                Exec(*child);
+                Process(*child);
             }
         }
         catch (...) {
@@ -87,17 +87,17 @@ namespace xcompiler {
         return nullptr;
     }
     
-    llvm::Value* IRGen::Exec(IdExpr& node) {
+    llvm::Value* IRGen::Process(IdExpr& node) {
         auto var       = IdResolve(node);
         auto llvm_type = LLVMType(node.resolved_type_->ReferenceUnwrap());
         return llvm_builder().CreateLoad(llvm_type, var, node.name_);
     }
 
-    llvm::Value* IRGen::Exec(RefExpr& node) {
+    llvm::Value* IRGen::Process(RefExpr& node) {
         return IdResolve(*(IdExpr*)node.target_.get());
     }
 
-    llvm::Value* IRGen::Exec(DeclExpr& node) {
+    llvm::Value* IRGen::Process(DeclExpr& node) {
 
         // Variable
         auto var_type = node.resolved_type_;
@@ -140,7 +140,7 @@ namespace xcompiler {
         }
     }
 
-    llvm::Value* IRGen::Exec(OperExpr& node) {
+    llvm::Value* IRGen::Process(OperExpr& node) {
         using enum OperType;
 
         if (node.oper_type_ == Pick) {
@@ -154,7 +154,7 @@ namespace xcompiler {
                     caller_addr = IdResolve(*idexpr);
                 }
                 else if (dynamic_cast<sema::ReferenceType*>(node.lexpr_->resolved_type_)) {
-                    caller_addr = Exec(*node.lexpr_);
+                    caller_addr = Process(*node.lexpr_);
                 }
                 else {
                     caller_addr = ValMaterialize(ExprLoad(*node.lexpr_), node.lexpr_->resolved_type_);
@@ -217,7 +217,7 @@ namespace xcompiler {
 
             // Rval Block
             llvm_builder().SetInsertPoint(block_rval);  // write in rval block
-            auto rval = Exec(*node.rexpr_);
+            auto rval = Process(*node.rexpr_);
             BlockTermCreate(block_end);
 
             // End Block
@@ -277,7 +277,7 @@ namespace xcompiler {
         }
     }
     
-    llvm::Value* IRGen::Exec(RangeExpr& node) {
+    llvm::Value* IRGen::Process(RangeExpr& node) {
 
         // Value
         auto iter_type      = node.iter_type_;
@@ -293,7 +293,7 @@ namespace xcompiler {
         llvm::Value* step_val = nullptr;
         if (node.step_) {
             step_val = TypeImplTable::Cast(*this,
-                Exec(*node.step_), node.step_->resolved_type_->ReferenceUnwrap(), iter_type, node.loc_
+                Process(*node.step_), node.step_->resolved_type_->ReferenceUnwrap(), iter_type, node.loc_
             );
         }
         else {
@@ -319,7 +319,7 @@ namespace xcompiler {
         );
     }
 
-    llvm::Value* IRGen::Exec(ArrayExpr& node) {
+    llvm::Value* IRGen::Process(ArrayExpr& node) {
         auto& exprs = node.elems_->exprs_;
 
         // Empty
@@ -364,7 +364,7 @@ namespace xcompiler {
         }
     }
 
-    llvm::Value* IRGen::Exec(FnCallExpr& node) {
+    llvm::Value* IRGen::Process(FnCallExpr& node) {
         auto  fnsign     = node.callee_fnsign_;
         auto& params_fix = node.callee_fnsign_->params_type_fix();
 
@@ -388,7 +388,7 @@ namespace xcompiler {
 
                     // RefExpr
                     else {
-                        addr = Exec(*expr);
+                        addr = Process(*expr);
                     }
 
                     args.emplace_back(addr, params_fix[i]);
@@ -423,7 +423,7 @@ namespace xcompiler {
         ), node.loc_);
     }
     
-    llvm::Value* IRGen::Exec(MethodCallExpr& node) {
+    llvm::Value* IRGen::Process(MethodCallExpr& node) {
         
         // Caller
         auto caller_type      = node.caller_->resolved_type_;
@@ -437,7 +437,7 @@ namespace xcompiler {
                 caller_addr = IdResolve(*idexpr);
             }
             else if (dynamic_cast<sema::ReferenceType*>(node.caller_->resolved_type_)) {
-                caller_addr = Exec(*node.caller_);
+                caller_addr = Process(*node.caller_);
             }
 
             // Value as Caller
@@ -455,7 +455,7 @@ namespace xcompiler {
         });
         if (node.args_) {
             for (auto& e : node.args_->exprs_) {
-                args.emplace_back(Exec(*e), e->resolved_type_->ReferenceUnwrap());
+                args.emplace_back(Process(*e), e->resolved_type_->ReferenceUnwrap());
             }
         }
 
@@ -465,7 +465,7 @@ namespace xcompiler {
         );
     }
 
-    llvm::Value* IRGen::Exec(FnExpr& node) {
+    llvm::Value* IRGen::Process(FnExpr& node) {
 
         // Declare
         auto fn = llvm_fn_table_[&node];
@@ -489,7 +489,7 @@ namespace xcompiler {
         }
 
         // Block
-        Exec(*node.body_, [&]() {
+        Process(*node.body_, [&]() {
             // Args
             for (auto& arg : fn->args()) {
                 auto var_name = arg.getName().str();
@@ -515,7 +515,7 @@ namespace xcompiler {
 
     // └─ Const
 
-    llvm::Value* IRGen::Exec(NumConst& node) {
+    llvm::Value* IRGen::Process(NumConst& node) {
         auto type = node.resolved_type_;
         if (type->Is("i32")) return llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_context()), node.resolved_value_.integer_);
         if (type->Is("i64")) return llvm::ConstantInt::get(llvm::Type::getInt64Ty(llvm_context()), node.resolved_value_.integer_);
@@ -524,17 +524,17 @@ namespace xcompiler {
         std::unreachable();
     }
 
-    llvm::Value* IRGen::Exec(BoolConst& node) {
+    llvm::Value* IRGen::Process(BoolConst& node) {
         return node.value_
             ? llvm::ConstantInt::getTrue(llvm_context())
             : llvm::ConstantInt::getFalse(llvm_context());
     }
 
-    llvm::Value* IRGen::Exec(CharConst& node) {
+    llvm::Value* IRGen::Process(CharConst& node) {
         return llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_context()), node.codepoint_);
     }
 
-    llvm::Value* IRGen::Exec(StringConst& node) {
+    llvm::Value* IRGen::Process(StringConst& node) {
         
         // Codepoints
         size_t i = 0;
@@ -586,17 +586,17 @@ namespace xcompiler {
 
     // └─ Stmt
 
-    llvm::Value* IRGen::Exec(ExprStmt& node) {
-        if (node.expr_) return Exec(*node.expr_);
+    llvm::Value* IRGen::Process(ExprStmt& node) {
+        if (node.expr_) return Process(*node.expr_);
         return nullptr;
     }
 
-    llvm::Value* IRGen::Exec(AssignStmt& node) {
+    llvm::Value* IRGen::Process(AssignStmt& node) {
         auto target_type = node.target_->resolved_type_->ReferenceUnwrap();
 
         // Use @assign
         if (sema::TypeTable::MethodLookupTry(target_type, "@assign")) {
-            auto target_val  = Exec(*node.target_);
+            auto target_val  = Process(*node.target_);
             auto target_addr = ValMaterialize(target_val, target_type);
 
             auto val_type = node.value_->resolved_type_->ReferenceUnwrap();
@@ -616,7 +616,7 @@ namespace xcompiler {
                 target_addr = IdResolve(*idexpr);
             }
             else if (dynamic_cast<sema::ReferenceType*>(node.target_->resolved_type_)) {
-                target_addr = Exec(*node.target_);
+                target_addr = Process(*node.target_);
             }
             else {
                 throw LogErr(LogModule::Xcompiler, "cannot assign to a non-referenceable value", node.loc_);
@@ -648,7 +648,7 @@ namespace xcompiler {
         }
     }
 
-    llvm::Value* IRGen::Exec(CondStmt& node) {
+    llvm::Value* IRGen::Process(CondStmt& node) {
         auto fn        = llvm_builder().GetInsertBlock()->getParent();
         auto block_end = BlockCreate(".cond.end", fn);
 
@@ -656,11 +656,11 @@ namespace xcompiler {
 
             // Cond
             if (!node_sub.cond_) {
-                Exec(*node_sub.then_);
+                Process(*node_sub.then_);
                 BlockTermCreate(block_end);
                 return;
             }
-            auto cond_val = Exec(*node_sub.cond_);
+            auto cond_val = Process(*node_sub.cond_);
 
             // Blocks
             auto fn_sub     = llvm_builder().GetInsertBlock()->getParent();
@@ -672,7 +672,7 @@ namespace xcompiler {
 
             // Then Block
             llvm_builder().SetInsertPoint(block_then);
-            Exec(*node_sub.then_);
+            Process(*node_sub.then_);
             BlockTermCreate(block_end);
 
             // Else Block
@@ -688,7 +688,7 @@ namespace xcompiler {
         return nullptr;
     }
         
-    llvm::Value* IRGen::Exec(LoopSignalStmt& node) {
+    llvm::Value* IRGen::Process(LoopSignalStmt& node) {
         if (state_.loop_nextblocks_.empty()) {
             throw LogErr(LogModule::Xcompiler, "'break' or 'continue' outside of loop", node.loc_);
         }
@@ -701,7 +701,7 @@ namespace xcompiler {
         return nullptr;
     }
 
-    llvm::Value* IRGen::Exec(ReturnSignalStmt& node) {
+    llvm::Value* IRGen::Process(ReturnSignalStmt& node) {
         if (node.value_) {
             auto val = ExprLoad(*node.value_);
             llvm_builder().CreateRet(
@@ -714,7 +714,7 @@ namespace xcompiler {
         return nullptr;
     }
 
-    llvm::Value* IRGen::Exec(ForStmt& node) {
+    llvm::Value* IRGen::Process(ForStmt& node) {
         auto data = ExprLoad(*node.data_);
 
         auto iterate = [&](llvm::Value* data_ptr, llvm::Value* offset, llvm::Value* len, llvm::Type* elem_llvm_type) {
@@ -748,7 +748,7 @@ namespace xcompiler {
                 builder.CreateStore(builder.CreateLoad(elem_llvm_type, elem), iter_slot);
 
                 state_.loop_nextblocks_.emplace_back(State::LoopNextBlock{ block_step, block_end });
-                Exec(*node.body_, [&] { slot_table_.Declare(node.iter_->name_, iter_slot); });
+                Process(*node.body_, [&] { slot_table_.Declare(node.iter_->name_, iter_slot); });
                 state_.loop_nextblocks_.pop_back();
 
                 BlockTermCreate(block_step);
@@ -816,7 +816,7 @@ namespace xcompiler {
             llvm_builder().SetInsertPoint(block_body);
             {
                 state_.loop_nextblocks_.emplace_back(State::LoopNextBlock{ block_step, block_end });
-                Exec(*node.body_, [&] { slot_table_.Declare(node.iter_->name_, iter_slot); });
+                Process(*node.body_, [&] { slot_table_.Declare(node.iter_->name_, iter_slot); });
                 state_.loop_nextblocks_.pop_back();
 
                 // Entry step block to iterate var
@@ -887,7 +887,7 @@ namespace xcompiler {
         return nullptr;
     }
 
-    llvm::Value* IRGen::Exec(WhileStmt& node) {
+    llvm::Value* IRGen::Process(WhileStmt& node) {
 
         // Blocks
         auto fn         = llvm_builder().GetInsertBlock()->getParent();
@@ -900,7 +900,7 @@ namespace xcompiler {
 
         // Cond Block
         llvm_builder().SetInsertPoint(block_cond);
-        auto cond_val = Exec(*node.cond_);
+        auto cond_val = Process(*node.cond_);
         llvm_builder().CreateCondBr(cond_val, block_body, block_end);
 
         // Body Block
@@ -909,7 +909,7 @@ namespace xcompiler {
             .continue_ = block_cond,
             .break_    = block_end
         });
-        Exec(*node.body_);
+        Process(*node.body_);
         state_.loop_nextblocks_.pop_back();
         BlockTermCreate(block_cond);
 
@@ -919,8 +919,8 @@ namespace xcompiler {
     
     // └─ Common
 
-    llvm::Value* IRGen::Exec(Program& node) {
-        for (auto& child : node.children_) Exec(*child);
+    llvm::Value* IRGen::Process(Program& node) {
+        for (auto& child : node.children_) Process(*child);
         return nullptr;
     }
 }

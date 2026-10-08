@@ -129,7 +129,7 @@ namespace xcompiler {
     }
     
     llvm::Value*      IRGen::ExprLoad(Expr& node) {
-        auto val = Exec(node);
+        auto val = Process(node);
 
         // ReferenceType
         // Non-IdExpr

@@ -11,27 +11,6 @@
 
 namespace lexer {
 
-    Token Lexer::TokenGen(TT type, const std::string& lexeme) {
-        loc_prev_ = {
-            .line_ = loc_.line_,
-            .col_  = loc_.col_ - lexeme.length()
-        };
-        return Token(type, lexeme, loc_prev_);
-    }
-
-    void  Lexer::TokensGen(bool is_print) {
-        while (!IsScanEnd()) {
-            auto next_opt = TokenNext();
-            if (!next_opt.has_value()) break;
-
-            auto next = next_opt.value();
-            if (next.type_ != TT::Undefined) {
-                auto& token = tokens_.emplace_back(next);
-                if (is_print) token.MetaPrint();
-            }
-        }
-    }
-
     std::optional<Token> Lexer::TokenNext() {
         WhitespaceSkip();
         if (IsScanEnd()) return std::nullopt;
@@ -190,6 +169,14 @@ namespace lexer {
         throw LogErr(LogModule::Lexer, "invalid token", loc_scan_);
     }
 
+    Token Lexer::TokenGen(TT type, const std::string& lexeme) {
+        loc_prev_ = {
+            .line_ = loc_.line_,
+            .col_  = loc_.col_ - lexeme.length()
+        };
+        return Token(type, lexeme, loc_prev_);
+    }
+
     Token Lexer::TokenScanWord() {
         size_t pbeg = pos_;
         while (pos_ + 1 < code_.length() && IsIdContinue(code_[pos_ + 1])) {
@@ -332,5 +319,18 @@ namespace lexer {
             CharNext();
         }
         return Token();
+    }
+
+    void  Lexer::Run(bool is_print) {
+        while (!IsScanEnd()) {
+            auto next_opt = TokenNext();
+            if (!next_opt.has_value()) break;
+
+            auto next = next_opt.value();
+            if (next.type_ != TT::Undefined) {
+                auto& token = tokens_.emplace_back(next);
+                if (is_print) token.MetaPrint();
+            }
+        }
     }
 }

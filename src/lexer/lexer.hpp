@@ -63,6 +63,11 @@ namespace lexer {
         void  CharNext(size_t cnt) {
             for (size_t i = 0; i < cnt; i++) CharNext();
         }
+        bool  IsScanEnd()     const { return pos_ >= code_.length(); }
+        bool  IsNextScanEnd() const { return pos_ + 1 >= code_.length(); }
+        
+        std::optional<Token> TokenNext();
+        Token TokenGen(TT type, const std::string& lexeme);
         Token TokenScanWord();
         Token TokenScanNumber();
         Token TokenScanChar();
@@ -76,11 +81,6 @@ namespace lexer {
         std::vector<Token>& tokens() { return tokens_; }
 
     public:
-        bool  IsScanEnd()     const { return pos_ >= code_.length(); }
-        bool  IsNextScanEnd() const { return pos_ + 1 >= code_.length(); }
-        
-        std::optional<Token> TokenNext();
-        Token                TokenGen(TT type, const std::string& lexeme);
-        void                 TokensGen(bool is_print = false);
+        void Run(bool is_print = false);
     };
 }

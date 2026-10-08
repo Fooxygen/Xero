@@ -16,7 +16,7 @@ namespace sema {
         
         // Return Type
         if (node.return_type_) {
-            Exec(*node.return_type_);
+            Process(*node.return_type_);
             node.ret_resolved_type_ = node.return_type_->resolved_type_;
         }
         else {
@@ -36,7 +36,7 @@ namespace sema {
             }
 
             auto expr = (DeclExpr*)e.get();
-            Exec(*expr->bind_type_);
+            Process(*expr->bind_type_);
             expr->resolved_type_ = expr->bind_type_->resolved_type_;
             params_type.emplace_back(expr->resolved_type_);
         }
@@ -55,18 +55,18 @@ namespace sema {
         }
     }
 
-    // Exec
+    // Process
 
     // └─ Expr
 
-    void Analyzer::Exec(BlockExpr& node, const std::function<void()>& on_scope_ready) {
+    void Analyzer::Process(BlockExpr& node, const std::function<void()>& on_scope_ready) {
         node.resolved_type_ = TypeTable::Lookup("none");
 
         var_table_.ScopePush();
         if (on_scope_ready) on_scope_ready();
 
         try {
-            for (auto& child : node.children_) Exec(*child);
+            for (auto& child : node.children_) Process(*child);
         }
         catch (...) {
             var_table_.ScopePop();
@@ -76,7 +76,7 @@ namespace sema {
         var_table_.ScopePop();
     }
 
-    void Analyzer::Exec(IdExpr& node) {
+    void Analyzer::Process(IdExpr& node) {
         if (auto var = var_table_.LookupTry(node.name_)) {
             node.resolved_type_ = var->type_;
             return;
@@ -87,16 +87,16 @@ namespace sema {
         ), node.loc_);
     }
 
-    void Analyzer::Exec(RefExpr& node) {
+    void Analyzer::Process(RefExpr& node) {
         if (!dynamic_cast<IdExpr*>(node.target_.get())) {
             throw LogErr(LogModule::Sema, "cannot reference a non-referenceable value", node.loc_);
         }
 
-        Exec(*node.target_);
+        Process(*node.target_);
         node.resolved_type_ = TypeTable::ReferenceTypeGet(node.target_->resolved_type_->ReferenceUnwrap());
     }
 
-    void Analyzer::Exec(TypeExpr& node) {
+    void Analyzer::Process(TypeExpr& node) {
         auto  basic_type = TypeTable::Lookup(node.basic_type_, node.loc_);
         Type* resolved   = nullptr;
 
@@ -110,7 +110,7 @@ namespace sema {
             std::vector<Type*> params = {};
             for (auto& e : node.params_->exprs_) {
                 if      (auto typeexpr = dynamic_cast<TypeExpr*>(e.get())) {
-                    Exec(*typeexpr);
+                    Process(*typeexpr);
                     params.emplace_back(typeexpr->resolved_type_);
                 }
                 else if (auto idexpr   = dynamic_cast<IdExpr*>(e.get())) {
@@ -137,8 +137,8 @@ namespace sema {
         node.resolved_type_ = resolved;
     }
 
-    void Analyzer::Exec(DeclExpr& node) {
-        Exec(*node.bind_type_);
+    void Analyzer::Process(DeclExpr& node) {
+        Process(*node.bind_type_);
 
         // ReferenceType
         if (node.bind_type_->is_referred_) {
@@ -161,14 +161,14 @@ namespace sema {
         var_table_.Declare(std::make_unique<Var>(
             node.id_, node.resolved_type_, node.loc_
         ));
-        if (node.value_) Exec(*node.value_);
+        if (node.value_) Process(*node.value_);
     }
 
-    void Analyzer::Exec(OperExpr& node) {
+    void Analyzer::Process(OperExpr& node) {
         using enum OperType;
 
         // Unary
-        Exec(*node.lexpr_);
+        Process(*node.lexpr_);
         {
             if (node.oper_type_ == Neg) {
                 auto ltype  = node.lexpr_->resolved_type_->ReferenceUnwrap();
@@ -184,7 +184,7 @@ namespace sema {
         }
 
         // Binary
-        Exec(*node.rexpr_);
+        Process(*node.rexpr_);
         {
             // Pick
             if (node.oper_type_ == Pick) {
@@ -230,11 +230,11 @@ namespace sema {
         }
     }
 
-    void Analyzer::Exec(RangeExpr& node) {
+    void Analyzer::Process(RangeExpr& node) {
 
         // Boundary
-        Exec(*node.lexpr_);
-        Exec(*node.rexpr_);
+        Process(*node.lexpr_);
+        Process(*node.rexpr_);
         auto boundary_type = TypeTable::CommonTypeGet({
             node.lexpr_->resolved_type_->ReferenceUnwrap(),
             node.rexpr_->resolved_type_->ReferenceUnwrap()
@@ -246,7 +246,7 @@ namespace sema {
         // Step
         auto step_type = boundary_type;
         if (node.step_) {
-            Exec(*node.step_);
+            Process(*node.step_);
             step_type = node.step_->resolved_type_->ReferenceUnwrap();
             if (TypeTable::CommonTypeGet({ step_type, boundary_type }) != boundary_type) {
                 throw LogErr(LogModule::Sema, "'step type of range' must be compatible with 'boundary type of range'", node.loc_);
@@ -259,13 +259,13 @@ namespace sema {
         );
     }
 
-    void Analyzer::Exec(ArrayExpr& node) {
+    void Analyzer::Process(ArrayExpr& node) {
         auto& exprs = node.elems_->exprs_;
         
         // Elem Type
         node.elem_type_ = nullptr;
         for (size_t i = 0; i < exprs.size(); i++) {
-            Exec(*exprs[i]);
+            Process(*exprs[i]);
 
             if (i == 0) {
                 node.elem_type_ = exprs[i]->resolved_type_->ReferenceUnwrap();
@@ -288,12 +288,12 @@ namespace sema {
         );
     }
 
-    void Analyzer::Exec(FnCallExpr& node) {
+    void Analyzer::Process(FnCallExpr& node) {
 
         // Args Type
         std::vector<Type*> args_type = {};
         for (auto& e : node.args_->exprs_) {
-            Exec(*e);
+            Process(*e);
             args_type.emplace_back(e->resolved_type_);
         }
 
@@ -320,17 +320,17 @@ namespace sema {
         ), node.loc_);
     }
 
-    void Analyzer::Exec(MethodCallExpr& node) {
+    void Analyzer::Process(MethodCallExpr& node) {
         
         // Args Type
         std::vector<Type*> args_type = {};
         for (auto& e : node.args_->exprs_) {
-            Exec(*e);
+            Process(*e);
             args_type.emplace_back(e->resolved_type_);
         }
 
         // Caller
-        Exec(*node.caller_);
+        Process(*node.caller_);
         auto caller_type = node.caller_->resolved_type_;
 
         // Callee
@@ -342,13 +342,13 @@ namespace sema {
         node.callee_fnsign_ = sign;
     }
 
-    void Analyzer::Exec(FnExpr& node) {
+    void Analyzer::Process(FnExpr& node) {
         if (!node.ret_resolved_type_) Declare(node);
         
         // Parameter Binding
         if (node.body_) {
             auto& params_expr = node.params_->exprs_;
-            Exec(*node.body_, [&]() {
+            Process(*node.body_, [&]() {
                 for (size_t i = 0; i < params_expr.size(); i++) {
                     auto expr = (DeclExpr*)(params_expr[i].get());
                     var_table_.Declare(std::make_unique<Var>(
@@ -361,7 +361,7 @@ namespace sema {
 
     // └─ Const
 
-    void Analyzer::Exec(NumConst& node) {
+    void Analyzer::Process(NumConst& node) {
         const auto& numstr = node.value_;
 
         // Integer
@@ -427,38 +427,38 @@ namespace sema {
         ), node.loc_);
     }
 
-    void Analyzer::Exec(BoolConst& node) {
+    void Analyzer::Process(BoolConst& node) {
         node.resolved_type_ = TypeTable::Lookup("bool");
     }
 
-    void Analyzer::Exec(CharConst& node) {
+    void Analyzer::Process(CharConst& node) {
         node.resolved_type_ = TypeTable::Lookup("char");
     }
 
-    void Analyzer::Exec(StringConst& node) {
+    void Analyzer::Process(StringConst& node) {
         node.resolved_type_ = TypeTable::Lookup("string");
     }
 
     // └─ Stmt
 
-    void Analyzer::Exec(ExprStmt& node) {
+    void Analyzer::Process(ExprStmt& node) {
         node.resolved_type_ = TypeTable::Lookup("none");
 
-        Exec(*node.expr_);
+        Process(*node.expr_);
     }
 
-    void Analyzer::Exec(AssignStmt& node) {
+    void Analyzer::Process(AssignStmt& node) {
         node.resolved_type_ = TypeTable::Lookup("none");
 
-        Exec(*node.target_);
-        Exec(*node.value_);
+        Process(*node.target_);
+        Process(*node.value_);
     }
 
-    void Analyzer::Exec(CondStmt& node) {
+    void Analyzer::Process(CondStmt& node) {
         node.resolved_type_ = TypeTable::Lookup("none");
 
         if (node.cond_) {
-            Exec(*node.cond_);
+            Process(*node.cond_);
             if (node.cond_->resolved_type_ && !node.cond_->resolved_type_->Is("bool")) {
                 throw LogErr(LogModule::Sema, std::format(
                     "'condition' must be 'bool', not '{}'",
@@ -467,19 +467,19 @@ namespace sema {
             }
         }
 
-        Exec(*node.then_);
-        if (node.next_) Exec(*node.next_);
+        Process(*node.then_);
+        if (node.next_) Process(*node.next_);
     }
 
-    void Analyzer::Exec(ReturnSignalStmt& node) {
+    void Analyzer::Process(ReturnSignalStmt& node) {
         node.resolved_type_ = TypeTable::Lookup("none");
 
-        if (node.value_) Exec(*node.value_);
+        if (node.value_) Process(*node.value_);
     }
 
-    void Analyzer::Exec(ForStmt& node) {
+    void Analyzer::Process(ForStmt& node) {
         node.resolved_type_ = TypeTable::Lookup("none");
-        Exec(*node.data_);
+        Process(*node.data_);
 
         Type* iter_type = nullptr;
         auto  data_type = node.data_->resolved_type_->ReferenceUnwrap();
@@ -507,18 +507,18 @@ namespace sema {
             ), node.data_->loc_);
         }
 
-        Exec(*node.body_, [&]() {
+        Process(*node.body_, [&]() {
             var_table_.Declare(std::make_unique<Var>(
                 node.iter_->name_, iter_type, node.iter_->loc_)
             );
         });
     }
 
-    void Analyzer::Exec(WhileStmt& node) {
+    void Analyzer::Process(WhileStmt& node) {
         node.resolved_type_ = TypeTable::Lookup("none");
 
         if (node.cond_) {
-            Exec(*node.cond_);
+            Process(*node.cond_);
             if (node.cond_->resolved_type_ && !node.cond_->resolved_type_->Is("bool")) {
                 throw LogErr(LogModule::Sema, std::format(
                     "'condition' must be 'bool', not '{}'",
@@ -526,14 +526,14 @@ namespace sema {
                 ), node.loc_);
             }
         }
-        Exec(*node.body_);
+        Process(*node.body_);
     }
 
     // └─ Common
 
-    void Analyzer::Exec(Program& node) {
+    void Analyzer::Process(Program& node) {
         node.resolved_type_ = TypeTable::Lookup("none");
 
-        Exec((BlockExpr&)node);
+        Process((BlockExpr&)node);
     }
 }

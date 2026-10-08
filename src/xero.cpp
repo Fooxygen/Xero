@@ -60,8 +60,7 @@ int main(int argc, char* argv[]) {
         config.ProjectConfigLoad(argv[1]);
 
         // Modules
-        auto& modules_path = config.project_.modules_;
-        for (auto& module_path : modules_path) {
+        for (auto& module_path : config_project.modules_) {
             context.modules().emplace_back(
                 module_path,
                 FileRead(module_path.string())
@@ -71,7 +70,7 @@ int main(int argc, char* argv[]) {
         // Lexer
         for (auto& module : context.modules()) {
             lexer::Lexer lexer(module.code());
-            lexer.TokensGen(config_project.diag_.is_print_tokens_);
+            lexer.Run(config_project.diag_.is_print_tokens_);
             module.tokens() = std::move(lexer.tokens());
             LogDone(LogModule::Lexer).Print();
         }
@@ -79,10 +78,7 @@ int main(int argc, char* argv[]) {
         // Parser
         for (auto& module : context.modules()) {
             parser::Parser parser(module.tokens());
-            parser.Execute();
-            if (config_project.diag_.is_print_ast_) {
-                parser.root()->Print("", "", true);
-            }
+            parser.Run(config_project.diag_.is_print_ast_);
             module.root() = std::move(parser.root());
             LogDone(LogModule::Parser).Print();
         }
