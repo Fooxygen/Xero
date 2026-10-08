@@ -30,7 +30,7 @@ namespace xcompiler {
         StringInfo   StringLoad(IRGen& gen, const Arg& arg) {
             auto& builder   = gen.llvm_builder();
             auto  addr      = gen.ArgAddr(arg);
-            auto  llvm_type = gen.LLVMType(arg.ReferenceUnwrap());
+            auto  llvm_type = gen.LlvmType(arg.ReferenceUnwrap());
             auto  val       = builder.CreateLoad(llvm_type, addr);
 
             return StringInfo{
@@ -48,14 +48,14 @@ namespace xcompiler {
         StringInfo   StringViewLoad(IRGen& gen, const Arg& arg) {
             auto& builder   = gen.llvm_builder();
             auto  addr      = gen.ArgAddr(arg);
-            auto  llvm_type = gen.LLVMType(arg.ReferenceUnwrap());
+            auto  llvm_type = gen.LlvmType(arg.ReferenceUnwrap());
             auto  val       = builder.CreateLoad(llvm_type, addr);
 
             auto  org       = builder.CreateExtractValue(val, 0);
             auto  offset    = builder.CreateExtractValue(val, 1);
             auto  len       = builder.CreateExtractValue(val, 2);
 
-            auto  org_val   = builder.CreateLoad(gen.LLVMType(sema::TypeTable::Lookup("string")), org);
+            auto  org_val   = builder.CreateLoad(gen.LlvmType(sema::TypeTable::Lookup("string")), org);
             auto  data      = builder.CreateExtractValue(org_val, 0);
 
             return StringInfo{
@@ -220,7 +220,7 @@ namespace xcompiler {
             auto  offset    = builder.CreateAdd(info.offset, left);
 
             return gen.StructTypeValCreate(
-                gen.LLVMType(sema::TypeTable::Lookup("stringview")),
+                gen.LlvmType(sema::TypeTable::Lookup("stringview")),
                 { info.org, offset, len }
             );
         }
@@ -260,7 +260,7 @@ namespace xcompiler {
             builder.SetInsertPoint(block_end);
 
             return gen.StructTypeValCreate(
-                gen.LLVMType(sema::TypeTable::Lookup("string")),
+                gen.LlvmType(sema::TypeTable::Lookup("string")),
                 { result_data, info.memory.len }
             );
         }
@@ -284,7 +284,7 @@ namespace xcompiler {
             auto& builder   = gen.llvm_builder();
             auto  string_   = sema::TypeTable::Lookup("string");
 
-            auto  lval_load = builder.CreateLoad(gen.LLVMType(string_), lval.org);
+            auto  lval_load = builder.CreateLoad(gen.LlvmType(string_), lval.org);
             auto  lval_data = builder.CreateExtractValue(lval_load, 0);
             auto  lval_len  = builder.CreateExtractValue(lval_load, 1);
 
@@ -330,7 +330,7 @@ namespace xcompiler {
                 auto new_len  = builder.CreateSub(lval_len, builder.CreateSub(lval.memory.len, rval.len));
                 auto new_data = Realloc(gen, lval_data, new_len);
 
-                Store(gen, lval.org, { new_data, new_len }, gen.LLVMType(string_));
+                Store(gen, lval.org, { new_data, new_len }, gen.LlvmType(string_));
                 builder.CreateBr(block_adjust);
             }
 
@@ -353,7 +353,7 @@ namespace xcompiler {
                     builder.CreateSub(rval.len, len_common)
                 );
 
-                Store(gen, lval.org, { new_data, new_len }, gen.LLVMType(string_));
+                Store(gen, lval.org, { new_data, new_len }, gen.LlvmType(string_));
                 builder.CreateBr(block_adjust);
             }
 
@@ -538,7 +538,7 @@ namespace xcompiler {
             Copy(gen, new_data, src, view.memory.len);
 
             return gen.StructTypeValCreate(
-                gen.LLVMType(string_), { new_data, view.memory.len }
+                gen.LlvmType(string_), { new_data, view.memory.len }
             );
         }, sema::FnSign(string_, {}, std::nullopt, sema::FnModifier::Cast));
 

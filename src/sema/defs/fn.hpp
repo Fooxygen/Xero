@@ -16,7 +16,7 @@
 namespace sema {
     class Type;
     
-    // Modifier of Fn
+    // Modifier
     enum   FnModifier : int {
         None = 0,
         Cast = 1 << 0,
@@ -29,7 +29,7 @@ namespace sema {
         return FnModifier((int)a & (int)b);
     }
 
-    // Signature of Fn
+    // Signature
     class  FnSign {
     private:
         Type*                return_type_     = nullptr;
@@ -79,7 +79,7 @@ namespace sema {
         void TemplateSignSet(const FnSign* sign) { template_sign_ = sign; }
     };
 
-    // Definition of Fn
+    // Obj
     class  Fn {
     private:
         std::string name_ = "";
@@ -101,7 +101,7 @@ namespace sema {
         const FnSign* SignAdd(const std::string& name, const FnSign& sign);
     };
 
-    // Global Fn Table
+    // Table
     class  FnTable {
     private:
         std::unordered_map<std::string, Fn> table_;

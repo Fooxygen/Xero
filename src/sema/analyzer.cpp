@@ -27,7 +27,6 @@ namespace sema {
         std::vector<Type*> params_type = {};
         auto& params_expr = node.params_->exprs_;
         for (auto& e : params_expr) {
-
             if (e->type_ != AstType::DeclExpr) {
                 throw LogErr(LogModule::Sema, std::format(
                     "parameter of function must be a declaration, not '{}'",
@@ -41,6 +40,7 @@ namespace sema {
             params_type.emplace_back(expr->resolved_type_);
         }
 
+        // Signature
         node.fnsign_ = fn_table_.Add(
             node.name_, FnSign(node.ret_resolved_type_, params_type)
         );
@@ -49,8 +49,7 @@ namespace sema {
     // └─ Common
 
     void Analyzer::Declare(Program& node) {
-        auto& blockexpr = (BlockExpr&)node;
-        for (auto& child : blockexpr.children_) {
+        for (auto& child : ((BlockExpr&)node).children_) {
             Declare(*child);
         }
     }

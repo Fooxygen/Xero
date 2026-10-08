@@ -77,7 +77,7 @@ namespace xcompiler {
         ));
     }
 
-    // Built-in Fn
+    // Built-in Function
 
     void BuiltinFnRegister(sema::FnTable& fn_table) {
         auto none_ = sema::TypeTable::Lookup("none");

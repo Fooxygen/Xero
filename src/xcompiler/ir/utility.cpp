@@ -10,7 +10,7 @@ namespace xcompiler {
 
     // Type
 
-    llvm::Type*       IRGen::LLVMType(sema::Type* type) {
+    llvm::Type*       IRGen::LlvmType(sema::Type* type) {
         if (dynamic_cast<sema::ReferenceType*>(type)) {
             return llvm::PointerType::get(llvm_context(), 0);
         }
@@ -59,7 +59,7 @@ namespace xcompiler {
         }
         if (type->Is("range")) {
             auto parametric_type = (sema::ParametricType*)type;
-            auto elem_type       = LLVMType(parametric_type->params()[0]);
+            auto elem_type       = LlvmType(parametric_type->params()[0]);
             return llvm::StructType::get(llvm_context(),
                 { elem_type, elem_type, elem_type, llvm_builder().getInt1Ty() }
             );
@@ -123,7 +123,7 @@ namespace xcompiler {
     }
 
     llvm::Value*      IRGen::ValMaterialize(llvm::Value* val, sema::Type* type) {
-        auto slot = SlotCreate(LLVMType(type), ".arg.slot");
+        auto slot = SlotCreate(LlvmType(type), ".arg.slot");
         llvm_builder().CreateStore(val, slot);
         return slot;
     }
@@ -138,7 +138,7 @@ namespace xcompiler {
             !dynamic_cast<IdExpr*>(&node))
         {
             return llvm_builder().CreateLoad(
-                LLVMType(node.resolved_type_->ReferenceUnwrap()), val
+                LlvmType(node.resolved_type_->ReferenceUnwrap()), val
             );
         }
         return val;
@@ -153,7 +153,7 @@ namespace xcompiler {
     llvm::Value*      IRGen::ArgLoad(const Arg& arg) {
         if (arg.IsReferenceType()) {
             auto reference_type = (sema::ReferenceType*)arg.type();
-            return llvm_builder().CreateLoad(LLVMType(reference_type->referred()), arg.val());
+            return llvm_builder().CreateLoad(LlvmType(reference_type->referred()), arg.val());
         }
         return arg.val();
     }

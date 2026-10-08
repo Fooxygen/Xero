@@ -39,7 +39,7 @@ namespace xcompiler {
             builder.CreateStore(codepoint, data);
 
             return gen.StructTypeValCreate(
-                gen.LLVMType(string_), { data, builder.getInt64(1) }
+                gen.LlvmType(string_), { data, builder.getInt64(1) }
             );
         }, sema::FnSign(string_, {}, std::nullopt, sema::FnModifier::Cast));
 

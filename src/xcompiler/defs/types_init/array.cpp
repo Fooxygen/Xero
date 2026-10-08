@@ -37,7 +37,7 @@ namespace xcompiler {
 
             auto  addr      = gen.ArgAddr(arg);
             auto  type      = arg.ReferenceUnwrap();
-            auto  llvm_type = gen.LLVMType(type->BasicTypeGet());
+            auto  llvm_type = gen.LlvmType(type->BasicTypeGet());
             auto  val       = builder.CreateLoad(llvm_type, addr);
 
             sema::Type* elem_type      = nullptr;
@@ -49,7 +49,7 @@ namespace xcompiler {
             if (auto parametric_type = dynamic_cast<sema::ParametricType*>(type)) {
                 elem_type      = parametric_type->params()[0];
                 elem_type_impl = TypeImplTable::Lookup(elem_type);
-                elem_size      = module.getDataLayout().getTypeAllocSize(gen.LLVMType(elem_type));
+                elem_size      = module.getDataLayout().getTypeAllocSize(gen.LlvmType(elem_type));
             }
 
             return ArrayInfo{
@@ -74,14 +74,14 @@ namespace xcompiler {
 
             auto  addr      = gen.ArgAddr(arg);
             auto  type      = arg.ReferenceUnwrap();
-            auto  llvm_type = gen.LLVMType(type);
+            auto  llvm_type = gen.LlvmType(type);
             auto  val       = builder.CreateLoad(llvm_type, addr);
 
             auto  org       = builder.CreateExtractValue(val, 0);
             auto  offset    = builder.CreateExtractValue(val, 1);
             auto  len       = builder.CreateExtractValue(val, 2);
 
-            auto  org_val   = builder.CreateLoad(gen.LLVMType(sema::TypeTable::Lookup("array")), org);
+            auto  org_val   = builder.CreateLoad(gen.LlvmType(sema::TypeTable::Lookup("array")), org);
             auto  data      = builder.CreateExtractValue(org_val, 0);
 
             sema::Type* elem_type      = nullptr;
@@ -91,7 +91,7 @@ namespace xcompiler {
             if (auto parametric_type = dynamic_cast<sema::ParametricType*>(type)) {
                 elem_type      = parametric_type->params()[0];
                 elem_type_impl = TypeImplTable::Lookup(elem_type);
-                elem_size      = module.getDataLayout().getTypeAllocSize(gen.LLVMType(elem_type));
+                elem_size      = module.getDataLayout().getTypeAllocSize(gen.LlvmType(elem_type));
             }
 
             return ArrayInfo{
@@ -178,7 +178,7 @@ namespace xcompiler {
 
             // Package
             return gen.StructTypeValCreate(
-                gen.LLVMType(sema::TypeTable::Lookup("array")),
+                gen.LlvmType(sema::TypeTable::Lookup("array")),
                 { result_data, info.memory.len }
             );
         }
@@ -282,7 +282,7 @@ namespace xcompiler {
             auto  offset    = builder.CreateAdd(info.offset, left);
 
             return gen.StructTypeValCreate(
-                gen.LLVMType(sema::TypeTable::Lookup("arrayview")),
+                gen.LlvmType(sema::TypeTable::Lookup("arrayview")),
                 { info.org, offset, len }
             );
         }
@@ -293,7 +293,7 @@ namespace xcompiler {
             const MemoryInfo& rval
         ) {
             auto& builder         = gen.llvm_builder();
-            auto  array_llvm_type = gen.LLVMType(sema::TypeTable::Lookup("array"));
+            auto  array_llvm_type = gen.LlvmType(sema::TypeTable::Lookup("array"));
 
             auto  elem_type       = lval.elem_type;
             auto  elem_type_impl  = lval.elem_type_impl;
@@ -890,7 +890,7 @@ namespace xcompiler {
             builder.SetInsertPoint(block_end);
 
             return gen.StructTypeValCreate(
-                gen.LLVMType(array_), { new_data, view.memory.len }
+                gen.LlvmType(array_), { new_data, view.memory.len }
             );
         }, sema::FnSign(sema::TypeTable::ParametricTypeGet(array_, { T }), {}, std::nullopt, sema::FnModifier::Cast));
 

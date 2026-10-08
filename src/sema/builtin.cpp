@@ -7,7 +7,7 @@
 
 namespace sema {
 
-    // Built-in Fn
+    // Built-in Function
 
     void Analyzer::BuiltinFnRegister() {
         

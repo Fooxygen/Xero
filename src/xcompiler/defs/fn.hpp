@@ -7,6 +7,7 @@
 
 #include "llvm/IR/Value.h"
 
+#include "common/defs/ast.hpp"
 #include "sema/defs/fn.hpp"
 #include "sema/defs/type.hpp"
 
@@ -73,5 +74,14 @@ namespace xcompiler {
         static void    Add(const std::string& name, const sema::FnSign* sign, std::unique_ptr<FnImpl>&& impl);
         static FnImpl* Lookup(const sema::FnSign* sign);
         static FnImpl* LookupTry(const sema::FnSign* sign);
+    };
+
+    class LlvmFnTable {
+    private:
+        static inline std::unordered_map<const FnExpr*, llvm::Function*> table_;
+
+    public:
+        static void            Add(const FnExpr* node, llvm::Function* fn);
+        static llvm::Function* Lookup(const FnExpr* node);
     };
 }

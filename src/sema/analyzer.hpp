@@ -17,14 +17,14 @@ namespace sema {
     private:
         // Table
 
-        VarTable var_table_;
-        FnTable& fn_table_;
+        VarTable var_table_;                // scope variable table
+        FnTable& fn_table_;                 // global function table
 
         // Declare
 
-        void Declare(FnExpr& node);
+        void Declare(FnExpr& node);         // signature of global function
 
-        void Declare(Program& node);
+        void Declare(Program& node);        // module level
 
         // Process
 

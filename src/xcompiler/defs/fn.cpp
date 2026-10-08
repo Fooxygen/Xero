@@ -3,6 +3,9 @@
 //  Copyright (c) 2026 Fooxygen.
 //  Licensed under the MIT License.
 
+#include "llvm/IR/Function.h"
+
+#include "common/defs/ast.hpp"
 #include "xcompiler/defs/fn.hpp"
 
 namespace xcompiler {
@@ -32,5 +35,15 @@ namespace xcompiler {
             sign->name(), sign->ParamsPrint()
         ));
         return impl;
+    }
+
+    // LlvmFnTable
+
+    void            LlvmFnTable::Add(const FnExpr* node, llvm::Function* fn) {
+        table_[node] = fn;
+    }
+
+    llvm::Function* LlvmFnTable::Lookup(const FnExpr* node) {
+        return table_.at(node);
     }
 }

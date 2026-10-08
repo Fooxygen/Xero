@@ -21,7 +21,7 @@ namespace xcompiler {
     llvm::Function* LibC_free(IRGen& gen);
     llvm::Function* LibC_memmove(IRGen& gen);
 
-    // Built-in Fn
+    // Built-in Function
 
     void BuiltinFnRegister(sema::FnTable& fn_table);
 }

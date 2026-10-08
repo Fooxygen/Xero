@@ -313,7 +313,7 @@ namespace parser {
             );
         }
         
-        // Fn and Method
+        // Function and Method
        
         // └─ caller.expr(exprs?) -> methodcallexpr
         {

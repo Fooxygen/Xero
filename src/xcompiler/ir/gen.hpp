@@ -35,12 +35,12 @@ namespace xcompiler {
         };
 
         struct State {
-            // Fn
+            // Function
 
             llvm::Function* fn_             = nullptr;
             sema::Type*     fn_return_type_ = nullptr;
 
-            // Loop
+            // Loop Structure
             struct LoopNextBlock {
                 llvm::BasicBlock* continue_ = nullptr;
                 llvm::BasicBlock* break_    = nullptr;
@@ -50,13 +50,10 @@ namespace xcompiler {
         };
     
     private:
-        LlvmCore            llvmcore_;
-        State               state_;
-        SlotTable           slot_table_;
-        std::unordered_map<
-            const FnExpr*,
-            llvm::Function*
-        >                   llvm_fn_table_;
+        LlvmCore    llvmcore_;
+        State       state_;
+        SlotTable   slot_table_;
+        LlvmFnTable llvm_fn_table_;
 
     private:
         // Declare
@@ -105,7 +102,7 @@ namespace xcompiler {
 
         // └─ Type
 
-        llvm::Type*       LLVMType(sema::Type* type);
+        llvm::Type*       LlvmType(sema::Type* type);
 
         // └─ IR
 

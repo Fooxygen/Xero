@@ -23,7 +23,7 @@ namespace xcompiler {
     void IRGen::Declare(FnExpr& node) {
 
         // Return Type
-        auto return_llvm_type = LLVMType(node.ret_resolved_type_);
+        auto return_llvm_type = LlvmType(node.ret_resolved_type_);
         if (node.name_ == "main") {
             return_llvm_type = llvm::Type::getInt32Ty(llvm_context());
         }
@@ -33,11 +33,11 @@ namespace xcompiler {
         if (node.params_) {
             for (auto& e : node.params_->exprs_) {
                 auto param = (DeclExpr*)(e.get());
-                params_type.emplace_back(LLVMType(param->resolved_type_));
+                params_type.emplace_back(LlvmType(param->resolved_type_));
             }
         }
 
-        // Fn
+        // Llvm Function
         auto fntype = llvm::FunctionType::get(
             return_llvm_type, params_type, false    // non-variable params
         );
@@ -47,9 +47,9 @@ namespace xcompiler {
             node.name_,
             llvm_module()
         );
-        llvm_fn_table_[&node] = fn;
+        llvm_fn_table_.Add(&node, fn);
 
-        // FnImplTable
+        // Implement
         if (node.name_ != "main") {
             FnImplTable::Add(node.name_, node.fnsign_, std::make_unique<LangFnImpl>(fn));
         }
@@ -58,8 +58,7 @@ namespace xcompiler {
     // └─ Common
 
     void IRGen::Declare(Program& node) {
-        auto& blockexpr = (BlockExpr&)node;
-        for (auto& child : blockexpr.children_) {
+        for (auto& child : ((BlockExpr&)node).children_) {
             Declare(*child);
         }
     }
@@ -89,7 +88,7 @@ namespace xcompiler {
     
     llvm::Value* IRGen::Process(IdExpr& node) {
         auto var       = IdResolve(node);
-        auto llvm_type = LLVMType(node.resolved_type_->ReferenceUnwrap());
+        auto llvm_type = LlvmType(node.resolved_type_->ReferenceUnwrap());
         return llvm_builder().CreateLoad(llvm_type, var, node.name_);
     }
 
@@ -101,7 +100,7 @@ namespace xcompiler {
 
         // Variable
         auto var_type = node.resolved_type_;
-        auto var_slot = SlotCreate(LLVMType(var_type), node.id_);
+        auto var_slot = SlotCreate(LlvmType(var_type), node.id_);
         
         // Reference Type
         // x: i32& = y;
@@ -281,7 +280,7 @@ namespace xcompiler {
 
         // Value
         auto iter_type      = node.iter_type_;
-        auto iter_llvm_type = LLVMType(iter_type);
+        auto iter_llvm_type = LlvmType(iter_type);
 
         auto left_val = TypeImplTable::Cast(*this,
             ExprLoad(*node.lexpr_), node.lexpr_->resolved_type_->ReferenceUnwrap(), iter_type, node.loc_
@@ -328,7 +327,7 @@ namespace xcompiler {
                 llvm::PointerType::get(llvm_context(), 0)
             );
             return StructTypeValCreate(
-                LLVMType(node.resolved_type_),
+                LlvmType(node.resolved_type_),
                 { null_data, llvm_builder().getInt64(0) }
             );
         }
@@ -339,7 +338,7 @@ namespace xcompiler {
             // Elem
             size_t len       = exprs.size();
             size_t size_elem = llvm_module()->getDataLayout().getTypeAllocSize(
-                LLVMType(node.elem_type_)
+                LlvmType(node.elem_type_)
             );
             size_t size      = len * size_elem;
 
@@ -358,7 +357,7 @@ namespace xcompiler {
 
             // Package
             return StructTypeValCreate(
-                LLVMType(node.resolved_type_),
+                LlvmType(node.resolved_type_),
                 { data, llvm_builder().getInt64(len) }
             );
         }
@@ -467,8 +466,8 @@ namespace xcompiler {
 
     llvm::Value* IRGen::Process(FnExpr& node) {
 
-        // Declare
-        auto fn = llvm_fn_table_[&node];
+        // Llvm Function
+        auto fn = llvm_fn_table_.Lookup(&node);
 
         // IR
         auto block_entry = BlockCreate(".entry", fn);
@@ -490,7 +489,6 @@ namespace xcompiler {
 
         // Block
         Process(*node.body_, [&]() {
-            // Args
             for (auto& arg : fn->args()) {
                 auto var_name = arg.getName().str();
                 auto var_slot = SlotCreate(arg.getType(), var_name);
@@ -579,7 +577,7 @@ namespace xcompiler {
 
         // Package
         return StructTypeValCreate(
-            LLVMType(node.resolved_type_),
+            LlvmType(node.resolved_type_),
             { data, llvm_builder().getInt64(len) }
         );
     }
@@ -783,7 +781,7 @@ namespace xcompiler {
             };
 
             // Iterator
-            auto iter_slot = SlotCreate(LLVMType(iter_type), node.iter_->name_);
+            auto iter_slot = SlotCreate(LlvmType(iter_type), node.iter_->name_);
             llvm_builder().CreateStore(left_val, iter_slot);
 
             // Blocks
@@ -797,7 +795,7 @@ namespace xcompiler {
             llvm_builder().CreateBr(block_cond);
             llvm_builder().SetInsertPoint(block_cond);
             {
-                auto iter_val = llvm_builder().CreateLoad(LLVMType(iter_type), iter_slot);
+                auto iter_val = llvm_builder().CreateLoad(LlvmType(iter_type), iter_slot);
 
                 auto is_up = cmp("@ge", right_val, left_val);   // increasing
                 auto ge    = cmp("@ge", iter_val, right_val);
@@ -828,7 +826,7 @@ namespace xcompiler {
             // Step Block
             llvm_builder().SetInsertPoint(block_step);
             {
-                auto iter_val      = llvm_builder().CreateLoad(LLVMType(iter_type), iter_slot);
+                auto iter_val      = llvm_builder().CreateLoad(LlvmType(iter_type), iter_slot);
                 auto iter_val_next = cmp("@plus", iter_val, step_val);
                 llvm_builder().CreateStore(iter_val_next, iter_slot);
                 llvm_builder().CreateBr(block_cond);
@@ -846,7 +844,7 @@ namespace xcompiler {
                 llvm_builder().CreateExtractValue(data, 0),
                 llvm_builder().getInt64(0),
                 llvm_builder().CreateExtractValue(data, 1),
-                LLVMType(elem_type)
+                LlvmType(elem_type)
             );
         }
 
@@ -854,12 +852,12 @@ namespace xcompiler {
         else if (node.data_->resolved_type_->Is("arrayview")) {
             auto view_type = (sema::ParametricType*)node.data_->resolved_type_->ReferenceUnwrap();
             auto elem_type = view_type->params()[0];
-            auto arr_val   = llvm_builder().CreateLoad(LLVMType(sema::TypeTable::Lookup("array")), llvm_builder().CreateExtractValue(data, 0));
+            auto arr_val   = llvm_builder().CreateLoad(LlvmType(sema::TypeTable::Lookup("array")), llvm_builder().CreateExtractValue(data, 0));
             iterate(
                 llvm_builder().CreateExtractValue(arr_val, 0),
                 llvm_builder().CreateExtractValue(data, 1),
                 llvm_builder().CreateExtractValue(data, 2),
-                LLVMType(elem_type)
+                LlvmType(elem_type)
             );
         }
 
@@ -875,7 +873,7 @@ namespace xcompiler {
 
         // stringview
         else if (node.data_->resolved_type_->Is("stringview")) {
-            auto str_val = llvm_builder().CreateLoad(LLVMType(sema::TypeTable::Lookup("string")), llvm_builder().CreateExtractValue(data, 0));
+            auto str_val = llvm_builder().CreateLoad(LlvmType(sema::TypeTable::Lookup("string")), llvm_builder().CreateExtractValue(data, 0));
             iterate(
                 llvm_builder().CreateExtractValue(str_val, 0),
                 llvm_builder().CreateExtractValue(data, 1),
