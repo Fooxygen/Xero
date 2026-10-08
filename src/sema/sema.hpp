@@ -5,7 +5,10 @@
 
 #pragma once
 
+#include <vector>
+
 #include "common/defs/ast.hpp"
+#include "context/module.hpp"
 #include "sema/defs/type.hpp"
 #include "sema/analyzer.hpp"
 
@@ -16,16 +19,20 @@ namespace sema {
         Analyzer analyzer_;
 
     public:
-        Analyzer& analyzer() { return analyzer_; }
+        Sema(FnTable& fn_table) : analyzer_(fn_table) {}
 
     public:
-        void Run(AstNode& node) {
+        void Run(std::vector<context::Module>& modules) {
             
             // TypeTable
             TypeTable::Init();
 
-            // Analyzer
-            analyzer_.Exec(node);
+            // Builtin
+            analyzer_.BuiltinFnRegister();
+
+            // AstNode
+            for (auto& module : modules) analyzer_.Declare(*module.root());
+            for (auto& module : modules) analyzer_.Exec(*module.root());
         }
     };
 }

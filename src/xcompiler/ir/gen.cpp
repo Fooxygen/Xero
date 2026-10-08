@@ -16,10 +16,60 @@
 
 namespace xcompiler {
 
-    // Expr
+    // Declare
+
+    // └─ Expr
+
+    void IRGen::Declare(FnExpr& node) {
+
+        // Return Type
+        auto return_llvm_type = LLVMType(node.ret_resolved_type_);
+        if (node.name_ == "main") {
+            return_llvm_type = llvm::Type::getInt32Ty(llvm_context());
+        }
+
+        // Params Type
+        std::vector<llvm::Type*> params_type = {};
+        if (node.params_) {
+            for (auto& e : node.params_->exprs_) {
+                auto param = (DeclExpr*)(e.get());
+                params_type.emplace_back(LLVMType(param->resolved_type_));
+            }
+        }
+
+        // Fn
+        auto fntype = llvm::FunctionType::get(
+            return_llvm_type, params_type, false    // non-variable params
+        );
+        auto fn = llvm::Function::Create(
+            fntype,
+            llvm::Function::ExternalLinkage,
+            node.name_,
+            llvm_module()
+        );
+        llvm_fn_table_[&node] = fn;
+
+        // FnImplTable
+        if (node.name_ != "main") {
+            FnImplTable::Add(node.name_, node.fnsign_, std::make_unique<LangFnImpl>(fn));
+        }
+    }
+
+    // └─ Common
+
+    void IRGen::Declare(Program& node) {
+        auto& blockexpr = (BlockExpr&)node;
+        for (auto& child : blockexpr.children_) {
+            Declare(*child);
+        }
+    }
+
+    // Exec
+
+    // └─ Expr
 
     llvm::Value* IRGen::Exec(BlockExpr& node, const std::function<void()>& on_scope_ready) {
-        var_table_.ScopePush();
+        slot_table_.ScopePush();
         if (on_scope_ready) on_scope_ready();
 
         try {
@@ -29,11 +79,11 @@ namespace xcompiler {
             }
         }
         catch (...) {
-            var_table_.ScopePop();
+            slot_table_.ScopePop();
             throw;
         }
 
-        var_table_.ScopePop();
+        slot_table_.ScopePop();
         return nullptr;
     }
     
@@ -59,7 +109,7 @@ namespace xcompiler {
             auto idexpr = (IdExpr*)(node.value_.get());
             auto addr   = IdResolve(*idexpr);
             llvm_builder().CreateStore(addr, var_slot);
-            var_table_.Declare(node.id_, var_slot);
+            slot_table_.Declare(node.id_, var_slot);
             return nullptr;
         }
 
@@ -85,7 +135,7 @@ namespace xcompiler {
                 );
             }
             
-            var_table_.Declare(node.id_, var_slot);
+            slot_table_.Declare(node.id_, var_slot);
             return nullptr;
         }
     }
@@ -417,35 +467,14 @@ namespace xcompiler {
 
     llvm::Value* IRGen::Exec(FnExpr& node) {
 
-        // Return Type
-        auto return_llvm_type = LLVMType(node.ret_resolved_type_);
-        if (node.name_ == "main") {
-            return_llvm_type = llvm::Type::getInt32Ty(llvm_context());
-        }
+        // Declare
+        auto fn = llvm_fn_table_[&node];
 
-        // Params Type
-        std::vector<llvm::Type*> params_type = {};
-        if (node.params_) {
-            for (auto& e : node.params_->exprs_) {
-                auto param = (DeclExpr*)(e.get());
-                params_type.emplace_back(LLVMType(param->resolved_type_));
-            }
-        }
+        // IR
+        auto block_entry = BlockCreate(".entry", fn);
+        llvm_builder().SetInsertPoint(block_entry);
 
-        // Fn
-        auto fntype = llvm::FunctionType::get(
-            return_llvm_type, params_type, false    // non-variable params
-        );
-        auto fn = llvm::Function::Create(
-            fntype,
-            llvm::Function::ExternalLinkage,
-            node.name_,
-            llvm_module()
-        );
-        auto block = BlockCreate(".entry", fn);
-        llvm_builder().SetInsertPoint(block);
-
-        // Processing Fn
+        // State
         state_.fn_ = fn;
         state_.fn_return_type_ = node.ret_resolved_type_;
 
@@ -466,7 +495,7 @@ namespace xcompiler {
                 auto var_name = arg.getName().str();
                 auto var_slot = SlotCreate(arg.getType(), var_name);
                 llvm_builder().CreateStore(&arg, var_slot);
-                var_table_.Declare(var_name, var_slot);
+                slot_table_.Declare(var_name, var_slot);
             }
         });
 
@@ -474,20 +503,17 @@ namespace xcompiler {
         // Each block requires a terminal symbol,
         // including return value, the unreachable stmt...
         BlockTermCreate([&]() {
+            auto return_llvm_type = fn->getReturnType();
             if (return_llvm_type->isVoidTy())
                 llvm_builder().CreateRetVoid();
             else
                 llvm_builder().CreateRet(llvm::ConstantInt::get(return_llvm_type, 0));
         });
 
-        if (node.name_ != "main") {
-            FnImplTable::Add(node.name_, node.fnsign_, std::make_unique<LangFnImpl>(fn));
-        }
-
         return nullptr;
     }
 
-    // Const
+    // └─ Const
 
     llvm::Value* IRGen::Exec(NumConst& node) {
         auto type = node.resolved_type_;
@@ -558,7 +584,7 @@ namespace xcompiler {
         );
     }
 
-    // Stmt
+    // └─ Stmt
 
     llvm::Value* IRGen::Exec(ExprStmt& node) {
         if (node.expr_) return Exec(*node.expr_);
@@ -722,7 +748,7 @@ namespace xcompiler {
                 builder.CreateStore(builder.CreateLoad(elem_llvm_type, elem), iter_slot);
 
                 state_.loop_nextblocks_.emplace_back(State::LoopNextBlock{ block_step, block_end });
-                Exec(*node.body_, [&] { var_table_.Declare(node.iter_->name_, iter_slot); });
+                Exec(*node.body_, [&] { slot_table_.Declare(node.iter_->name_, iter_slot); });
                 state_.loop_nextblocks_.pop_back();
 
                 BlockTermCreate(block_step);
@@ -790,7 +816,7 @@ namespace xcompiler {
             llvm_builder().SetInsertPoint(block_body);
             {
                 state_.loop_nextblocks_.emplace_back(State::LoopNextBlock{ block_step, block_end });
-                Exec(*node.body_, [&] { var_table_.Declare(node.iter_->name_, iter_slot); });
+                Exec(*node.body_, [&] { slot_table_.Declare(node.iter_->name_, iter_slot); });
                 state_.loop_nextblocks_.pop_back();
 
                 // Entry step block to iterate var
@@ -891,7 +917,7 @@ namespace xcompiler {
         return nullptr;
     }
     
-    // Common
+    // └─ Common
 
     llvm::Value* IRGen::Exec(Program& node) {
         for (auto& child : node.children_) Exec(*child);

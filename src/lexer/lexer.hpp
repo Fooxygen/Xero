@@ -16,7 +16,7 @@ namespace lexer {
     // Lexical Analyzer
     class Lexer {
     private:
-        std::string_view code_;
+        const std::string& code_;
 
         Loc    loc_;        // current location
         Loc    loc_prev_;   // previous location
@@ -71,10 +71,7 @@ namespace lexer {
         Token TokenScanMultiComment();
 
     public:
-        Lexer(std::string_view code)
-        :   code_(code),
-            pos_(0)
-        {}
+        Lexer(const std::string& code) : code_(code), pos_(0) {}
 
         std::vector<Token>& tokens() { return tokens_; }
 

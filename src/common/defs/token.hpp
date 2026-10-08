@@ -18,6 +18,7 @@ public:
         Undefined,
 
         // Unsemantic
+
         // └─ Punctuation
         Unsemantic,         //  Base
         Colon,              //  :
@@ -40,6 +41,7 @@ public:
         Amper,              //  &
 
         // Semantic
+        
         // └─ Literal
         Semantic,           //  Base
         Id,                 //  Identity

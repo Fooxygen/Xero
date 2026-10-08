@@ -1,23 +1,11 @@
 
-fn abs(x: i32) -> i32 {
-    if (x < 0) return -x;
-    return x;
-}
-
 fn main() {
-    r: i32 = 3;
-
-    for (x in -r..=r) {
-        s: i32 = r - abs(x);
-        
-        for (y in 0..s) print(' ');
-        print('O');
-
-        if (x != 0) {
-            for (y in 0..(2 * r + 1 - 2 * s - 2)) print(' ');
-            print('O');
-        }
-
-        print('\n');
-    }
+    println("abs(-7)          = ", abs(-7));            # 7
+    println("min(3, 9)        = ", min(3, 9));          # 3
+    println("max(3, 9)        = ", max(3, 9));          # 9
+    println("clamp(15, 0, 10) = ", clamp(15, 0, 10));   # 10
+    println("pow(2, 10)       = ", pow(2, 10));         # 1024
+    println("gcd(48, 18)      = ", gcd(48, 18));        # 6
+    println("factorial(6)     = ", factorial(6));       # 720
+    println("is_prime(97)     = ", is_prime(97));       # true
 }

@@ -7,7 +7,57 @@
 
 namespace sema {
 
-    // Expr
+    // Declare
+
+    // └─ Expr
+
+    void Analyzer::Declare(FnExpr& node) {
+        node.resolved_type_ = TypeTable::Lookup("function");
+        
+        // Return Type
+        if (node.return_type_) {
+            Exec(*node.return_type_);
+            node.ret_resolved_type_ = node.return_type_->resolved_type_;
+        }
+        else {
+            node.ret_resolved_type_ = TypeTable::Lookup("none");
+        }
+
+        // Params Type
+        std::vector<Type*> params_type = {};
+        auto& params_expr = node.params_->exprs_;
+        for (auto& e : params_expr) {
+
+            if (e->type_ != AstType::DeclExpr) {
+                throw LogErr(LogModule::Sema, std::format(
+                    "parameter of function must be a declaration, not '{}'",
+                    e->TypeName()
+                ), e->loc_);
+            }
+
+            auto expr = (DeclExpr*)e.get();
+            Exec(*expr->bind_type_);
+            expr->resolved_type_ = expr->bind_type_->resolved_type_;
+            params_type.emplace_back(expr->resolved_type_);
+        }
+
+        node.fnsign_ = fn_table_.Add(
+            node.name_, FnSign(node.ret_resolved_type_, params_type)
+        );
+    }
+
+    // └─ Common
+
+    void Analyzer::Declare(Program& node) {
+        auto& blockexpr = (BlockExpr&)node;
+        for (auto& child : blockexpr.children_) {
+            Declare(*child);
+        }
+    }
+
+    // Exec
+
+    // └─ Expr
 
     void Analyzer::Exec(BlockExpr& node, const std::function<void()>& on_scope_ready) {
         node.resolved_type_ = TypeTable::Lookup("none");
@@ -293,57 +343,23 @@ namespace sema {
     }
 
     void Analyzer::Exec(FnExpr& node) {
-        node.resolved_type_ = TypeTable::Lookup("function");
-
-        // Return Type
-        if (node.return_type_) {
-            Exec(*node.return_type_);
-            node.ret_resolved_type_ = node.return_type_->resolved_type_;
-        }
-        else {
-            node.ret_resolved_type_ = TypeTable::Lookup("none");
-        }
-
-        // Params Type
-        std::vector<Type*> params_type = {};
-        auto& params_expr = node.params_->exprs_;
-        for (auto& e : params_expr) {
-
-            if (e->type_ != AstType::DeclExpr) {
-                throw LogErr(LogModule::Sema, std::format(
-                    "parameter of function must be a declaration, not '{}'",
-                    e->TypeName()
-                ), e->loc_);
-            }
-
-            auto expr = (DeclExpr*)e.get();
-            Exec(*expr->bind_type_);
-            expr->resolved_type_ = expr->bind_type_->resolved_type_;
-            params_type.emplace_back(expr->resolved_type_);
-        }
-
-        // Stored in FnTable
-        if (!node.name_.empty()) {
-            node.fnsign_ = fn_table_.Add(
-                node.name_, FnSign(node.ret_resolved_type_, params_type)
-            );
-        }
+        if (!node.ret_resolved_type_) Declare(node);
         
-        // Stored in VarTable
+        // Parameter Binding
         if (node.body_) {
+            auto& params_expr = node.params_->exprs_;
             Exec(*node.body_, [&]() {
-                // Args
                 for (size_t i = 0; i < params_expr.size(); i++) {
                     auto expr = (DeclExpr*)(params_expr[i].get());
                     var_table_.Declare(std::make_unique<Var>(
-                        expr->id_, params_type[i], expr->loc_)
+                        expr->id_, expr->resolved_type_, expr->loc_)
                     );
                 }
             });
         }
     }
 
-    // Const
+    // └─ Const
 
     void Analyzer::Exec(NumConst& node) {
         const auto& numstr = node.value_;
@@ -423,7 +439,7 @@ namespace sema {
         node.resolved_type_ = TypeTable::Lookup("string");
     }
 
-    // Stmt
+    // └─ Stmt
 
     void Analyzer::Exec(ExprStmt& node) {
         node.resolved_type_ = TypeTable::Lookup("none");
@@ -513,13 +529,11 @@ namespace sema {
         Exec(*node.body_);
     }
 
-    // Common
+    // └─ Common
 
     void Analyzer::Exec(Program& node) {
         node.resolved_type_ = TypeTable::Lookup("none");
 
-        Exec((BlockExpr&)node, [&]() {
-            BuiltinFnRegister();
-        });
+        Exec((BlockExpr&)node);
     }
 }

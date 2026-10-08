@@ -57,7 +57,7 @@ namespace xcompiler {
         using Impl  = llvm::Function*;
 
     private:
-        Impl  impl_ = nullptr;
+        Impl impl_ = nullptr;
 
     public:
         LangFnImpl(Impl impl) : impl_(impl) {}

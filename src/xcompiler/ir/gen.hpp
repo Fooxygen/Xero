@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
@@ -34,24 +35,35 @@ namespace xcompiler {
         };
 
         struct State {
-            struct LoopNextBlock {
-                llvm::BasicBlock* continue_ = nullptr;
-                llvm::BasicBlock* break_    = nullptr;
-            };
+            // Fn
 
             llvm::Function* fn_             = nullptr;
             sema::Type*     fn_return_type_ = nullptr;
 
+            // Loop
+            struct LoopNextBlock {
+                llvm::BasicBlock* continue_ = nullptr;
+                llvm::BasicBlock* break_    = nullptr;
+            };
+            
             std::vector<LoopNextBlock> loop_nextblocks_ = {};
         };
     
     private:
-        LlvmCore llvmcore_;
-        State    state_;
-
-        VarTable var_table_;
+        LlvmCore            llvmcore_;
+        State               state_;
+        SlotTable           slot_table_;
+        std::unordered_map<
+            const FnExpr*,
+            llvm::Function*
+        >                   llvm_fn_table_;
 
     private:
+        // Declare
+        void Declare(FnExpr& node);
+
+        void Declare(Program& node);
+
         // Exec
 
         llvm::Value* Exec(BlockExpr& node, const std::function<void()>& on_scope_ready = nullptr);
@@ -116,6 +128,18 @@ namespace xcompiler {
         Arg               ArgRefMake(llvm::Value* val, sema::Type* type);               // wrap value as ref arg
         llvm::Value*      ArgLoad(const Arg& arg);                                      // take value   from arg
         llvm::Value*      ArgAddr(const Arg& arg);                                      // take address from arg
+
+        // Declare
+
+        void Declare(AstNode& node) {
+            switch (node.type_) {
+                case AstType::FnExpr:  Declare((FnExpr&)node);  return;
+
+                case AstType::Program: Declare((Program&)node); return;
+
+                default: return;
+            }
+        }
 
         // Exec
 

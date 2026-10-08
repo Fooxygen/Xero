@@ -15,7 +15,7 @@
 
 namespace xcompiler {
 
-    class VarTable {
+    class SlotTable {
     private:
         std::vector<std::unordered_map<std::string, llvm::Value*>> scopes_;
 

@@ -15,11 +15,16 @@ namespace sema {
     
     class Analyzer {
     private:
-
         // Table
 
         VarTable var_table_;
-        FnTable  fn_table_;
+        FnTable& fn_table_;
+
+        // Declare
+
+        void Declare(FnExpr& node);
+
+        void Declare(Program& node);
 
         // Exec
 
@@ -50,13 +55,24 @@ namespace sema {
         void Exec(Program& node);
 
     public:
-        FnTable& fn_table() { return fn_table_; }
-
+        Analyzer(FnTable& fn_table) : fn_table_(fn_table) {}
+    
     public:
-
-        // Builtin-Fn
+        // Builtin
 
         void BuiltinFnRegister();
+
+        // Declare
+
+        void Declare(AstNode& node) {
+            switch (node.type_) {
+                case AstType::FnExpr:  Declare((FnExpr&)node);  return;
+
+                case AstType::Program: Declare((Program&)node); return;
+
+                default: return;
+            }
+        }
 
         // Exec
 
@@ -93,4 +109,3 @@ namespace sema {
         }
     };
 }
-

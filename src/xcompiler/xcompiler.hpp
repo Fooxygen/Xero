@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <vector>
 #include <filesystem>
 
 #include "llvm/Support/Program.h"
@@ -12,6 +13,7 @@
 #include "common/config.hpp"
 #include "common/log.hpp"
 #include "common/defs/ast.hpp"
+#include "context/context.hpp"
 #include "sema/defs/fn.hpp"
 #include "xcompiler/backend/backend.hpp"
 #include "xcompiler/builtin.hpp"
@@ -23,11 +25,14 @@ namespace xcompiler {
 
     class Xcompiler {
     public:
-        void Run(const Config& config, AstNode& node, sema::FnTable& fn_table) {
+        void Run(
+            const Config& config,
+            std::vector<context::Module>& modules,
+            sema::FnTable& fn_table
+        ) {
 
-            // Directories
-            auto module_name = config.project_.name_;
-            auto path =
+            auto project_name = config.project_.name_;
+            auto profile_path =
                 config.project_.build_.path_ /
                 config.project_.profile_.name_;
 
@@ -41,14 +46,16 @@ namespace xcompiler {
             Backend backend;
 
             // IR Gen and Output
-            auto path_ir = path / "ir";
-            IRGen irgen(module_name);
+            auto ir_path = profile_path / "ir";
+            IRGen irgen(project_name);
             backend.ModuleSet(*irgen.llvm_module());
-            irgen.Exec(node);
+            
+            for (auto& module : modules) irgen.Declare(*module.root());
+            for (auto& module : modules) irgen.Exec(*module.root());
 
             if (config.project_.build_.emit_ir_) {
-                std::filesystem::create_directories(path_ir);
-                backend.IROutput((path_ir / (module_name + ".ll")).string(), *irgen.llvm_module());
+                std::filesystem::create_directories(ir_path);
+                backend.IROutput((ir_path / (project_name + ".ll")).string(), *irgen.llvm_module());
             }
 
             // IR Optimize
@@ -56,9 +63,9 @@ namespace xcompiler {
             optimizer.Run(*irgen.llvm_module(), config.project_.profile_.opt_level_);
 
             // Object Code Gen and Output
-            auto path_obj = path / "obj";
-            std::filesystem::create_directories(path_obj);
-            backend.ObjectCodeOutput((path_obj / (module_name + ".o")).string(), *irgen.llvm_module());
+            auto obj_path = profile_path / "obj";
+            std::filesystem::create_directories(obj_path);
+            backend.ObjectCodeOutput((obj_path / (project_name + ".o")).string(), *irgen.llvm_module());
 
             // Linker
             auto gpp = llvm::sys::findProgramByName("g++");
@@ -67,8 +74,8 @@ namespace xcompiler {
             }
             
             auto link_status = llvm::sys::ExecuteAndWait(*gpp, {
-                *gpp, (path_obj / (module_name + ".o")).string(),
-                "-o", (path / (module_name + ".exe")).string(),
+                *gpp, (obj_path / (project_name + ".o")).string(),
+                "-o", (profile_path / (project_name + ".exe")).string(),
             });
             if (link_status != 0) {
                 throw LogErr(LogModule::Xcompiler, "failed to link object file");

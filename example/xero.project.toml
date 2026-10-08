@@ -3,8 +3,11 @@
 #   Comment shows the default
 
 name    = "example"
-entry   = "main.xe"
 profile = "debug"
+modules = [
+    "main.xe",
+    "math.xe"
+]
 
 [profiles.debug]
 opt_level = "o0"        # "o0"
