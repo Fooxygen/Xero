@@ -36,7 +36,7 @@ To build the compiler, refer to **Build & Run** below.
 
 ## Architecture
 
-| Module | Task |
+| Stage | Task |
 | -         | - |
 | Lexer     | Lexical analysis |
 | Parser    | Syntax analysis |
@@ -58,7 +58,7 @@ To build the compiler, refer to **Build & Run** below.
 
 ## Dependency
 
-| Module | Task | Version |
+| Package | Task | Version |
 | - | - | - |
 | LLVM | IR Optimization, Object Code Generation | 22.1.8 |
 | toml++ | Configuration File Parsing | 3.4.0 |
