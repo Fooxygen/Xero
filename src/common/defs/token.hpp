@@ -274,7 +274,7 @@ public:
     void MetaPrint() {
         std::cerr
         <<  COLOR_CYAN
-        <<  std::format("[{}:{}] ", loc_.line_, loc_.col_)
+        <<  std::format("[{}:{}] ", loc_.line(), loc_.col())
         <<  COLOR_ORANGE
         <<  TypeName(type_)
         <<  COLOR_DEFAULT

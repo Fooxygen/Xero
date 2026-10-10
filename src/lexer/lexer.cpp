@@ -16,7 +16,7 @@ namespace lexer {
         if (IsScanEnd()) return std::nullopt;
 
         loc_scan_ = loc_;
-        char c = code_[pos_];
+        char c = module_.code()[pos_];
 
         // Indef Length
         if (IsIdBegin(c))   return TokenScanWord();     // a... | _... | @...
@@ -28,8 +28,8 @@ namespace lexer {
         CharNext();
 
         // └─ Multiple Chars
-        char cn  = !IsScanEnd()     ? code_[pos_]     : '\0';
-        char cnn = !IsNextScanEnd() ? code_[pos_ + 1] : '\0';
+        char cn  = !IsScanEnd()     ? module_.code()[pos_]     : '\0';
+        char cnn = !IsNextScanEnd() ? module_.code()[pos_ + 1] : '\0';
         switch (c) {
             case '=': {
                 if (cn == '=') {
@@ -150,7 +150,7 @@ namespace lexer {
         switch (c) {
             case '#': {
                 // Multi-Line Common
-                if (!IsScanEnd() && code_[pos_] == '#') {
+                if (!IsScanEnd() && module_.code()[pos_] == '#') {
                     CharNext();
                     return TokenScanMultiComment();
                 }
@@ -170,20 +170,21 @@ namespace lexer {
     }
 
     Token Lexer::TokenGen(TT type, const std::string& lexeme) {
-        loc_prev_ = {
-            .line_ = loc_.line_,
-            .col_  = loc_.col_ - lexeme.length()
-        };
+        loc_prev_ = Loc(
+            loc_.line(),
+            loc_.col() - lexeme.length(),
+            module_.name()
+        );
         return Token(type, lexeme, loc_prev_);
     }
 
     Token Lexer::TokenScanWord() {
         size_t pbeg = pos_;
-        while (pos_ + 1 < code_.length() && IsIdContinue(code_[pos_ + 1])) {
+        while (pos_ + 1 < module_.code().length() && IsIdContinue(module_.code()[pos_ + 1])) {
             CharNext();
         }
         CharNext();
-        std::string lexeme = std::string(code_.substr(pbeg, pos_ - pbeg));
+        std::string lexeme = std::string(module_.code().substr(pbeg, pos_ - pbeg));
 
         return TokenGen(TT::Id, lexeme);
     }
@@ -192,8 +193,8 @@ namespace lexer {
         size_t pbeg   = pos_;
         bool   has_dot = false;
 
-        while (pos_ + 1 < code_.length()) {
-            char cn = code_[pos_ + 1];
+        while (pos_ + 1 < module_.code().length()) {
+            char cn = module_.code()[pos_ + 1];
             
             if (IsNumber(cn)) CharNext();
 
@@ -201,7 +202,7 @@ namespace lexer {
             else if (IsDot(cn) && !has_dot) {
 
                 // 123.4
-                if (pos_ + 2 < code_.length() && IsNumber(code_[pos_ + 2])) {
+                if (pos_ + 2 < module_.code().length() && IsNumber(module_.code()[pos_ + 2])) {
                     has_dot = true;
                     CharNext();
                 }
@@ -215,7 +216,7 @@ namespace lexer {
 
         return TokenGen(
             TT::Number,
-            std::string(code_.substr(pbeg, pos_ - pbeg))
+            std::string(module_.code().substr(pbeg, pos_ - pbeg))
         );
     }
 
@@ -226,12 +227,12 @@ namespace lexer {
             throw LogErr(LogStage::Lexer, "unclosed single quotes of char", loc_scan_);
 
         // Escape Char
-        if (code_[pos_] == '\\') {
+        if (module_.code()[pos_] == '\\') {
             CharNext();
             if (IsScanEnd())
                 throw LogErr(LogStage::Lexer, "unclosed single quotes of char", loc_scan_);
 
-            switch (code_[pos_]) {
+            switch (module_.code()[pos_]) {
                 case 'n':  bytes += '\n'; break;
                 case 't':  bytes += '\t'; break;
                 case 'r':  bytes += '\r'; break;
@@ -239,7 +240,7 @@ namespace lexer {
                 case '\\': bytes += '\\'; break;
                 default:
                     throw LogErr(LogStage::Lexer, std::format(
-                        "unknown escape '{}'", code_[pos_]
+                        "unknown escape '{}'", module_.code()[pos_]
                     ), loc_scan_);
             }
             CharNext();
@@ -247,16 +248,16 @@ namespace lexer {
 
         // UTF8
         else {
-            size_t bytes_get = UTF8::BytesCntGet((uint8_t)code_[pos_], LogStage::Lexer, loc_scan_);
+            size_t bytes_get = UTF8::BytesCntGet((uint8_t)module_.code()[pos_], LogStage::Lexer, loc_scan_);
             for (size_t i = 0; i < bytes_get; i++) {
                 if (IsScanEnd())
                     throw LogErr(LogStage::Lexer, "unclosed single quotes of char", loc_scan_);
-                bytes += code_[pos_];
+                bytes += module_.code()[pos_];
                 CharNext();
             }
         }
 
-        if (IsScanEnd() || code_[pos_] != '\'')
+        if (IsScanEnd() || module_.code()[pos_] != '\'')
             throw LogErr(LogStage::Lexer, "unclosed single quotes of char", loc_scan_);
         CharNext();
         return TokenGen(TT::Char, bytes);
@@ -267,7 +268,7 @@ namespace lexer {
         CharNext();
 
         while (!IsScanEnd()) {
-            char c = code_[pos_];
+            char c = module_.code()[pos_];
 
             if (c == '"') {
                 CharNext();
@@ -283,7 +284,7 @@ namespace lexer {
                 if (IsScanEnd())
                     throw LogErr(LogStage::Lexer, "unclosed double quotes of string", loc_scan_);
 
-                switch (code_[pos_]) {
+                switch (module_.code()[pos_]) {
                     case 'n':  lexeme += '\n'; break;
                     case 't':  lexeme += '\t'; break;
                     case 'r':  lexeme += '\r'; break;
@@ -291,7 +292,7 @@ namespace lexer {
                     case '\\': lexeme += '\\'; break;
                     default:
                         throw LogErr(LogStage::Lexer, std::format(
-                            "unknown escape '{}'", code_[pos_]
+                            "unknown escape '{}'", module_.code()[pos_]
                         ), loc_scan_);
                 }
                 CharNext();
@@ -306,13 +307,13 @@ namespace lexer {
     }
 
     Token Lexer::TokenScanSingleComment() {
-        while (!IsScanEnd() && code_[pos_] != '\n') CharNext();
+        while (!IsScanEnd() && module_.code()[pos_] != '\n') CharNext();
         return Token();
     }
 
     Token Lexer::TokenScanMultiComment() {
         while (!IsScanEnd()) {
-            if (code_[pos_] == '#' && !IsNextScanEnd() && code_[pos_ + 1] == '#') {
+            if (module_.code()[pos_] == '#' && !IsNextScanEnd() && module_.code()[pos_ + 1] == '#') {
                 CharNext(2);
                 return Token();
             }
@@ -332,5 +333,7 @@ namespace lexer {
                 if (is_print) token.MetaPrint();
             }
         }
+
+        LogBuild(LogStage::Lexer, module_.name()).Print();
     }
 }

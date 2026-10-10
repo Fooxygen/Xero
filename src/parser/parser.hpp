@@ -12,6 +12,7 @@
 
 #include "common/defs/token.hpp"
 #include "common/defs/ast.hpp"
+#include "context/module.hpp"
 
 namespace parser {
     using TT        = Token::Type;
@@ -290,10 +291,11 @@ namespace parser {
     // Syntactic Analyzer
     class Parser {
     private:
+        context::Module&    module_;
+
         // Defined
 
-        std::vector<Rule> rules_;
-        TS& tokens_;
+        std::vector<Rule>   rules_;
 
         // Cache
         
@@ -367,7 +369,7 @@ namespace parser {
         }
 
     public:
-        Parser(TS& tokens) : tokens_(tokens) { RulesInit(); }
+        Parser(context::Module& module) : module_(module) { RulesInit(); }
         ~Parser() { rules_.clear(); }
 
         ASTNODE& root() { return root_; }

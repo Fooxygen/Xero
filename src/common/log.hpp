@@ -85,10 +85,16 @@ public:
         std::cerr << COLOR_GRAY
         << StageNameFixed() << " | ";
 
-        // Loc
+        // Module and Loc
         if (loc_.has_value()) {
+            auto loc = loc_.value();
+            
+            if (!loc.module().empty()) {
+                std::cerr << COLOR_CYAN << loc.module();
+            }
+            
             std::cerr << COLOR_CYAN
-            << std::format("[{}:{}]\t", loc_->line_, loc_->col_);
+            << std::format("[{}:{}]\t", loc.line(), loc.col());
         }
 
         // Message
@@ -103,7 +109,7 @@ public:
 class LogInfo : public Log {
 public:
     LogInfo(LogStage stage, std::string_view msg)
-    :   Log(stage, std::format("info {}", msg)) {}
+    :   Log(stage, std::format("info: {}", msg)) {}
 };
 
 class LogWarn : public Log {
@@ -120,6 +126,6 @@ public:
 
 class LogBuild : public Log {
 public:
-    LogBuild(LogStage stage)
-    :   Log(stage, "", COLOR_GREEN) {}
+    LogBuild(LogStage stage, const std::string& module)
+    :   Log(stage, module, COLOR_GREEN) {}
 };

@@ -9,6 +9,7 @@
 
 #include "common/utils/loc.hpp"
 #include "common/defs/token.hpp"
+#include "context/module.hpp"
 
 namespace lexer {
     using TT = Token::Type;
@@ -16,7 +17,7 @@ namespace lexer {
     // Lexical Analyzer
     class Lexer {
     private:
-        const std::string& code_;
+        context::Module& module_;
 
         Loc    loc_;        // current location
         Loc    loc_prev_;   // previous location
@@ -46,7 +47,7 @@ namespace lexer {
         
         void  WhitespaceSkip() {
             while (!IsScanEnd()) {
-                char c = code_[pos_];
+                char c = module_.code()[pos_];
                 if (c == ' ' || c == '\n' || c == '\r' || c == '\t')
                     CharNext();
                 
@@ -55,16 +56,16 @@ namespace lexer {
         }
 
         void  CharNext() {
-            if (code_[pos_] == '\n') loc_.NextLine();
-            else loc_.NextChar();
+            if (module_.code()[pos_] == '\n') loc_.LineNext();
+            else loc_.ColNext();
             
             pos_++;
         }
         void  CharNext(size_t cnt) {
             for (size_t i = 0; i < cnt; i++) CharNext();
         }
-        bool  IsScanEnd()     const { return pos_ >= code_.length(); }
-        bool  IsNextScanEnd() const { return pos_ + 1 >= code_.length(); }
+        bool  IsScanEnd()     const { return pos_ >= module_.code().length(); }
+        bool  IsNextScanEnd() const { return pos_ + 1 >= module_.code().length(); }
         
         std::optional<Token> TokenNext();
         Token TokenGen(TT type, const std::string& lexeme);
@@ -76,7 +77,13 @@ namespace lexer {
         Token TokenScanMultiComment();
 
     public:
-        Lexer(const std::string& code) : code_(code), pos_(0) {}
+        Lexer(context::Module& module)
+        :   module_(module),
+            loc_(1, 1, module.name()),
+            loc_prev_(1, 1, module.name()),
+            loc_scan_(1, 1, module.name()),
+            pos_(0)
+        {}
 
         std::vector<Token>& tokens() { return tokens_; }
 

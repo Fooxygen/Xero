@@ -13,16 +13,18 @@ namespace parser {
         symbols_.clear();
         scopes_brace_.clear();
 
+        auto& tokens = module_.tokens();
+
         // Token Rewrite
-        for (auto& t : tokens_) TokenRewrite(t);
+        for (auto& t : tokens) TokenRewrite(t);
 
         // Symbols
-        for (size_t i = 0; i < tokens_.size(); i++) {
-            const auto& token = tokens_[i];
+        for (size_t i = 0; i < tokens.size(); i++) {
+            const auto& token = tokens[i];
             const auto  token_next =
-                i + 1 >= tokens_.size()
+                i + 1 >= tokens.size()
                 ? TT::Undefined
-                : (tokens_[i + 1]).type_;
+                : (tokens[i + 1]).type_;
 
             // Shift
             Shift(token);
@@ -76,6 +78,8 @@ namespace parser {
                 root_->Print("", "", true);
             }
         }
+    
+        LogBuild(LogStage::Parser, module_.name()).Print();
     }
 
     void   Parser::TokenRewrite(Token& token) {

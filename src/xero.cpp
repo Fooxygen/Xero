@@ -69,24 +69,21 @@ int main(int argc, char* argv[]) {
 
         // Lexer
         for (auto& module : context.modules()) {
-            lexer::Lexer lexer(module.code());
+            lexer::Lexer lexer(module);
             lexer.Run(config_project.diag_.is_print_tokens_);
             module.tokens() = std::move(lexer.tokens());
-            LogBuild(LogStage::Lexer).Print();
         }
 
         // Parser
         for (auto& module : context.modules()) {
-            parser::Parser parser(module.tokens());
+            parser::Parser parser(module);
             parser.Run(config_project.diag_.is_print_ast_);
             module.root() = std::move(parser.root());
-            LogBuild(LogStage::Parser).Print();
         }
 
         // Sema
         sema::Sema sema(context.fn_table());
         sema.Run(context.modules());
-        LogBuild(LogStage::Sema).Print();
 
         // Xcompiler
         xcompiler::Xcompiler xcompiler;
@@ -95,7 +92,6 @@ int main(int argc, char* argv[]) {
             context.modules(),
             context.fn_table()
         );
-        LogBuild(LogStage::Xcompiler).Print();
     }
     catch (const LogErr& log) {
         log.Print();
