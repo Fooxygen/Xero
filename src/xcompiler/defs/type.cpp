@@ -22,7 +22,7 @@ namespace xcompiler {
 
         auto it = methods_.find(method_sign);
         if (it != methods_.end()) {
-            throw LogErr(LogModule::Xcompiler, std::format(
+            throw LogErr(LogStage::Xcompiler, std::format(
                 "redefinition implementation of method {} for type '{}', signature is {}",
                 name, def_basic->name(), sign.ParamsPrint()
             ));
@@ -37,7 +37,7 @@ namespace xcompiler {
 
         auto it = methods_.find(method_sign);
         if (it != methods_.end()) {
-            throw LogErr(LogModule::Xcompiler, std::format(
+            throw LogErr(LogStage::Xcompiler, std::format(
                 "redefinition implementation of method {} for type '{}', signature is {}",
                 name, def_basic->name(), sign.ParamsPrint()
             ));
@@ -48,7 +48,7 @@ namespace xcompiler {
     FnImpl*      TypeImpl::MethodLookup(const sema::FnSign* sign, std::optional<Loc> loc) {
         auto fnimpl = MethodLookupTry(sign);
         if (!fnimpl) {
-            throw LogErr(LogModule::Xcompiler, std::format(
+            throw LogErr(LogStage::Xcompiler, std::format(
                 "undefined implementation of method {} for type '{}', signature it attempts to obtain is {}",
                 sign->name(), def_->name(), sign->ParamsPrint()
             ), loc);
@@ -86,7 +86,7 @@ namespace xcompiler {
             return gen.llvm_builder().CreateCall(lang->impl(), vals);
         }
 
-        throw LogErr(LogModule::Xcompiler, std::format(
+        throw LogErr(LogStage::Xcompiler, std::format(
             "unsupported method '{}'", name
         ), loc);
     }
@@ -142,7 +142,7 @@ namespace xcompiler {
         }
 
         if (!method_sign) {
-            throw LogErr(LogModule::Xcompiler, std::format(
+            throw LogErr(LogStage::Xcompiler, std::format(
                 "cannot cast type from '{}' to '{}'", from->name(), to->name()
             ), loc);
         }

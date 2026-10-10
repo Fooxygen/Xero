@@ -24,12 +24,12 @@
 
 std::string FileRead(const std::string& path) {
     if (path.empty()) {
-        throw LogErr(LogModule::File, "empty file path");
+        throw LogErr(LogStage::File, "empty file path");
     }
 
     std::ifstream file(path, std::ios::binary);
     if (!file) {
-        throw LogErr(LogModule::File, std::format("failed to open file '{}'", path));
+        throw LogErr(LogStage::File, std::format("failed to open file '{}'", path));
     }
 
     std::stringstream ss;
@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
 
     try {
         if (argc != 2) {
-            throw LogErr(LogModule::File, "usage: xero.exe <xero.project.toml>");
+            throw LogErr(LogStage::File, "usage: xero.exe <xero.project.toml>");
         }
 
         // Context
@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
             lexer::Lexer lexer(module.code());
             lexer.Run(config_project.diag_.is_print_tokens_);
             module.tokens() = std::move(lexer.tokens());
-            LogDone(LogModule::Lexer).Print();
+            LogBuild(LogStage::Lexer).Print();
         }
 
         // Parser
@@ -80,13 +80,13 @@ int main(int argc, char* argv[]) {
             parser::Parser parser(module.tokens());
             parser.Run(config_project.diag_.is_print_ast_);
             module.root() = std::move(parser.root());
-            LogDone(LogModule::Parser).Print();
+            LogBuild(LogStage::Parser).Print();
         }
 
         // Sema
         sema::Sema sema(context.fn_table());
         sema.Run(context.modules());
-        LogDone(LogModule::Sema).Print();
+        LogBuild(LogStage::Sema).Print();
 
         // Xcompiler
         xcompiler::Xcompiler xcompiler;
@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
             context.modules(),
             context.fn_table()
         );
-        LogDone(LogModule::Xcompiler).Print();
+        LogBuild(LogStage::Xcompiler).Print();
     }
     catch (const LogErr& log) {
         log.Print();
@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
         log.Print();
     }
     catch (const std::exception& e) {
-        LogErr(LogModule::File, std::format("unexpected error: {}", e.what())).Print();
+        LogErr(LogStage::File, std::format("unexpected error: {}", e.what())).Print();
         return 1;
     }
     

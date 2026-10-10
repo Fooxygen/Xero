@@ -15,7 +15,7 @@ namespace xcompiler {
     void    FnImplTable::Add(const std::string& name, const sema::FnSign* sign, std::unique_ptr<FnImpl>&& impl) {
         auto it = table_.find(sign);
         if (it != table_.end()) {
-            throw LogErr(LogModule::Xcompiler, std::format(
+            throw LogErr(LogStage::Xcompiler, std::format(
                 "redefinition implementation of function '{}', signature is {}",
                 name, sign->ParamsPrint()
             ));
@@ -30,7 +30,7 @@ namespace xcompiler {
 
     FnImpl* FnImplTable::Lookup(const sema::FnSign* sign) {
         auto impl = LookupTry(sign);
-        if (!impl) throw LogErr(LogModule::Xcompiler, std::format(
+        if (!impl) throw LogErr(LogStage::Xcompiler, std::format(
             "undefined implementation of function '{}', signature it attempts to obtain is {}",
             sign->name(), sign->ParamsPrint()
         ));

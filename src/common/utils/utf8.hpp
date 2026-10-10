@@ -17,7 +17,7 @@ private:
 public:
     static size_t BytesCntGet(
         uint8_t bytes_first,
-        LogModule log_module, std::optional<Loc> loc = std::nullopt
+        LogStage log_module, std::optional<Loc> loc = std::nullopt
     ) {
         try {
             if (bytes_first < 0x80) return 1;
@@ -35,7 +35,7 @@ public:
 
     static void   Decode(
         const uint8_t* bytes, size_t bytes_cnt, uint32_t& out_codepoint,
-        LogModule log_module, std::optional<Loc> loc = std::nullopt
+        LogStage log_module, std::optional<Loc> loc = std::nullopt
     ) {
         try {
             if (bytes_cnt == 0) throw Invalid{};

@@ -22,32 +22,31 @@
 #define COLOR_WHITE     "\033[97m"
 #define COLOR_ORANGE    "\033[38;5;214m"    // Token, Ast:Node, Number
 
-enum class LogModule {
+enum class LogStage {
     Undefined,
     File,
     Config,
     Lexer,
     Parser,
     Sema,
-    Xcompiler,
-    Xengine
+    Xcompiler
 };
 
 class Log {
 private:
-    LogModule           module_;
+    LogStage            stage_;
     std::string         msg_;
     std::string         color_;
     std::optional<Loc>  loc_;
 
 public:
     Log(
-        LogModule           module,
+        LogStage            stage,
         std::string_view    msg,
         std::string_view    color = COLOR_DEFAULT,
         std::optional<Loc>  loc   = std::nullopt
     )
-    :   module_(module), 
+    :   stage_(stage), 
         msg_(msg),
         color_(color),
         loc_(loc)
@@ -55,54 +54,72 @@ public:
 
     virtual ~Log() = default;
 
-    std::string ModulePrint() const {
-        using enum LogModule;
-        switch (module_) {
-            case File:      return "file";
-            case Config:    return "config";
-            case Lexer:     return "lexer";
-            case Parser:    return "parser";
-            case Sema:      return "sema";
-            case Xcompiler: return "xcompiler";
-            case Xengine:   return "xengine";
+    std::string StageName() const {
+        using enum LogStage;
+        switch (stage_) {
+            case File:      return "File";
+            case Config:    return "Config";
+            case Lexer:     return "Lexer";
+            case Parser:    return "Parser";
+            case Sema:      return "Sema";
+            case Xcompiler: return "Xcompiler";
             default:        return "Undefined";
         }
     }
-    void Print() const {
-        std::cerr
-        <<  COLOR_GRAY <<  "[" << ModulePrint() << "]";
+    std::string StageNameFixed() const {
+        using enum LogStage;
+        switch (stage_) {
+            case File:      return "File     ";
+            case Config:    return "Config   ";
+            case Lexer:     return "Lexer    ";
+            case Parser:    return "Parser   ";
+            case Sema:      return "Sema     ";
+            case Xcompiler: return "Xcompiler";
+            default:        return "Undefined";
+        }
+    }
 
+    void Print() const {
+
+        // Stage
+        std::cerr << COLOR_GRAY
+        << StageNameFixed() << " | ";
+
+        // Loc
         if (loc_.has_value()) {
-            std::cerr << COLOR_CYAN << std::format("[{}:{}]", loc_->line_, loc_->col_);
+            std::cerr << COLOR_CYAN
+            << std::format("[{}:{}]\t", loc_->line_, loc_->col_);
         }
 
+        // Message
         std::cerr
         <<  color_ << msg_
-        <<  COLOR_DEFAULT <<
-        std::endl;
+        <<  COLOR_DEFAULT;
+        
+        std::cerr << std::endl;
     }
 };
 
 class LogInfo : public Log {
 public:
-    LogInfo(LogModule module, std::string_view msg)
-    :   Log(module, std::format("[info] {}", msg)) {}
+    LogInfo(LogStage stage, std::string_view msg)
+    :   Log(stage, std::format("info {}", msg)) {}
 };
 
 class LogWarn : public Log {
 public:
-    LogWarn(LogModule module, std::string_view msg, std::optional<Loc> loc = std::nullopt)
-    :   Log(module, std::format("[warn] {}", msg), COLOR_YELLOW, loc) {}
+    LogWarn(LogStage stage, std::string_view msg, std::optional<Loc> loc = std::nullopt)
+    :   Log(stage, std::format("warn: {}", msg), COLOR_YELLOW, loc) {}
 };
 
 class LogErr : public Log {
 public:
-    LogErr(LogModule module, std::string_view msg, std::optional<Loc> loc = std::nullopt)
-    :   Log(module, std::format("[err] {}", msg), COLOR_RED, loc) {}
+    LogErr(LogStage stage, std::string_view msg, std::optional<Loc> loc = std::nullopt)
+    :   Log(stage, std::format("error: {}", msg), COLOR_RED, loc) {}
 };
 
-class LogDone : public Log {
+class LogBuild : public Log {
 public:
-    LogDone(LogModule module)
-    :   Log(module, " done", COLOR_GREEN) {}
+    LogBuild(LogStage stage)
+    :   Log(stage, "", COLOR_GREEN) {}
 };

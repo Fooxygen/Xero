@@ -247,7 +247,7 @@ namespace xcompiler {
             auto rtype    = node.rexpr_->resolved_type_->ReferenceUnwrap();
             auto com_type = sema::TypeTable::CommonTypeGet({ ltype, rtype });
             if (!com_type) {
-                throw LogErr(LogModule::Xcompiler, std::format(
+                throw LogErr(LogStage::Xcompiler, std::format(
                     "cannot make type '{}' compatible with '{}'",
                     ltype->name(), rtype->name()
                 ), node.loc_);
@@ -417,7 +417,7 @@ namespace xcompiler {
             }
         }
 
-        throw LogErr(LogModule::Xcompiler, std::format(
+        throw LogErr(LogStage::Xcompiler, std::format(
             "undefined function '{}'", node.callee_->name_
         ), node.loc_);
     }
@@ -547,12 +547,12 @@ namespace xcompiler {
             // getting bytes_len from the first byte
 
             auto&  codepoint = codepoints.emplace_back(0);
-            size_t bytes_len = UTF8::BytesCntGet((uint8_t)str[i], LogModule::Xcompiler, node.loc_);
+            size_t bytes_len = UTF8::BytesCntGet((uint8_t)str[i], LogStage::Xcompiler, node.loc_);
             UTF8::Decode(
                 (const uint8_t *)str.data() + i,
                 str.size() - i,
                 codepoint,
-                LogModule::Xcompiler,
+                LogStage::Xcompiler,
                 node.loc_
             );
             i += bytes_len;
@@ -617,7 +617,7 @@ namespace xcompiler {
                 target_addr = Process(*node.target_);
             }
             else {
-                throw LogErr(LogModule::Xcompiler, "cannot assign to a non-referenceable value", node.loc_);
+                throw LogErr(LogStage::Xcompiler, "cannot assign to a non-referenceable value", node.loc_);
             }
 
             // Value
@@ -688,7 +688,7 @@ namespace xcompiler {
         
     llvm::Value* IRGen::Process(LoopSignalStmt& node) {
         if (state_.loop_nextblocks_.empty()) {
-            throw LogErr(LogModule::Xcompiler, "'break' or 'continue' outside of loop", node.loc_);
+            throw LogErr(LogStage::Xcompiler, "'break' or 'continue' outside of loop", node.loc_);
         }
 
         auto& nextblock = state_.loop_nextblocks_.back();

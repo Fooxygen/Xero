@@ -114,7 +114,7 @@ namespace sema {
         Fn*  Lookup(const std::string& name, std::optional<Loc> loc = std::nullopt) {
             auto fn = LookupTry(name);
             if (!fn) {
-                throw LogErr(LogModule::Sema, std::format(
+                throw LogErr(LogStage::Sema, std::format(
                     "undefined function '{}'", name
                 ), loc);
             }

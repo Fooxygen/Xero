@@ -30,7 +30,7 @@ namespace xcompiler {
                 auto var_it = scope_it->find(name);
                 if (var_it != scope_it->end()) return var_it->second;
             }
-            throw LogErr(LogModule::Xcompiler, std::format(
+            throw LogErr(LogStage::Xcompiler, std::format(
                 "undefined variable '{}'", name
             ), loc);
         }

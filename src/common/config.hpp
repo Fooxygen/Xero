@@ -50,7 +50,7 @@ struct Config {
         try {
             table = toml::parse_file(path);
         } catch (const toml::parse_error& e) {
-            throw LogErr(LogModule::Config, std::format(
+            throw LogErr(LogStage::Config, std::format(
                 "failed to parse {} as config of project: {}", path, e.description()
             ));
         }
@@ -61,7 +61,7 @@ struct Config {
             {
                 auto name = table["name"].value<std::string>();
                 if (!name || name->empty()) {
-                    throw LogErr(LogModule::Config, "project: field 'name' must not be empty");
+                    throw LogErr(LogStage::Config, "project: field 'name' must not be empty");
                 }
                 project_.name_ = *name;
             }
@@ -75,7 +75,7 @@ struct Config {
             {
                 auto modules = table["modules"].as_array();
                 if (!modules || modules->empty()) {
-                    throw LogErr(LogModule::Config, "project: field 'modules' must not be empty");
+                    throw LogErr(LogStage::Config, "project: field 'modules' must not be empty");
                 }
 
                 for (auto&& module : *modules) {
@@ -84,7 +84,7 @@ struct Config {
 
                     auto path_full = project_.root_ / *val;
                     if (!std::filesystem::is_regular_file(path_full)) {
-                        throw LogErr(LogModule::Config, std::format(
+                        throw LogErr(LogStage::Config, std::format(
                             "project.modules: '{}' is not an existing file", *val));
                     }
 
@@ -92,7 +92,7 @@ struct Config {
 
                     for (auto& module_existed : project_.modules_) {
                         if (std::filesystem::equivalent(module_existed, path_canon)) {
-                            throw LogErr(LogModule::Config, std::format(
+                            throw LogErr(LogStage::Config, std::format(
                                 "project.modules: '{}' is already listed", *val));
                         }
                     }
@@ -110,10 +110,10 @@ struct Config {
             {
                 auto name = table["profile"].value<std::string>();
                 if (!name || name->empty()) {
-                    throw LogErr(LogModule::Config, "project: field 'profile' must not be empty");
+                    throw LogErr(LogStage::Config, "project: field 'profile' must not be empty");
                 }
                 if (!table["profiles"][*name]) {
-                    throw LogErr(LogModule::Config, std::format(
+                    throw LogErr(LogStage::Config, std::format(
                         "project.profile: failed to find '{}'", *name
                     ));
                 }
@@ -140,7 +140,7 @@ struct Config {
             {
                 auto path = table["build"]["path"].value<std::string>();
                 if (!path || path->empty()) {
-                    throw LogErr(LogModule::Config, "project.build: field 'path' must not be empty");
+                    throw LogErr(LogStage::Config, "project.build: field 'path' must not be empty");
                 }
                 build.path_    = project_.root_ / *path;
                 

@@ -263,7 +263,7 @@ public:
             case Fn:            return "fn";
 
             default: 
-                LogWarn(LogModule::Lexer, "undefined print name for TokenType").Print();
+                LogWarn(LogStage::Lexer, "undefined print name for TokenType").Print();
                 return "Undefined";
         }
     }

@@ -327,7 +327,7 @@ namespace parser {
 
         void        PatternIndexCheck(size_t pos) {
             if (pos < 1) {
-                throw LogErr(LogModule::Parser, "invalid rule pattern index");
+                throw LogErr(LogStage::Parser, "invalid rule pattern index");
             }
         }
         Token::Type PatternTokenTypeGet(size_t pos) {

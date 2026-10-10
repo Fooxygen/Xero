@@ -26,7 +26,7 @@ namespace sema {
 
     void Type::BasicTypeCheck(std::optional<Loc> loc) const {
         if (type_using_ != Using::Basic) {
-            throw LogErr(LogModule::Sema, std::format(
+            throw LogErr(LogStage::Sema, std::format(
                 "invalid basic type '{}'", name_
             ), loc);
         }
@@ -49,7 +49,7 @@ namespace sema {
             std::make_unique<BasicType>(type.name(), type.params_cnt())
         );
         if (!is_inserted) {
-            throw LogErr(LogModule::Sema, std::format("redefinition of type '{}'", type.name()));
+            throw LogErr(LogStage::Sema, std::format("redefinition of type '{}'", type.name()));
         }
         return (BasicType*)it->second.get();
     }
@@ -60,7 +60,7 @@ namespace sema {
             std::make_unique<ParametricType>(type.name(), type.basic(), type.params())
         );
         if (!is_inserted) {
-            throw LogErr(LogModule::Sema, std::format("redefinition of type '{}'", type.name()));
+            throw LogErr(LogStage::Sema, std::format("redefinition of type '{}'", type.name()));
         }
         return (ParametricType*)it->second.get();
     }
@@ -71,7 +71,7 @@ namespace sema {
             std::make_unique<ReferenceType>(type.name(), type.referred())
         );
         if (!is_inserted) {
-            throw LogErr(LogModule::Sema, std::format("redefinition of type '{}'", type.name()));
+            throw LogErr(LogStage::Sema, std::format("redefinition of type '{}'", type.name()));
         }
         return (ReferenceType*)it->second.get();
     }
@@ -79,7 +79,7 @@ namespace sema {
     Type*   TypeTable::Lookup(std::string_view name, std::optional<Loc> loc) {
         auto type = LookupTry(name);
         if (!type) {
-            throw LogErr(LogModule::Sema, std::format("undefined type '{}'", name), loc);
+            throw LogErr(LogStage::Sema, std::format("undefined type '{}'", name), loc);
         }
         return type;
     }
@@ -95,7 +95,7 @@ namespace sema {
 
         auto basic_type = (BasicType*)type;
         if (basic_type->params_cnt() != params.size()) {
-            throw LogErr(LogModule::Sema, std::format(
+            throw LogErr(LogStage::Sema, std::format(
                 "type '{}' expects {} type parameter(s), got {}",
                 basic_type->name(), basic_type->params_cnt(), params.size()
             ), loc);
@@ -203,7 +203,7 @@ namespace sema {
     Fn*     TypeTable::MethodLookup(Type* type, const std::string& name, std::optional<Loc> loc) {
         auto method = MethodLookupTry(type, name);
         if (!method) {
-            throw LogErr(LogModule::Sema, std::format(
+            throw LogErr(LogStage::Sema, std::format(
                 "undefined method '{}'", name
             ), loc);
         }

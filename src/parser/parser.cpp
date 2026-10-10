@@ -65,7 +65,7 @@ namespace parser {
                 }
             }
             if (independent_sym_cnt > 0) {
-                throw LogErr(LogModule::Parser, std::format(
+                throw LogErr(LogStage::Parser, std::format(
                     "reduce failed with '{}' symbols unprocessed", independent_sym_cnt
                 ));
             }
@@ -156,7 +156,7 @@ namespace parser {
                     (const uint8_t*)token.lexeme_.data(),
                     token.lexeme_.length(),
                     codepoint,
-                    LogModule::Parser,
+                    LogStage::Parser,
                     token.loc_
                 );
                 sym = Symbol(std::make_unique<CharConst>(codepoint, token.lexeme_), token.loc_);
@@ -182,7 +182,7 @@ namespace parser {
             }
             else if (token.type_ == RBrace) {
                 if (scopes_brace_.empty()) {
-                    throw LogErr(LogModule::Parser, "unclosed brace", token.loc_);
+                    throw LogErr(LogStage::Parser, "unclosed brace", token.loc_);
                 }
 
                 size_t pbeg = scopes_brace_.back();

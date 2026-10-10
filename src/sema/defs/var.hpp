@@ -41,13 +41,13 @@ namespace sema {
 
         void   Declare(std::unique_ptr<Var>&& var) {
             if (var->name_.empty()) {
-                throw LogErr(LogModule::Sema, "empty variable declared name", var->loc_);
+                throw LogErr(LogStage::Sema, "empty variable declared name", var->loc_);
             }
             
             auto& scope = ScopeGet();
             auto [it, is_declared] = scope.try_emplace(var->name_, std::move(var));
             if (!is_declared) {
-                throw LogErr(LogModule::Sema, std::format(
+                throw LogErr(LogStage::Sema, std::format(
                     "redefinition of variable '{}' in same scope",
                     var->name_
                 ), var->loc_);
@@ -57,7 +57,7 @@ namespace sema {
         const Var* Lookup(const std::string& name, std::optional<Loc> loc = std::nullopt) {
             auto var = LookupTry(name);
             if (!var) {
-                throw LogErr(LogModule::Sema, std::format("undefined variable '{}'", name), loc);
+                throw LogErr(LogStage::Sema, std::format("undefined variable '{}'", name), loc);
             }
             return var;
         }

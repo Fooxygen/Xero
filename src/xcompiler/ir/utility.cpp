@@ -16,7 +16,7 @@ namespace xcompiler {
         }
 
         if (dynamic_cast<sema::BindingType*>(type)) {
-            throw LogErr(LogModule::Xcompiler, std::format(
+            throw LogErr(LogStage::Xcompiler, std::format(
                 "unresolved binding type '{}'", type->name()
             ));
         }
@@ -65,7 +65,7 @@ namespace xcompiler {
             );
         }
 
-        throw LogErr(LogModule::Xcompiler, std::format(
+        throw LogErr(LogStage::Xcompiler, std::format(
             "undefined type '{}'", type->name()
         ));
     }

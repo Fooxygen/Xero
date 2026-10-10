@@ -101,7 +101,7 @@ namespace sema {
     const FnSign* Fn::SignLookup(const FnSign& sign_reference, std::optional<Loc> loc) const {
         auto sign = SignLookupTry(sign_reference);
         if (!sign) {
-            throw LogErr(LogModule::Sema, std::format(
+            throw LogErr(LogStage::Sema, std::format(
                 "undefined signature {} for function '{}'",
                 sign_reference.ParamsPrint(), name_
             ), loc);
@@ -112,7 +112,7 @@ namespace sema {
     const FnSign* Fn::SignLookup(const std::vector<Type*>& args_type, std::optional<Loc> loc) {
         auto sign = SignLookupTry(args_type);
         if (!sign) {
-            throw LogErr(LogModule::Sema, std::format(
+            throw LogErr(LogStage::Sema, std::format(
                 "undefined signature {} for function '{}'",
                 FnSign(nullptr, args_type).ParamsPrint(), name_
             ), loc);
@@ -123,7 +123,7 @@ namespace sema {
     const FnSign* Fn::SignLookup(Type* caller_type, const std::vector<Type*>& args_type, std::optional<Loc> loc) {
         auto sign = SignLookupTry(caller_type, args_type);
         if (!sign) {
-            throw LogErr(LogModule::Sema, std::format(
+            throw LogErr(LogStage::Sema, std::format(
                 "undefined signature {} for method '{}'",
                 FnSign(nullptr, args_type).ParamsPrint(), name_
             ), loc);

@@ -28,7 +28,7 @@ namespace sema {
         auto& params_expr = node.params_->exprs_;
         for (auto& e : params_expr) {
             if (e->type_ != AstType::DeclExpr) {
-                throw LogErr(LogModule::Sema, std::format(
+                throw LogErr(LogStage::Sema, std::format(
                     "parameter of function must be a declaration, not '{}'",
                     e->TypeName()
                 ), e->loc_);
@@ -81,14 +81,14 @@ namespace sema {
             return;
         }
 
-        throw LogErr(LogModule::Sema, std::format(
+        throw LogErr(LogStage::Sema, std::format(
             "undefined identifier '{}'", node.name_
         ), node.loc_);
     }
 
     void Analyzer::Process(RefExpr& node) {
         if (!dynamic_cast<IdExpr*>(node.target_.get())) {
-            throw LogErr(LogModule::Sema, "cannot reference a non-referenceable value", node.loc_);
+            throw LogErr(LogStage::Sema, "cannot reference a non-referenceable value", node.loc_);
         }
 
         Process(*node.target_);
@@ -116,7 +116,7 @@ namespace sema {
                     params.emplace_back(TypeTable::Lookup(idexpr->name_, idexpr->loc_));
                 }
                 else {
-                    throw LogErr(LogModule::Sema, std::format(
+                    throw LogErr(LogStage::Sema, std::format(
                         "invalid type parameter '{}'", e->TypeName()
                     ), e->loc_);
                 }
@@ -144,12 +144,12 @@ namespace sema {
             
             // x: i32&;
             if (!node.value_) {
-                throw LogErr(LogModule::Sema, "reference type must be initialized with a value", node.loc_);
+                throw LogErr(LogStage::Sema, "reference type must be initialized with a value", node.loc_);
             }
 
             // x: i32& = 3;
             if (!dynamic_cast<IdExpr*>(node.value_.get())) {
-                throw LogErr(LogModule::Sema, std::format(
+                throw LogErr(LogStage::Sema, std::format(
                     "cannot assign non-reference value to reference type '{}'",
                     node.bind_type_->resolved_type_->name()
                 ), node.value_->loc_);
@@ -220,7 +220,7 @@ namespace sema {
             });
 
             if (!node.resolved_type_) {
-                throw LogErr(LogModule::Sema, std::format(
+                throw LogErr(LogStage::Sema, std::format(
                     "cannot make type '{}' compatible with '{}'",
                     node.lexpr_->resolved_type_->name(),
                     node.rexpr_->resolved_type_->name()
@@ -239,7 +239,7 @@ namespace sema {
             node.rexpr_->resolved_type_->ReferenceUnwrap()
         });
         if (!boundary_type) {
-            throw LogErr(LogModule::Sema, "'left bound type of range' must be compatible with 'right bound type of range'", node.loc_);
+            throw LogErr(LogStage::Sema, "'left bound type of range' must be compatible with 'right bound type of range'", node.loc_);
         }
 
         // Step
@@ -248,7 +248,7 @@ namespace sema {
             Process(*node.step_);
             step_type = node.step_->resolved_type_->ReferenceUnwrap();
             if (TypeTable::CommonTypeGet({ step_type, boundary_type }) != boundary_type) {
-                throw LogErr(LogModule::Sema, "'step type of range' must be compatible with 'boundary type of range'", node.loc_);
+                throw LogErr(LogStage::Sema, "'step type of range' must be compatible with 'boundary type of range'", node.loc_);
             }
         }
 
@@ -270,7 +270,7 @@ namespace sema {
                 node.elem_type_ = exprs[i]->resolved_type_->ReferenceUnwrap();
             }
             else if (exprs[i]->resolved_type_->ReferenceUnwrap() != node.elem_type_) {
-                throw LogErr(LogModule::Sema, std::format(
+                throw LogErr(LogStage::Sema, std::format(
                     "cannot make type '{}' compatible with '{}'",
                     exprs[i]->resolved_type_->name(),
                     node.elem_type_->name()
@@ -314,7 +314,7 @@ namespace sema {
             }*/
         }
 
-        throw LogErr(LogModule::Sema, std::format(
+        throw LogErr(LogStage::Sema, std::format(
             "undefined function '{}'", callee
         ), node.loc_);
     }
@@ -393,7 +393,7 @@ namespace sema {
         else {
             // error: 3.14.15
             if (numstr.substr(numstr.find(".") + 1).contains(".")) {
-                throw LogErr(LogModule::Sema, std::format(
+                throw LogErr(LogStage::Sema, std::format(
                     "invalid float format '{}'", numstr
                 ), node.loc_);
             }
@@ -421,7 +421,7 @@ namespace sema {
             }
         }
 
-        throw LogErr(LogModule::Sema, std::format(
+        throw LogErr(LogStage::Sema, std::format(
             "numeric overflow '{}'", numstr
         ), node.loc_);
     }
@@ -459,7 +459,7 @@ namespace sema {
         if (node.cond_) {
             Process(*node.cond_);
             if (node.cond_->resolved_type_ && !node.cond_->resolved_type_->Is("bool")) {
-                throw LogErr(LogModule::Sema, std::format(
+                throw LogErr(LogStage::Sema, std::format(
                     "'condition' must be 'bool', not '{}'",
                     node.cond_->resolved_type_->name()
                 ), node.loc_);
@@ -500,7 +500,7 @@ namespace sema {
         }
 
         if (!iter_type) {
-            throw LogErr(LogModule::Sema, std::format(
+            throw LogErr(LogStage::Sema, std::format(
                 "'iterated value type' must be iterable, not '{}'",
                 data_type->name()
             ), node.data_->loc_);
@@ -519,7 +519,7 @@ namespace sema {
         if (node.cond_) {
             Process(*node.cond_);
             if (node.cond_->resolved_type_ && !node.cond_->resolved_type_->Is("bool")) {
-                throw LogErr(LogModule::Sema, std::format(
+                throw LogErr(LogStage::Sema, std::format(
                     "'condition' must be 'bool', not '{}'",
                     node.cond_->resolved_type_->name()
                 ), node.loc_);

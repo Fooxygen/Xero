@@ -28,7 +28,7 @@ namespace xcompiler {
         std::string target_err = "";
         auto target = llvm::TargetRegistry::lookupTarget(target_triple_, target_err);
         if (!target) {
-            throw LogErr(LogModule::Xcompiler, std::format(
+            throw LogErr(LogStage::Xcompiler, std::format(
                 "failed to lookup target: {}", target_err
             ));
         }
@@ -60,13 +60,13 @@ namespace xcompiler {
 
         // Open File
         if (path.empty()) {
-            throw LogErr(LogModule::Xcompiler, "empty file path");
+            throw LogErr(LogStage::Xcompiler, "empty file path");
         }
 
         std::error_code ec;
         llvm::raw_fd_ostream file(path, ec);
         if (ec) {
-            throw LogErr(LogModule::Xcompiler, std::format(
+            throw LogErr(LogStage::Xcompiler, std::format(
                 "failed to open file '{}'", path
             ));
         }
@@ -79,13 +79,13 @@ namespace xcompiler {
 
         // └─ Open File
         if (path.empty()) {
-            throw LogErr(LogModule::Xcompiler, "empty file path");
+            throw LogErr(LogStage::Xcompiler, "empty file path");
         }
 
         std::error_code ec;
         llvm::raw_fd_ostream file(path, ec);
         if (ec) {
-            throw LogErr(LogModule::Xcompiler, std::format(
+            throw LogErr(LogStage::Xcompiler, std::format(
                 "failed to open file '{}'", path
             ));
         }
@@ -98,7 +98,7 @@ namespace xcompiler {
             pass, file, nullptr, llvm::CodeGenFileType::ObjectFile
         ))
         {
-            throw LogErr(LogModule::Xcompiler, "failed to generate object code");
+            throw LogErr(LogStage::Xcompiler, "failed to generate object code");
         }
 
         pass.run(module);

@@ -70,7 +70,7 @@ namespace xcompiler {
             // Linker
             auto gpp = llvm::sys::findProgramByName("g++");
             if (!gpp) {
-                throw LogErr(LogModule::Xcompiler, "failed to find g++");
+                throw LogErr(LogStage::Xcompiler, "failed to find g++");
             }
             
             auto link_status = llvm::sys::ExecuteAndWait(*gpp, {
@@ -78,7 +78,7 @@ namespace xcompiler {
                 "-o", (profile_path / (project_name + ".exe")).string(),
             });
             if (link_status != 0) {
-                throw LogErr(LogModule::Xcompiler, "failed to link object file");
+                throw LogErr(LogStage::Xcompiler, "failed to link object file");
             }
         }
     };

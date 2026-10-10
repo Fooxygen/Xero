@@ -79,7 +79,7 @@ namespace xcompiler {
         static TypeImpl*    Lookup(sema::Type* type, std::optional<Loc> loc = std::nullopt) {
             auto it = table_.find(type->BasicTypeGet());
             if (it == table_.end()) {
-                throw LogErr(LogModule::Xcompiler, std::format(
+                throw LogErr(LogStage::Xcompiler, std::format(
                     "undefined implementation of type '{}'", type->name()
                 ), loc);
             }
