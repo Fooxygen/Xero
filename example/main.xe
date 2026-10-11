@@ -1,8 +1,13 @@
 
+fn over(x: i32) -> i32 {
+    return x;
+}
+
 fn over(x: f64) -> f64 {
     return x;
 }
 
 fn main() {
+    println(over(1));
     println(over(1.0));
 }

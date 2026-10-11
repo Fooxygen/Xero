@@ -38,13 +38,16 @@ namespace xcompiler {
         }
 
         // Llvm Function
-        auto fntype = llvm::FunctionType::get(
+        auto fn_name =
+            node.name_ +
+            (node.fnsign_->name() == "main" ? "" : node.fnsign_->ParamsPrint());
+        auto fn_llvm_type = llvm::FunctionType::get(
             return_llvm_type, params_type, false    // non-variable params
         );
         auto fn = llvm::Function::Create(
-            fntype,
+            fn_llvm_type,
             llvm::Function::ExternalLinkage,
-            node.name_,
+            fn_name,
             llvm_module()
         );
         llvm_fn_table_.Add(&node, fn);

@@ -9,23 +9,27 @@ namespace sema {
 
     // FnSign
 
-    std::string FnSign::ParamsPrint() const {
+    std::string FnSign::ParamsPrint(const std::vector<Type*>& params_type_fix, std::optional<Type*> params_type_var) {
         std::string res = "";
 
         // Fixed Params
-        for (size_t i = 0; i < params_type_fix_.size(); i++) {
+        for (size_t i = 0; i < params_type_fix.size(); i++) {
             if (i != 0) res += ", ";
-            res += params_type_fix_[i] ? params_type_fix_[i]->name() : "any";
+            res += params_type_fix[i] ? params_type_fix[i]->name() : "any";
         }
 
         // Variable Params
-        if (!params_type_fix_.empty() && params_type_var_) res += ", ";
-        if (params_type_var_) {
-            res += *params_type_var_ ? (*params_type_var_)->name() : "any";
+        if (!params_type_fix.empty() && params_type_var) res += ", ";
+        if (params_type_var) {
+            res += *params_type_var ? (*params_type_var)->name() : "any";
             res += "...";
         }
 
         return res.empty() ? "(empty)" : '(' + res + ')';
+    }
+
+    std::string FnSign::ParamsPrint() const {
+        return ParamsPrint(params_type_fix_, params_type_var_);
     }
 
     bool        FnSign::IsSignEqual(const FnSign& sign) {

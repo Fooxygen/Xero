@@ -66,7 +66,11 @@ namespace sema {
     public:
         void NameSet(const std::string& name) { name_ = name; }
 
-        std::string ParamsPrint() const;
+        static std::string ParamsPrint(
+            const std::vector<Type*>& params_type_fix,
+            std::optional<Type*>      params_type_var = std::nullopt
+        );
+        std::string        ParamsPrint() const;
 
         bool IsSignEqual(const FnSign& sign);
         bool IsSignMatch(const std::vector<Type*>& args_type);      // implicit type cast
