@@ -5,8 +5,7 @@
 name    = "example"
 profile = "debug"
 modules = [
-    "main.xe",
-    "math.xe"
+    "main.xe"
 ]
 
 [profiles.debug]

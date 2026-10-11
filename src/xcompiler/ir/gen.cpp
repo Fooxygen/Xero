@@ -395,10 +395,15 @@ namespace xcompiler {
 
                 // Non-Reference Type
                 else {
-                    args.emplace_back(
-                        ExprLoad(*expr),
-                        expr->resolved_type_->ReferenceUnwrap()
-                    );
+                    auto arg_val  = ExprLoad(*expr);
+                    auto arg_type = expr->resolved_type_->ReferenceUnwrap();
+                    auto param    = (i < params_fix.size()) ? params_fix[i] : nullptr;
+
+                    if (param && arg_type != param) {
+                        arg_val  = TypeImplTable::Cast(*this, arg_val, arg_type, param, node.loc_);
+                        arg_type = param;
+                    }
+                    args.emplace_back(arg_val, arg_type);
                 }
             }
         }
