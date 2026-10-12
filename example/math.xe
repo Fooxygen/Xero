@@ -1,0 +1,51 @@
+
+fn abs(x: i32) -> i32 {
+    if (x < 0) return -x;
+    return x;
+}
+
+fn min(a: i32, b: i32) -> i32 {
+    if (a < b) return a;
+    return b;
+}
+
+fn max(a: i32, b: i32) -> i32 {
+    if (a > b) return a;
+    return b;
+}
+
+fn clamp(x: i32, l: i32, h: i32) -> i32 {
+    if (x < l) return l;
+    if (x > h) return h;
+    return x;
+}
+
+fn pow(base: i32, exp: i32) -> i32 {
+    r: i32 = 1;
+    for (i in 0..exp) {
+        r = r * base;
+    }
+    return r;
+}
+
+fn gcd(a: i32, b: i32) -> i32 {
+    while (b != 0) {
+        t: i32 = a % b;
+        a = b;
+        b = t;
+    }
+    return a;
+}
+
+fn factorial(n: i32) -> i32 {
+    if (n <= 1) return 1;
+    return n * factorial(n - 1);
+}
+
+fn is_prime(n: i32) -> bool {
+    if (n < 2) return false;
+    for (i in 2..n) {
+        if (n % i == 0) return false;
+    }
+    return true;
+}
