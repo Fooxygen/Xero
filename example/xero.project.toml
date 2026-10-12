@@ -2,11 +2,13 @@
 #   xero.project.toml
 #   Comment shows the default
 
-name    = "example"
-profile = "debug"
-modules = [
-    "main.xe",
-    "math.xe"
+name     = "example"
+profile  = "debug"
+modules  = [
+    "main.xe"
+]
+packages = [
+    "../lib/xero"
 ]
 
 [profiles.debug]

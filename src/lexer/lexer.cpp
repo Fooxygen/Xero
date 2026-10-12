@@ -144,6 +144,13 @@ namespace lexer {
                 }
                 return TokenGen(TT::LBkt, "[");
             }
+            case ':': {
+                if (cn == ':') {
+                    CharNext();
+                    return TokenGen(TT::ColonColon, "::");
+                }
+                return TokenGen(TT::Colon, ":");
+            }
         }
 
         // └─ Single Char
@@ -156,7 +163,6 @@ namespace lexer {
                 }
                 else return TokenScanSingleComment();
             }
-            case ':':   return TokenGen(TT::Colon,     ":");
             case ';':   return TokenGen(TT::Semicolon, ";");
             case '(':   return TokenGen(TT::LParen,    "(");
             case ')':   return TokenGen(TT::RParen,    ")");

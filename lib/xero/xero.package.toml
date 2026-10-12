@@ -1,0 +1,7 @@
+
+#   xero.package.toml
+#   Comment shows the default
+
+name        = "xero"
+version     = "2026.2.0-beta1"
+description = "The Xero standard library"

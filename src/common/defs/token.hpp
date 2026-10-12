@@ -39,6 +39,7 @@ public:
         QuoteSingle,        //  '
         Arrow,              //  ->
         Amper,              //  &
+        ColonColon,         //  ::
 
         // Semantic
         
@@ -85,6 +86,7 @@ public:
 
         // └─ Keyword
         Keyword,            // Base
+        Import,             // import
         True,               // true
         False,              // false
         If,                 // if
@@ -132,6 +134,7 @@ public:
             case QuoteSingle:
             case Arrow:
             case Amper:
+            case ColonColon:
                 return Unsemantic;
 
             case Id:
@@ -170,6 +173,7 @@ public:
             case ModFAssign:
                 return AssignOper;
 
+            case Import:
             case True:
             case False:
             case If:
@@ -217,6 +221,7 @@ public:
             case QuoteSingle:   return "QuoteSingle";
             case Arrow:         return "Arrow";
             case Amper:         return "Amper";
+            case ColonColon:    return "ColonColon";
 
             case Id:            return "Id";
             case Number:        return "Number";
@@ -249,6 +254,7 @@ public:
             case ModTAssign:    return "ModTAssign";
             case ModFAssign:    return "ModFAssign";
 
+            case Import:        return "import";
             case True:          return "true";
             case False:         return "false";
             case If:            return "if";

@@ -98,8 +98,10 @@
             ]
         },
         "punctuation": {
-            "name": "punctuation.xero",
-            "match": "[:;(){}\\[\\],.]"
+            "patterns": [
+                { "name": "punctuation.separator.namespace.xero", "match": "::" },
+                { "name": "punctuation.xero", "match": "[:;(){}\\[\\],.]" }
+            ]
         },
         "types": {
             "name": "storage.type.xero",
@@ -111,7 +113,7 @@
         },
         "keywords": {
             "name": "keyword.control.xero",
-            "match": "\\b(if|elif|else|for|while|in|break|continue|fn|return)\\b"
+            "match": "\\b(import|if|elif|else|for|while|in|break|continue|fn|return)\\b"
         }
     }
 }

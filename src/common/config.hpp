@@ -35,6 +35,7 @@ struct ProjectConfig {
     std::string                        name_ = "";
     std::filesystem::path              root_;
     std::vector<std::filesystem::path> modules_;
+    std::vector<std::filesystem::path> packages_;
 
     Profile profile_;
     Build   build_;
@@ -83,21 +84,67 @@ struct Config {
                     if (!val || val->empty()) continue;
 
                     auto path_full = project_.root_ / *val;
+
+                    // exist as file
                     if (!std::filesystem::is_regular_file(path_full)) {
                         throw LogErr(LogStage::Config, std::format(
-                            "project.modules: '{}' is not an existing file", *val));
+                            "project.modules: '{}' is not an existing file", *val)
+                        );
                     }
 
-                    auto path_canon = std::filesystem::weakly_canonical(project_.root_ / *val);
+                    auto path_canon = std::filesystem::weakly_canonical(path_full);
 
+                    // duplicate removal
                     for (auto& module_existed : project_.modules_) {
                         if (std::filesystem::equivalent(module_existed, path_canon)) {
                             throw LogErr(LogStage::Config, std::format(
-                                "project.modules: '{}' is already listed", *val));
+                                "project.modules: '{}' is already listed", *val)
+                            );
                         }
                     }
 
-                    project_.modules_.push_back(path_canon);
+                    project_.modules_.emplace_back(path_canon);
+                }
+            }
+
+            // Packages
+            {
+                auto packages = table["packages"].as_array();
+                if (!packages || packages->empty()) {
+                    throw LogErr(LogStage::Config, "project: field 'packages' must not be empty");
+                }
+
+                for (auto&& package : *packages) {
+                    auto val = package.value<std::string>();
+                    if (!val || val->empty()) continue;
+
+                    auto path_full = project_.root_ / *val;
+
+                    // exist as directory
+                    if (!std::filesystem::is_directory(path_full)) {
+                        throw LogErr(LogStage::Config, std::format(
+                            "project.packages: '{}' is not an existing directory", *val)
+                        );
+                    }
+
+                    // directly including project config
+                    if (!std::filesystem::is_regular_file(path_full / "xero.package.toml")) {
+                        throw LogErr(LogStage::Config, std::format(
+                            "project.packages: '{}' is not a package, missing `xero.package.toml`", *val)
+                        );
+                    }
+
+                    auto path_canon = std::filesystem::weakly_canonical(path_full);
+
+                    // duplicate removal
+                    for (auto& package_existed : project_.packages_) {
+                        if (std::filesystem::equivalent(package_existed, path_canon)) {
+                            throw LogErr(LogStage::Config, std::format(
+                                "project.packages: '{}' is already listed", *val));
+                        }
+                    }
+
+                    project_.packages_.emplace_back(path_canon);
                 }
             }
         }

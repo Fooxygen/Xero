@@ -1,0 +1,25 @@
+
+#   Xero
+#   Copyright (c) 2026 Fooxygen.
+#   Licensed under the MIT License.
+
+fn abs(x: i32) -> i32 {
+    if (x < 0) return -x;
+    return x;
+}
+
+fn min(a: i32, b: i32) -> i32 {
+    if (a < b) return a;
+    return b;
+}
+
+fn max(a: i32, b: i32) -> i32 {
+    if (a > b) return a;
+    return b;
+}
+
+fn clamp(x: i32, l: i32, h: i32) -> i32 {
+    if (x < l) return l;
+    if (x > h) return h;
+    return x;
+}
