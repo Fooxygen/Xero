@@ -51,7 +51,10 @@ namespace xcompiler {
             IRGen irgen(project_name);
             backend.ModuleSet(*irgen.llvm_module());
             
-            for (auto& module : modules) irgen.Declare(*module.root());
+            for (auto& module : modules) {
+                irgen.ModuleSet(module.name_full());
+                irgen.Declare(*module.root());
+            }
             for (auto& module : modules) {
                 irgen.Process(*module.root());
                 LogBuild(LogStage::Xcompiler, module.name_full()).Print();

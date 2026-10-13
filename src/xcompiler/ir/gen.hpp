@@ -37,8 +37,8 @@ namespace xcompiler {
         struct State {
             // Function
 
-            llvm::Function* fn_             = nullptr;
-            sema::Type*     fn_return_type_ = nullptr;
+            llvm::Function* fn_               = nullptr;
+            sema::Type*     fn_return_type_   = nullptr;
 
             // Loop Structure
             struct LoopNextBlock {
@@ -54,6 +54,9 @@ namespace xcompiler {
         State       state_;
         SlotTable   slot_table_;
         LlvmFnTable llvm_fn_table_;
+
+        // Module
+        std::string module_name_full_ = "";
 
     private:
         // Declare
@@ -125,6 +128,10 @@ namespace xcompiler {
         Arg               ArgRefMake(llvm::Value* val, sema::Type* type);               // wrap value as ref arg
         llvm::Value*      ArgLoad(const Arg& arg);                                      // take value   from arg
         llvm::Value*      ArgAddr(const Arg& arg);                                      // take address from arg
+
+        // Module
+
+        void ModuleSet(const std::string& name_full) { module_name_full_ = name_full; }
 
         // Declare
 

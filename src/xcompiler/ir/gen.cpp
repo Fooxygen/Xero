@@ -38,9 +38,9 @@ namespace xcompiler {
         }
 
         // Llvm Function
-        auto fn_name =
-            node.name_ +
-            (node.fnsign_->name() == "main" ? "" : node.fnsign_->ParamsPrint());
+        auto fn_name = node.name_ == "main"
+            ? std::string("main")
+            : module_name_full_ + "::" + node.name_ + node.fnsign_->ParamsPrint();
         auto fn_llvm_type = llvm::FunctionType::get(
             return_llvm_type, params_type, false    // non-variable params
         );
