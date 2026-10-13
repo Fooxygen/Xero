@@ -109,7 +109,7 @@ namespace sema {
             name, basic_type, params
         ));
 
-        for (auto& [method_name, method] : basic_type->method_table().table()) {
+        for (auto& [method_name, method] : basic_type->method_table().namespace_current()->table()) {
             for (auto& sign : method.signs()) {
                 if (!IsContainBindingType(*sign)) continue;
                 parametric_type->method_table().Add(
@@ -238,7 +238,7 @@ namespace sema {
         for (auto& [type_name, type] : table_) {
             if (auto basic_type = dynamic_cast<BasicType*>(type.get())) {
                 auto& method_table = basic_type->method_table();
-                for (auto& [method_name, method] : method_table.table()) {
+                for (auto& [method_name, method] : method_table.namespace_current()->table()) {
                     for (auto& sign : method.signs()) {
                         if (sign->modifier() & FnModifier::Cast && sign->return_type()) {
                             type->casts().emplace(sign->return_type());

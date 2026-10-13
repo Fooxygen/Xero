@@ -14,6 +14,7 @@
 #include "deps/vendor/toml++/toml.hpp"
 
 #include "common/log.hpp"
+#include "common/defs/const.hpp"
 
 struct ProjectConfig {
 
@@ -72,41 +73,6 @@ struct Config {
                 project_.root_  = std::filesystem::weakly_canonical(path).parent_path();
             }
             
-            // Modules
-            {
-                auto modules = table["modules"].as_array();
-                if (!modules || modules->empty()) {
-                    throw LogErr(LogStage::Config, "project: field 'modules' must not be empty");
-                }
-
-                for (auto&& module : *modules) {
-                    auto val = module.value<std::string>();
-                    if (!val || val->empty()) continue;
-
-                    auto path_full = project_.root_ / *val;
-
-                    // exist as file
-                    if (!std::filesystem::is_regular_file(path_full)) {
-                        throw LogErr(LogStage::Config, std::format(
-                            "project.modules: '{}' is not an existing file", *val)
-                        );
-                    }
-
-                    auto path_canon = std::filesystem::weakly_canonical(path_full);
-
-                    // duplicate removal
-                    for (auto& module_existed : project_.modules_) {
-                        if (std::filesystem::equivalent(module_existed, path_canon)) {
-                            throw LogErr(LogStage::Config, std::format(
-                                "project.modules: '{}' is already listed", *val)
-                            );
-                        }
-                    }
-
-                    project_.modules_.emplace_back(path_canon);
-                }
-            }
-
             // Packages
             {
                 auto packages = table["packages"].as_array();
@@ -128,10 +94,11 @@ struct Config {
                     }
 
                     // directly including project config
-                    if (!std::filesystem::is_regular_file(path_full / "xero.package.toml")) {
+                    if (!std::filesystem::is_regular_file(path_full / consts::FILE_CONFIG_PACKAGE)) {
                         throw LogErr(LogStage::Config, std::format(
-                            "project.packages: '{}' is not a package, missing `xero.package.toml`", *val)
-                        );
+                            "project.packages: '{}' is not a package, missing `{}`",
+                            *val, consts::FILE_CONFIG_PACKAGE
+                        ));
                     }
 
                     auto path_canon = std::filesystem::weakly_canonical(path_full);
@@ -145,6 +112,48 @@ struct Config {
                     }
 
                     project_.packages_.emplace_back(path_canon);
+                }
+            }
+
+            // Modules
+            {
+                auto modules = table["modules"].as_array();
+                if (!modules || modules->empty()) {
+                    throw LogErr(LogStage::Config, "project: field 'modules' must not be empty");
+                }
+
+                for (auto&& module : *modules) {
+                    auto val = module.value<std::string>();
+                    if (!val || val->empty()) continue;
+
+                    auto path_full = project_.root_ / *val;
+
+                    // exist as file
+                    if (!std::filesystem::is_regular_file(path_full)) {
+                        throw LogErr(LogStage::Config, std::format(
+                            "project.modules: '{}' is not an existing file", *val)
+                        );
+                    }
+
+                    // with `.xe` extention name
+                    if (path_full.extension() != consts::EXT_SOURCE) {
+                        throw LogErr(LogStage::Config, std::format(
+                            "project.modules: '{}' is not a file with the extension name `.xe`", *val)
+                        );
+                    }
+
+                    auto path_canon = std::filesystem::weakly_canonical(path_full);
+
+                    // duplicate removal
+                    for (auto& module_existed : project_.modules_) {
+                        if (std::filesystem::equivalent(module_existed, path_canon)) {
+                            throw LogErr(LogStage::Config, std::format(
+                                "project.modules: '{}' is already listed", *val)
+                            );
+                        }
+                    }
+
+                    project_.modules_.emplace_back(path_canon);
                 }
             }
         }

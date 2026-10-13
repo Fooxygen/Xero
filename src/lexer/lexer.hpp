@@ -79,9 +79,9 @@ namespace lexer {
     public:
         Lexer(context::Module& module)
         :   module_(module),
-            loc_(1, 1, module.name()),
-            loc_prev_(1, 1, module.name()),
-            loc_scan_(1, 1, module.name()),
+            loc_(1, 1,      module.name_full()),
+            loc_prev_(1, 1, module.name_full()),
+            loc_scan_(1, 1, module.name_full()),
             pos_(0)
         {}
 

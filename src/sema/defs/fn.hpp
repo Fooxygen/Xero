@@ -12,6 +12,7 @@
 #include <unordered_map>
 
 #include "common/log.hpp"
+#include "common/utils/format.hpp"
 
 namespace sema {
     class Type;
@@ -107,14 +108,46 @@ namespace sema {
 
     // Table
     class  FnTable {
+    public:
+        class Namespace {
+        public:
+            std::string name_   = "";
+            Namespace*  parent_ = nullptr;
+            std::unordered_map<std::string, std::unique_ptr<Namespace>> children_ = {};
+            std::unordered_map<std::string, Fn>                         table_    = {};
+
+        public:
+            Namespace() = default;
+            Namespace(std::string name, Namespace* parent)
+            :   name_(std::move(name)), parent_(parent) {}
+        
+            std::unordered_map<std::string, Fn>& table() { return table_; }
+        };
+
     private:
-        std::unordered_map<std::string, Fn> table_;
-        Type* owner_ = nullptr;     // owner should be recorded when used in a type table
+        Namespace  ns_root_;
+        Namespace* ns_current_ = &ns_root_;
+        Type*      owner_ = nullptr;    // owner should be recorded when used in a type table
 
     public:
-        std::unordered_map<std::string, Fn>& table() { return table_; }
-
+        Namespace* namespace_current() { return ns_current_; }
+    
     public:
+        void NamespaceEnter(const std::vector<std::string>& path) {
+            auto* ns = &ns_root_;
+            for (auto& seg : path) {
+                auto& child = ns->children_[seg];
+                if (!child) {
+                    child = std::make_unique<Namespace>(seg, ns);
+                }
+                ns = child.get();
+            }
+            ns_current_ = ns;
+        }
+        void NamespaceEnter() { ns_current_ = &ns_root_; }
+
+        // call fn, only callee
+
         Fn*  Lookup(const std::string& name, std::optional<Loc> loc = std::nullopt) {
             auto fn = LookupTry(name);
             if (!fn) {
@@ -125,17 +158,49 @@ namespace sema {
             return fn;
         }
         Fn*  LookupTry(const std::string& name) {
-            auto it = table_.find(name);
-            return it == table_.end() ? nullptr : &it->second;
+            for (auto* ns = ns_current_; ns; ns = ns->parent_) {
+                auto it = ns->table_.find(name);
+                if (it != ns->table_.end()) return &it->second;
+            }
+            return nullptr;
         }
         
+        // call a::b::fn, path + callee
+
+        Fn*  Lookup(const std::vector<std::string>& path, std::optional<Loc> loc = std::nullopt) {
+            auto fn = LookupTry(path);
+            if (!fn) {
+                throw LogErr(LogStage::Sema, std::format(
+                    "undefined function '{}'",
+                    format::JoinWithBoundary(path, [](std::string seg) {
+                        return seg;
+                    }, "", "", "::")
+                ), loc);
+            }
+            return fn;
+        }
+        Fn*  LookupTry(const std::vector<std::string>& path) {
+            auto* ns = &ns_root_;
+
+            // search a::b
+            for (size_t i = 0; i < path.size() - 1; i++) {
+                auto ns_it = ns->children_.find(path[i]);
+                if (ns_it == ns->children_.end()) return nullptr;
+                ns = ns_it->second.get();
+            }
+
+            // search fn
+            auto it = ns->table_.find(path.back());
+            return it == ns->table_.end() ? nullptr : &it->second;
+        }
+
         const FnSign* Add(const std::string& name, const FnSign& sign) {
-            auto& fn = table_.try_emplace(name, name).first->second;
+            auto& fn = ns_current_->table_.try_emplace(name, name).first->second;
             auto  sign_add = sign;
             if (owner_) sign_add.CallerSet(owner_);
             return fn.SignAdd(name, sign_add);
         }
-    
+
         void OwnerSet(Type* type) { owner_ = type; }
     };
 }

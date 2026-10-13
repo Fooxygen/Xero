@@ -31,10 +31,14 @@ namespace sema {
             analyzer_.BuiltinFnRegister();
 
             // AstNode
-            for (auto& module : modules) analyzer_.Declare(*module.root());
             for (auto& module : modules) {
+                analyzer_.fn_table().NamespaceEnter(module.namespaces());
+                analyzer_.Declare(*module.root());
+            }
+            for (auto& module : modules) {
+                analyzer_.fn_table().NamespaceEnter(module.namespaces());
                 analyzer_.Process(*module.root());
-                LogBuild(LogStage::Sema, module.name()).Print();
+                LogBuild(LogStage::Sema, module.name_full()).Print();
             }
         }
     };

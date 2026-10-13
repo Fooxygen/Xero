@@ -48,6 +48,8 @@ enum class AstType {
     FnCallExpr,         //  calling function
     MethodCallExpr,     //  calling method
     FnExpr,             //  function
+    PathExpr,           //  a::b::c
+    ImportExpr,         //  import a::b::c
 
     // Stmt
     Stmt,               //  base ------
@@ -85,6 +87,8 @@ inline AstType BaseOfAstType(AstType type) {
         case FnCallExpr:
         case MethodCallExpr:
         case FnExpr:
+        case PathExpr:
+        case ImportExpr:
             return Expr;
 
         case ExprStmt:
@@ -504,16 +508,16 @@ public:
 };
 class FnCallExpr        : public Expr {
 public:
-    std::unique_ptr<IdExpr> callee_ = nullptr;
-    std::unique_ptr<Exprs>  args_   = nullptr;
+    std::unique_ptr<Expr>  callee_ = nullptr;
+    std::unique_ptr<Exprs> args_   = nullptr;
 
 public:
     const sema::FnSign* callee_fnsign_ = nullptr;
 
 public:
     FnCallExpr(
-        std::unique_ptr<IdExpr> callee,
-        std::unique_ptr<Exprs>  args
+        std::unique_ptr<Expr>  callee,
+        std::unique_ptr<Exprs> args
     )
     :   callee_(std::move(callee)),
         args_(std::move(args))
@@ -640,6 +644,72 @@ public:
         node->fnsign_            = fnsign_;
 
         node->resolved_type_     = resolved_type_;
+        node->loc_ = loc_;
+        return node;
+    }
+};
+class PathExpr          : public Expr {
+public:
+    std::vector<std::unique_ptr<IdExpr>> segments_ = {};
+
+public:
+    PathExpr(std::vector<std::unique_ptr<IdExpr>>& segments)
+    :   segments_(std::move(segments))
+    {
+        type_ = AstType::PathExpr;
+    }
+
+    std::string TypeName() const override {
+        return "PathExpr";
+    }
+
+    void PrintImpl(const std::string& prefix) override {
+        for (auto& seg : segments_) seg->Print(prefix);
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        std::vector<std::unique_ptr<IdExpr>> segments = {};
+        for (auto& seg : segments_) {
+            segments.emplace_back(ChildClone(seg));
+        }
+        
+        auto node = std::make_unique<PathExpr>(segments);
+        node->resolved_type_ = resolved_type_;
+        node->loc_ = loc_;
+        return node;
+    }
+};
+class ImportExpr        : public Expr {
+public:
+    std::unique_ptr<PathExpr> path_  = nullptr;
+    std::unique_ptr<IdExpr>   alias_ = nullptr;
+
+public:
+    ImportExpr(
+        std::unique_ptr<PathExpr> path,
+        std::unique_ptr<IdExpr>   alias
+    )
+    :   path_(std::move(path)),
+        alias_(std::move(alias))
+    {
+        type_ = AstType::ImportExpr;
+    }
+
+    std::string TypeName() const override {
+        return "ImportExpr";
+    }
+
+    void PrintImpl(const std::string& prefix) override {
+        if (path_)  path_->Print(prefix, "path");
+        if (alias_) alias_->Print(prefix, "alias");
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+         auto node = std::make_unique<ImportExpr>(
+            ChildClone(path_),
+            ChildClone(alias_)
+        );
+        node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }

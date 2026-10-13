@@ -17,6 +17,8 @@ llvm_map_components_to_libnames(XERO_LLVM_LIBS
 add_executable(xero
     xero.cpp
 
+    context/context.cpp
+
     lexer/lexer.cpp
 
     parser/parser.cpp

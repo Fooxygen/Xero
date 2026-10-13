@@ -27,5 +27,9 @@ namespace context {
         std::vector<Module>& modules() { return modules_; }
         
         sema::FnTable&       fn_table() { return fn_table_; }
+    
+    public:
+        void ModulesLoad();
+    
     };
 }

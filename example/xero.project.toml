@@ -4,11 +4,11 @@
 
 name     = "example"
 profile  = "debug"
-modules  = [
-    "main.xe"
-]
 packages = [
     "../lib/xero"
+]
+modules  = [
+    "main.xe"
 ]
 
 [profiles.debug]

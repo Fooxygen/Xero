@@ -13,6 +13,7 @@
 #include "common/config.hpp"
 #include "common/log.hpp"
 #include "common/defs/ast.hpp"
+#include "common/defs/const.hpp"
 #include "context/context.hpp"
 #include "sema/defs/fn.hpp"
 #include "xcompiler/backend/backend.hpp"
@@ -53,12 +54,15 @@ namespace xcompiler {
             for (auto& module : modules) irgen.Declare(*module.root());
             for (auto& module : modules) {
                 irgen.Process(*module.root());
-                LogBuild(LogStage::Xcompiler, module.name()).Print();
+                LogBuild(LogStage::Xcompiler, module.name_full()).Print();
             }
 
             if (config.project_.build_.emit_ir_) {
                 std::filesystem::create_directories(ir_path);
-                backend.IROutput((ir_path / (project_name + ".ll")).string(), *irgen.llvm_module());
+                backend.IROutput(
+                    (ir_path / (project_name + std::string(consts::EXT_IR))).string(),
+                    *irgen.llvm_module()
+                );
             }
 
             // IR Optimize
@@ -68,7 +72,10 @@ namespace xcompiler {
             // Object Code Gen and Output
             auto obj_path = profile_path / "obj";
             std::filesystem::create_directories(obj_path);
-            backend.ObjectCodeOutput((obj_path / (project_name + ".o")).string(), *irgen.llvm_module());
+            backend.ObjectCodeOutput(
+                (obj_path / (project_name + std::string(consts::EXT_OBJ))).string(),
+                *irgen.llvm_module()
+            );
 
             // Linker
             auto gpp = llvm::sys::findProgramByName("g++");
@@ -77,8 +84,8 @@ namespace xcompiler {
             }
             
             auto link_status = llvm::sys::ExecuteAndWait(*gpp, {
-                *gpp, (obj_path / (project_name + ".o")).string(),
-                "-o", (profile_path / (project_name + ".exe")).string(),
+                *gpp, (obj_path / (project_name + std::string(consts::EXT_OBJ))).string(),
+                "-o", (profile_path / (project_name + std::string(consts::EXT_EXECUTABLE))).string(),
             });
             if (link_status != 0) {
                 throw LogErr(LogStage::Xcompiler, "failed to link object file");

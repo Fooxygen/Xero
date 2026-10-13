@@ -157,7 +157,7 @@ namespace sema {
         }
         node.resolved_type_ = node.bind_type_->resolved_type_;
 
-        var_table_.Declare(std::make_unique<Var>(
+        var_table_.Add(std::make_unique<Var>(
             node.id_, node.resolved_type_, node.loc_
         ));
         if (node.value_) Process(*node.value_);
@@ -297,26 +297,25 @@ namespace sema {
         }
 
         // Callee
-        auto callee = node.callee_->name_;
-        {
-            // Stored in FnTable
-            if (auto fn = fn_table_.LookupTry(callee)) {
-                auto sign = fn->SignLookup(args_type, node.callee_->loc_);
-                node.resolved_type_ = sign->return_type();
-                node.callee_fnsign_ = sign;
-                return;
+        Fn* fn = nullptr;
+        
+        // call fn
+        if      (auto* idexpr   = dynamic_cast<IdExpr*>(node.callee_.get())) {
+            fn = fn_table_.Lookup(idexpr->name_, idexpr->loc_);
+        }
+        
+        // call a::b::fn
+        else if (auto* pathexpr = dynamic_cast<PathExpr*>(node.callee_.get())) {
+            std::vector<std::string> segments = {};
+            for (auto& seg : pathexpr->segments_) {
+                segments.emplace_back(seg->name_);
             }
-
-            // Stored in VarTable
-            /*if (auto var = var_table_.LookupTry(callee)) {
-                node.resolved_type_ = TypeTable::Lookup("none");
-                return;
-            }*/
+            fn = fn_table_.Lookup(segments, pathexpr->loc_);
         }
 
-        throw LogErr(LogStage::Sema, std::format(
-            "undefined function '{}'", callee
-        ), node.loc_);
+        auto sign = fn->SignLookup(args_type, node.callee_->loc_);
+        node.resolved_type_ = sign->return_type();
+        node.callee_fnsign_ = sign;
     }
 
     void Analyzer::Process(MethodCallExpr& node) {
@@ -350,7 +349,7 @@ namespace sema {
             Process(*node.body_, [&]() {
                 for (size_t i = 0; i < params_expr.size(); i++) {
                     auto expr = (DeclExpr*)(params_expr[i].get());
-                    var_table_.Declare(std::make_unique<Var>(
+                    var_table_.Add(std::make_unique<Var>(
                         expr->id_, expr->resolved_type_, expr->loc_)
                     );
                 }
@@ -507,7 +506,7 @@ namespace sema {
         }
 
         Process(*node.body_, [&]() {
-            var_table_.Declare(std::make_unique<Var>(
+            var_table_.Add(std::make_unique<Var>(
                 node.iter_->name_, iter_type, node.iter_->loc_)
             );
         });

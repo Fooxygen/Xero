@@ -56,6 +56,8 @@ namespace sema {
 
     public:
         Analyzer(FnTable& fn_table) : fn_table_(fn_table) {}
+
+        FnTable& fn_table() { return fn_table_; }
     
     public:
         // Builtin

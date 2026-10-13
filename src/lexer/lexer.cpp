@@ -340,6 +340,6 @@ namespace lexer {
             }
         }
 
-        LogBuild(LogStage::Lexer, module_.name()).Print();
+        LogBuild(LogStage::Lexer, module_.name_full()).Print();
     }
 }

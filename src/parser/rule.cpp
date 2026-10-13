@@ -161,6 +161,77 @@ namespace parser {
                 }
             );
         }
+        // └─ id :: id -> pathexpr
+        {
+            RuleAdd(
+                PATS_INIT{
+                    AT::IdExpr,
+                    TT::ColonColon,
+                    AT::IdExpr
+                },
+                [this](auto) -> ASTNODE {
+                    std::vector<std::unique_ptr<IdExpr>> segments = {};
+                    segments.emplace_back(Move<IdExpr>(1));
+                    segments.emplace_back(Move<IdExpr>(3));
+                    return std::make_unique<PathExpr>(segments);
+                }
+            );
+        }
+        // └─ pathexpr :: id -> pathexpr
+        {
+            RuleAdd(
+                PATS_INIT{
+                    AT::PathExpr,
+                    TT::ColonColon,
+                    AT::IdExpr
+                },
+                [this](auto) -> ASTNODE {
+                    auto pathexpr = Move<PathExpr>(1);
+                    pathexpr->segments_.emplace_back(Move<IdExpr>(3));
+                    return pathexpr;
+                }
+            );
+        }
+
+        // Package and Module
+        
+        // └─ import id -> importexpr
+        {
+            RuleAdd(
+                PATS_INIT{
+                    TT::Import,
+                    AT::IdExpr
+                },
+                [this](auto) -> ASTNODE {
+                    std::vector<std::unique_ptr<IdExpr>> segments = {};
+                    segments.emplace_back(Move<IdExpr>(2));
+
+                    auto pathexpr = std::make_unique<PathExpr>(segments);
+                    auto alias    = std::unique_ptr<IdExpr>(nullptr);
+                    return std::make_unique<ImportExpr>(
+                        std::move(pathexpr),
+                        std::move(alias)
+                    );
+                }
+            );
+        }
+        // └─ import pathexpr -> importexpr
+        {
+            RuleAdd(
+                PATS_INIT{
+                    TT::Import,
+                    AT::PathExpr
+                },
+                [this](auto) -> ASTNODE {
+                    auto pathexpr = Move<PathExpr>(2);
+                    auto alias    = std::unique_ptr<IdExpr>(nullptr);
+                    return std::make_unique<ImportExpr>(
+                        std::move(pathexpr),
+                        std::move(alias)
+                    );
+                }
+            );
+        }
 
         // Type, Declare and Assign
         
@@ -336,18 +407,18 @@ namespace parser {
             );
         }
 
-        // └─ expr(exprs?) -> fncallexpr
+        // └─ <id, pathexpr> (exprs?) -> fncallexpr
         {
             RuleAdd(
                 PATS_INIT{
-                    AT::IdExpr,
+                    SymbolPattern({ AT::IdExpr, AT::PathExpr }),
                     TT::LParen,
                     SymbolPattern::Opt({ AT::Expr, AT::Exprs}),
                     TT::RParen
                 },
                 [this](auto) {
                     return std::make_unique<FnCallExpr>(
-                        Move<IdExpr>(1),
+                        Move<Expr>(1),
                         Pack2Exprs(*this, 3)
                     );
                 },

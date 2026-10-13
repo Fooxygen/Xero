@@ -426,7 +426,7 @@ namespace xcompiler {
         }
 
         throw LogErr(LogStage::Xcompiler, std::format(
-            "undefined function '{}'", node.callee_->name_
+            "undefined function '{}'", fnsign->name()
         ), node.loc_);
     }
     

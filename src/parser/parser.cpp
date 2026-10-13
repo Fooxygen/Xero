@@ -79,7 +79,7 @@ namespace parser {
             }
         }
     
-        LogBuild(LogStage::Parser, module_.name()).Print();
+        LogBuild(LogStage::Parser, module_.name_full()).Print();
     }
 
     void   Parser::TokenRewrite(Token& token) {

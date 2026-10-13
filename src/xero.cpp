@@ -9,33 +9,16 @@
 
 #include <iostream>
 #include <string>
-#include <sstream>
-#include <fstream>
-#include <filesystem>
 #include <format>
 
 #include "build.hpp"
 #include "common/log.hpp"
+#include "common/defs/const.hpp"
 #include "context/context.hpp"
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
 #include "sema/sema.hpp"
 #include "xcompiler/xcompiler.hpp"
-
-std::string FileRead(const std::string& path) {
-    if (path.empty()) {
-        throw LogErr(LogStage::File, "empty file path");
-    }
-
-    std::ifstream file(path, std::ios::binary);
-    if (!file) {
-        throw LogErr(LogStage::File, std::format("failed to open file '{}'", path));
-    }
-
-    std::stringstream ss;
-    ss << file.rdbuf();
-    return ss.str();
-}
 
 int main(int argc, char* argv[]) {
 
@@ -48,7 +31,9 @@ int main(int argc, char* argv[]) {
 
     try {
         if (argc != 2) {
-            throw LogErr(LogStage::File, "usage: xero.exe <xero.project.toml>");
+            throw LogErr(LogStage::File, std::format(
+                "usage: xero.exe <{}>", consts::FILE_CONFIG_PROJECT
+            ));
         }
 
         // Context
@@ -59,13 +44,8 @@ int main(int argc, char* argv[]) {
         auto& config_project = config.project_;
         config.ProjectConfigLoad(argv[1]);
 
-        // Modules
-        for (auto& module_path : config_project.modules_) {
-            context.modules().emplace_back(
-                module_path,
-                FileRead(module_path.string())
-            );
-        }
+        // Packages and Modules
+        context.ModulesLoad();
 
         // Lexer
         for (auto& module : context.modules()) {

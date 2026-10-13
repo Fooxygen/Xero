@@ -39,7 +39,7 @@ namespace sema {
         void   ScopePop()  { scopes_.pop_back(); }
         Scope& ScopeGet()  { return scopes_.back(); }
 
-        void   Declare(std::unique_ptr<Var>&& var) {
+        void   Add(std::unique_ptr<Var>&& var) {
             if (var->name_.empty()) {
                 throw LogErr(LogStage::Sema, "empty variable declared name", var->loc_);
             }

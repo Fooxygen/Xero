@@ -1,9 +1,9 @@
 
-import xero::math::scalar
+# import xero::math::scalar
 
 fn main() {
-    println("abs(-7)          = ", scalar::abs(-7));            # 7
-    println("min(3, 9)        = ", scalar::min(3, 9));          # 3
-    println("max(3, 9)        = ", scalar::max(3, 9));          # 9
-    println("clamp(15, 0, 10) = ", scalar::clamp(15, 0, 10));   # 10
+    println("abs(-7)          = ", xero::math::scalar::abs(-7));            # 7
+    println("min(3, 9)        = ", xero::math::scalar::min(3, 9));          # 3
+    println("max(3, 9)        = ", xero::math::scalar::max(3, 9));          # 9
+    println("clamp(15, 0, 10) = ", xero::math::scalar::clamp(15, 0, 10));   # 10
 }
