@@ -10,7 +10,7 @@
 
 #include "common/log.hpp"
 #include "common/utils/format.hpp"
-#include "common/utils/loc.hpp"
+#include "common/defs/loc.hpp"
 
 class Token {
 public:

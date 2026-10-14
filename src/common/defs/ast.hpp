@@ -10,7 +10,7 @@
 #include <vector>
 #include <utility>
 
-#include "common/utils/loc.hpp"
+#include "common/defs/loc.hpp"
 #include "common/utils/format.hpp"
 #include "common/defs/token.hpp"
 #include "common/defs/opertype.hpp"

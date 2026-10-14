@@ -160,7 +160,7 @@ namespace parser {
             }
             case Char: {
                 uint32_t codepoint = 0;
-                UTF8::Decode(
+                utf8::Decode(
                     (const uint8_t*)token.lexeme_.data(),
                     token.lexeme_.length(),
                     codepoint,

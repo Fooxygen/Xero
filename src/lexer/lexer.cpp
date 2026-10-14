@@ -254,7 +254,7 @@ namespace lexer {
 
         // UTF8
         else {
-            size_t bytes_get = UTF8::BytesCntGet((uint8_t)module_.code()[pos_], LogStage::Lexer, loc_scan_);
+            size_t bytes_get = utf8::BytesCntGet((uint8_t)module_.code()[pos_], LogStage::Lexer, loc_scan_);
             for (size_t i = 0; i < bytes_get; i++) {
                 if (IsScanEnd())
                     throw LogErr(LogStage::Lexer, "unclosed single quotes of char", loc_scan_);

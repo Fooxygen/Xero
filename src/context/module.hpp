@@ -13,6 +13,7 @@
 
 #include "common/defs/token.hpp"
 #include "common/defs/ast.hpp"
+#include "common/defs/path.hpp"
 
 namespace context {
     
@@ -24,8 +25,8 @@ namespace context {
 
         // Namespace
 
-        std::vector<std::string> namespaces_ = {};
-        std::unordered_map<std::string, std::vector<std::string>> namespaces_alias_ = {};
+        Path namespaces_;
+        std::unordered_map<std::string, Path> namespaces_alias_;
         
         // Lexer
 
@@ -38,9 +39,9 @@ namespace context {
 
     public:
         Module(
-            std::filesystem::path    path,
-            std::vector<std::string> namespaces,
-            std::string              code
+            std::filesystem::path path,
+            Path                  namespaces,
+            std::string           code
         )
         :   name_(path.stem().string()),
             path_(std::move(path)),
@@ -48,18 +49,15 @@ namespace context {
             code_(std::move(code))
         {
             // Full Name
-            name_full_ = format::JoinWithBoundary(
-                namespaces_, [](const std::string& seg) { return seg;},
-                "", "", "::"
-            );
+            name_full_ = namespaces_.Print();
         }
 
         const std::string&              name()       const { return name_; }
         const std::string&              name_full()  const { return name_full_; }
         const std::filesystem::path&    path()       const { return path_; }
 
-        const std::vector<std::string>& namespaces() const { return namespaces_; }
-        std::unordered_map<std::string, std::vector<std::string>>& namespaces_alias() { return namespaces_alias_; }
+        const Path&                            namespaces() const { return namespaces_; }
+        std::unordered_map<std::string, Path>& namespaces_alias() { return namespaces_alias_; }
 
         const std::string&        code()   const { return code_; }
         std::vector<Token>&       tokens()       { return tokens_; }

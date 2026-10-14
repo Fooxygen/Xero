@@ -7,7 +7,7 @@
 
 #include <vector>
 
-#include "common/utils/loc.hpp"
+#include "common/defs/loc.hpp"
 #include "common/defs/token.hpp"
 #include "context/module.hpp"
 

@@ -13,6 +13,7 @@
 
 #include "common/log.hpp"
 #include "common/utils/format.hpp"
+#include "common/defs/path.hpp"
 
 namespace sema {
     class Type;
@@ -133,9 +134,10 @@ namespace sema {
         Namespace* namespace_current() { return ns_current_; }
     
     public:
-        void NamespaceEnter(const std::vector<std::string>& path) {
+        void NamespaceEnter(const Path& path) {
             auto* ns = &ns_root_;
-            for (auto& seg : path) {
+            for (size_t i = 0; i < path.Length(); i++) {
+                auto& seg   = path[i];
                 auto& child = ns->children_[seg];
                 if (!child) {
                     child = std::make_unique<Namespace>(seg, ns);
@@ -167,30 +169,27 @@ namespace sema {
         
         // call a::b::fn, path + callee
 
-        Fn*  Lookup(const std::vector<std::string>& path, std::optional<Loc> loc = std::nullopt) {
+        Fn*  Lookup(const Path& path, std::optional<Loc> loc = std::nullopt) {
             auto fn = LookupTry(path);
             if (!fn) {
                 throw LogErr(LogStage::Sema, std::format(
-                    "undefined function '{}'",
-                    format::JoinWithBoundary(path, [](std::string seg) {
-                        return seg;
-                    }, "", "", "::")
+                    "undefined function '{}'", path.Print()
                 ), loc);
             }
             return fn;
         }
-        Fn*  LookupTry(const std::vector<std::string>& path) {
+        Fn*  LookupTry(const Path& path) {
             auto* ns = &ns_root_;
 
             // search a::b
-            for (size_t i = 0; i < path.size() - 1; i++) {
+            for (size_t i = 0; i < path.Length() - 1; i++) {
                 auto ns_it = ns->children_.find(path[i]);
                 if (ns_it == ns->children_.end()) return nullptr;
                 ns = ns_it->second.get();
             }
 
             // search fn
-            auto it = ns->table_.find(path.back());
+            auto it = ns->table_.find(path.Back());
             return it == ns->table_.end() ? nullptr : &it->second;
         }
 

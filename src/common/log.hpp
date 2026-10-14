@@ -9,7 +9,7 @@
 #include <string>
 #include <optional>
 
-#include "common/utils/loc.hpp"
+#include "common/defs/loc.hpp"
 
 #define COLOR_DEFAULT   "\033[0m"
 #define COLOR_GRAY      "\033[90m"          // Module

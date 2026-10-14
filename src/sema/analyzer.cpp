@@ -306,9 +306,9 @@ namespace sema {
         
         // call a::b::fn
         else if (auto* pathexpr = dynamic_cast<PathExpr*>(node.callee_.get())) {
-            std::vector<std::string> segments = {};
+            Path segments = {};
             for (auto& seg : pathexpr->segments_) {
-                segments.emplace_back(seg->name_);
+                segments.Add(seg->name_);
             }
             fn = fn_table_.Lookup(segments, pathexpr->loc_);
         }

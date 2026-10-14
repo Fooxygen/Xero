@@ -94,10 +94,10 @@ struct Config {
                     }
 
                     // directly including project config
-                    if (!std::filesystem::is_regular_file(path_full / consts::FILE_CONFIG_PACKAGE)) {
+                    if (!std::filesystem::is_regular_file(path_full / XERO_FILE_CONFIG_PACKAGE)) {
                         throw LogErr(LogStage::Config, std::format(
                             "project.packages: '{}' is not a package, missing `{}`",
-                            *val, consts::FILE_CONFIG_PACKAGE
+                            *val, XERO_FILE_CONFIG_PACKAGE
                         ));
                     }
 
@@ -136,7 +136,7 @@ struct Config {
                     }
 
                     // with `.xe` extention name
-                    if (path_full.extension() != consts::EXT_SOURCE) {
+                    if (path_full.extension() != XERO_EXT_SOURCE) {
                         throw LogErr(LogStage::Config, std::format(
                             "project.modules: '{}' is not a file with the extension name `.xe`", *val)
                         );

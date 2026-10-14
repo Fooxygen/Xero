@@ -30,6 +30,6 @@ namespace context {
     
     public:
         void ModulesProjectLoad();
-        void ModulesDependencyLoad(const std::vector<std::string>& path);
+        void ModulesDependencyLoad(const Path& path);
     };
 }

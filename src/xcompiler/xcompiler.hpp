@@ -63,7 +63,7 @@ namespace xcompiler {
             if (config.project_.build_.emit_ir_) {
                 std::filesystem::create_directories(ir_path);
                 backend.IROutput(
-                    (ir_path / (project_name + std::string(consts::EXT_IR))).string(),
+                    (ir_path / (project_name + std::string(XERO_EXT_IR))).string(),
                     *irgen.llvm_module()
                 );
             }
@@ -76,7 +76,7 @@ namespace xcompiler {
             auto obj_path = profile_path / "obj";
             std::filesystem::create_directories(obj_path);
             backend.ObjectCodeOutput(
-                (obj_path / (project_name + std::string(consts::EXT_OBJ))).string(),
+                (obj_path / (project_name + std::string(XERO_EXT_OBJ))).string(),
                 *irgen.llvm_module()
             );
 
@@ -87,8 +87,8 @@ namespace xcompiler {
             }
             
             auto link_status = llvm::sys::ExecuteAndWait(*gpp, {
-                *gpp, (obj_path / (project_name + std::string(consts::EXT_OBJ))).string(),
-                "-o", (profile_path / (project_name + std::string(consts::EXT_EXECUTABLE))).string(),
+                *gpp, (obj_path / (project_name + std::string(XERO_EXT_OBJ))).string(),
+                "-o", (profile_path / (project_name + std::string(XERO_EXT_EXECUTABLE))).string(),
             });
             if (link_status != 0) {
                 throw LogErr(LogStage::Xcompiler, "failed to link object file");

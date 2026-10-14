@@ -13,7 +13,7 @@ namespace context {
 
     void Context::ModulesProjectLoad() {
         for (auto& module_path : config_.project_.modules_) {
-            std::vector<std::string> namespaces = { module_path.stem().string() };
+            Path namespaces = { module_path.stem().string() };
             modules().emplace_back(
                 module_path,
                 std::move(namespaces),
@@ -22,8 +22,8 @@ namespace context {
         }
     }
 
-    void Context::ModulesDependencyLoad(const std::vector<std::string>& path) {
-        if (path.empty()) return;
+    void Context::ModulesDependencyLoad(const Path& path) {
+        if (path.IsEmpty()) return;
 
         // Package Root
         std::filesystem::path package_root = {};
@@ -37,26 +37,26 @@ namespace context {
 
         // Recursion Search
         auto current_dir       = package_root;
-        auto current_ns        = std::vector<std::string>{ path[0] };
-        auto result_namespaces = std::vector<std::string>{};
+        auto current_ns        = Path{ path[0] };
+        auto result_namespaces = Path{};
         auto result_module     = std::filesystem::path{};
 
-        for (size_t i = 1; i < path.size(); i++) {
+        for (size_t i = 1; i < path.Length(); i++) {
             const auto& seg = path[i];
 
             // Exist as module
-            auto seg_module = current_dir / (seg + std::string(consts::EXT_SOURCE));
+            auto seg_module = current_dir / (seg + std::string(XERO_EXT_SOURCE));
             if (std::filesystem::is_regular_file(seg_module)) {
                 result_module     = seg_module;
                 result_namespaces = current_ns;
-                result_namespaces.emplace_back(seg);
+                result_namespaces.Add(seg);
             }
 
             // Exist as namespace
             auto seg_namespace = current_dir / seg;
             if (std::filesystem::is_directory(seg_namespace)) {
                 current_dir = seg_namespace;
-                current_ns.emplace_back(seg);
+                current_ns.Add(seg);
                 continue;
             }
 

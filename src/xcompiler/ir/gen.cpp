@@ -555,8 +555,8 @@ namespace xcompiler {
             // getting bytes_len from the first byte
 
             auto&  codepoint = codepoints.emplace_back(0);
-            size_t bytes_len = UTF8::BytesCntGet((uint8_t)str[i], LogStage::Xcompiler, node.loc_);
-            UTF8::Decode(
+            size_t bytes_len = utf8::BytesCntGet((uint8_t)str[i], LogStage::Xcompiler, node.loc_);
+            utf8::Decode(
                 (const uint8_t *)str.data() + i,
                 str.size() - i,
                 codepoint,

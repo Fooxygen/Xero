@@ -10,12 +10,11 @@
 
 #include "common/log.hpp"
 
-class UTF8 {
-private:
-    struct Invalid {};
+namespace utf8 {
 
-public:
-    static size_t BytesCntGet(
+    struct Invalid{};
+
+    inline size_t BytesCntGet(
         uint8_t bytes_first,
         LogStage log_module, std::optional<Loc> loc = std::nullopt
     ) {
@@ -33,7 +32,7 @@ public:
         }
     }
 
-    static void   Decode(
+    inline void   Decode(
         const uint8_t* bytes, size_t bytes_cnt, uint32_t& out_codepoint,
         LogStage log_module, std::optional<Loc> loc = std::nullopt
     ) {
@@ -58,4 +57,4 @@ public:
             throw LogErr(log_module, "invalid utf8 sequence", loc);
         }
     }
-};
+}

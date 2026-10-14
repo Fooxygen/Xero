@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
     try {
         if (argc != 2) {
             throw LogErr(LogStage::File, std::format(
-                "usage: xero.exe <{}>", consts::FILE_CONFIG_PROJECT
+                "usage: xero.exe <{}>", XERO_FILE_CONFIG_PROJECT
             ));
         }
 
@@ -66,9 +66,9 @@ int main(int argc, char* argv[]) {
             context::Deps deps;
             deps.Process(*module.root());
             for (auto* pathexpr : deps.paths()) {
-                std::vector<std::string> path = {};
+                Path path = {};
                 for (auto& seg : pathexpr->segments_) {
-                    path.emplace_back(seg->name_);
+                    path.Add(seg->name_);
                 }
                 context.ModulesDependencyLoad(path);
             }
