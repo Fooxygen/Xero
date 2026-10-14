@@ -29,7 +29,8 @@ namespace context {
         sema::FnTable&       fn_table() { return fn_table_; }
     
     public:
-        void ModulesProjectLoad();
-        void ModulesDependencyLoad(const Path& path);
+        void ModulesProjectLoad();                  // load project modules from config
+
+        void ModuleDependencyLoad(Module& module);  // search dependency of module and load
     };
 }

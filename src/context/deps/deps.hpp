@@ -9,13 +9,16 @@
 
 #include "common/defs/ast.hpp"
 #include "common/defs/path.hpp"
+#include "context/module.hpp"
 
 namespace context {
 
     class Deps {
     private:
-        std::vector<PathExpr*> paths_ = {};
-        std::unordered_map<std::string, Path>& namespaces_alias_;
+        Module& module_;
+
+    private:
+        std::vector<Path> paths_ = {};
 
         // Process
 
@@ -43,14 +46,12 @@ namespace context {
         void Process(Program& node);
 
     public:
-        Deps(std::unordered_map<std::string, Path>& namespaces_alias)
-        :   namespaces_alias_(namespaces_alias) {}
+        Deps(Module& module)
+        :   module_(module) {}
 
-        const std::vector<PathExpr*>& paths() const { return paths_; }
+        const std::vector<Path>& paths() const { return paths_; }
 
     public:
-        void Reset() { paths_.clear(); }
-
         // Process
 
         void Process(AstNode& node) {

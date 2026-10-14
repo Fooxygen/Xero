@@ -15,7 +15,6 @@
 #include "common/log.hpp"
 #include "common/defs/const.hpp"
 #include "context/context.hpp"
-#include "context/deps/deps.hpp"
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
 #include "sema/sema.hpp"
@@ -63,15 +62,9 @@ int main(int argc, char* argv[]) {
             module.root() = std::move(parser.root());
 
             // Dependency
-            context::Deps deps(module.namespaces_alias());
-            deps.Process(*module.root());
-            for (auto* pathexpr : deps.paths()) {
-                Path path = {};
-                for (auto& seg : pathexpr->segments_) {
-                    path.Add(seg->name_);
-                }
-                context.ModulesDependencyLoad(path);
-            }
+            // Any Module may contain dependencies,
+            // so newly imported modules will be processed in this loop
+            context.ModuleDependencyLoad(module);
         }
 
         // Sema
@@ -79,12 +72,8 @@ int main(int argc, char* argv[]) {
         sema.Run(context.modules());
 
         // Xcompiler
-        xcompiler::Xcompiler xcompiler;
-        xcompiler.Run(
-            config,
-            context.modules(),
-            context.fn_table()
-        );
+        xcompiler::Xcompiler xcompiler(config, context.fn_table());
+        xcompiler.Run(context.modules());
     }
     catch (const LogErr& log) {
         log.Print();

@@ -14,7 +14,7 @@
 #include "common/log.hpp"
 #include "common/defs/ast.hpp"
 #include "common/defs/const.hpp"
-#include "context/context.hpp"
+#include "context/module.hpp"
 #include "sema/defs/fn.hpp"
 #include "xcompiler/backend/backend.hpp"
 #include "xcompiler/builtin.hpp"
@@ -25,23 +25,29 @@
 namespace xcompiler {
 
     class Xcompiler {
-    public:
-        void Run(
-            const Config& config,
-            std::vector<context::Module>& modules,
-            sema::FnTable& fn_table
-        ) {
+    private:
+        const Config&  config_;
+        sema::FnTable& fn_table_;
 
-            auto project_name = config.project_.name_;
+    public:
+        Xcompiler(const Config& config, sema::FnTable& fn_table)
+        :   config_(config),
+            fn_table_(fn_table) {}
+
+    public:
+        void Run(std::vector<context::Module>& modules) {
+
+            // Project
+            auto project_name = config_.project_.name_;
             auto profile_path =
-                config.project_.build_.path_ /
-                config.project_.profile_.name_;
+                config_.project_.build_.path_ /
+                config_.project_.profile_.name_;
 
             // TypeImpl
             TypeImplTable::Init();
 
             // Builtin
-            BuiltinFnRegister(fn_table);
+            BuiltinFnRegister(fn_table_);
 
             // Backend
             Backend backend;
@@ -60,7 +66,7 @@ namespace xcompiler {
                 LogBuild(LogStage::Xcompiler, module.name_full()).Print();
             }
 
-            if (config.project_.build_.emit_ir_) {
+            if (config_.project_.build_.emit_ir_) {
                 std::filesystem::create_directories(ir_path);
                 backend.IROutput(
                     (ir_path / (project_name + std::string(XERO_EXT_IR))).string(),
@@ -70,7 +76,7 @@ namespace xcompiler {
 
             // IR Optimize
             Optimizer optimizer;
-            optimizer.Run(*irgen.llvm_module(), config.project_.profile_.opt_level_);
+            optimizer.Run(*irgen.llvm_module(), config_.project_.profile_.opt_level_);
 
             // Object Code Gen and Output
             auto obj_path = profile_path / "obj";

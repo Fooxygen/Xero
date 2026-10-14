@@ -312,9 +312,9 @@ namespace sema {
             }
 
             // Alias: a::b::c::fn -> d::fn
-            if (module_namespaces_alias_ && !segments.IsEmpty()) {
-                auto it = module_namespaces_alias_->find(segments[0]);  // d
-                if (it != module_namespaces_alias_->end()) {
+            if (module_ && !segments.IsEmpty()) {
+                auto it = module_->namespaces_alias().find(segments[0]);  // d
+                if (it != module_->namespaces_alias().end()) {
                     Path segments_replace = it->second;                 // a::b::c
                     for (size_t i = 1; i < segments.Length(); i++) {
                         segments_replace.Add(segments[i]);              // + ::fn + ::...

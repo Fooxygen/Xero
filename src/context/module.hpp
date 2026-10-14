@@ -56,8 +56,9 @@ namespace context {
         const std::string&              name_full()  const { return name_full_; }
         const std::filesystem::path&    path()       const { return path_; }
 
-        const Path&                            namespaces() const { return namespaces_; }
-        std::unordered_map<std::string, Path>& namespaces_alias() { return namespaces_alias_; }
+        const Path&                                  namespaces()       const { return namespaces_; }
+        std::unordered_map<std::string, Path>&       namespaces_alias()       { return namespaces_alias_; }
+        const std::unordered_map<std::string, Path>& namespaces_alias() const { return namespaces_alias_; }
 
         const std::string&        code()   const { return code_; }
         std::vector<Token>&       tokens()       { return tokens_; }
