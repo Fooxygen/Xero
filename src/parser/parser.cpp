@@ -87,8 +87,8 @@ namespace parser {
 
         switch (token.type_) {
             case Id: {
-                if      (token.lexeme_ == "import") {
-                    token = Token(Import, token.lexeme_, token.loc_);
+                if      (token.lexeme_ == "use") {
+                    token = Token(Use, token.lexeme_, token.loc_);
                 }
 
                 else if (token.lexeme_ == "true") {

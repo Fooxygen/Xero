@@ -49,7 +49,7 @@ enum class AstType {
     MethodCallExpr,     //  calling method
     FnExpr,             //  function
     PathExpr,           //  a::b::c
-    ImportExpr,         //  import a::b::c
+    UseExpr,            //  use a::b::c
 
     // Stmt
     Stmt,               //  base ------
@@ -88,7 +88,7 @@ inline AstType BaseOfAstType(AstType type) {
         case MethodCallExpr:
         case FnExpr:
         case PathExpr:
-        case ImportExpr:
+        case UseExpr:
             return Expr;
 
         case ExprStmt:
@@ -679,24 +679,24 @@ public:
         return node;
     }
 };
-class ImportExpr        : public Expr {
+class UseExpr           : public Expr {
 public:
     std::unique_ptr<PathExpr> path_  = nullptr;
     std::unique_ptr<IdExpr>   alias_ = nullptr;
 
 public:
-    ImportExpr(
+    UseExpr(
         std::unique_ptr<PathExpr> path,
         std::unique_ptr<IdExpr>   alias
     )
     :   path_(std::move(path)),
         alias_(std::move(alias))
     {
-        type_ = AstType::ImportExpr;
+        type_ = AstType::UseExpr;
     }
 
     std::string TypeName() const override {
-        return "ImportExpr";
+        return "UseExpr";
     }
 
     void PrintImpl(const std::string& prefix) override {
@@ -705,7 +705,7 @@ public:
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-         auto node = std::make_unique<ImportExpr>(
+         auto node = std::make_unique<UseExpr>(
             ChildClone(path_),
             ChildClone(alias_)
         );

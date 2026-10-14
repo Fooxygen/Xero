@@ -195,11 +195,11 @@ namespace parser {
 
         // Package and Module
         
-        // └─ import id -> importexpr
+        // └─ use id -> useexpr
         {
             RuleAdd(
                 PATS_INIT{
-                    TT::Import,
+                    TT::Use,
                     AT::IdExpr
                 },
                 [this](auto) -> ASTNODE {
@@ -208,24 +208,24 @@ namespace parser {
 
                     auto pathexpr = std::make_unique<PathExpr>(segments);
                     auto alias    = std::unique_ptr<IdExpr>(nullptr);
-                    return std::make_unique<ImportExpr>(
+                    return std::make_unique<UseExpr>(
                         std::move(pathexpr),
                         std::move(alias)
                     );
                 }
             );
         }
-        // └─ import pathexpr -> importexpr
+        // └─ use pathexpr -> useexpr
         {
             RuleAdd(
                 PATS_INIT{
-                    TT::Import,
+                    TT::Use,
                     AT::PathExpr
                 },
                 [this](auto) -> ASTNODE {
                     auto pathexpr = Move<PathExpr>(2);
                     auto alias    = std::unique_ptr<IdExpr>(nullptr);
-                    return std::make_unique<ImportExpr>(
+                    return std::make_unique<UseExpr>(
                         std::move(pathexpr),
                         std::move(alias)
                     );

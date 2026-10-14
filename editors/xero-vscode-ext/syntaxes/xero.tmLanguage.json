@@ -113,7 +113,7 @@
         },
         "keywords": {
             "name": "keyword.control.xero",
-            "match": "\\b(import|if|elif|else|for|while|in|break|continue|fn|return)\\b"
+            "match": "\\b(use|if|elif|else|for|while|in|break|continue|fn|return)\\b"
         }
     }
 }

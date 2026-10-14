@@ -70,6 +70,10 @@ namespace context {
         paths_.emplace_back(&node);
     }
 
+    void Deps::Process(UseExpr& node) {
+        if (node.path_) Process(*node.path_);
+    }
+
     // └─ Stmt
 
     void Deps::Process(ExprStmt& node) {

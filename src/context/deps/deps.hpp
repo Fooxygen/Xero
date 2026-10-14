@@ -29,6 +29,7 @@ namespace context {
         void Process(MethodCallExpr& node);
         void Process(FnExpr& node);
         void Process(PathExpr& node);
+        void Process(UseExpr& node);
 
         void Process(ExprStmt& node);
         void Process(AssignStmt& node);
@@ -61,6 +62,7 @@ namespace context {
                 case AstType::MethodCallExpr:   Process((MethodCallExpr&)node);   return;
                 case AstType::FnExpr:           Process((FnExpr&)node);           return;
                 case AstType::PathExpr:         Process((PathExpr&)node);         return;
+                case AstType::UseExpr:          Process((UseExpr&)node);          return;
                 
                 case AstType::ExprStmt:         Process((ExprStmt&)node);         return;
                 case AstType::AssignStmt:       Process((AssignStmt&)node);       return;

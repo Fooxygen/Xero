@@ -86,7 +86,8 @@ public:
 
         // └─ Keyword
         Keyword,            // Base
-        Import,             // import
+        Use,                // use
+        As,                 // as
         True,               // true
         False,              // false
         If,                 // if
@@ -173,7 +174,8 @@ public:
             case ModFAssign:
                 return AssignOper;
 
-            case Import:
+            case Use:
+            case As:
             case True:
             case False:
             case If:
@@ -254,7 +256,8 @@ public:
             case ModTAssign:    return "ModTAssign";
             case ModFAssign:    return "ModFAssign";
 
-            case Import:        return "import";
+            case Use:           return "use";
+            case As:            return "as";
             case True:          return "true";
             case False:         return "false";
             case If:            return "if";
