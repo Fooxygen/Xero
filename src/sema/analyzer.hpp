@@ -8,6 +8,7 @@
 #include <functional>
 
 #include "common/defs/ast.hpp"
+#include "common/defs/path.hpp"
 #include "sema/defs/var.hpp"
 #include "sema/defs/fn.hpp"
 
@@ -19,6 +20,10 @@ namespace sema {
 
         VarTable var_table_;                // scope variable table
         FnTable& fn_table_;                 // global function table
+
+        // Module
+
+        std::unordered_map<std::string, Path>* module_namespaces_alias_ = nullptr;
 
         // Declare
 
@@ -63,6 +68,12 @@ namespace sema {
         // Builtin
 
         void BuiltinFnRegister();
+
+        // Module
+
+        void ModuleNamespacesAliasSet(std::unordered_map<std::string, Path>& aliases) {
+            module_namespaces_alias_ = &aliases;
+        }
 
         // Declare
 

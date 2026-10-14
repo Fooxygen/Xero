@@ -36,6 +36,7 @@ namespace sema {
                 analyzer_.Declare(*module.root());
             }
             for (auto& module : modules) {
+                analyzer_.ModuleNamespacesAliasSet(module.namespaces_alias());
                 analyzer_.fn_table().NamespaceEnter(module.namespaces());
                 analyzer_.Process(*module.root());
                 LogBuild(LogStage::Sema, module.name_full()).Print();

@@ -8,12 +8,14 @@
 #include <vector>
 
 #include "common/defs/ast.hpp"
+#include "common/defs/path.hpp"
 
 namespace context {
 
     class Deps {
     private:
         std::vector<PathExpr*> paths_ = {};
+        std::unordered_map<std::string, Path>& namespaces_alias_;
 
         // Process
 
@@ -41,6 +43,9 @@ namespace context {
         void Process(Program& node);
 
     public:
+        Deps(std::unordered_map<std::string, Path>& namespaces_alias)
+        :   namespaces_alias_(namespaces_alias) {}
+
         const std::vector<PathExpr*>& paths() const { return paths_; }
 
     public:

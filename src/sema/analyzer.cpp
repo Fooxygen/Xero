@@ -299,17 +299,30 @@ namespace sema {
         // Callee
         Fn* fn = nullptr;
         
-        // call fn
+        // Call fn
         if      (auto* idexpr   = dynamic_cast<IdExpr*>(node.callee_.get())) {
             fn = fn_table_.Lookup(idexpr->name_, idexpr->loc_);
         }
         
-        // call a::b::fn
+        // Call a::b::fn
         else if (auto* pathexpr = dynamic_cast<PathExpr*>(node.callee_.get())) {
             Path segments = {};
             for (auto& seg : pathexpr->segments_) {
                 segments.Add(seg->name_);
             }
+
+            // Alias: a::b::c::fn -> d::fn
+            if (module_namespaces_alias_ && !segments.IsEmpty()) {
+                auto it = module_namespaces_alias_->find(segments[0]);  // d
+                if (it != module_namespaces_alias_->end()) {
+                    Path segments_replace = it->second;                 // a::b::c
+                    for (size_t i = 1; i < segments.Length(); i++) {
+                        segments_replace.Add(segments[i]);              // + ::fn + ::...
+                    }
+                    segments = segments_replace;
+                }
+            }
+
             fn = fn_table_.Lookup(segments, pathexpr->loc_);
         }
 

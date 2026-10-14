@@ -71,7 +71,23 @@ namespace context {
     }
 
     void Deps::Process(UseExpr& node) {
-        if (node.path_) Process(*node.path_);
+        if (node.path_) {
+            Process(*node.path_);
+
+            Path namespaces = {};
+            for (auto& seg : node.path_->segments_) {
+                namespaces.Add(seg->name_);
+            }
+
+            auto& alias = namespaces.Back();
+            auto  it    = namespaces_alias_.find(alias);
+            if (it != namespaces_alias_.end() && it->second != namespaces) {
+                throw LogErr(LogStage::Sema, std::format(
+                    "redefinition of alias '{}'", alias
+                ), node.loc_);
+            }
+            namespaces_alias_[alias] = namespaces;
+        }
     }
 
     // └─ Stmt

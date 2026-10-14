@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
             module.root() = std::move(parser.root());
 
             // Dependency
-            context::Deps deps;
+            context::Deps deps(module.namespaces_alias());
             deps.Process(*module.root());
             for (auto* pathexpr : deps.paths()) {
                 Path path = {};

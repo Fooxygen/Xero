@@ -212,7 +212,8 @@ namespace parser {
                         std::move(pathexpr),
                         std::move(alias)
                     );
-                }
+                },
+                {}, {}, TTS_INIT{ TT::ColonColon }
             );
         }
         // └─ use pathexpr -> useexpr
