@@ -15,6 +15,7 @@
 #include "common/log.hpp"
 #include "common/defs/const.hpp"
 #include "context/context.hpp"
+#include "context/deps/deps.hpp"
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
 #include "sema/sema.hpp"
@@ -45,20 +46,32 @@ int main(int argc, char* argv[]) {
         config.ProjectConfigLoad(argv[1]);
 
         // Packages and Modules
-        context.ModulesLoad();
+        context.ModulesProjectLoad();
 
-        // Lexer
-        for (auto& module : context.modules()) {
+        // Lexer, Parser and Dependency
+        for (size_t i = 0; i < context.modules().size(); i++) {
+            auto& module = context.modules()[i];
+
+            // Lexer
             lexer::Lexer lexer(module);
             lexer.Run(config_project.diag_.is_print_tokens_);
             module.tokens() = std::move(lexer.tokens());
-        }
 
-        // Parser
-        for (auto& module : context.modules()) {
+            // Parser
             parser::Parser parser(module);
             parser.Run(config_project.diag_.is_print_ast_);
             module.root() = std::move(parser.root());
+
+            // Dependency
+            context::Deps deps;
+            deps.Process(*module.root());
+            for (auto* pathexpr : deps.paths()) {
+                std::vector<std::string> path = {};
+                for (auto& seg : pathexpr->segments_) {
+                    path.emplace_back(seg->name_);
+                }
+                context.ModulesDependencyLoad(path);
+            }
         }
 
         // Sema

@@ -58,7 +58,7 @@ namespace xcompiler {
         }
     }
 
-    // └─ Common
+    // └─ Program
 
     void IRGen::Declare(Program& node) {
         for (auto& child : ((BlockExpr&)node).children_) {
@@ -923,7 +923,7 @@ namespace xcompiler {
         return nullptr;
     }
     
-    // └─ Common
+    // └─ Program
 
     llvm::Value* IRGen::Process(Program& node) {
         for (auto& child : node.children_) Process(*child);

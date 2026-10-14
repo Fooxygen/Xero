@@ -527,7 +527,7 @@ namespace sema {
         Process(*node.body_);
     }
 
-    // └─ Common
+    // └─ Program
 
     void Analyzer::Process(Program& node) {
         node.resolved_type_ = TypeTable::Lookup("none");

@@ -18,6 +18,7 @@ add_executable(xero
     xero.cpp
 
     context/context.cpp
+    context/deps/deps.cpp
 
     lexer/lexer.cpp
 

@@ -29,7 +29,7 @@ namespace context {
         sema::FnTable&       fn_table() { return fn_table_; }
     
     public:
-        void ModulesLoad();
-    
+        void ModulesProjectLoad();
+        void ModulesDependencyLoad(const std::vector<std::string>& path);
     };
 }
