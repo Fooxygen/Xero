@@ -136,11 +136,21 @@ namespace xcompiler {
                 llvm::Value* val = nullptr;
                 auto val_type    = node.value_->resolved_type_->ReferenceUnwrap();
 
+                // = a, IdExpr
                 if (auto idexpr = dynamic_cast<IdExpr*>(node.value_.get())) {
                     val = TypeImplTable::Lookup(val_type, node.loc_)->MethodCall(*this, "@copy", {
                         Arg(IdResolve(*idexpr), sema::TypeTable::ReferenceTypeGet(val_type))
                     });
                 }
+
+                // = s[0], Address
+                else if (dynamic_cast<sema::ReferenceType*>(node.value_->resolved_type_)) {
+                    val = TypeImplTable::Lookup(val_type, node.loc_)->MethodCall(*this, "@copy", {
+                        Arg(Process(*node.value_), sema::TypeTable::ReferenceTypeGet(val_type))
+                    });
+                }
+
+                // = 1 + 2, temp value
                 else {
                     val = ExprLoad(*node.value_);
                 }
@@ -665,11 +675,22 @@ namespace xcompiler {
             // Value
             llvm::Value* val = nullptr;
             auto val_type    = node.value_->resolved_type_->ReferenceUnwrap();
+            
+            // = a, IdExpr
             if (auto idexpr = dynamic_cast<IdExpr*>(node.value_.get())) {
                 val = TypeImplTable::Lookup(val_type, node.loc_)->MethodCall(*this, "@copy", {
                     Arg(IdResolve(*idexpr), sema::TypeTable::ReferenceTypeGet(val_type))
                 }, node.loc_);
             }
+
+            // = s[0], Address
+            else if (dynamic_cast<sema::ReferenceType*>(node.value_->resolved_type_)) {
+                val = TypeImplTable::Lookup(val_type, node.loc_)->MethodCall(*this, "@copy", {
+                    Arg(Process(*node.value_), sema::TypeTable::ReferenceTypeGet(val_type))
+                }, node.loc_);
+            }
+
+            // = 1 + 2, temp value
             else {
                 val = ExprLoad(*node.value_);
             }
@@ -747,14 +768,24 @@ namespace xcompiler {
 
     llvm::Value* IRGen::Process(ReturnSignalStmt& node) {
         if (node.value_) {
-            auto val_type = node.value_->resolved_type_->ReferenceUnwrap();
-
+            auto val_type    = node.value_->resolved_type_->ReferenceUnwrap();
             llvm::Value* val = nullptr;
+            
+            // = a, IdExpr
             if (auto idexpr = dynamic_cast<IdExpr*>(node.value_.get())) {
                 val = TypeImplTable::Lookup(val_type, node.loc_)->MethodCall(*this, "@copy", {
                     Arg(IdResolve(*idexpr), sema::TypeTable::ReferenceTypeGet(val_type))
                 });
             }
+
+            // = s[0], Address
+            else if (dynamic_cast<sema::ReferenceType*>(node.value_->resolved_type_)) {
+                val = TypeImplTable::Lookup(val_type, node.loc_)->MethodCall(*this, "@copy", {
+                    Arg(Process(*node.value_), sema::TypeTable::ReferenceTypeGet(val_type))
+                });
+            }
+
+            // = 1 + 2, temp value
             else {
                 val = ExprLoad(*node.value_);
             }

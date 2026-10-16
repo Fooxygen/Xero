@@ -1,30 +1,6 @@
 
-fn dup(x: string) -> string {
-    y: string = x + x;
-    return y;
-}
-
 fn main() {
-    a: string = "root";
-
-    {
-        b: string = "block";
-        println(a, b);
-    }
-
-    c: string = dup("ab");
-    println(c);
-
-    i: i32 = 0;
-    while (i < 3) {
-        i = i + 1;
-        t: string = "loop";
-        if (i == 2) { continue; }
-        if (i == 3) { break; }
-        println(t, i);
-    }
-
-    r:  string = "ref";
-    rr: string& = r;
-    println(rr);
+    a: array[=string=] = ["x", "y"];
+    s: string = a[0];
+    println(s);
 }
