@@ -4,6 +4,7 @@
 //  Licensed under the MIT License.
 
 #include "xcompiler/defs/fn.hpp"
+#include "xcompiler/defs/type.hpp"
 #include "xcompiler/ir/gen.hpp"
 
 namespace xcompiler {
@@ -95,6 +96,17 @@ namespace xcompiler {
         // Program is a top-level node and has no BasicBlock
         auto block = llvm_builder().GetInsertBlock();
         return block && block->getTerminator() != nullptr;
+    }
+
+    void              IRGen::ReleaseEmit(size_t target_depth) {
+        for (size_t depth = state_.release_scopes_.size(); depth > target_depth; depth--) {
+            auto& scope = state_.release_scopes_[depth - 1];
+            for (auto scope_it = scope.rbegin(); scope_it != scope.rend(); ++scope_it) {
+                TypeImplTable::Lookup(scope_it->type)->MethodCall(*this, "@release", {
+                    Arg(scope_it->slot, sema::TypeTable::ReferenceTypeGet(scope_it->type))
+                });
+            }
+        }
     }
 
     llvm::Value*      IRGen::StructTypeValCreate(llvm::Type* type, llvm::ArrayRef<llvm::Value*> fields) {

@@ -42,11 +42,20 @@ namespace xcompiler {
 
             // Loop Structure
             struct LoopNextBlock {
-                llvm::BasicBlock* continue_ = nullptr;
-                llvm::BasicBlock* break_    = nullptr;
+                llvm::BasicBlock* continue_            = nullptr;
+                llvm::BasicBlock* break_               = nullptr;
+                size_t            release_scope_depth_ = 0;
             };
             
             std::vector<LoopNextBlock> loop_nextblocks_ = {};
+
+            // Release
+            struct ReleaseSlot {
+                llvm::Value* slot = nullptr;
+                sema::Type*  type = nullptr;
+            };
+
+            std::vector<std::vector<ReleaseSlot>> release_scopes_ = {};
         };
     
     private:
@@ -114,6 +123,7 @@ namespace xcompiler {
         void              BlockTermCreate(llvm::BasicBlock* term);
         void              BlockTermCreate(std::function<void()> callback);
         bool              HasBlockTerm();
+        void              ReleaseEmit(size_t target_depth);
         llvm::Value*      StructTypeValCreate(llvm::Type* type, llvm::ArrayRef<llvm::Value*> fields);
 
         // └─ Expr

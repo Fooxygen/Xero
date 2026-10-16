@@ -1,31 +1,30 @@
 
-use xero::math
+fn dup(x: string) -> string {
+    y: string = x + x;
+    return y;
+}
 
 fn main() {
-    println("abs(-7)          =", math::abs(-7));           #  7
-    println("min(3, 9)        =", math::min(3, 9));         #  3
-    println("max(3, 9)        =", math::max(3, 9));         #  9
-    println("clamp(15, 0, 10) =", math::clamp(15, 0, 10));  #  10
-    println("clamp(-9, 0, 10) =", math::clamp(-9, 0, 10));  #  0
+    a: string = "root";
 
-    println("trunc(2.7)       =", math::trunc(2.7));        #  2
-    println("trunc(-2.7)      =", math::trunc(-2.7));       # -2
-    println("floor(2.7)       =", math::floor(2.7));        #  2
-    println("floor(-2.7)      =", math::floor(-2.7));       # -3
-    println("ceil(2.3)        =", math::ceil(2.3));         #  3
-    println("ceil(-2.3)       =", math::ceil(-2.3));        # -2
-    println("round(2.4)       =", math::round(2.4));        #  2
-    println("round(2.5)       =", math::round(2.5));        #  3
-    println("round(-2.5)      =", math::round(-2.5));       # -2
-    println("fract(2.7)       =", math::fract(2.7));        #  0.7
-    println("fract(-2.7)      =", math::fract(-2.7));       #  0.3
+    {
+        b: string = "block";
+        println(a, b);
+    }
 
-    a: f64 = 2.7;
-    b: f64 = -2.7;
-    c: f64 = -2.5;
-    println("trunc(f64 2.7)   =", math::trunc(a));          #  2
-    println("floor(f64 -2.7)  =", math::floor(b));          # -3
-    println("ceil(f64 -2.7)   =", math::ceil(b));           # -2
-    println("round(f64 -2.5)  =", math::round(c));          # -2
-    println("fract(f64 -2.7)  =", math::fract(b));          #  0.3
+    c: string = dup("ab");
+    println(c);
+
+    i: i32 = 0;
+    while (i < 3) {
+        i = i + 1;
+        t: string = "loop";
+        if (i == 2) { continue; }
+        if (i == 3) { break; }
+        println(t, i);
+    }
+
+    r:  string = "ref";
+    rr: string& = r;
+    println(rr);
 }
