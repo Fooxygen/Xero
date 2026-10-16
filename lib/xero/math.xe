@@ -3,23 +3,55 @@
 #   Copyright (c) 2026 Fooxygen.
 #   Licensed under the MIT License.
 
-fn abs(x: i32) -> i32 {
-    if (x < 0) return -x;
-    return x;
-}
+fn abs(x: i32) -> i32 { if (x < 0) { return -x; } return x; }
+fn abs(x: i64) -> i64 { if (x < 0) { return -x; } return x; }
 
-fn min(a: i32, b: i32) -> i32 {
-    if (a < b) return a;
-    return b;
-}
+fn min(a: i32, b: i32) -> i32 { if (a < b) { return a; } return b; }
+fn min(a: i64, b: i64) -> i64 { if (a < b) { return a; } return b; }
 
-fn max(a: i32, b: i32) -> i32 {
-    if (a > b) return a;
-    return b;
-}
+fn max(a: i32, b: i32) -> i32 { if (a < b) { return b; } return a; }
+fn max(a: i64, b: i64) -> i64 { if (a < b) { return b; } return a; }
 
 fn clamp(x: i32, l: i32, h: i32) -> i32 {
     if (x < l) return l;
     if (x > h) return h;
     return x;
 }
+fn clamp(x: i64, l: i64, h: i64) -> i64 {
+    if (x < l) return l;
+    if (x > h) return h;
+    return x;
+}
+
+# Round toward zero
+fn trunc(x: f32) -> f32 { return x - (x % 1.0); }   # x % 1.0  = x - trunc(x)
+fn trunc(x: f64) -> f64 { return x - (x % 1.0); }
+
+# Round down
+fn floor(x: f32) -> f32 { return x - (x %% 1.0); }  # x %% 1.0 = x - floor(x)
+fn floor(x: f64) -> f64 { return x - (x %% 1.0); }
+
+# Round up
+fn ceil(x: f32) -> f32 { return x + ((-x) %% 1.0); }
+fn ceil(x: f64) -> f64 { return x + ((-x) %% 1.0); }
+
+# Round to nearest
+fn round(x: f32) -> f32 { return floor(x + 0.5); }
+fn round(x: f64) -> f64 { return floor(x + 0.5); }
+
+# Fractional part in [0, 1)
+fn fract(x: f32) -> f32 { return x %% 1.0; }
+fn fract(x: f64) -> f64 { return x %% 1.0; }
+
+# sqrt
+# pow
+
+# exp
+# log
+# log2
+# log10
+# ln
+
+# sin
+# cos
+# tan
