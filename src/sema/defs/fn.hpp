@@ -19,6 +19,7 @@ namespace sema {
     class Type;
     
     // Modifier
+
     enum   FnModifier : int {
         None = 0,
         Cast = 1 << 0,
@@ -33,6 +34,56 @@ namespace sema {
 
     // Signature
     class  FnSign {
+    public:
+        class MatchParams {
+        public:
+            enum Level : int {
+                Cast_After_Deref = 0,
+                Cast             = 1,
+                Deref            = 2,
+                EqBase           = 3,
+                Unconstrained    = 4,
+                Exact            = 4
+            };
+
+        private:
+            std::vector<Level> levels_ = {};
+
+        public:
+            void Add(Level level) {
+                levels_.emplace_back(level);
+            }
+
+            bool operator >(const MatchParams& other) const {
+                bool is_better_strictly = false;
+
+                for (size_t i = 0; i < levels_.size(); i++) {
+
+                    // All params are superior to or equal to those of other
+                    if (levels_[i] < other.levels_[i]) return false;
+
+                    // At least one param is superior to the other
+                    if (levels_[i] > other.levels_[i]) is_better_strictly = true;
+                }
+
+                return is_better_strictly;
+            }
+        };
+
+        class Match {
+        private:
+            const FnSign* sign_ = nullptr;
+            MatchParams   match_params_;
+
+        public:
+            Match(const FnSign* sign) : sign_(sign) {}
+
+        public:
+            const FnSign*      sign()         const { return sign_; }
+            MatchParams&       match_params()       { return match_params_; }
+            const MatchParams& match_params() const { return match_params_; }
+        };
+
     private:
         Type*                return_type_     = nullptr;
         Type*                caller_type_     = nullptr;
@@ -75,7 +126,7 @@ namespace sema {
         std::string        ParamsPrint() const;
 
         bool IsSignEqual(const FnSign& sign);
-        bool IsSignMatch(const std::vector<Type*>& args_type);      // implicit type cast
+        std::optional<FnSign::Match> SignMatch(const std::vector<Type*>& args_type);
 
         // As Method
 
@@ -86,6 +137,7 @@ namespace sema {
     };
 
     // Obj
+
     class  Fn {
     private:
         std::string name_ = "";
@@ -97,17 +149,25 @@ namespace sema {
         std::vector<std::unique_ptr<FnSign>>& signs() { return signs_; }
 
     public:
-        const FnSign* SignLookup(const FnSign& sign, std::optional<Loc> loc = std::nullopt) const;
-        const FnSign* SignLookup(const std::vector<Type*>& args_type, std::optional<Loc> loc = std::nullopt);
-        const FnSign* SignLookup(Type* caller_type, const std::vector<Type*>& args_type, std::optional<Loc> loc = std::nullopt);
-        const FnSign* SignLookupTry(const FnSign& sign) const;
-        const FnSign* SignLookupTry(const std::vector<Type*>& args_type);
-        const FnSign* SignLookupTry(Type* caller_type, const std::vector<Type*>& args_type);
+
+        // Lookup
+        // nullopt: empty
+        // nullptr: ambiguity
+
+        const FnSign*                SignLookup(const FnSign& sign_reference, std::optional<Loc> loc = std::nullopt) const;
+        const FnSign*                SignLookup(const std::vector<Type*>& args_type, std::optional<Loc> loc = std::nullopt);
+        const FnSign*                SignLookup(Type* caller_type, const std::vector<Type*>& args_type, std::optional<Loc> loc = std::nullopt);
+        const FnSign*                SignLookupTry(const FnSign& sign_reference) const;
+        std::optional<const FnSign*> SignLookupTry(const std::vector<Type*>& args_type);
+        std::optional<const FnSign*> SignLookupTry(Type* caller_type, const std::vector<Type*>& args_type);
+
+        // Add
 
         const FnSign* SignAdd(const std::string& name, const FnSign& sign);
     };
 
     // Table
+
     class  FnTable {
     public:
         class Namespace {

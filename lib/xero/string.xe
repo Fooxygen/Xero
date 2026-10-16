@@ -1,0 +1,9 @@
+
+#   Xero
+#   Copyright (c) 2026 Fooxygen.
+#   Licensed under the MIT License.
+
+# Status
+
+fn is_empty(s: string&) -> bool { return s.len() == 0; }
+fn is_empty(s: string)  -> bool { return is_empty(&s); }

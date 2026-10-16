@@ -45,7 +45,6 @@ fn fract(x: f64) -> f64 { return x %% 1.0; }
 
 # sqrt
 # pow
-
 # exp
 # log
 # log2

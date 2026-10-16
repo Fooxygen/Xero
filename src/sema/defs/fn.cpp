@@ -52,47 +52,82 @@ namespace sema {
         return true;
     }
 
-    bool        FnSign::IsSignMatch(const std::vector<Type*>& args_type) {
+    std::optional<FnSign::Match>
+                FnSign::SignMatch(const std::vector<Type*>& args_type)
+    {
+        Match match(this);
 
-        // Fixed Params
-        if (args_type.size() < params_type_fix_.size()) return false;
-        for (size_t i = 0; i < params_type_fix_.size(); i++) {
-            auto param = params_type_fix_[i];
-            auto arg   = args_type[i];
-            if (param) {
-                
+        auto ParamLevelGet = [](sema::Type* param, sema::Type* arg, Match& match) -> bool {
+
+            // Unconstrained: any type
+            if (!param) {
+                match.match_params().Add(MatchParams::Level::Unconstrained);
+            }
+
+            else {
                 // Reference Param
                 if (dynamic_cast<ReferenceType*>(param)) {
-                    // Pass: param i32&, arg i32&
+                    // Exact: i32& -> i32&
                     if (arg != param) return false;
+                    match.match_params().Add(MatchParams::Level::Exact);
                 }
                 
                 // Non-Reference Param
                 else {
-                    // Pass: param i32,   arg i32&
-                    //       param f64,   arg i32
-                    //       param range, arg range[=i32=]
                     auto arg_unwrap = arg->ReferenceUnwrap();
-                    if (arg_unwrap != param && !arg_unwrap->Is(param->name()) && !arg->casts().contains(param)) return false;
+
+                    // Exact: i32 -> i32
+                    if (arg == param) {
+                        match.match_params().Add(MatchParams::Exact);
+                    }
+
+                    // Deref: i32& -> i32
+                    else if (arg_unwrap == param) {
+                        match.match_params().Add(MatchParams::Deref);
+                    }
+
+                    // EqBase: range[=i32=] -> range
+                    else if (arg_unwrap->Is(param->name())) {
+                        match.match_params().Add(MatchParams::EqBase);
+                    }
+
+                    // Cast
+                    else if (arg_unwrap->casts().contains(param)) {
+                        // Cast After Deref: i32& -> f64
+                        if (dynamic_cast<ReferenceType*>(arg)) {
+                            match.match_params().Add(MatchParams::Cast_After_Deref);
+                        }
+
+                        // Cast: i32 -> f64
+                        else {
+                            match.match_params().Add(MatchParams::Cast);
+                        }
+                    }
+
+                    else return false;
                 }
             }
+
+            return true;
+        };
+
+        // Fixed Params
+        if (args_type.size() < params_type_fix_.size()) return {};
+        for (size_t i = 0; i < params_type_fix_.size(); i++) {
+            auto param = params_type_fix_[i];
+            auto arg   = args_type[i];
+            if (!ParamLevelGet(param, arg, match)) return std::nullopt;
         }
 
         // Variable Params
-        if (params_type_var_) {
-            for (size_t i = params_type_fix_.size(); i < args_type.size(); i++) {
-                auto param = *params_type_var_;
-                auto arg   = args_type[i];
-                if (param) {
-                    if (arg->ReferenceUnwrap() != param && !arg->casts().contains(param)) return false;
-                }
-            }
-        }
-        else {
-            if (args_type.size() > params_type_fix_.size()) return false;
+        if (!params_type_var_ && args_type.size() > params_type_fix_.size()) return std::nullopt;
+        for (size_t i = params_type_fix_.size(); i < args_type.size(); i++) {
+            auto param = *params_type_var_;
+            auto arg   = args_type[i];
+            if (!ParamLevelGet(param, arg, match)) return std::nullopt;
         }
 
-        return true;
+        return match;
     }
 
     bool        FnSign::IsCallerMatch(Type* type) const {
@@ -114,25 +149,39 @@ namespace sema {
     }
     
     const FnSign* Fn::SignLookup(const std::vector<Type*>& args_type, std::optional<Loc> loc) {
-        auto sign = SignLookupTry(args_type);
-        if (!sign) {
-            throw LogErr(LogStage::Sema, std::format(
-                "undefined signature {} for function '{}'",
-                FnSign(nullptr, args_type).ParamsPrint(), name_
-            ), loc);
+        
+        if (auto sign = SignLookupTry(args_type)) {
+            if (*sign) return *sign;
+            else {
+                throw LogErr(LogStage::Sema, std::format(
+                    "ambiguous signature {} for method '{}'",
+                    FnSign(nullptr, args_type).ParamsPrint(), name_
+                ), loc);
+            }
         }
-        return sign;
+
+        throw LogErr(LogStage::Sema, std::format(
+            "undefined signature {} for method '{}'",
+            FnSign(nullptr, args_type).ParamsPrint(), name_
+        ), loc);
     }
     
     const FnSign* Fn::SignLookup(Type* caller_type, const std::vector<Type*>& args_type, std::optional<Loc> loc) {
-        auto sign = SignLookupTry(caller_type, args_type);
-        if (!sign) {
-            throw LogErr(LogStage::Sema, std::format(
-                "undefined signature {} for method '{}'",
-                FnSign(nullptr, args_type).ParamsPrint(), name_
-            ), loc);
+
+        if (auto sign = SignLookupTry(caller_type, args_type)) {
+            if (*sign) return *sign;
+            else {
+                throw LogErr(LogStage::Sema, std::format(
+                    "ambiguous signature {} for method '{}'",
+                    FnSign(nullptr, args_type).ParamsPrint(), name_
+                ), loc);
+            }
         }
-        return sign;
+
+        throw LogErr(LogStage::Sema, std::format(
+            "undefined signature {} for method '{}'",
+            FnSign(nullptr, args_type).ParamsPrint(), name_
+        ), loc);
     }
 
     const FnSign* Fn::SignLookupTry(const FnSign& sign_reference) const {
@@ -142,25 +191,70 @@ namespace sema {
         return nullptr;
     }
     
-    const FnSign* Fn::SignLookupTry(const std::vector<Type*>& args_type) {
+    std::optional<const FnSign*>
+                  Fn::SignLookupTry(const std::vector<Type*>& args_type) {
+        
+        std::vector<FnSign::Match> matches = {};
         for (auto& s : signs_) {
-            if (s->IsSignMatch(args_type)) return s.get();
+            if (auto match = s->SignMatch(args_type)) {
+                matches.emplace_back(std::move(*match));
+            }
         }
+        if (matches.empty()) return std::nullopt;
+        if (matches.size() == 1) return matches[0].sign();
+
+        // Best
+        for (size_t i = 0; i < matches.size(); i++) {
+            bool is_best = true;
+
+            for (size_t j = 0; j < matches.size(); j++) {
+                if (i == j) continue;
+                if (!(matches[i].match_params() > matches[j].match_params())) {
+                    is_best = false;
+                    break;
+                }
+            }
+
+            if (is_best) return matches[i].sign();
+        }
+
         return nullptr;
     }
 
-    const FnSign* Fn::SignLookupTry(Type* caller_type, const std::vector<Type*>& args_type) {
+    std::optional<const FnSign*>
+                  Fn::SignLookupTry(Type* caller_type, const std::vector<Type*>& args_type) {
+
+        std::vector<FnSign::Match> matches = {};
         for (auto& s : signs_) {
-            if (s->IsCallerMatch(caller_type) && s->IsSignMatch(args_type)) return s.get();
+            if (!s->IsCallerMatch(caller_type)) continue;
+            if (auto match = s->SignMatch(args_type)) {
+                matches.emplace_back(std::move(*match));
+            }
         }
+        if (matches.empty()) return std::nullopt;
+        if (matches.size() == 1) return matches[0].sign();
+
+        // Best
+        for (size_t i = 0; i < matches.size(); i++) {
+            bool is_best = true;
+            for (size_t j = 0; j < matches.size(); j++) {
+                if (i == j) continue;
+                if (!(matches[i].match_params() > matches[j].match_params())) {
+                    is_best = false;
+                    break;
+                }
+            }
+            if (is_best) return matches[i].sign();
+        }
+
         return nullptr;
     }
 
-    const FnSign* Fn::SignAdd(const std::string& name, const FnSign& sign) {
-        if (auto s = SignLookupTry(sign)) return s;
+    const FnSign* Fn::SignAdd(const std::string& name, const FnSign& sign_reference) {
+        if (auto sign = SignLookupTry(sign_reference)) return sign;
 
-        auto sign_add = signs_.emplace_back(std::make_unique<FnSign>(sign)).get();
-        sign_add->NameSet(name);
-        return sign_add;
+        auto sign = signs_.emplace_back(std::make_unique<FnSign>(sign_reference)).get();
+        sign->NameSet(name);
+        return sign;
     }
 }

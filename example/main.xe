@@ -1,6 +1,10 @@
 
+use xero::string
+
 fn main() {
-    a: array[=string=] = ["x", "y"];
-    s: string = a[0];
-    println(s);
+    a: string  = "";
+    b: string& = a;
+    println(string::is_empty(a));
+    println(string::is_empty(b));
+    println(string::is_empty(""));
 }
