@@ -5,7 +5,7 @@
 
 # Find
 
-fn index(s: string&, pat: string&) -> i64 {
+fn find_first(s: string&, pat: string&) -> i64 {
     if (is_empty(pat))       return 0;
     if (pat.len() > s.len()) return -1;
 
@@ -18,9 +18,9 @@ fn index(s: string&, pat: string&) -> i64 {
     }
     return -1;
 }
-fn index(s: string, pat: string) -> i64 { return index(&s, &pat); }
+fn find_first(s: string, pat: string) -> i64 { return find_first(&s, &pat); }
 
-fn rindex(s: string&, pat: string&) -> i64 {
+fn find_last(s: string&, pat: string&) -> i64 {
     if (is_empty(pat))       return s.len();
     if (pat.len() > s.len()) return -1;
 
@@ -33,22 +33,22 @@ fn rindex(s: string&, pat: string&) -> i64 {
     }
     return -1;
 }
-fn rindex(s: string, pat: string) -> i64 { return rindex(&s, &pat); }
+fn find_last(s: string, pat: string) -> i64 { return find_last(&s, &pat); }
 
 # Predicate
 
 fn is_empty(s: string&) -> bool { return s.len() == 0; }
 fn is_empty(s: string)  -> bool { return is_empty(&s); }
 
-fn has(s: string&, pat: string&) -> bool { return index(s, pat) >= 0; }
+fn has(s: string&, pat: string&) -> bool { return find_first(s, pat) >= 0; }
 fn has(s: string,  pat: string)  -> bool { return has(&s, &pat); }
 
-fn has_prefix(s: string&, pre: string&) -> bool { return index(s, pre) == 0; }
+fn has_prefix(s: string&, pre: string&) -> bool { return find_first(s, pre) == 0; }
 fn has_prefix(s: string,  pre: string)  -> bool { return has_prefix(&s, &pre); }
 
 fn has_suffix(s: string&, suf: string&) -> bool {
     if (suf.len() > s.len()) return false;
-    return rindex(s, suf) == s.len() - suf.len();
+    return find_last(s, suf) == s.len() - suf.len();
 }
 fn has_suffix(s: string,  suf: string)  -> bool { return has_suffix(&s, &suf); }
 
@@ -76,6 +76,6 @@ fn take_suffix(s: string, len: i64) -> string { return take_suffix(&s, len); }
 
 # Trim
 
-# ltrim(chars?)
-# rtrim(chars?)
+# trim_start(chars?)
+# trim_end(chars?)
 # trim(chars?)
