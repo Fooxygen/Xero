@@ -34,7 +34,7 @@
         {
             "label": "Example Debug",
             "type": "shell",
-            "command": "& '${workspaceFolder}/example/build/debug/example.exe'",
+            "command": "[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false); & '${workspaceFolder}/example/build/debug/example.exe'",
             "options": {
                 "cwd": "${workspaceFolder}",
                 "shell": {
@@ -49,7 +49,7 @@
         {
             "label": "Example Release",
             "type": "shell",
-            "command": "& '${workspaceFolder}/example/build/release/example.exe'",
+            "command": "[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false); & '${workspaceFolder}/example/build/release/example.exe'",
             "options": {
                 "cwd": "${workspaceFolder}",
                 "shell": {
