@@ -1,10 +1,41 @@
 
 use xero::string
 
+fn test_index() {
+    println(string::index("", ""));                     # 0
+    println(string::index("abc", ""));                  # 0
+    println(string::index("", "abc"));                  # -1
+    println(string::index("ab", "abc"));                # -1
+    println(string::index("abc", "abc"));               # 0
+    println(string::index("abc", "abd"));               # -1
+    println(string::index("labcabcr", "abc"));          # 1
+    println(string::index("中中文中文文", "中文"));     # 1
+
+    s:  string  = "labcabcr";
+    sr: string& = s;
+    p:  string  = "abc";
+    pr: string& = p;
+    println(string::index(sr, pr));                     # 1
+}
+
+fn test_rindex() {
+    println(string::rindex("", ""));                    # 0
+    println(string::rindex("abc", ""));                 # 3
+    println(string::rindex("", "abc"));                 # -1
+    println(string::rindex("ab", "abc"));               # -1
+    println(string::rindex("abc", "abc"));              # 0
+    println(string::rindex("abc", "abd"));              # -1
+    println(string::rindex("labcabcr", "abc"));         # 4
+    println(string::rindex("中中文中文文", "中文"));    # 3
+
+    s:  string  = "labcabcr";
+    sr: string& = s;
+    p:  string  = "abc";
+    pr: string& = p;
+    println(string::rindex(sr, pr));                    # 4
+}
+
 fn main() {
-    a: string  = "";
-    b: string& = a;
-    println(string::is_empty(a));
-    println(string::is_empty(b));
-    println(string::is_empty(""));
+    println("[test_index]");    test_index();
+    println("[test_rindex]");   test_rindex();
 }

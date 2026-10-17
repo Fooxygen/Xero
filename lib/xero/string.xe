@@ -3,7 +3,60 @@
 #   Copyright (c) 2026 Fooxygen.
 #   Licensed under the MIT License.
 
-# Status
+# Find
+
+fn index(s: string&, pat: string&) -> i64 {
+    if (is_empty(pat))       return 0;
+    if (pat.len() > s.len()) return -1;
+
+    for (i in 0..=(s.len() - pat.len())) {
+        is_match: bool = true;
+        for (j in 0..pat.len()) {
+            if (s[i + j] != pat[j]) { is_match = false; break; }
+        }
+        if (is_match) return i;
+    }
+    return -1;
+}
+fn index(s: string, pat: string) -> i64 { return index(&s, &pat); }
+
+fn rindex(s: string&, pat: string&) -> i64 {
+    if (is_empty(pat))       return s.len();
+    if (pat.len() > s.len()) return -1;
+
+    for (i in (s.len() - pat.len())..-1..(-1)) {
+        is_match: bool = true;
+        for (j in 0..pat.len()) {
+            if (s[i + j] != pat[j]) { is_match = false; break; }
+        }
+        if (is_match) return i;
+    }
+    return -1;
+}
+fn rindex(s: string, pat: string) -> i64 { return rindex(&s, &pat); }
+
+# Predicate
 
 fn is_empty(s: string&) -> bool { return s.len() == 0; }
 fn is_empty(s: string)  -> bool { return is_empty(&s); }
+
+# has
+# has_prefix
+# has_suffix
+
+# Take
+
+# ltake
+# rtake
+
+# Case
+
+# to_upper
+# to_lower
+# to_title
+
+# Trim
+
+# ltrim(chars?)
+# rtrim(chars?)
+# trim(chars?)

@@ -76,6 +76,10 @@
                     "match": "->"
                 },
                 {
+                    "name": "keyword.operator.reference.xero",
+                    "match": "&"
+                },
+                {
                     "name": "keyword.operator.assignment.xero",
                     "match": "%%=|\\+=|-=|\\*=|/=|%=|="
                 },
