@@ -132,9 +132,33 @@ fn take_suffix(s: string,  len: i64) -> string { return take_suffix(&s, len); }
 
 # Trim
 
-# trim_start(chars?)
-# trim_end(chars?)
-# trim(chars?)
+fn trim_start(s: string&, chars: string) -> string {
+    i: i64 = find_first_out(s, chars);
+    if (i < 0) return "";
+    return s[i..s.len()];
+}
+fn trim_start(s: string, chars: string) -> string { return trim_start(&s, chars); }
+fn trim_start(s: string&) -> string { return trim_start(s, " \t\n\r"); }
+fn trim_start(s: string)  -> string { return trim_start(&s, " \t\n\r"); }
+
+fn trim_end(s: string&, chars: string) -> string {
+    i: i64 = find_last_out(s, chars);
+    if (i < 0) return "";
+    return s[0..=i];
+}
+fn trim_end(s: string, chars: string) -> string { return trim_end(&s, chars); }
+fn trim_end(s: string&) -> string { return trim_end(s, " \t\n\r"); }
+fn trim_end(s: string)  -> string { return trim_end(&s, " \t\n\r"); }
+
+fn trim(s: string&, chars: string) -> string {
+    l: i64 = find_first_out(s, chars);
+    if (l < 0) return "";
+    r: i64 = find_last_out(s, chars);
+    return s[l..=r];
+}
+fn trim(s: string, chars: string) -> string { return trim(&s, chars); }
+fn trim(s: string&) -> string { return trim(s, " \t\n\r"); }
+fn trim(s: string)  -> string { return trim(&s, " \t\n\r"); }
 
 # Join
 
@@ -147,3 +171,23 @@ fn join(parts: array[=string=]&, sep: string) -> string {
     return result;
 }
 fn join(parts: array[=string=], sep: string) -> string { return join(&parts, sep); }
+
+# Split
+
+fn split(s: string&, sep: char) -> array[=string=] {
+    result: array[=string=] = [];
+    offset: i64 = 0;
+
+    for (i in 0..s.len()) {
+        if (s[i] == sep) {
+            part: string = s[offset..i];
+            result.push_back(part);
+            offset = i + 1;
+        }
+    }
+    tail: string = s[offset..s.len()];
+    result.push_back(tail);
+    
+    return result;
+}
+fn split(s: string, sep: char) -> array[=string=] { return split(&s, sep); }

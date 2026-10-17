@@ -19,6 +19,7 @@ namespace parser {
                     case TT::LBkt:
                     case TT::LParen:
                     case TT::Dot:
+                    case TT::ColonColon:
                         return -1;
 
                     case TT::Star:

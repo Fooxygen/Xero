@@ -2,37 +2,30 @@
 use xero::string
 
 fn main() {
-    println(string::find_first_in("abcdefg", "cd"));        # 2
-    println(string::find_first_in("abxdefg", "cd"));        # 3
-    println(string::find_first_in("abcdefg", "xyz"));       # -1
-    println(string::find_first_in("abcdefg", ""));          # -1
-    println(string::find_first_in("", "abc"));              # -1
-    println(string::find_first_in("abc", "a"));             # 0
-    println(string::find_first_in("abc", "c"));             # 2
-    println(string::find_first_in("abc", "cb"));            # 1
+    println("[" + string::trim("  hi  ") + "]");            # [hi]
+    println("[" + string::trim("   ") + "]");               # []
+    println("[" + string::trim("\r\n hi \r\n") + "]");      # [hi]
+    println("[" + string::trim_start("  hi  ") + "]");      # [hi  ]
+    println("[" + string::trim_end("  hi  ") + "]");        # [  hi]
 
-    println(string::find_first_out("abxdefg", "abxd"));     # 4
-    println(string::find_first_out("abxdefg", "abxdefg"));  # -1
-    println(string::find_first_out("aab", "ab"));           # -1
-    println(string::find_first_out("abc", ""));             # 0
-    println(string::find_first_out("", "abc"));             # -1
-    println(string::find_first_out("", ""));                # -1
-    println(string::find_first_out("aXb", "ab"));           # 1
+    println(string::trim("xxhixx", "x"));                   # hi
+    println(string::trim_start("xxhixx", "x"));             # hixx
+    println(string::trim_end("xxhixx", "x"));               # xxhi
 
-    println(string::find_last_in("abcab", "ab"));           # 4
-    println(string::find_last_in("abcab", "c"));            # 2
-    println(string::find_last_in("abcab", "xyz"));          # -1
-    println(string::find_last_in("abcab", ""));             # -1
-    println(string::find_last_in("", "abc"));               # -1
-    println(string::find_last_in("abc", "a"));              # 0
-    println(string::find_last_in("abc", "c"));              # 2
-    println(string::find_last_in("abca", "a"));             # 3
+    println(string::trim("abc", ""));                       # abc
+    println(string::trim_start("abc", ""));                 # abc
+    println(string::trim_end("abc", ""));                   # abc
 
-    println(string::find_last_out("abcab", "ab"));          # 2
-    println(string::find_last_out("abcab", "abcab"));       # -1
-    println(string::find_last_out("abcab", ""));            # 4
-    println(string::find_last_out("", "abc"));              # -1
-    println(string::find_last_out("", ""));                 # -1
-    println(string::find_last_out("aXb", "ab"));            # 1
-    println(string::find_last_out("abc", "c"));             # 1
+    println("[" + string::trim("xxx", "x") + "]");          # []
+    println("[" + string::trim_start("xxx", "x") + "]");    # []
+    println("[" + string::trim_end("xxx", "x") + "]");      # []
+
+    println(string::trim("中中文中中", "中"));              # 文
+    println(string::trim_start("中中文中中", "中"));        # 文中中
+    println(string::trim_end("中中文中中", "中"));          # 中中文
+
+    s: string = "  hi  ";
+    t: string = string::trim(&s);
+    s[0] = 'X';
+    println("[" + t + "]");                                 # [hi]
 }
