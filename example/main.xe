@@ -1,51 +1,38 @@
-use xero::char
+
+use xero::string
 
 fn main() {
-    println(char::is_digit('0'));       # true
-    println(char::is_digit('9'));       # true
-    println(char::is_digit('/'));       # false
-    println(char::is_digit(':'));       # false
-    println(char::is_digit('a'));       # false
+    println(string::find_first_in("abcdefg", "cd"));        # 2
+    println(string::find_first_in("abxdefg", "cd"));        # 3
+    println(string::find_first_in("abcdefg", "xyz"));       # -1
+    println(string::find_first_in("abcdefg", ""));          # -1
+    println(string::find_first_in("", "abc"));              # -1
+    println(string::find_first_in("abc", "a"));             # 0
+    println(string::find_first_in("abc", "c"));             # 2
+    println(string::find_first_in("abc", "cb"));            # 1
 
-    println(char::is_alpha('a'));       # true
-    println(char::is_alpha('z'));       # true
-    println(char::is_alpha('A'));       # true
-    println(char::is_alpha('Z'));       # true
-    println(char::is_alpha('`'));       # false
-    println(char::is_alpha('{'));       # false
-    println(char::is_alpha('0'));       # false
-    println(char::is_alpha('中'));      # false
+    println(string::find_first_out("abxdefg", "abxd"));     # 4
+    println(string::find_first_out("abxdefg", "abxdefg"));  # -1
+    println(string::find_first_out("aab", "ab"));           # -1
+    println(string::find_first_out("abc", ""));             # 0
+    println(string::find_first_out("", "abc"));             # -1
+    println(string::find_first_out("", ""));                # -1
+    println(string::find_first_out("aXb", "ab"));           # 1
 
-    println(char::is_upper('A'));       # true
-    println(char::is_upper('Z'));       # true
-    println(char::is_upper('@'));       # false
-    println(char::is_upper('['));       # false
-    println(char::is_upper('a'));       # false
+    println(string::find_last_in("abcab", "ab"));           # 4
+    println(string::find_last_in("abcab", "c"));            # 2
+    println(string::find_last_in("abcab", "xyz"));          # -1
+    println(string::find_last_in("abcab", ""));             # -1
+    println(string::find_last_in("", "abc"));               # -1
+    println(string::find_last_in("abc", "a"));              # 0
+    println(string::find_last_in("abc", "c"));              # 2
+    println(string::find_last_in("abca", "a"));             # 3
 
-    println(char::is_lower('a'));       # true
-    println(char::is_lower('z'));       # true
-    println(char::is_lower('`'));       # false
-    println(char::is_lower('{'));       # false
-    println(char::is_lower('A'));       # false
-
-    println(char::is_space(' '));       # true
-    println(char::is_space('\t'));      # true
-    println(char::is_space('\n'));      # true
-    println(char::is_space('\r'));      # true
-    println(char::is_space('a'));       # false
-
-    println(char::is_punct('!'));       # true
-    println(char::is_punct('/'));       # true
-    println(char::is_punct(':'));       # true
-    println(char::is_punct('@'));       # true
-    println(char::is_punct('['));       # true
-    println(char::is_punct('`'));       # true
-    println(char::is_punct('{'));       # true
-    println(char::is_punct('~'));       # true
-    println(char::is_punct('+'));       # true
-    println(char::is_punct('_'));       # true
-    println(char::is_punct('a'));       # false
-    println(char::is_punct('0'));       # false
-    println(char::is_punct(' '));       # false
-    println(char::is_punct('中'));      # false
+    println(string::find_last_out("abcab", "ab"));          # 2
+    println(string::find_last_out("abcab", "abcab"));       # -1
+    println(string::find_last_out("abcab", ""));            # 4
+    println(string::find_last_out("", "abc"));              # -1
+    println(string::find_last_out("", ""));                 # -1
+    println(string::find_last_out("aXb", "ab"));            # 1
+    println(string::find_last_out("abc", "c"));             # 1
 }

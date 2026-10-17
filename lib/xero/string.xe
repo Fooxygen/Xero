@@ -18,9 +18,9 @@ fn find_first(s: string&, pat: string&) -> i64 {
     }
     return -1;
 }
-fn find_first(s: string, pat: string) -> i64 { return find_first(&s, &pat); }
+fn find_first(s: string,  pat: string)  -> i64 { return find_first(&s, &pat); }
 
-fn find_last(s: string&, pat: string&) -> i64 {
+fn find_last(s: string&,  pat: string&) -> i64 {
     if (is_empty(pat))       return s.len();
     if (pat.len() > s.len()) return -1;
 
@@ -33,7 +33,63 @@ fn find_last(s: string&, pat: string&) -> i64 {
     }
     return -1;
 }
-fn find_last(s: string, pat: string) -> i64 { return find_last(&s, &pat); }
+fn find_last(s: string,   pat: string)  -> i64 { return find_last(&s, &pat); }
+
+fn find_first_in(s: string&, chars: string) -> i64 {
+    for (i in 0..s.len()) {
+        c: char = s[i];
+
+        for (j in 0..chars.len()) {
+            if (c == chars[j]) return i;
+        }
+    }
+    return -1;
+}
+fn find_first_in(s: string,  chars: string) -> i64 { return find_first_in(&s, chars); }
+
+fn find_first_out(s: string&, chars: string) -> i64 {
+    for (i in 0..s.len()) {
+        c: char = s[i];
+        is_in: bool = false;
+
+        for (j in 0..chars.len()) {
+            if (c == chars[j]) { is_in = true; break; }
+        }
+        if (!is_in) return i;
+    }
+    return -1;
+}
+fn find_first_out(s: string,  chars: string) -> i64 { return find_first_out(&s, chars); }
+
+fn find_last_in(s: string&, chars: string) -> i64 {
+    if (s.len() == 0) return -1;
+
+    for (i in (s.len() - 1)..-1..(-1)) {
+        c: char = s[i];
+
+        for (j in 0..chars.len()) {
+            if (c == chars[j]) return i;
+        }
+    }
+    return -1;
+}
+fn find_last_in(s: string,  chars: string) -> i64 { return find_last_in(&s, chars); }
+
+fn find_last_out(s: string&, chars: string) -> i64 {
+    if (s.len() == 0) return -1;
+
+    for (i in (s.len() - 1)..-1..(-1)) {
+        c: char = s[i];
+        is_in: bool = false;
+
+        for (j in 0..chars.len()) {
+            if (c == chars[j]) { is_in = true; break; }
+        }
+        if (!is_in) return i;
+    }
+    return -1;
+}
+fn find_last_out(s: string,  chars: string) -> i64 { return find_last_out(&s, chars); }
 
 # Predicate
 
@@ -59,14 +115,14 @@ fn take_prefix(s: string&, len: i64) -> string {
     if (len >= s.len()) return s;
     return s[0..len];
 }
-fn take_prefix(s: string, len: i64) -> string { return take_prefix(&s, len); }
+fn take_prefix(s: string,  len: i64) -> string { return take_prefix(&s, len); }
 
 fn take_suffix(s: string&, len: i64) -> string {
     if (len <= 0)       return "";
     if (len >= s.len()) return s;
     return s[(s.len() - len)..s.len()];
 }
-fn take_suffix(s: string, len: i64) -> string { return take_suffix(&s, len); }
+fn take_suffix(s: string,  len: i64) -> string { return take_suffix(&s, len); }
 
 # Case
 
