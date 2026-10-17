@@ -79,3 +79,15 @@ fn take_suffix(s: string, len: i64) -> string { return take_suffix(&s, len); }
 # trim_start(chars?)
 # trim_end(chars?)
 # trim(chars?)
+
+# Join
+
+fn join(parts: array[=string=]&, sep: string) -> string {
+    result: string = "";
+    for (i in 0..parts.len()) {
+        if (i > 0) result += sep;
+        result += parts[i];
+    }
+    return result;
+}
+fn join(parts: array[=string=], sep: string) -> string { return join(&parts, sep); }

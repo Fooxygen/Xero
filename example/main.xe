@@ -2,13 +2,6 @@
 use xero::string
 
 fn main() {
-    println(string::take_prefix("Hello World", -5));    # ""
-    println(string::take_prefix("Hello World", 5));     # "Hello"
-    println(string::take_prefix("Hello World", 6));     # "Hello "
-    println(string::take_prefix("Hello World", 15));    # "Hello World"
-
-    println(string::take_suffix("Hello World", -5));    # ""
-    println(string::take_suffix("Hello World", 5));     # "World"
-    println(string::take_suffix("Hello World", 6));     # " World"
-    println(string::take_suffix("Hello World", 15));    # "Hello World"
+    parts: array[=string=] = ["Hello", "World", "and", "Xero"];
+    println(string::join(parts, ", "));     # Hello, World, and, Xero
 }

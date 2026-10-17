@@ -267,7 +267,8 @@ namespace parser {
                         Pack2Exprs(*this, 3),
                         false
                     );
-                }
+                },
+                {}, {}, TTS_INIT{ TT::Amper }
             );
         }
         // └─ id [= exprs =] & -> typeexpr
