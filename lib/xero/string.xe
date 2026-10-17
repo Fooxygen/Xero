@@ -40,9 +40,17 @@ fn rindex(s: string, pat: string) -> i64 { return rindex(&s, &pat); }
 fn is_empty(s: string&) -> bool { return s.len() == 0; }
 fn is_empty(s: string)  -> bool { return is_empty(&s); }
 
-# has
-# has_prefix
-# has_suffix
+fn has(s: string&, pat: string&) -> bool { return index(s, pat) >= 0; }
+fn has(s: string,  pat: string)  -> bool { return has(&s, &pat); }
+
+fn has_prefix(s: string&, pre: string&) -> bool { return index(s, pre) == 0; }
+fn has_prefix(s: string,  pre: string)  -> bool { return has_prefix(&s, &pre); }
+
+fn has_suffix(s: string&, suf: string&) -> bool {
+    if (suf.len() > s.len()) return false;
+    return rindex(s, suf) == s.len() - suf.len();
+}
+fn has_suffix(s: string,  suf: string)  -> bool { return has_suffix(&s, &suf); }
 
 # Take
 
