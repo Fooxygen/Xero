@@ -2,16 +2,13 @@
 use xero::string
 
 fn main() {
-    println(string::has("labcabcr", "abc"));        # true
-    println(string::has("labdabcr", "abc"));        # true
-    println(string::has("labdabdr", "abc"));        # false
+    println(string::take_prefix("Hello World", -5));    # ""
+    println(string::take_prefix("Hello World", 5));     # "Hello"
+    println(string::take_prefix("Hello World", 6));     # "Hello "
+    println(string::take_prefix("Hello World", 15));    # "Hello World"
 
-    println(string::has_prefix("abcxxx", "abc"));   # true
-    println(string::has_prefix("xabcxx", "abc"));   # false
-
-    println(string::has_suffix("xxxabc", "abc"));   # true
-    println(string::has_suffix("xxabcx", "abc"));   # false
-
-    println(string::has("", ""));                   # true
-    println(string::has("xxx", ""));                # true
+    println(string::take_suffix("Hello World", -5));    # ""
+    println(string::take_suffix("Hello World", 5));     # "World"
+    println(string::take_suffix("Hello World", 6));     # " World"
+    println(string::take_suffix("Hello World", 15));    # "Hello World"
 }

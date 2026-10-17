@@ -54,8 +54,19 @@ fn has_suffix(s: string,  suf: string)  -> bool { return has_suffix(&s, &suf); }
 
 # Take
 
-# ltake
-# rtake
+fn take_prefix(s: string&, len: i64) -> string {
+    if (len <= 0)       return "";
+    if (len >= s.len()) return s;
+    return s[0..len];
+}
+fn take_prefix(s: string, len: i64) -> string { return take_prefix(&s, len); }
+
+fn take_suffix(s: string&, len: i64) -> string {
+    if (len <= 0)       return "";
+    if (len >= s.len()) return s;
+    return s[(s.len() - len)..s.len()];
+}
+fn take_suffix(s: string, len: i64) -> string { return take_suffix(&s, len); }
 
 # Case
 
