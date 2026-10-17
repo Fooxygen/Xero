@@ -1,7 +1,51 @@
-
-use xero::string
+use xero::char
 
 fn main() {
-    parts: array[=string=] = ["Hello", "World", "and", "Xero"];
-    println(string::join(parts, ", "));     # Hello, World, and, Xero
+    println(char::is_digit('0'));       # true
+    println(char::is_digit('9'));       # true
+    println(char::is_digit('/'));       # false
+    println(char::is_digit(':'));       # false
+    println(char::is_digit('a'));       # false
+
+    println(char::is_alpha('a'));       # true
+    println(char::is_alpha('z'));       # true
+    println(char::is_alpha('A'));       # true
+    println(char::is_alpha('Z'));       # true
+    println(char::is_alpha('`'));       # false
+    println(char::is_alpha('{'));       # false
+    println(char::is_alpha('0'));       # false
+    println(char::is_alpha('中'));      # false
+
+    println(char::is_upper('A'));       # true
+    println(char::is_upper('Z'));       # true
+    println(char::is_upper('@'));       # false
+    println(char::is_upper('['));       # false
+    println(char::is_upper('a'));       # false
+
+    println(char::is_lower('a'));       # true
+    println(char::is_lower('z'));       # true
+    println(char::is_lower('`'));       # false
+    println(char::is_lower('{'));       # false
+    println(char::is_lower('A'));       # false
+
+    println(char::is_space(' '));       # true
+    println(char::is_space('\t'));      # true
+    println(char::is_space('\n'));      # true
+    println(char::is_space('\r'));      # true
+    println(char::is_space('a'));       # false
+
+    println(char::is_punct('!'));       # true
+    println(char::is_punct('/'));       # true
+    println(char::is_punct(':'));       # true
+    println(char::is_punct('@'));       # true
+    println(char::is_punct('['));       # true
+    println(char::is_punct('`'));       # true
+    println(char::is_punct('{'));       # true
+    println(char::is_punct('~'));       # true
+    println(char::is_punct('+'));       # true
+    println(char::is_punct('_'));       # true
+    println(char::is_punct('a'));       # false
+    println(char::is_punct('0'));       # false
+    println(char::is_punct(' '));       # false
+    println(char::is_punct('中'));      # false
 }
