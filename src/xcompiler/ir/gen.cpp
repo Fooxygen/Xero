@@ -237,6 +237,7 @@ namespace xcompiler {
             // Rval Block
             llvm_builder().SetInsertPoint(block_rval);  // write in rval block
             auto rval = Process(*node.rexpr_);
+            auto rval_end = llvm_builder().GetInsertBlock(); 
             BlockTermCreate(block_end);
 
             // End Block
@@ -249,13 +250,13 @@ namespace xcompiler {
                 // false &&
                 phi->addIncoming(llvm_builder().getFalse(), block_lval);
                 // true &&
-                phi->addIncoming(rval, block_rval);
+                phi->addIncoming(rval, rval_end);
             }
             else {
                 // true ||
                 phi->addIncoming(llvm_builder().getTrue(), block_lval);
                 // false ||
-                phi->addIncoming(rval, block_rval);
+                phi->addIncoming(rval, rval_end);
             }
 
             return phi;
