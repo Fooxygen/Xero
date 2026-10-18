@@ -2,30 +2,28 @@
 use xero::string
 
 fn main() {
-    println("[" + string::trim("  hi  ") + "]");            # [hi]
-    println("[" + string::trim("   ") + "]");               # []
-    println("[" + string::trim("\r\n hi \r\n") + "]");      # [hi]
-    println("[" + string::trim_start("  hi  ") + "]");      # [hi  ]
-    println("[" + string::trim_end("  hi  ") + "]");        # [  hi]
+    a: array[=string=] = ["a"];
+    a.push_back("abc");
+    a.push_back("abc"[0..=1]);
+    a.push_back("abc"[2]);
+    println(a);                     # [a, abc, ab, c]
 
-    println(string::trim("xxhixx", "x"));                   # hi
-    println(string::trim_start("xxhixx", "x"));             # hixx
-    println(string::trim_end("xxhixx", "x"));               # xxhi
+    s: string = "hello";
+    c: array[=char=] = ['b'];
+    c.push_back(s[0]);
+    println(c);                     # [b, h]
 
-    println(string::trim("abc", ""));                       # abc
-    println(string::trim_start("abc", ""));                 # abc
-    println(string::trim_end("abc", ""));                   # abc
+    i: array[=i32=] = [1];
+    i.push_back(2);
+    println(i);                     # [1, 2]
 
-    println("[" + string::trim("xxx", "x") + "]");          # []
-    println("[" + string::trim_start("xxx", "x") + "]");    # []
-    println("[" + string::trim_end("xxx", "x") + "]");      # []
+    f: array[=f32=] = [1.3];
+    f.push_back(2.6);
+    println(f);                     # [1.300000, 2.600000]
 
-    println(string::trim("中中文中中", "中"));              # 文
-    println(string::trim_start("中中文中中", "中"));        # 文中中
-    println(string::trim_end("中中文中中", "中"));          # 中中文
+    ss: array[=string=] = ["ab", "cd"];
+    ss[0].clear();
+    println(ss);                    # [, cd]
 
-    s: string = "  hi  ";
-    t: string = string::trim(&s);
-    s[0] = 'X';
-    println("[" + t + "]");                                 # [hi]
+    println(string::split("Hello,Xero,and,World", ','));
 }

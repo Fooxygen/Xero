@@ -217,27 +217,31 @@ namespace sema {
             
             // array
             {
+                auto T = array_->params_binding()[0];
+
                 array_->method_table().Add("@print",        FnSign(none_));
-                array_->method_table().Add("@pick",         FnSign(ReferenceTypeGet(array_->params_binding()[0]), { i64_ }));
-                array_->method_table().Add("@pick",         FnSign(ParametricTypeGet(arrayview_, { array_->params_binding()[0] }), { range_ }));
-                array_->method_table().Add("@neg",          FnSign(ParametricTypeGet(array_, { array_->params_binding()[0] })));
-                array_->method_table().Add("@plus",         FnSign(ParametricTypeGet(array_, { array_->params_binding()[0] }), { ParametricTypeGet(array_, { array_->params_binding()[0] }) }));
+                array_->method_table().Add("@pick",         FnSign(ReferenceTypeGet(T), { i64_ }));
+                array_->method_table().Add("@pick",         FnSign(ParametricTypeGet(arrayview_, { T }), { range_ }));
+                array_->method_table().Add("@neg",          FnSign(ParametricTypeGet(array_, { T })));
+                array_->method_table().Add("@plus",         FnSign(ParametricTypeGet(array_, { T }), { ParametricTypeGet(array_, { T }) }));
                 array_->method_table().Add("len",           FnSign(i64_));
                 array_->method_table().Add("clear",         FnSign(none_));
-                array_->method_table().Add("insert",        FnSign(none_, { i64_, nullptr }));
+                array_->method_table().Add("insert",        FnSign(none_, { i64_, T }));
                 array_->method_table().Add("remove",        FnSign(none_, { i64_ }));
-                array_->method_table().Add("push_front",    FnSign(none_, { nullptr }));
+                array_->method_table().Add("push_front",    FnSign(none_, { T }));
                 array_->method_table().Add("pop_front",     FnSign(none_));
-                array_->method_table().Add("push_back",     FnSign(none_, { nullptr }));
+                array_->method_table().Add("push_back",     FnSign(none_, { T }));
                 array_->method_table().Add("pop_back",      FnSign(none_));
             }
 
             // arrayview
             {
+                auto T = arrayview_->params_binding()[0];
+
                 arrayview_->method_table().Add("@print",    FnSign(none_));
-                arrayview_->method_table().Add("@pick",     FnSign(ReferenceTypeGet(arrayview_->params_binding()[0]), { i64_ }));
-                arrayview_->method_table().Add("@pick",     FnSign(ParametricTypeGet(arrayview_, { arrayview_->params_binding()[0] }), { range_ }));
-                arrayview_->method_table().Add("@neg",      FnSign(ParametricTypeGet(array_, { arrayview_->params_binding()[0] })));
+                arrayview_->method_table().Add("@pick",     FnSign(ReferenceTypeGet(T), { i64_ }));
+                arrayview_->method_table().Add("@pick",     FnSign(ParametricTypeGet(arrayview_, { T }), { range_ }));
+                arrayview_->method_table().Add("@neg",      FnSign(ParametricTypeGet(array_, { T })));
                 arrayview_->method_table().Add("len",       FnSign(i64_));
             }
 

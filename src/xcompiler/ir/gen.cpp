@@ -395,8 +395,10 @@ namespace xcompiler {
     }
 
     llvm::Value* IRGen::Process(FnCallExpr& node) {
-        auto  fnsign     = node.callee_fnsign_;
-        auto& params_fix = node.callee_fnsign_->params_type_fix();
+
+        // Sign
+        auto  sign       = node.callee_fnsign_;
+        auto& params_fix = sign->params_type_fix();
 
         // Args
         std::vector<Arg> args = {};
@@ -405,18 +407,15 @@ namespace xcompiler {
                 auto& expr = node.args_->exprs_[i];
 
                 // Reference Type
-                // e.g. fn call(a: i32&) { ... }
-                //      x: i32 = 3; y: i32& = x;
-                //      call(y);
                 if (i < params_fix.size() && dynamic_cast<sema::ReferenceType*>(params_fix[i])) {
                     llvm::Value* addr = nullptr;
 
-                    // RefVar
+                    // call fn(a), a: i32;
                     if (auto idexpr = dynamic_cast<IdExpr*>(expr.get())) {
                         addr = IdResolve(*idexpr);
                     }
 
-                    // RefExpr
+                    // call fn(&a)
                     else {
                         addr = Process(*expr);
                     }
@@ -439,8 +438,8 @@ namespace xcompiler {
             }
         }
 
-        // Stored in FnTable
-        if (auto impl = FnImplTable::LookupTry(fnsign)) {
+        // Call
+        if (auto impl = FnImplTable::LookupTry(sign)) {
             if (auto native = dynamic_cast<NativeFnImpl*>(impl)) {
                 return native->impl()(*this, args);
             }
@@ -454,28 +453,32 @@ namespace xcompiler {
         }
 
         throw LogErr(LogStage::Xcompiler, std::format(
-            "undefined function '{}'", fnsign->name()
+            "undefined function '{}'", sign->name()
         ), node.loc_);
     }
     
     llvm::Value* IRGen::Process(MethodCallExpr& node) {
         
+        // Sign
+        auto  sign       = node.callee_fnsign_;
+        auto& params_fix = sign->params_type_fix();
+
         // Caller
         auto caller_type      = node.caller_->resolved_type_;
         auto caller_type_impl = TypeImplTable::Lookup(caller_type->BasicTypeGet(), node.loc_);
 
         llvm::Value* caller_addr = nullptr;
         {
-            // Variable as Caller
             // a.len()
             if (auto idexpr = dynamic_cast<IdExpr*>(node.caller_.get())) {
                 caller_addr = IdResolve(*idexpr);
             }
+
+            // str[0].clear()
             else if (dynamic_cast<sema::ReferenceType*>(node.caller_->resolved_type_)) {
                 caller_addr = Process(*node.caller_);
             }
 
-            // Value as Caller
             // 3.plus(4)
             else {
                 caller_addr = ValMaterialize(ExprLoad(*node.caller_), node.caller_->resolved_type_);
@@ -489,15 +492,58 @@ namespace xcompiler {
             sema::TypeTable::ReferenceTypeGet(caller_type->ReferenceUnwrap())
         });
         if (node.args_) {
-            for (auto& e : node.args_->exprs_) {
-                args.emplace_back(Process(*e), e->resolved_type_->ReferenceUnwrap());
+            for (size_t i = 0; i < node.args_->exprs_.size(); i++) {
+                auto& expr = node.args_->exprs_[i];
+
+                // Reference Type
+                if (i < params_fix.size() && dynamic_cast<sema::ReferenceType*>(params_fix[i])) {
+                    llvm::Value* addr = nullptr;
+
+                    // call fn(a), a: i32;
+                    if (auto idexpr = dynamic_cast<IdExpr*>(expr.get())) {
+                        addr = IdResolve(*idexpr);
+                    }
+
+                    // call fn(&a)
+                    else {
+                        addr = Process(*expr);
+                    }
+
+                    args.emplace_back(addr, params_fix[i]);
+                }
+
+                // Non-Reference Type
+                else {
+                    auto arg_val  = ExprLoad(*expr);
+                    auto arg_type = expr->resolved_type_->ReferenceUnwrap();
+                    auto param    = (i < params_fix.size()) ? params_fix[i] : nullptr;
+
+                    if (param && arg_type != param) {
+                        arg_val  = TypeImplTable::Cast(*this, arg_val, arg_type, param, node.loc_);
+                        arg_type = param;
+                    }
+                    args.emplace_back(arg_val, arg_type);
+                }
             }
         }
 
         // Call
-        return caller_type_impl->MethodCall(
-            *this, node.callee_->name_, args, node.loc_
-        );
+        if (auto impl = caller_type_impl->MethodLookupTry(sign)) {
+            if (auto native = dynamic_cast<NativeFnImpl*>(impl)) {
+                return native->impl()(*this, args);
+            }
+            if (auto lang   = dynamic_cast<LangFnImpl*>(impl)) {
+                std::vector<llvm::Value*> vals = {};
+                for (auto& arg : args) {
+                    vals.emplace_back(arg.val());
+                }
+                return llvm_builder().CreateCall(lang->impl(), vals);
+            }
+        }
+
+        throw LogErr(LogStage::Xcompiler, std::format(
+            "undefined method '{}'", sign->name()
+        ), node.loc_);
     }
 
     llvm::Value* IRGen::Process(FnExpr& node) {

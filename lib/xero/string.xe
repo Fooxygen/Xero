@@ -180,13 +180,11 @@ fn split(s: string&, sep: char) -> array[=string=] {
 
     for (i in 0..s.len()) {
         if (s[i] == sep) {
-            part: string = s[offset..i];
-            result.push_back(part);
+            result.push_back(s[offset..i]);
             offset = i + 1;
         }
     }
-    tail: string = s[offset..s.len()];
-    result.push_back(tail);
+    result.push_back(s[offset..s.len()]);
     
     return result;
 }
