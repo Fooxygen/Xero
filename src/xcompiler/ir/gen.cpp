@@ -71,21 +71,35 @@ namespace xcompiler {
     // └─ Expr
 
     llvm::Value* IRGen::Process(BlockExpr& node, const std::function<void()>& on_scope_ready) {
+
+        // Scope Push
         slot_table_.ScopePush();
+        state_.release_scopes_.emplace_back();
         if (on_scope_ready) on_scope_ready();
 
         try {
             for (auto& child : node.children_) {
-                if (HasBlockTerm()) continue;   // invalid stmts come after term
+                if (HasBlockTerm()) continue;   // ignore code after term
                 Process(*child);
             }
         }
         catch (...) {
+
+            // Scope Pop
             slot_table_.ScopePop();
+            state_.release_scopes_.pop_back();
             throw;
         }
 
+        // Release variables
+        // For normal block, it will release all normal variables.
+        // But if it belongs to a block that contains an early exit stmt,
+        // this stmt will concurrently perform the ReleaseEmit() when it is executed
+        if (!HasBlockTerm()) ReleaseEmit(state_.release_scopes_.size() - 1);
+
+        // Scope Pop
         slot_table_.ScopePop();
+        state_.release_scopes_.pop_back();
         return nullptr;
     }
     
@@ -136,7 +150,10 @@ namespace xcompiler {
                     var_slot
                 );
             }
-            
+
+            // Register for release at scope exit
+            state_.release_scopes_.back().emplace_back(var_slot, var_type);
+
             slot_table_.Declare(node.id_, var_slot);
             return nullptr;
         }
@@ -497,11 +514,28 @@ namespace xcompiler {
 
         // Block
         Process(*node.body_, [&]() {
+            size_t i = 0;
             for (auto& arg : fn->args()) {
-                auto var_name = arg.getName().str();
-                auto var_slot = SlotCreate(arg.getType(), var_name);
+                auto param      = (DeclExpr*)node.params_->exprs_[i].get();
+                auto param_type = param->resolved_type_;
+                auto var_name   = arg.getName().str();
+                auto var_slot   = SlotCreate(arg.getType(), var_name);
+
+                // Store Arg's Val
                 llvm_builder().CreateStore(&arg, var_slot);
+
+                // Copy if not ReferenceType
+                if (!dynamic_cast<sema::ReferenceType*>(param_type)) {
+                    auto copied = TypeImplTable::Lookup(param_type)->MethodCall(*this, "@copy", {
+                        Arg(var_slot, sema::TypeTable::ReferenceTypeGet(param_type))
+                    });
+                    
+                    llvm_builder().CreateStore(copied, var_slot);
+                    state_.release_scopes_.back().emplace_back(var_slot, param_type);
+                }
+
                 slot_table_.Declare(var_name, var_slot);
+                i++;
             }
         });
 
@@ -700,6 +734,10 @@ namespace xcompiler {
         }
 
         auto& nextblock = state_.loop_nextblocks_.back();
+
+        // Release loop-body scopes before leaving the body
+        ReleaseEmit(nextblock.release_scope_depth_);
+
         llvm_builder().CreateBr(
             node.signal_ == LoopSignal::Continue ?
                 nextblock.continue_ : nextblock.break_
@@ -709,14 +747,29 @@ namespace xcompiler {
 
     llvm::Value* IRGen::Process(ReturnSignalStmt& node) {
         if (node.value_) {
-            auto val = ExprLoad(*node.value_);
+            auto val_type = node.value_->resolved_type_->ReferenceUnwrap();
+
+            llvm::Value* val = nullptr;
+            if (auto idexpr = dynamic_cast<IdExpr*>(node.value_.get())) {
+                val = TypeImplTable::Lookup(val_type, node.loc_)->MethodCall(*this, "@copy", {
+                    Arg(IdResolve(*idexpr), sema::TypeTable::ReferenceTypeGet(val_type))
+                });
+            }
+            else {
+                val = ExprLoad(*node.value_);
+            }
+
+            // Release all scopes before leaving the function
+            ReleaseEmit(0);
+
             llvm_builder().CreateRet(
-                TypeImplTable::Cast(*this, val,
-                    node.value_->resolved_type_->ReferenceUnwrap(), state_.fn_return_type_, node.loc_
-                )
+                TypeImplTable::Cast(*this, val, val_type, state_.fn_return_type_, node.loc_)
             );
         }
-        else llvm_builder().CreateRetVoid();
+        else {
+            ReleaseEmit(0);
+            llvm_builder().CreateRetVoid();
+        }
         return nullptr;
     }
 
@@ -753,7 +806,9 @@ namespace xcompiler {
                 auto elem     = builder.CreateInBoundsGEP(builder.getInt8Ty(), data_ptr, { byte_off });
                 builder.CreateStore(builder.CreateLoad(elem_llvm_type, elem), iter_slot);
 
-                state_.loop_nextblocks_.emplace_back(State::LoopNextBlock{ block_step, block_end });
+                state_.loop_nextblocks_.emplace_back(State::LoopNextBlock{
+                    block_step, block_end, state_.release_scopes_.size()
+                });
                 Process(*node.body_, [&] { slot_table_.Declare(node.iter_->name_, iter_slot); });
                 state_.loop_nextblocks_.pop_back();
 
@@ -821,7 +876,9 @@ namespace xcompiler {
             // Body Block
             llvm_builder().SetInsertPoint(block_body);
             {
-                state_.loop_nextblocks_.emplace_back(State::LoopNextBlock{ block_step, block_end });
+                state_.loop_nextblocks_.emplace_back(State::LoopNextBlock{
+                    block_step, block_end, state_.release_scopes_.size()
+                });
                 Process(*node.body_, [&] { slot_table_.Declare(node.iter_->name_, iter_slot); });
                 state_.loop_nextblocks_.pop_back();
 
@@ -912,8 +969,9 @@ namespace xcompiler {
         // Body Block
         llvm_builder().SetInsertPoint(block_body);
         state_.loop_nextblocks_.emplace_back(State::LoopNextBlock{
-            .continue_ = block_cond,
-            .break_    = block_end
+            .continue_            = block_cond,
+            .break_               = block_end,
+            .release_scope_depth_ = state_.release_scopes_.size()
         });
         Process(*node.body_);
         state_.loop_nextblocks_.pop_back();
