@@ -752,7 +752,7 @@ namespace xcompiler {
 
             Store(gen, arr.addr, { result_data, result_len }, arr.llvm_type);
             return nullptr;
-        }, sema::FnSign(none_, { i64_, nullptr }));
+        }, sema::FnSign(none_, { i64_, T }));
         impl->MethodAdd("remove",       [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  arr     = ArrayLoad(gen, args[0]);
@@ -783,7 +783,7 @@ namespace xcompiler {
             );
             Store(gen, arr.addr, { result_data, result_len }, arr.llvm_type);
             return nullptr;
-        }, sema::FnSign(none_, { nullptr }));
+        }, sema::FnSign(none_, { T }));
         impl->MethodAdd("push_front",   [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder     = gen.llvm_builder();
             auto  arr         = ArrayLoad(gen, args[0]);
@@ -804,7 +804,7 @@ namespace xcompiler {
             );
             Store(gen, arr.addr, { result_data, result_len }, arr.llvm_type);
             return nullptr;
-        }, sema::FnSign(none_, { nullptr }));
+        }, sema::FnSign(none_, { T }));
         impl->MethodAdd("pop_back",     [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  arr     = ArrayLoad(gen, args[0]);
