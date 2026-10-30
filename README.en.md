@@ -14,10 +14,10 @@ English |
     <a href="https://github.com/Fooxygen/Xero">
       <strong>» Read Wiki</strong>
     </a>
-    <a href="https://github.com/Fooxygen/Xero/issues/new?labels=bug&template=bug-report---.md">
+    <a href="https://github.com/Fooxygen/Xero/issues/new?labels=bug&template=bug-report.md">
       <strong>» Report Bug</strong>
     </a>
-    <a href="https://github.com/Fooxygen/Xero/issues/new?labels=enhancement&template=feature-request---.md">
+    <a href="https://github.com/Fooxygen/Xero/issues/new?labels=enhancement&template=feature-request.md">
       <strong>» Request Feature</strong>
     </a>
   </p>

@@ -14,10 +14,10 @@
     <a href="https://github.com/Fooxygen/Xero">
       <strong>» 阅读 Wiki</strong>
     </a>
-    <a href="https://github.com/Fooxygen/Xero/issues/new?labels=bug&template=bug-report---.md">
-      <strong>» 报告问题</strong>
+    <a href="https://github.com/Fooxygen/Xero/issues/new?labels=bug&template=bug-report.md">
+      <strong>» 报告漏洞</strong>
     </a>
-    <a href="https://github.com/Fooxygen/Xero/issues/new?labels=enhancement&template=feature-request---.md">
+    <a href="https://github.com/Fooxygen/Xero/issues/new?labels=enhancement&template=feature-request.md">
       <strong>» 请求特性</strong>
     </a>
   </p>
