@@ -9,7 +9,7 @@ English |
   <img src="https://cdn.jsdelivr.net/gh/Fooxygen/Xero@main/docs/images/brand_xero.svg" style="margin=0">
   <h3 align="center">Xero</h3>
   <p align="center">
-    Statically typed programming language & compiler
+    The Statically Typed Programming Language and Compiler
     <br /><br />
     <a href="https://github.com/Fooxygen/Xero">
       <strong>» Read Wiki</strong>
