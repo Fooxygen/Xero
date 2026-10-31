@@ -73,7 +73,7 @@ namespace xcompiler {
     llvm::Value* IRGen::Process(BlockExpr& node, const std::function<void()>& on_scope_ready) {
 
         // Scope Push
-        slot_table_.ScopePush();
+        slot_scope_.Push();
         state_.release_scopes_.emplace_back();
         if (on_scope_ready) on_scope_ready();
 
@@ -86,7 +86,7 @@ namespace xcompiler {
         catch (...) {
 
             // Scope Pop
-            slot_table_.ScopePop();
+            slot_scope_.Pop();
             state_.release_scopes_.pop_back();
             throw;
         }
@@ -98,7 +98,7 @@ namespace xcompiler {
         if (!HasBlockTerm()) ReleaseEmit(state_.release_scopes_.size() - 1);
 
         // Scope Pop
-        slot_table_.ScopePop();
+        slot_scope_.Pop();
         state_.release_scopes_.pop_back();
         return nullptr;
     }
@@ -125,7 +125,7 @@ namespace xcompiler {
             auto idexpr = (IdExpr*)(node.value_.get());
             auto addr   = IdResolve(*idexpr);
             llvm_builder().CreateStore(addr, var_slot);
-            slot_table_.Declare(node.id_, var_slot);
+            slot_scope_.Declare(node.id_, var_slot);
             return nullptr;
         }
 
@@ -164,7 +164,7 @@ namespace xcompiler {
             // Register for release at scope exit
             state_.release_scopes_.back().emplace_back(var_slot, var_type);
 
-            slot_table_.Declare(node.id_, var_slot);
+            slot_scope_.Declare(node.id_, var_slot);
             return nullptr;
         }
     }
@@ -591,7 +591,7 @@ namespace xcompiler {
                     state_.release_scopes_.back().emplace_back(var_slot, param_type);
                 }
 
-                slot_table_.Declare(var_name, var_slot);
+                slot_scope_.Declare(var_name, var_slot);
                 i++;
             }
         });
@@ -887,7 +887,7 @@ namespace xcompiler {
                 state_.loop_nextblocks_.emplace_back(State::LoopNextBlock{
                     block_step, block_end, state_.release_scopes_.size()
                 });
-                Process(*node.body_, [&] { slot_table_.Declare(node.iter_->name_, iter_slot); });
+                Process(*node.body_, [&] { slot_scope_.Declare(node.iter_->name_, iter_slot); });
                 state_.loop_nextblocks_.pop_back();
 
                 BlockTermCreate(block_step);
@@ -957,7 +957,7 @@ namespace xcompiler {
                 state_.loop_nextblocks_.emplace_back(State::LoopNextBlock{
                     block_step, block_end, state_.release_scopes_.size()
                 });
-                Process(*node.body_, [&] { slot_table_.Declare(node.iter_->name_, iter_slot); });
+                Process(*node.body_, [&] { slot_scope_.Declare(node.iter_->name_, iter_slot); });
                 state_.loop_nextblocks_.pop_back();
 
                 // Entry step block to iterate var

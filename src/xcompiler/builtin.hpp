@@ -23,5 +23,5 @@ namespace xcompiler {
 
     // Built-in Function
 
-    void BuiltinFnRegister(sema::FnTable& fn_table);
+    void BuiltinFnRegister(sema::FnScope& fn_scope);
 }

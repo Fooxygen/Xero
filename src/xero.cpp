@@ -68,11 +68,11 @@ int main(int argc, char* argv[]) {
         }
 
         // Sema
-        sema::Sema sema(context.fn_table());
+        sema::Sema sema(context.fn_scope());
         sema.Run(context.modules());
 
         // Xcompiler
-        xcompiler::Xcompiler xcompiler(config, context.fn_table());
+        xcompiler::Xcompiler xcompiler(config, context.fn_scope());
         xcompiler.Run(context.modules());
     }
     catch (const LogErr& log) {

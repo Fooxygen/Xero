@@ -41,6 +41,33 @@ namespace sema {
         }, "[=", "=]");
     }
 
+    // TypeScope
+
+    Type* TypeScope::Lookup(const Path& path, std::optional<Loc> loc) {
+        auto type = LookupTry(path);
+        if (!type) {
+            throw LogErr(LogStage::Sema, std::format(
+                "undefined type '{}'", path.Print()
+            ), loc);
+        }
+        return type;
+    }
+
+    Type* TypeScope::Resolve(
+        const Path& path,
+        const std::unordered_map<std::string, Path>* aliases,
+        std::optional<Loc> loc
+    ) {
+        auto resolved_path = aliases ? Path::Resolve(path, *aliases) : path;
+
+        if (auto type = LookupTry(resolved_path)) return type;
+        if (auto type = TypeTable::LookupTry(resolved_path.Print())) return type;
+
+        throw LogErr(LogStage::Sema, std::format(
+            "undefined type '{}'", resolved_path.Print()
+        ), loc);
+    }
+
     // TypeTable
 
     BasicType*      TypeTable::Set(const BasicType& type) {
@@ -75,6 +102,15 @@ namespace sema {
         }
         return (ReferenceType*)it->second.get();
     }
+
+    Type*   TypeTable::Set(std::unique_ptr<Type> type) {
+        auto name = type->name();
+        auto [it, is_inserted] = table_.try_emplace(name, std::move(type));
+        if (!is_inserted) {
+            throw LogErr(LogStage::Sema, std::format("redefinition of type '{}'", name));
+        }
+        return it->second.get();
+    }
     
     Type*   TypeTable::Lookup(std::string_view name, std::optional<Loc> loc) {
         auto type = LookupTry(name);
@@ -88,7 +124,7 @@ namespace sema {
         auto it = table_.find(std::string(name));
         return it == table_.end() ? nullptr : it->second.get();
     }
-    
+
     Type*   TypeTable::ParametricTypeGet(Type* type, const std::vector<Type*>& params, std::optional<Loc> loc) {
         type->BasicTypeCheck(loc);
         if (params.empty()) return Lookup(type->name(), loc);
@@ -109,7 +145,7 @@ namespace sema {
             name, basic_type, params
         ));
 
-        for (auto& [method_name, method] : basic_type->method_table().namespace_current()->table()) {
+        for (auto& [method_name, method] : basic_type->method_table().table()) {
             for (auto& sign : method.signs()) {
                 if (!IsContainBindingType(*sign)) continue;
                 parametric_type->method_table().Add(
@@ -238,7 +274,7 @@ namespace sema {
         for (auto& [type_name, type] : table_) {
             if (auto basic_type = dynamic_cast<BasicType*>(type.get())) {
                 auto& method_table = basic_type->method_table();
-                for (auto& [method_name, method] : method_table.namespace_current()->table()) {
+                for (auto& [method_name, method] : method_table.table()) {
                     for (auto& sign : method.signs()) {
                         if (sign->modifier() & FnModifier::Cast && sign->return_type()) {
                             type->casts().emplace(sign->return_type());

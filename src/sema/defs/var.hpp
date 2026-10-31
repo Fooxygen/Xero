@@ -13,6 +13,7 @@
 
 #include "common/log.hpp"
 #include "common/defs/loc.hpp"
+#include "common/defs/scope.hpp"
 #include "sema/defs/type.hpp"
 
 namespace sema {
@@ -27,30 +28,28 @@ namespace sema {
         :   name_(name), type_(type), loc_(loc) {}
     };
 
-    class VarTable {
-    public:
-        using Scope = std::unordered_map<std::string, std::unique_ptr<Var>>;
-
+    class VarScope {
     private:
-        std::vector<Scope> scopes_;
+        Scope<std::unique_ptr<Var>> scope_;
 
     public:
-        void   ScopePush() { scopes_.emplace_back(); }
-        void   ScopePop()  { scopes_.pop_back(); }
-        Scope& ScopeGet()  { return scopes_.back(); }
+        void Push() { scope_.Push(); }
+        void Pop()  { scope_.Pop(); }
 
-        void   Add(std::unique_ptr<Var>&& var) {
-            if (var->name_.empty()) {
-                throw LogErr(LogStage::Sema, "empty variable declared name", var->loc_);
+        void Add(std::unique_ptr<Var>&& var) {
+            auto name = var->name_;
+            auto loc  = var->loc_;
+
+            if (name.empty()) {
+                throw LogErr(LogStage::Sema, "empty variable declared name", loc);
             }
-            
-            auto& scope = ScopeGet();
-            auto [it, is_declared] = scope.try_emplace(var->name_, std::move(var));
-            if (!is_declared) {
+
+            auto declared = scope_.Declare(name, std::move(var));
+            if (!declared.second) {
                 throw LogErr(LogStage::Sema, std::format(
                     "redefinition of variable '{}' in same scope",
-                    var->name_
-                ), var->loc_);
+                    name
+                ), loc);
             }
         }
         
@@ -62,11 +61,8 @@ namespace sema {
             return var;
         }
         const Var* LookupTry(const std::string& name) {
-            for (auto scope_it = scopes_.rbegin(); scope_it != scopes_.rend(); scope_it++) {
-                auto var_it = scope_it->find(name);
-                if (var_it != scope_it->end()) return &(*var_it->second);
-            }
-            return nullptr;
+            auto var = scope_.LookupTry(name);
+            return var ? var->get() : nullptr;
         }
     };
 }

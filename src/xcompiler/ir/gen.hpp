@@ -61,7 +61,7 @@ namespace xcompiler {
     private:
         LlvmCore    llvmcore_;
         State       state_;
-        SlotTable   slot_table_;
+        SlotScope   slot_scope_;
         LlvmFnTable llvm_fn_table_;
 
         // Module

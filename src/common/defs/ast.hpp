@@ -11,6 +11,7 @@
 #include <utility>
 
 #include "common/defs/loc.hpp"
+#include "common/defs/path.hpp"
 #include "common/utils/format.hpp"
 #include "common/defs/token.hpp"
 #include "common/defs/opertype.hpp"
@@ -287,13 +288,25 @@ public:
 };
 class TypeExpr          : public Expr {
 public:
-    std::string            basic_type_  = "";
+    Path                   basic_type_  = {};
     std::unique_ptr<Exprs> params_      = nullptr;
     bool                   is_referred_ = false;
 
 public:
     TypeExpr(
         const std::string&     basic_type,
+        std::unique_ptr<Exprs> params,
+        bool                   is_referred
+    )
+    :   params_(std::move(params)),
+        is_referred_(is_referred)
+    {
+        basic_type_.Add(basic_type);
+        type_ = AstType::TypeExpr;
+    }
+
+    TypeExpr(
+        const Path&            basic_type,
         std::unique_ptr<Exprs> params,
         bool                   is_referred
     )
@@ -310,7 +323,7 @@ public:
 
     void PrintImpl(const std::string& prefix) override {
         PrintLabel("basic_type", prefix); {
-            std::cerr << COLOR_BLUE << basic_type_ << COLOR_DEFAULT << std::endl;
+            std::cerr << COLOR_BLUE << basic_type_.Print() << COLOR_DEFAULT << std::endl;
         }
         
         if (params_) params_->Print(prefix, "params");

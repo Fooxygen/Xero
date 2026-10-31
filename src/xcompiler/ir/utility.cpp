@@ -121,7 +121,7 @@ namespace xcompiler {
     // Expr
 
     llvm::Value*      IRGen::IdResolve(IdExpr& node) {
-        auto var = slot_table_.Lookup(node.name_, node.loc_);
+        auto var = slot_scope_.Lookup(node.name_, node.loc_);
 
         // ReferenceType
         if (dynamic_cast<sema::ReferenceType*>(node.resolved_type_)) {

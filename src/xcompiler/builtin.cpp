@@ -79,7 +79,7 @@ namespace xcompiler {
 
     // Built-in Function
 
-    void BuiltinFnRegister(sema::FnTable& fn_table) {
+    void BuiltinFnRegister(sema::FnScope& fn_scope) {
         auto none_ = sema::TypeTable::Lookup("none");
 
         // print and println
@@ -117,8 +117,8 @@ namespace xcompiler {
                 return nullptr;
             };
 
-            auto sign_print   = fn_table.Lookup("print")->SignLookup(sema::FnSign(none_, {}, nullptr, {}, "print"));
-            auto sign_println = fn_table.Lookup("println")->SignLookup(sema::FnSign(none_, {}, nullptr, {}, "println"));
+            auto sign_print   = fn_scope.Lookup("print")->SignLookup(sema::FnSign(none_, {}, nullptr, {}, "print"));
+            auto sign_println = fn_scope.Lookup("println")->SignLookup(sema::FnSign(none_, {}, nullptr, {}, "println"));
             FnImplTable::Add("print", sign_print,   std::make_unique<NativeFnImpl>(impl_print));
             FnImplTable::Add("println", sign_println, std::make_unique<NativeFnImpl>(impl_println));
         }

@@ -14,6 +14,7 @@
 #include "common/log.hpp"
 #include "common/utils/format.hpp"
 #include "common/defs/path.hpp"
+#include "common/defs/scope.hpp"
 
 namespace sema {
     class Type;
@@ -166,47 +167,19 @@ namespace sema {
         const FnSign* SignAdd(const std::string& name, const FnSign& sign);
     };
 
-    // Table
+    // Scope
 
-    class  FnTable {
-    public:
-        class Namespace {
-        public:
-            std::string name_   = "";
-            Namespace*  parent_ = nullptr;
-            std::unordered_map<std::string, std::unique_ptr<Namespace>> children_ = {};
-            std::unordered_map<std::string, Fn>                         table_    = {};
-
-        public:
-            Namespace() = default;
-            Namespace(std::string name, Namespace* parent)
-            :   name_(std::move(name)), parent_(parent) {}
-        
-            std::unordered_map<std::string, Fn>& table() { return table_; }
-        };
-
+    class  FnScope {
     private:
-        Namespace  ns_root_;
-        Namespace* ns_current_ = &ns_root_;
-        Type*      owner_ = nullptr;    // owner should be recorded when used in a type table
+        Namespace<Fn> scope_;
+        Type*         owner_ = nullptr;    // owner should be recorded when used in a type table
 
     public:
-        Namespace* namespace_current() { return ns_current_; }
-    
+        std::unordered_map<std::string, Fn>& table() { return scope_.table(); }
+
     public:
-        void NamespaceEnter(const Path& path) {
-            auto* ns = &ns_root_;
-            for (size_t i = 0; i < path.Length(); i++) {
-                auto& seg   = path[i];
-                auto& child = ns->children_[seg];
-                if (!child) {
-                    child = std::make_unique<Namespace>(seg, ns);
-                }
-                ns = child.get();
-            }
-            ns_current_ = ns;
-        }
-        void NamespaceEnter() { ns_current_ = &ns_root_; }
+        void Enter(const Path& path) { scope_.Enter(path); }
+        void EnterRoot()             { scope_.EnterRoot(); }
 
         // call fn, only callee
 
@@ -220,11 +193,7 @@ namespace sema {
             return fn;
         }
         Fn*  LookupTry(const std::string& name) {
-            for (auto* ns = ns_current_; ns; ns = ns->parent_) {
-                auto it = ns->table_.find(name);
-                if (it != ns->table_.end()) return &it->second;
-            }
-            return nullptr;
+            return scope_.LookupTry(name);
         }
         
         // call a::b::fn, path + callee
@@ -239,22 +208,11 @@ namespace sema {
             return fn;
         }
         Fn*  LookupTry(const Path& path) {
-            auto* ns = &ns_root_;
-
-            // search a::b
-            for (size_t i = 0; i < path.Length() - 1; i++) {
-                auto ns_it = ns->children_.find(path[i]);
-                if (ns_it == ns->children_.end()) return nullptr;
-                ns = ns_it->second.get();
-            }
-
-            // search fn
-            auto it = ns->table_.find(path.Back());
-            return it == ns->table_.end() ? nullptr : &it->second;
+            return scope_.LookupTry(path);
         }
 
         const FnSign* Add(const std::string& name, const FnSign& sign) {
-            auto& fn = ns_current_->table_.try_emplace(name, name).first->second;
+            auto& fn = *scope_.GetOrCreate(name, Fn(name));
             auto  sign_add = sign;
             if (owner_) sign_add.CallerSet(owner_);
             return fn.SignAdd(name, sign_add);

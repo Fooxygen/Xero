@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include <cstddef>
 #include <memory>
 #include <string>
 #include <vector>
@@ -17,6 +16,7 @@
 #include <iterator>
 
 #include "common/log.hpp"
+#include "common/defs/scope.hpp"
 #include "sema/defs/fn.hpp"
 
 namespace sema {
@@ -72,7 +72,7 @@ namespace sema {
     private:
         size_t                    params_cnt_     = 0;      // number of parameters in parametric type
         std::vector<BindingType*> params_binding_ = {};     // binding types
-        FnTable                   method_table_;
+        FnScope                   method_table_;
 
     public:
         BasicType(std::string name, size_t params_cnt = 0)
@@ -84,7 +84,7 @@ namespace sema {
 
         size_t                     params_cnt() const { return params_cnt_; }
         std::vector<BindingType*>& params_binding()   { return params_binding_; }
-        FnTable&                   method_table()     { return method_table_; }
+        FnScope&                   method_table()     { return method_table_; }
     
     public:
         Type* BasicTypeGet()    override { return this; }
@@ -95,7 +95,7 @@ namespace sema {
     private:
         Type*              basic_  = nullptr;
         std::vector<Type*> params_ = {};
-        FnTable            method_table_;
+        FnScope            method_table_;
 
     public:
         ParametricType(std::string name, Type* basic_type, const std::vector<Type*>& params)
@@ -109,7 +109,7 @@ namespace sema {
         Type*                     basic()  const { return basic_; }
         std::vector<Type*>&       params()       { return params_; }
         const std::vector<Type*>& params() const { return params_; }
-        FnTable&                  method_table() { return method_table_; }
+        FnScope&                  method_table() { return method_table_; }
 
     public:
         static std::string ParamsPrint(Type* basic_type, const std::vector<Type*>& params);
@@ -135,6 +135,31 @@ namespace sema {
         Type* ReferenceUnwrap() override { return referred_; }
     };
 
+    class TypeScope {
+    private:
+        Namespace<Type*> scope_;
+
+    public:
+        void  Enter(const Path& path) { scope_.Enter(path); }
+
+        bool  Declare(const std::string& name, Type* type) {
+            auto declared = scope_.Declare(name, type);
+            return declared.second;
+        }
+
+        Type* Lookup(const Path& path, std::optional<Loc> loc = std::nullopt);
+        Type* LookupTry(const Path& path) {
+            auto type = scope_.LookupTry(path);
+            return type ? *type : nullptr;
+        }
+
+        Type* Resolve(
+            const Path& path,
+            const std::unordered_map<std::string, Path>* aliases,
+            std::optional<Loc> loc = std::nullopt
+        );
+    };
+
     class TypeTable {
     private:
         static inline std::unordered_map<std::string, std::unique_ptr<Type>> table_;
@@ -146,6 +171,7 @@ namespace sema {
         static BasicType*      Set(const BasicType& t);
         static ParametricType* Set(const ParametricType& t);
         static ReferenceType*  Set(const ReferenceType& t);
+        static Type*           Set(std::unique_ptr<Type> type);
 
         static Type*  Lookup(std::string_view name, std::optional<Loc> loc = std::nullopt);
         static Type*  LookupTry(std::string_view name);

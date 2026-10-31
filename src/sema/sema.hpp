@@ -19,7 +19,7 @@ namespace sema {
         Analyzer analyzer_;
 
     public:
-        Sema(FnTable& fn_table) : analyzer_(fn_table) {}
+        Sema(FnScope& fn_scope) : analyzer_(fn_scope) {}
 
     public:
         void Run(std::vector<context::Module>& modules) {
@@ -32,12 +32,15 @@ namespace sema {
 
             // AstNode
             for (auto& module : modules) {
-                analyzer_.fn_table().NamespaceEnter(module.namespaces());
+                analyzer_.ModuleSet(module);
+                analyzer_.fn_scope().Enter(module.namespaces());
+                analyzer_.type_scope().Enter(module.namespaces());
                 analyzer_.Declare(*module.root());
             }
             for (auto& module : modules) {
                 analyzer_.ModuleSet(module);
-                analyzer_.fn_table().NamespaceEnter(module.namespaces());
+                analyzer_.fn_scope().Enter(module.namespaces());
+                analyzer_.type_scope().Enter(module.namespaces());
                 analyzer_.Process(*module.root());
                 LogBuild(LogStage::Sema, module.name_full()).Print();
             }

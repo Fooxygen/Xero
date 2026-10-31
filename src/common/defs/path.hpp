@@ -38,4 +38,19 @@ public:
 
     const std::string& operator [](size_t i)          const { return segments_[i]; }
     bool               operator ==(const Path& other) const = default;
+
+    template <typename Aliases>
+    static Path Resolve(const Path& path, const Aliases& aliases) {
+        // Namespace aliases only apply to qualified paths.
+        if (path.Length() < 2) return path;
+
+        auto it = aliases.find(path[0]);
+        if (it == aliases.end()) return path;
+
+        Path resolved = it->second;
+        for (size_t i = 1; i < path.Length(); i++) {
+            resolved.Add(path[i]);
+        }
+        return resolved;
+    }
 };

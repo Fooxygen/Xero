@@ -20,13 +20,13 @@ namespace context {
 
         // Sema
 
-        sema::FnTable fn_table_;
+        sema::FnScope fn_scope_;
 
     public:
         Config&              config()  { return config_; }
         std::vector<Module>& modules() { return modules_; }
         
-        sema::FnTable&       fn_table() { return fn_table_; }
+        sema::FnScope&       fn_scope() { return fn_scope_; }
     
     public:
         void ModulesProjectLoad();                  // load project modules from config

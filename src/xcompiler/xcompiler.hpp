@@ -27,12 +27,10 @@ namespace xcompiler {
     class Xcompiler {
     private:
         const Config&  config_;
-        sema::FnTable& fn_table_;
+        sema::FnScope& fn_scope_;
 
     public:
-        Xcompiler(const Config& config, sema::FnTable& fn_table)
-        :   config_(config),
-            fn_table_(fn_table) {}
+        Xcompiler(const Config& config, sema::FnScope& fn_scope) : config_(config), fn_scope_(fn_scope) {}
 
     public:
         void Run(std::vector<context::Module>& modules) {
@@ -47,7 +45,7 @@ namespace xcompiler {
             TypeImplTable::Init();
 
             // Builtin
-            BuiltinFnRegister(fn_table_);
+            BuiltinFnRegister(fn_scope_);
 
             // Backend
             Backend backend;

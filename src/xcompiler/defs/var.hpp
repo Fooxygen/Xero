@@ -12,27 +12,30 @@
 #include "llvm/IR/Value.h"
 
 #include "common/log.hpp"
+#include "common/defs/scope.hpp"
 
 namespace xcompiler {
 
-    class SlotTable {
+    class SlotScope {
     private:
-        std::vector<std::unordered_map<std::string, llvm::Value*>> scopes_;
+        Scope<llvm::Value*> scope_;
 
     public:
-        void ScopePush() { scopes_.emplace_back(); }
-        void ScopePop()  { scopes_.pop_back(); }
+        void Push() { scope_.Push(); }
+        void Pop()  { scope_.Pop(); }
 
-        void Declare(const std::string& name, llvm::Value* value) { scopes_.back()[name] = value; }
+        void Declare(const std::string& name, llvm::Value* value) {
+            scope_.Set(name, value);
+        }
 
         llvm::Value* Lookup(const std::string& name, std::optional<Loc> loc = std::nullopt) {
-            for (auto scope_it = scopes_.rbegin(); scope_it != scopes_.rend(); ++scope_it) {
-                auto var_it = scope_it->find(name);
-                if (var_it != scope_it->end()) return var_it->second;
+            auto value = scope_.LookupTry(name);
+            if (!value) {
+                throw LogErr(LogStage::Xcompiler, std::format(
+                    "undefined variable '{}'", name
+                ), loc);
             }
-            throw LogErr(LogStage::Xcompiler, std::format(
-                "undefined variable '{}'", name
-            ), loc);
+            return *value;
         }
     };
 }

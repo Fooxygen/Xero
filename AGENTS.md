@@ -22,12 +22,12 @@ Xero is a statically typed programming language. This repository contains its co
 | Build tool | Ninja | 1.13.2 |
 | Toolchain | MinGW-w64 | 16.1.0 |
 
-### Dependencies
+### Dependency
 
-| Module | Purpose | Version |
+| Package | Task | Version |
 | - | - | - |
-| LLVM | IR optimization, target code generation | 22.1.8 |
-| toml++ | Project config parsing | 3.4.0 |
+| LLVM | IR Optimization, Object Code Generation | 22.1.8 |
+| toml++ | Configuration File Parsing | 3.4.0 |
 
 Xero source files use the `.xe` extension. A project is configured by a single `xero.project.toml`, and the compiler is invoked as `xero.exe <xero.project.toml>`.
 

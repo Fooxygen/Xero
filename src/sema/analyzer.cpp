@@ -41,7 +41,7 @@ namespace sema {
         }
 
         // Signature
-        node.fnsign_ = fn_table_.Add(
+        node.fnsign_ = fn_scope_.Add(
             node.name_, FnSign(node.ret_resolved_type_, params_type)
         );
     }
@@ -61,22 +61,22 @@ namespace sema {
     void Analyzer::Process(BlockExpr& node, const std::function<void()>& on_scope_ready) {
         node.resolved_type_ = TypeTable::Lookup("none");
 
-        var_table_.ScopePush();
+        var_scope_.Push();
         if (on_scope_ready) on_scope_ready();
 
         try {
             for (auto& child : node.children_) Process(*child);
         }
         catch (...) {
-            var_table_.ScopePop();
+            var_scope_.Pop();
             throw;
         }
         
-        var_table_.ScopePop();
+        var_scope_.Pop();
     }
 
     void Analyzer::Process(IdExpr& node) {
-        if (auto var = var_table_.LookupTry(node.name_)) {
+        if (auto var = var_scope_.LookupTry(node.name_)) {
             node.resolved_type_ = var->type_;
             return;
         }
@@ -96,7 +96,8 @@ namespace sema {
     }
 
     void Analyzer::Process(TypeExpr& node) {
-        auto  basic_type = TypeTable::Lookup(node.basic_type_, node.loc_);
+        auto* aliases    = module_ ? &module_->namespaces_alias() : nullptr;
+        auto  basic_type = type_scope_.Resolve(node.basic_type_, aliases, node.loc_);
         Type* resolved   = nullptr;
 
         // BasicType
@@ -113,7 +114,9 @@ namespace sema {
                     params.emplace_back(typeexpr->resolved_type_);
                 }
                 else if (auto idexpr   = dynamic_cast<IdExpr*>(e.get())) {
-                    params.emplace_back(TypeTable::Lookup(idexpr->name_, idexpr->loc_));
+                    Path param_path = {};
+                    param_path.Add(idexpr->name_);
+                    params.emplace_back(type_scope_.Resolve(param_path, aliases, idexpr->loc_));
                 }
                 else {
                     throw LogErr(LogStage::Sema, std::format(
@@ -157,7 +160,7 @@ namespace sema {
         }
         node.resolved_type_ = node.bind_type_->resolved_type_;
 
-        var_table_.Add(std::make_unique<Var>(
+        var_scope_.Add(std::make_unique<Var>(
             node.id_, node.resolved_type_, node.loc_
         ));
         if (node.value_) Process(*node.value_);
@@ -301,7 +304,7 @@ namespace sema {
         
         // Call fn
         if      (auto* idexpr   = dynamic_cast<IdExpr*>(node.callee_.get())) {
-            fn = fn_table_.Lookup(idexpr->name_, idexpr->loc_);
+            fn = fn_scope_.Lookup(idexpr->name_, idexpr->loc_);
         }
         
         // Call a::b::fn
@@ -312,18 +315,11 @@ namespace sema {
             }
 
             // Alias: a::b::c::fn -> d::fn
-            if (module_ && !segments.IsEmpty()) {
-                auto it = module_->namespaces_alias().find(segments[0]);  // d
-                if (it != module_->namespaces_alias().end()) {
-                    Path segments_replace = it->second;                 // a::b::c
-                    for (size_t i = 1; i < segments.Length(); i++) {
-                        segments_replace.Add(segments[i]);              // + ::fn + ::...
-                    }
-                    segments = segments_replace;
-                }
+            if (module_) {
+                segments = Path::Resolve(segments, module_->namespaces_alias());
             }
 
-            fn = fn_table_.Lookup(segments, pathexpr->loc_);
+            fn = fn_scope_.Lookup(segments, pathexpr->loc_);
         }
 
         auto sign = fn->SignLookup(args_type, node.callee_->loc_);
@@ -359,14 +355,23 @@ namespace sema {
         // Parameter Binding
         if (node.body_) {
             auto& params_expr = node.params_->exprs_;
-            Process(*node.body_, [&]() {
-                for (size_t i = 0; i < params_expr.size(); i++) {
-                    auto expr = (DeclExpr*)(params_expr[i].get());
-                    var_table_.Add(std::make_unique<Var>(
-                        expr->id_, expr->resolved_type_, expr->loc_)
-                    );
-                }
-            });
+
+            fn_depth_++;
+            try {
+                Process(*node.body_, [&]() {
+                    for (size_t i = 0; i < params_expr.size(); i++) {
+                        auto expr = (DeclExpr*)(params_expr[i].get());
+                        var_scope_.Add(std::make_unique<Var>(
+                            expr->id_, expr->resolved_type_, expr->loc_)
+                        );
+                    }
+                });
+            }
+            catch (...) {
+                fn_depth_--;
+                throw;
+            }
+            fn_depth_--;
         }
     }
 
@@ -519,7 +524,7 @@ namespace sema {
         }
 
         Process(*node.body_, [&]() {
-            var_table_.Add(std::make_unique<Var>(
+            var_scope_.Add(std::make_unique<Var>(
                 node.iter_->name_, iter_type, node.iter_->loc_)
             );
         });

@@ -15,8 +15,8 @@ namespace sema {
 
         // IO
         {
-            fn_table_.Add("print",   FnSign(none_, {}, nullptr));
-            fn_table_.Add("println", FnSign(none_, {}, nullptr));
+            fn_scope_.Add("print",   FnSign(none_, {}, nullptr));
+            fn_scope_.Add("println", FnSign(none_, {}, nullptr));
         }
     }
 }

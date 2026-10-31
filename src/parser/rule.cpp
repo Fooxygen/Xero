@@ -99,6 +99,14 @@ namespace parser {
             return std::make_unique<BlockExpr>(children);
         };
         
+        static auto PathGet       = [](std::unique_ptr<PathExpr> pathexpr) {
+            Path path = {};
+            for (auto& seg : pathexpr->segments_) {
+                path.Add(seg->name_);
+            }
+            return path;
+        };
+
         static auto Pack2Exprs     = [](Parser& parser, size_t pos)
             -> std::unique_ptr<Exprs>
         {
@@ -285,6 +293,60 @@ namespace parser {
                 [this](auto) {
                     return std::make_unique<TypeExpr>(
                         Move<IdExpr>(1)->name_,
+                        Pack2Exprs(*this, 3),
+                        true
+                    );
+                }
+            );
+        }
+        // └─ pathexpr & -> typeexpr
+        {
+            RuleAdd(
+                PATS_INIT{
+                    AT::PathExpr,
+                    TT::Amper
+                },
+                [this](auto) {
+                    return std::make_unique<TypeExpr>(
+                        PathGet(Move<PathExpr>(1)),
+                        nullptr,
+                        true
+                    );
+                }
+            );
+        }
+        // └─ pathexpr [= exprs =] -> typeexpr
+        {
+            RuleAdd(
+                PATS_INIT{
+                    AT::PathExpr,
+                    TT::LEBkt,
+                    SymbolPattern::Opt({ AT::Expr, AT::Exprs }),
+                    TT::REBkt
+                },
+                [this](auto) {
+                    return std::make_unique<TypeExpr>(
+                        PathGet(Move<PathExpr>(1)),
+                        Pack2Exprs(*this, 3),
+                        false
+                    );
+                },
+                {}, {}, TTS_INIT{ TT::Amper }
+            );
+        }
+        // └─ pathexpr [= exprs =] & -> typeexpr
+        {
+            RuleAdd(
+                PATS_INIT{
+                    AT::PathExpr,
+                    TT::LEBkt,
+                    SymbolPattern::Opt({ AT::Expr, AT::Exprs }),
+                    TT::REBkt,
+                    TT::Amper
+                },
+                [this](auto) {
+                    return std::make_unique<TypeExpr>(
+                        PathGet(Move<PathExpr>(1)),
                         Pack2Exprs(*this, 3),
                         true
                     );

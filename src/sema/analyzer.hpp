@@ -19,12 +19,17 @@ namespace sema {
     private:
         // Table
 
-        VarTable var_table_;    // scope variable table
-        FnTable& fn_table_;     // global function table
+        VarScope  var_scope_;    // scope variable table
+        TypeScope type_scope_;   // global type scope
+        FnScope&  fn_scope_;     // global function scope
 
         // Module
 
         const context::Module* module_ = nullptr;
+
+        // Function
+
+        size_t fn_depth_ = 0;
 
         // Declare
 
@@ -61,9 +66,10 @@ namespace sema {
         void Process(Program& node);
 
     public:
-        Analyzer(FnTable& fn_table) : fn_table_(fn_table) {}
+        Analyzer(FnScope& fn_scope) : fn_scope_(fn_scope) {}
 
-        FnTable& fn_table() { return fn_table_; }
+        FnScope&   fn_scope()   { return fn_scope_; }
+        TypeScope& type_scope() { return type_scope_; }
     
     public:
         // Builtin
