@@ -100,6 +100,7 @@ public:
         Continue,           // continue
         Return,             // return
         Fn,                 // fn
+        Struct,             // struct
     };
 
     Type        type_   = Type::Undefined;
@@ -188,6 +189,7 @@ public:
             case Continue:
             case Return:
             case Fn:
+            case Struct:
                 return Keyword;
 
             default:
@@ -270,6 +272,7 @@ public:
             case Continue:      return "continue";
             case Return:        return "return";
             case Fn:            return "fn";
+            case Struct:        return "struct";
 
             default: 
                 LogWarn(LogStage::Lexer, "undefined print name for TokenType").Print();

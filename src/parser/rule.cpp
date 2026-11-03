@@ -449,6 +449,25 @@ namespace parser {
             );
         }
         
+        // Struct
+
+        // └─ struct id blockexpr -> structexpr
+        {
+            RuleAdd(
+                PATS_INIT{
+                    TT::Struct,
+                    AT::IdExpr,
+                    AT::BlockExpr
+                },
+                [this](auto) {
+                    return std::make_unique<StructExpr>(
+                        Move<IdExpr>(2)->name_,
+                        Move<BlockExpr>(3)
+                    );
+                }
+            );
+        }
+
         // Function and Method
        
         // └─ caller.expr(exprs?) -> methodcallexpr

@@ -65,10 +65,28 @@ namespace xcompiler {
                 { elem_type, elem_type, elem_type, llvm_builder().getInt1Ty() }
             );
         }
+        if (auto struct_type = dynamic_cast<sema::StructType*>(type)) {
+            return StructTypeGet(struct_type);
+        }
 
         throw LogErr(LogStage::Xcompiler, std::format(
             "undefined type '{}'", type->name()
         ));
+    }
+
+    llvm::StructType* IRGen::StructTypeGet(sema::StructType* type) {
+        auto it = struct_types_.find(type);
+        if (it != struct_types_.end()) return it->second;
+
+        auto llvm_type = llvm::StructType::create(llvm_context(), type->name());
+        struct_types_[type] = llvm_type;
+
+        std::vector<llvm::Type*> fields = {};
+        for (auto& field : type->fields()) {
+            fields.emplace_back(LlvmType(field.type_));
+        }
+        llvm_type->setBody(fields);
+        return llvm_type;
     }
 
     // IR

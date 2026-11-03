@@ -59,6 +59,13 @@ namespace sema {
         virtual Type* ReferenceUnwrap() = 0;
     };
 
+    class Field {
+    public:
+        std::string name_  = "";
+        Type*       type_  = nullptr;
+        size_t      index_ = 0;
+    };
+
     class BindingType    : public Type {
     public:
         BindingType(const std::string& name)
@@ -89,6 +96,19 @@ namespace sema {
     public:
         Type* BasicTypeGet()    override { return this; }
         Type* ReferenceUnwrap() override { return this; }
+    };
+
+    class StructType     : public BasicType {
+    private:
+        std::vector<Field>                      fields_        = {};
+        std::unordered_map<std::string, size_t> field_indices_ = {};
+
+    public:
+        StructType(std::string name)
+        :   BasicType(std::move(name)) {}
+
+        std::vector<Field>&                      fields()        { return fields_; }
+        std::unordered_map<std::string, size_t>& field_indices() { return field_indices_; }
     };
 
     class ParametricType : public Type {

@@ -1,6 +1,35 @@
 
-use xero::str
+struct empty {
+
+}
+
+struct point {
+    x: i32;
+    y: i32;
+}
+
+#  error: redefinition of field 'x' in type 'main::point'
+## struct point {
+    x: i32;
+    x: i32;
+} ##
+
+#  error: unexpected semicolon after struct declaration
+## struct point {
+    x: i32;
+    y: i32;
+}; ##
+
+struct node {
+    next: node&;
+}
 
 fn main() {
-    println(str::has_prefix("Hello", "Hel"));
+    #  error: struct declaration must be at module level
+    ## struct inner_struct {
+        x: i32;
+    } ##
 }
+
+#  error: redefinition of type 'main::empty'
+## struct empty { } ##

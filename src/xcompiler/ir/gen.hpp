@@ -67,6 +67,10 @@ namespace xcompiler {
         // Module
         std::string module_name_full_ = "";
 
+        // Struct
+
+        std::unordered_map<sema::StructType*, llvm::StructType*> struct_types_ = {};
+
     private:
         // Declare
         void Declare(FnExpr& node);
@@ -115,6 +119,7 @@ namespace xcompiler {
         // └─ Type
 
         llvm::Type*       LlvmType(sema::Type* type);
+        llvm::StructType* StructTypeGet(sema::StructType* type);
 
         // └─ IR
 

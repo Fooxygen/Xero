@@ -34,12 +34,14 @@ namespace sema {
         // Declare
 
         void Declare(FnExpr& node);     // signature of global function
+        void Declare(StructExpr& node); // signature of global struct
 
         void Declare(Program& node);    // module level
 
         // Process
 
         void Process(BlockExpr& node, const std::function<void()>& on_scope_ready = nullptr);
+        void Process(StructExpr& node);
         void Process(IdExpr& node);
         void Process(RefExpr& node);
         void Process(TypeExpr& node);
@@ -86,6 +88,8 @@ namespace sema {
             switch (node.type_) {
                 case AstType::FnExpr:  Declare((FnExpr&)node);  return;
 
+                case AstType::StructExpr: Declare((StructExpr&)node); return;
+
                 case AstType::Program: Declare((Program&)node); return;
 
                 default: return;
@@ -97,6 +101,7 @@ namespace sema {
         void Process(AstNode& node) {
             switch (node.type_) {
                 case AstType::BlockExpr:        Process((BlockExpr&)node);         return;
+                case AstType::StructExpr:       Process((StructExpr&)node);        return;
                 case AstType::IdExpr:           Process((IdExpr&)node);            return;
                 case AstType::RefExpr:          Process((RefExpr&)node);           return;
                 case AstType::TypeExpr:         Process((TypeExpr&)node);          return;

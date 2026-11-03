@@ -130,6 +130,9 @@ namespace parser {
                 else if (token.lexeme_ == "fn") {
                     token = Token(Fn, token.lexeme_, token.loc_);
                 }
+                else if (token.lexeme_ == "struct") {
+                    token = Token(Struct, token.lexeme_, token.loc_);
+                }
 
                 break;
             }

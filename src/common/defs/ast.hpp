@@ -46,6 +46,7 @@ enum class AstType {
     OperExpr,           //  operation
     RangeExpr,          //  range
     ArrayExpr,          //  array
+    StructExpr,         //  struct
     FnCallExpr,         //  calling function
     MethodCallExpr,     //  calling method
     FnExpr,             //  function
@@ -85,6 +86,7 @@ inline AstType BaseOfAstType(AstType type) {
         case OperExpr:
         case RangeExpr:
         case ArrayExpr:
+        case StructExpr:
         case FnCallExpr:
         case MethodCallExpr:
         case FnExpr:
@@ -514,6 +516,38 @@ public:
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<ArrayExpr>(ChildClone(elems_));
         node->elem_type_ = elem_type_;
+        node->resolved_type_ = resolved_type_;
+        node->loc_ = loc_;
+        return node;
+    }
+};
+class StructExpr        : public Expr {
+public:
+    std::string                name_ = "";
+    std::unique_ptr<BlockExpr> body_ = nullptr;
+
+public:
+    StructExpr(const std::string& name, std::unique_ptr<BlockExpr> body)
+    :   name_(name),
+        body_(std::move(body))
+    {
+        type_ = AstType::StructExpr;
+    }
+
+    std::string TypeName() const override {
+        return "StructExpr";
+    }
+
+    void PrintImpl(const std::string& prefix) override {
+        PrintLabel("name", prefix); {
+            std::cerr << COLOR_BLUE << name_ << COLOR_DEFAULT << std::endl;
+        }
+
+        if (body_) body_->Print(prefix, "body");
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        auto node = std::make_unique<StructExpr>(name_, ChildClone(body_));
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
