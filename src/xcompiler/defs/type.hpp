@@ -52,7 +52,7 @@ namespace xcompiler {
 
     private:
         // Init
-        
+
         static void Init_bool();
         static void Init_i32();
         static void Init_i64();
@@ -68,7 +68,11 @@ namespace xcompiler {
     public:
         // Init
 
-        static void         Init();
+        static void Init_struct(sema::StructType* type);
+        static void Init();
+
+        // Other
+
         static TypeImpl*    Set(TypeImpl&& type_impl) {
             auto def  = type_impl.def();
             auto impl = table_.emplace(

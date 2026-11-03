@@ -42,7 +42,19 @@ namespace xcompiler {
                 config_.project_.profile_.name_;
 
             // TypeImpl
-            TypeImplTable::Init();
+            {
+                TypeImplTable::Init();
+
+                for (auto& module : modules) {
+                    for (auto& child : ((BlockExpr&)*module.root()).children_) {
+                        if (child->type_ == AstType::StructExpr) {
+                            TypeImplTable::Init_struct(
+                                (sema::StructType*)((StructExpr&)*child).resolved_type_
+                            );
+                        }
+                    }
+                }
+            }
 
             // Builtin
             BuiltinFnRegister(fn_scope_);

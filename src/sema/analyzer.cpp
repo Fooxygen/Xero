@@ -47,20 +47,28 @@ namespace sema {
     }
 
     void Analyzer::Declare(StructExpr& node) {
+
+        // Path
         Path full_path = module_->namespaces();
         full_path.Add(node.name_);
-
+        
         if (TypeTable::LookupTry(full_path.Print())) {
             throw LogErr(LogStage::Sema, std::format(
                 "redefinition of type '{}'", full_path.Print()
             ), node.loc_);
         }
 
-        auto type     = std::make_unique<StructType>(full_path.Print());
-        auto type_raw = type.get();
+        // Type
+        auto  type      = std::make_unique<StructType>(full_path.Print());
+        auto  type_raw  = type.get();
+        auto* none_type = TypeTable::Lookup("none");
+        {
+            type_raw->method_table().Add("@copy",    FnSign(type_raw));
+            type_raw->method_table().Add("@release", FnSign(none_type));
 
-        TypeTable::Set(std::move(type));
-        type_scope_.Declare(node.name_, type_raw);
+            TypeTable::Set(std::move(type));
+            type_scope_.Declare(node.name_, type_raw);
+        }
 
         node.resolved_type_ = type_raw;
     }
