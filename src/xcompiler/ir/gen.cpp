@@ -119,6 +119,13 @@ namespace xcompiler {
         auto var_type = node.resolved_type_;
         auto var_slot = SlotCreate(LlvmType(var_type), node.id_);
         
+        // Set to Null when there is no initial value
+        if (!node.value_) {
+            llvm_builder().CreateStore(
+                llvm::Constant::getNullValue(var_slot->getAllocatedType()), var_slot
+            );
+        }
+
         // Reference Type
         // x: i32& = y;
         if (dynamic_cast<sema::ReferenceType*>(node.resolved_type_)) {
@@ -578,7 +585,7 @@ namespace xcompiler {
                 auto var_name   = arg.getName().str();
                 auto var_slot   = SlotCreate(arg.getType(), var_name);
 
-                // Store Arg's Val
+                // Store Arg's Value
                 llvm_builder().CreateStore(&arg, var_slot);
 
                 // Copy if not ReferenceType

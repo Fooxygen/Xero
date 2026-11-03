@@ -1,35 +1,9 @@
 
-struct empty {
-
-}
-
 struct point {
     x: i32;
-    y: i32;
-}
-
-#  error: redefinition of field 'x' in type 'main::point'
-## struct point {
-    x: i32;
-    x: i32;
-} ##
-
-#  error: unexpected semicolon after struct declaration
-## struct point {
-    x: i32;
-    y: i32;
-}; ##
-
-struct node {
-    next: node&;
+    s: string;
 }
 
 fn main() {
-    #  error: struct declaration must be at module level
-    ## struct inner_struct {
-        x: i32;
-    } ##
+    p: point;
 }
-
-#  error: redefinition of type 'main::empty'
-## struct empty { } ##
