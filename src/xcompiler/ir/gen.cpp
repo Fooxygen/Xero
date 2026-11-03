@@ -553,6 +553,24 @@ namespace xcompiler {
         ), node.loc_);
     }
 
+    llvm::Value* IRGen::Process(FieldAccessExpr& node) {
+        auto* type      = (sema::StructType*)node.base_->resolved_type_->ReferenceUnwrap();
+        auto  llvm_type = StructTypeGet(type);
+
+        llvm::Value* base_addr = nullptr;
+        if (auto* idexpr = dynamic_cast<IdExpr*>(node.base_.get())) {
+            base_addr = IdResolve(*idexpr);
+        }
+        else if (dynamic_cast<sema::ReferenceType*>(node.base_->resolved_type_)) {
+            base_addr = Process(*node.base_);
+        }
+        else {
+            base_addr = ValMaterialize(ExprLoad(*node.base_), type);
+        }
+
+        return llvm_builder().CreateStructGEP(llvm_type, base_addr, node.field_index_);
+    }
+
     llvm::Value* IRGen::Process(FnExpr& node) {
 
         // Llvm Function

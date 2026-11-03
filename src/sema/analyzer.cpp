@@ -443,6 +443,32 @@ namespace sema {
         node.callee_fnsign_ = sign;
     }
 
+    void Analyzer::Process(FieldAccessExpr& node) {
+        Process(*node.base_);
+        auto* base_type = node.base_->resolved_type_->ReferenceUnwrap();
+
+        // Struct Type
+        if (auto* struct_type = dynamic_cast<StructType*>(base_type)) {
+            auto it = struct_type->field_indices().find(node.field_->name_);
+            if (it == struct_type->field_indices().end()) {
+                throw LogErr(LogStage::Sema, std::format(
+                    "undefined field '{}' in type '{}'",
+                    node.field_->name_, struct_type->name()
+                ), node.field_->loc_);
+            }
+
+            node.field_index_   = it->second;
+            node.resolved_type_ = TypeTable::ReferenceTypeGet(struct_type->fields()[it->second].type_);
+        }
+
+        // Non-Struct Type
+        else {
+            throw LogErr(LogStage::Sema, std::format(
+                "base of field access must be a struct type, not '{}'", base_type->name()
+            ), node.loc_);
+        }
+    }
+
     void Analyzer::Process(FnExpr& node) {
         if (!node.ret_resolved_type_) Declare(node);
         

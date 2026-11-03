@@ -51,6 +51,7 @@ namespace sema {
         void Process(ArrayExpr& node);
         void Process(FnCallExpr& node);
         void Process(MethodCallExpr& node);
+        void Process(FieldAccessExpr& node);
         void Process(FnExpr& node);
 
         void Process(NumConst& node);
@@ -111,6 +112,7 @@ namespace sema {
                 case AstType::ArrayExpr:        Process((ArrayExpr&)node);         return;
                 case AstType::FnCallExpr:       Process((FnCallExpr&)node);        return;
                 case AstType::MethodCallExpr:   Process((MethodCallExpr&)node);    return;
+                case AstType::FieldAccessExpr:  Process((FieldAccessExpr&)node);   return;
                 case AstType::FnExpr:           Process((FnExpr&)node);            return;
 
                 case AstType::NumConst:         Process((NumConst&)node);          return;

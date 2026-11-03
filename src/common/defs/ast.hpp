@@ -49,6 +49,7 @@ enum class AstType {
     StructExpr,         //  struct
     FnCallExpr,         //  calling function
     MethodCallExpr,     //  calling method
+    FieldAccessExpr,    //  accessing field
     FnExpr,             //  function
     PathExpr,           //  a::b::c
     UseExpr,            //  use a::b::c
@@ -89,6 +90,7 @@ inline AstType BaseOfAstType(AstType type) {
         case StructExpr:
         case FnCallExpr:
         case MethodCallExpr:
+        case FieldAccessExpr:
         case FnExpr:
         case PathExpr:
         case UseExpr:
@@ -631,6 +633,45 @@ public:
             ChildClone(args_)
         );
         node->callee_fnsign_ = callee_fnsign_;
+        node->resolved_type_ = resolved_type_;
+        node->loc_ = loc_;
+        return node;
+    }
+};
+class FieldAccessExpr   : public Expr {
+public:
+    std::unique_ptr<Expr>   base_  = nullptr;
+    std::unique_ptr<IdExpr> field_ = nullptr;
+
+public:
+    size_t field_index_ = 0;
+
+public:
+    FieldAccessExpr(
+        std::unique_ptr<Expr>   base,
+        std::unique_ptr<IdExpr> field
+    )
+    :   base_(std::move(base)),
+        field_(std::move(field))
+    {
+        type_ = AstType::FieldAccessExpr;
+    }
+
+    std::string TypeName() const override {
+        return "FieldAccessExpr";
+    }
+
+    void PrintImpl(const std::string& prefix) override {
+        if (base_)  base_->Print(prefix, "base");
+        if (field_) field_->Print(prefix, "field");
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        auto node = std::make_unique<FieldAccessExpr>(
+            ChildClone(base_),
+            ChildClone(field_)
+        );
+        node->field_index_   = field_index_;
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;

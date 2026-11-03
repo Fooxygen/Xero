@@ -1,9 +1,17 @@
 
 struct point {
     x: i32;
+    y: f32;
     s: string;
+    a: array[=i32=];
 }
 
 fn main() {
     p: point;
+    p.x = 1;
+    p.y = 2;
+    println(p.x, p.y, p.s, p.a);    # 1 2.000000  []
+    p.s = "xero";
+    p.a = [1, 2, 3];
+    println(p.x, p.y, p.s, p.a);    # 1 2.000000 xero [1, 2, 3]
 }

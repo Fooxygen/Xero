@@ -468,24 +468,42 @@ namespace parser {
             );
         }
 
-        // Function and Method
-       
-        // └─ caller.expr(exprs?) -> methodcallexpr
+        // Field
+
+        // └─ expr.id -> fieldaccessexpr
         {
             RuleAdd(
                 PATS_INIT{
                     AT::Expr,
                     TT::Dot,
-                    AT::IdExpr,
+                    AT::IdExpr
+                },
+                [this](auto) {
+                    return std::make_unique<FieldAccessExpr>(
+                        Move<Expr>(1),
+                        Move<IdExpr>(3)
+                    );
+                }
+            );
+        }
+
+        // Function and Method
+       
+        // └─ fieldaccessexpr(exprs?) -> methodcallexpr
+        {
+            RuleAdd(
+                PATS_INIT{
+                    AT::FieldAccessExpr,
                     TT::LParen,
                     SymbolPattern::Opt({ AT::Expr, AT::Exprs}),
                     TT::RParen
                 },
                 [this](auto) {
+                    auto access = Move<FieldAccessExpr>(1);
                     return std::make_unique<MethodCallExpr>(
-                        Move<Expr>(1),
-                        Move<IdExpr>(3),
-                        Pack2Exprs(*this, 5)
+                        std::move(access->base_),
+                        std::move(access->field_),
+                        Pack2Exprs(*this, 3)
                     );
                 }
             );
