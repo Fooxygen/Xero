@@ -44,7 +44,7 @@ namespace xcompiler {
             TypeImpl*   elem_type_impl = nullptr;
             size_t      elem_size      = 0;
 
-            // For ArrayExpr, it belongs to BasicType, not ParametricType.
+            // For ArrayLitExpr, it belongs to BasicType, not ParametricType.
             // So there is no data about elems
             if (auto parametric_type = dynamic_cast<sema::ParametricType*>(type)) {
                 elem_type      = parametric_type->params()[0];

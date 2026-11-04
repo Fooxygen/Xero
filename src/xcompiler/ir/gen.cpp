@@ -356,7 +356,7 @@ namespace xcompiler {
         );
     }
 
-    llvm::Value* IRGen::Process(ArrayExpr& node) {
+    llvm::Value* IRGen::Process(ArrayLitExpr& node) {
         auto& exprs = node.elems_->exprs_;
 
         // Empty
@@ -399,6 +399,70 @@ namespace xcompiler {
                 { data, llvm_builder().getInt64(len) }
             );
         }
+    }
+
+    llvm::Value* IRGen::Process(FnExpr& node) {
+
+        // Llvm Function
+        auto fn = llvm_fn_table_.Lookup(&node);
+
+        // IR
+        auto block_entry = BlockCreate(".entry", fn);
+        llvm_builder().SetInsertPoint(block_entry);
+
+        // State
+        state_.fn_ = fn;
+        state_.fn_return_type_ = node.ret_resolved_type_;
+
+        // Args Name
+        {
+            size_t i = 0;
+            for (auto& arg : fn->args()) {
+                auto p = (DeclExpr*)(node.params_->exprs_[i].get());
+                arg.setName(p->id_);
+                i++;
+            }
+        }
+
+        // Block
+        Process(*node.body_, [&]() {
+            size_t i = 0;
+            for (auto& arg : fn->args()) {
+                auto param      = (DeclExpr*)node.params_->exprs_[i].get();
+                auto param_type = param->resolved_type_;
+                auto var_name   = arg.getName().str();
+                auto var_slot   = SlotCreate(arg.getType(), var_name);
+
+                // Store Arg's Value
+                llvm_builder().CreateStore(&arg, var_slot);
+
+                // Copy if not ReferenceType
+                if (!dynamic_cast<sema::ReferenceType*>(param_type)) {
+                    auto copied = TypeImplTable::Lookup(param_type)->MethodCall(*this, "@copy", {
+                        Arg(var_slot, sema::TypeTable::ReferenceTypeGet(param_type))
+                    });
+                    
+                    llvm_builder().CreateStore(copied, var_slot);
+                    state_.release_scopes_.back().emplace_back(var_slot, param_type);
+                }
+
+                slot_scope_.Declare(var_name, var_slot);
+                i++;
+            }
+        });
+
+        // Return Stmt
+        // Each block requires a terminal symbol,
+        // including return value, the unreachable stmt...
+        BlockTermCreate([&]() {
+            auto return_llvm_type = fn->getReturnType();
+            if (return_llvm_type->isVoidTy())
+                llvm_builder().CreateRetVoid();
+            else
+                llvm_builder().CreateRet(llvm::ConstantInt::get(return_llvm_type, 0));
+        });
+
+        return nullptr;
     }
 
     llvm::Value* IRGen::Process(FnCallExpr& node) {
@@ -569,70 +633,6 @@ namespace xcompiler {
         }
 
         return llvm_builder().CreateStructGEP(llvm_type, base_addr, node.field_index_);
-    }
-
-    llvm::Value* IRGen::Process(FnExpr& node) {
-
-        // Llvm Function
-        auto fn = llvm_fn_table_.Lookup(&node);
-
-        // IR
-        auto block_entry = BlockCreate(".entry", fn);
-        llvm_builder().SetInsertPoint(block_entry);
-
-        // State
-        state_.fn_ = fn;
-        state_.fn_return_type_ = node.ret_resolved_type_;
-
-        // Args Name
-        {
-            size_t i = 0;
-            for (auto& arg : fn->args()) {
-                auto p = (DeclExpr*)(node.params_->exprs_[i].get());
-                arg.setName(p->id_);
-                i++;
-            }
-        }
-
-        // Block
-        Process(*node.body_, [&]() {
-            size_t i = 0;
-            for (auto& arg : fn->args()) {
-                auto param      = (DeclExpr*)node.params_->exprs_[i].get();
-                auto param_type = param->resolved_type_;
-                auto var_name   = arg.getName().str();
-                auto var_slot   = SlotCreate(arg.getType(), var_name);
-
-                // Store Arg's Value
-                llvm_builder().CreateStore(&arg, var_slot);
-
-                // Copy if not ReferenceType
-                if (!dynamic_cast<sema::ReferenceType*>(param_type)) {
-                    auto copied = TypeImplTable::Lookup(param_type)->MethodCall(*this, "@copy", {
-                        Arg(var_slot, sema::TypeTable::ReferenceTypeGet(param_type))
-                    });
-                    
-                    llvm_builder().CreateStore(copied, var_slot);
-                    state_.release_scopes_.back().emplace_back(var_slot, param_type);
-                }
-
-                slot_scope_.Declare(var_name, var_slot);
-                i++;
-            }
-        });
-
-        // Return Stmt
-        // Each block requires a terminal symbol,
-        // including return value, the unreachable stmt...
-        BlockTermCreate([&]() {
-            auto return_llvm_type = fn->getReturnType();
-            if (return_llvm_type->isVoidTy())
-                llvm_builder().CreateRetVoid();
-            else
-                llvm_builder().CreateRet(llvm::ConstantInt::get(return_llvm_type, 0));
-        });
-
-        return nullptr;
     }
 
     // └─ Const

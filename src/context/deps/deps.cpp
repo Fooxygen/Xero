@@ -45,8 +45,14 @@ namespace context {
         if (node.step_)  Process(*node.step_);
     }
 
-    void Deps::Process(ArrayExpr& node) {
+    void Deps::Process(ArrayLitExpr& node) {
         if (node.elems_) Process(*node.elems_);
+    }
+
+    void Deps::Process(FnExpr& node) {
+        if (node.return_type_) Process(*node.return_type_);
+        if (node.params_)      Process(*node.params_);
+        if (node.body_)        Process(*node.body_);
     }
 
     void Deps::Process(FnCallExpr& node) {
@@ -58,12 +64,6 @@ namespace context {
         if (node.caller_) Process(*node.caller_);
         if (node.callee_) Process(*node.callee_);
         if (node.args_)   Process(*node.args_);
-    }
-
-    void Deps::Process(FnExpr& node) {
-        if (node.return_type_) Process(*node.return_type_);
-        if (node.params_)      Process(*node.params_);
-        if (node.body_)        Process(*node.body_);
     }
 
     void Deps::Process(PathExpr& node) {

@@ -46,7 +46,7 @@ namespace sema {
         );
     }
 
-    void Analyzer::Declare(StructExpr& node) {
+    void Analyzer::Declare(StructDeclExpr& node) {
 
         // Path
         Path full_path = module_->namespaces();
@@ -80,12 +80,12 @@ namespace sema {
 
         // Struct names first, so field types and signatures can refer to each other
         for (auto& child : node_children) {
-            if (child->type_ == AstType::StructExpr) Declare((StructExpr&)*child);
+            if (child->type_ == AstType::StructDeclExpr) Declare((StructDeclExpr&)*child);
         }
 
         // Other global declarations
         for (auto& child : node_children) {
-            if (child->type_ != AstType::StructExpr) Declare(*child);
+            if (child->type_ != AstType::StructDeclExpr) Declare(*child);
         }
     }
 
@@ -108,65 +108,6 @@ namespace sema {
         }
         
         var_scope_.Pop();
-    }
-
-    void Analyzer::Process(StructExpr& node) {
-        auto* struct_type = (StructType*)node.resolved_type_;
-        if (!struct_type) {
-            throw LogErr(LogStage::Sema,
-                "struct declaration must be at module level",
-                node.loc_
-            );
-        }
-
-        for (auto& child : node.body_->children_) {
-            auto* decl = dynamic_cast<DeclExpr*>(child.get());
-            if (!decl) {
-                if (auto* stmt = dynamic_cast<ExprStmt*>(child.get())) {
-                    decl = dynamic_cast<DeclExpr*>(stmt->expr_.get());
-                }
-            }
-            if (!decl || !decl->bind_type_) {
-                throw LogErr(LogStage::Sema, std::format(
-                    "member of struct must be a field declaration, not '{}'",
-                    child->TypeName()
-                ), child->loc_);
-            }
-
-            Process(*decl->bind_type_);
-            auto* field_type  = decl->bind_type_->resolved_type_;
-            auto  field_index = struct_type->fields().size();
-
-            if (!struct_type->field_indices().emplace(decl->id_, field_index).second) {
-                throw LogErr(LogStage::Sema, std::format(
-                    "redefinition of field '{}' in type '{}'",
-                    decl->id_, struct_type->name()
-                ), decl->loc_);
-            }
-            struct_type->fields().emplace_back(Field{decl->id_, field_type, field_index});
-        }
-
-        // Cycle Definition Check
-        std::set<StructType*> visiting = {};
-        std::function<void(StructType*)> CycleDefinitionCheck = [&](StructType* type) {
-            if (!visiting.insert(type).second) {
-                throw LogErr(LogStage::Sema, std::format(
-                    "struct '{}' must not contain itself by value", type->name()
-                ));
-            }
-
-            for (auto& field : type->fields()) {
-                if (dynamic_cast<ReferenceType*>(field.type_)) continue;
-
-                if (auto* field_struct_type = dynamic_cast<StructType*>(field.type_->BasicTypeGet())) {
-                    CycleDefinitionCheck(field_struct_type);
-                }
-            }
-
-            visiting.erase(type);
-        };
-        
-        CycleDefinitionCheck(struct_type);
     }
 
     void Analyzer::Process(IdExpr& node) {
@@ -355,7 +296,7 @@ namespace sema {
         );
     }
 
-    void Analyzer::Process(ArrayExpr& node) {
+    void Analyzer::Process(ArrayLitExpr& node) {
         auto& exprs = node.elems_->exprs_;
         
         // Elem Type
@@ -375,13 +316,39 @@ namespace sema {
             }
         }
 
-        // XXX: Empty ArrayExpr
+        // XXX: Empty ArrayLitExpr
         std::vector<Type*> params = {};
         if (node.elem_type_) params.emplace_back(node.elem_type_);
 
         node.resolved_type_ = TypeTable::ParametricTypeGet(
             TypeTable::Lookup("array", node.loc_), params
         );
+    }
+
+    void Analyzer::Process(FnExpr& node) {
+        if (!node.ret_resolved_type_) Declare(node);
+        
+        // Parameter Binding
+        if (node.body_) {
+            auto& params_expr = node.params_->exprs_;
+
+            fn_depth_++;
+            try {
+                Process(*node.body_, [&]() {
+                    for (size_t i = 0; i < params_expr.size(); i++) {
+                        auto expr = (DeclExpr*)(params_expr[i].get());
+                        var_scope_.Add(std::make_unique<Var>(
+                            expr->id_, expr->resolved_type_, expr->loc_)
+                        );
+                    }
+                });
+            }
+            catch (...) {
+                fn_depth_--;
+                throw;
+            }
+            fn_depth_--;
+        }
     }
 
     void Analyzer::Process(FnCallExpr& node) {
@@ -443,6 +410,65 @@ namespace sema {
         node.callee_fnsign_ = sign;
     }
 
+    void Analyzer::Process(StructDeclExpr& node) {
+        auto* struct_type = (StructType*)node.resolved_type_;
+        if (!struct_type) {
+            throw LogErr(LogStage::Sema,
+                "struct declaration must be at module level",
+                node.loc_
+            );
+        }
+
+        for (auto& child : node.body_->children_) {
+            auto* decl = dynamic_cast<DeclExpr*>(child.get());
+            if (!decl) {
+                if (auto* stmt = dynamic_cast<ExprStmt*>(child.get())) {
+                    decl = dynamic_cast<DeclExpr*>(stmt->expr_.get());
+                }
+            }
+            if (!decl || !decl->bind_type_) {
+                throw LogErr(LogStage::Sema, std::format(
+                    "member of struct must be a field declaration, not '{}'",
+                    child->TypeName()
+                ), child->loc_);
+            }
+
+            Process(*decl->bind_type_);
+            auto* field_type  = decl->bind_type_->resolved_type_;
+            auto  field_index = struct_type->fields().size();
+
+            if (!struct_type->field_indices().emplace(decl->id_, field_index).second) {
+                throw LogErr(LogStage::Sema, std::format(
+                    "redefinition of field '{}' in type '{}'",
+                    decl->id_, struct_type->name()
+                ), decl->loc_);
+            }
+            struct_type->fields().emplace_back(Field{decl->id_, field_type, field_index});
+        }
+
+        // Cycle Definition Check
+        std::set<StructType*> visiting = {};
+        std::function<void(StructType*)> CycleDefinitionCheck = [&](StructType* type) {
+            if (!visiting.insert(type).second) {
+                throw LogErr(LogStage::Sema, std::format(
+                    "struct '{}' must not contain itself by value", type->name()
+                ));
+            }
+
+            for (auto& field : type->fields()) {
+                if (dynamic_cast<ReferenceType*>(field.type_)) continue;
+
+                if (auto* field_struct_type = dynamic_cast<StructType*>(field.type_->BasicTypeGet())) {
+                    CycleDefinitionCheck(field_struct_type);
+                }
+            }
+
+            visiting.erase(type);
+        };
+        
+        CycleDefinitionCheck(struct_type);
+    }
+
     void Analyzer::Process(FieldAccessExpr& node) {
         Process(*node.base_);
         auto* base_type = node.base_->resolved_type_->ReferenceUnwrap();
@@ -466,32 +492,6 @@ namespace sema {
             throw LogErr(LogStage::Sema, std::format(
                 "base of field access must be a struct type, not '{}'", base_type->name()
             ), node.loc_);
-        }
-    }
-
-    void Analyzer::Process(FnExpr& node) {
-        if (!node.ret_resolved_type_) Declare(node);
-        
-        // Parameter Binding
-        if (node.body_) {
-            auto& params_expr = node.params_->exprs_;
-
-            fn_depth_++;
-            try {
-                Process(*node.body_, [&]() {
-                    for (size_t i = 0; i < params_expr.size(); i++) {
-                        auto expr = (DeclExpr*)(params_expr[i].get());
-                        var_scope_.Add(std::make_unique<Var>(
-                            expr->id_, expr->resolved_type_, expr->loc_)
-                        );
-                    }
-                });
-            }
-            catch (...) {
-                fn_depth_--;
-                throw;
-            }
-            fn_depth_--;
         }
     }
 
@@ -580,7 +580,7 @@ namespace sema {
     void Analyzer::Process(ExprStmt& node) {
         node.resolved_type_ = TypeTable::Lookup("none");
 
-        if (node.expr_->type_ == AstType::StructExpr) {
+        if (node.expr_->type_ == AstType::StructDeclExpr) {
             throw LogErr(LogStage::Sema,
                 "unexpected semicolon after struct declaration", node.loc_);
         }
@@ -679,12 +679,12 @@ namespace sema {
         try {
             // Struct
             for (auto& child : node.children_) {
-                if (child->type_ == AstType::StructExpr) Process((StructExpr&)*child);
+                if (child->type_ == AstType::StructDeclExpr) Process((StructDeclExpr&)*child);
             }
 
             // Other
             for (auto& child : node.children_) {
-                if (child->type_ == AstType::StructExpr) continue;
+                if (child->type_ == AstType::StructDeclExpr) continue;
                 Process(*child);
             }
         }

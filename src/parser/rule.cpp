@@ -449,9 +449,9 @@ namespace parser {
             );
         }
         
-        // Struct
+        // Struct and Field
 
-        // └─ struct id blockexpr -> structexpr
+        // └─ struct id blockexpr -> structdeclexpr
         {
             RuleAdd(
                 PATS_INIT{
@@ -460,15 +460,13 @@ namespace parser {
                     AT::BlockExpr
                 },
                 [this](auto) {
-                    return std::make_unique<StructExpr>(
+                    return std::make_unique<StructDeclExpr>(
                         Move<IdExpr>(2)->name_,
                         Move<BlockExpr>(3)
                     );
                 }
             );
         }
-
-        // Field
 
         // └─ expr.id -> fieldaccessexpr
         {
@@ -711,7 +709,7 @@ namespace parser {
         
         // Array
 
-        // └─ [exprs?] -> arrayexpr
+        // └─ [exprs?] -> arraylitexpr
         {
             RuleAdd(
                 PATS_INIT{
@@ -720,7 +718,7 @@ namespace parser {
                     TT::RBkt
                 },
                 [this](auto) {
-                    return std::make_unique<ArrayExpr>(
+                    return std::make_unique<ArrayLitExpr>(
                         Pack2Exprs(*this, 2)
                     );
                 }

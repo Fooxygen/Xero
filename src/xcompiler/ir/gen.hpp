@@ -85,11 +85,11 @@ namespace xcompiler {
         llvm::Value* Process(DeclExpr& node);
         llvm::Value* Process(OperExpr& node);
         llvm::Value* Process(RangeExpr& node);
-        llvm::Value* Process(ArrayExpr& node);
+        llvm::Value* Process(ArrayLitExpr& node);
+        llvm::Value* Process(FnExpr& node);
         llvm::Value* Process(FnCallExpr& node);
         llvm::Value* Process(MethodCallExpr& node);
         llvm::Value* Process(FieldAccessExpr& node);
-        llvm::Value* Process(FnExpr& node);
 
         llvm::Value* Process(NumConst& node);
         llvm::Value* Process(BoolConst& node);
@@ -171,11 +171,11 @@ namespace xcompiler {
                 case AstType::DeclExpr:         return Process((DeclExpr&)node);
                 case AstType::OperExpr:         return Process((OperExpr&)node);
                 case AstType::RangeExpr:        return Process((RangeExpr&)node);
-                case AstType::ArrayExpr:        return Process((ArrayExpr&)node);
+                case AstType::ArrayLitExpr:     return Process((ArrayLitExpr&)node);
+                case AstType::FnExpr:           return Process((FnExpr&)node);
                 case AstType::FnCallExpr:       return Process((FnCallExpr&)node);
                 case AstType::MethodCallExpr:   return Process((MethodCallExpr&)node);
                 case AstType::FieldAccessExpr:  return Process((FieldAccessExpr&)node);
-                case AstType::FnExpr:           return Process((FnExpr&)node);
                 
                 case AstType::NumConst:         return Process((NumConst&)node);
                 case AstType::BoolConst:        return Process((BoolConst&)node);

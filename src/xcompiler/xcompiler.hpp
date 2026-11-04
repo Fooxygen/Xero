@@ -47,9 +47,9 @@ namespace xcompiler {
 
                 for (auto& module : modules) {
                     for (auto& child : ((BlockExpr&)*module.root()).children_) {
-                        if (child->type_ == AstType::StructExpr) {
+                        if (child->type_ == AstType::StructDeclExpr) {
                             TypeImplTable::Init_struct(
-                                (sema::StructType*)((StructExpr&)*child).resolved_type_
+                                (sema::StructType*)((StructDeclExpr&)*child).resolved_type_
                             );
                         }
                     }

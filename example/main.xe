@@ -1,17 +1,28 @@
 
 struct point {
     x: i32;
-    y: f32;
-    s: string;
-    a: array[=i32=];
+    y: i32;
+}
+
+struct line {
+    from: point;
+    to:   point;
+}
+
+fn line_print(l: line&) {
+    println(l.from.x, l.from.y, l.to.x, l.to.y);
 }
 
 fn main() {
-    p: point;
-    p.x = 1;
-    p.y = 2;
-    println(p.x, p.y, p.s, p.a);    # 1 2.000000  []
-    p.s = "xero";
-    p.a = [1, 2, 3];
-    println(p.x, p.y, p.s, p.a);    # 1 2.000000 xero [1, 2, 3]
+    l1: line;
+    l1.from.x = 1;
+    l1.from.y = 2;
+    l1.to.x   = 4;
+    l1.to.y   = 8;
+
+    l2: line  = l1;
+    l2.to.x   = 8;
+
+    line_print(&l1);
+    line_print(&l2);
 }

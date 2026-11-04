@@ -38,17 +38,17 @@ enum class AstType {
 
     // Expr
     Expr,               //  base ------
-    BlockExpr,          //  packaged astnode
+    BlockExpr,          //  astnode list
     IdExpr,             //  identity
-    RefExpr,            //  getting reference to Var
+    RefExpr,            //  variable reference
     TypeExpr,           //  type
-    DeclExpr,           //  declaration
+    DeclExpr,           //  variable declaration
     OperExpr,           //  operation
     RangeExpr,          //  range
-    ArrayExpr,          //  array
-    StructExpr,         //  struct
-    FnCallExpr,         //  calling function
-    MethodCallExpr,     //  calling method
+    ArrayLitExpr,       //  array literal
+    FnCallExpr,         //  function calling
+    MethodCallExpr,     //  method calling
+    StructDeclExpr,     //  struct declaration
     FieldAccessExpr,    //  accessing field
     FnExpr,             //  function
     PathExpr,           //  a::b::c
@@ -59,13 +59,13 @@ enum class AstType {
     ExprStmt,           //  expr used as stmt
     AssignStmt,         //  assignment
     CondStmt,           //  condition
-    LoopSignalStmt,     //  signal of loop
-    ReturnSignalStmt,   //  signal of return
+    LoopSignalStmt,     //  loop signal
+    ReturnSignalStmt,   //  return signal
     ForStmt,            //  for
     WhileStmt,          //  while
 
     // Common
-    Exprs,              //  list of expr
+    Exprs,              //  expr list
 };
 
 inline AstType BaseOfAstType(AstType type) {
@@ -86,12 +86,12 @@ inline AstType BaseOfAstType(AstType type) {
         case DeclExpr:
         case OperExpr:
         case RangeExpr:
-        case ArrayExpr:
-        case StructExpr:
+        case ArrayLitExpr:
+        case FnExpr:
         case FnCallExpr:
         case MethodCallExpr:
+        case StructDeclExpr:
         case FieldAccessExpr:
-        case FnExpr:
         case PathExpr:
         case UseExpr:
             return Expr;
@@ -493,7 +493,7 @@ public:
         return node;
     }
 };
-class ArrayExpr         : public Expr {
+class ArrayLitExpr      : public Expr {
 public:
     std::unique_ptr<Exprs> elems_;
 
@@ -501,14 +501,14 @@ public:
     sema::Type* elem_type_ = nullptr;
 
 public:
-    ArrayExpr(std::unique_ptr<Exprs> elems)
+    ArrayLitExpr(std::unique_ptr<Exprs> elems)
     :   elems_(std::move(elems))
     {
-        type_ = AstType::ArrayExpr;
+        type_ = AstType::ArrayLitExpr;
     }
 
     std::string TypeName() const override {
-        return "ArrayExpr";
+        return "ArrayLitExpr";
     }
 
     void PrintImpl(const std::string& prefix) override {
@@ -516,41 +516,68 @@ public:
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        auto node = std::make_unique<ArrayExpr>(ChildClone(elems_));
+        auto node = std::make_unique<ArrayLitExpr>(ChildClone(elems_));
         node->elem_type_ = elem_type_;
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
 };
-class StructExpr        : public Expr {
+class FnExpr            : public Expr {
 public:
-    std::string                name_ = "";
-    std::unique_ptr<BlockExpr> body_ = nullptr;
+    std::string                name_        = "";
+    std::unique_ptr<TypeExpr>  return_type_ = nullptr;
+    std::unique_ptr<Exprs>     params_      = nullptr;
+    std::unique_ptr<BlockExpr> body_        = nullptr;
 
 public:
-    StructExpr(const std::string& name, std::unique_ptr<BlockExpr> body)
+    sema::Type*         ret_resolved_type_ = nullptr;
+    const sema::FnSign* fnsign_            = nullptr;
+
+public:
+    FnExpr(
+        std::string                name,
+        std::unique_ptr<TypeExpr>  return_type,
+        std::unique_ptr<Exprs>     params,
+        std::unique_ptr<BlockExpr> body
+    )
     :   name_(name),
+        return_type_(std::move(return_type)),
+        params_(std::move(params)),
         body_(std::move(body))
     {
-        type_ = AstType::StructExpr;
+        type_ = AstType::FnExpr;
     }
 
     std::string TypeName() const override {
-        return "StructExpr";
+        return "FnExpr";
     }
 
     void PrintImpl(const std::string& prefix) override {
         PrintLabel("name", prefix); {
             std::cerr << COLOR_BLUE << name_ << COLOR_DEFAULT << std::endl;
         }
-
-        if (body_) body_->Print(prefix, "body");
+        
+        if (return_type_)
+            return_type_->Print(prefix, "return_type");
+        if (params_ && !params_->exprs_.empty())
+            params_->Print(prefix, "params");
+        if (body_)
+            body_->Print(prefix, "body");
     }
 
     std::unique_ptr<AstNode> Clone() const override {
-        auto node = std::make_unique<StructExpr>(name_, ChildClone(body_));
-        node->resolved_type_ = resolved_type_;
+        auto node = std::make_unique<FnExpr>(
+            name_,
+            ChildClone(return_type_),
+            ChildClone(params_),
+            ChildClone(body_)
+        );
+
+        node->ret_resolved_type_ = ret_resolved_type_;
+        node->fnsign_            = fnsign_;
+
+        node->resolved_type_     = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -638,6 +665,38 @@ public:
         return node;
     }
 };
+class StructDeclExpr    : public Expr {
+public:
+    std::string                name_ = "";
+    std::unique_ptr<BlockExpr> body_ = nullptr;
+
+public:
+    StructDeclExpr(const std::string& name, std::unique_ptr<BlockExpr> body)
+    :   name_(name),
+        body_(std::move(body))
+    {
+        type_ = AstType::StructDeclExpr;
+    }
+
+    std::string TypeName() const override {
+        return "StructDeclExpr";
+    }
+
+    void PrintImpl(const std::string& prefix) override {
+        PrintLabel("name", prefix); {
+            std::cerr << COLOR_BLUE << name_ << COLOR_DEFAULT << std::endl;
+        }
+
+        if (body_) body_->Print(prefix, "body");
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        auto node = std::make_unique<StructDeclExpr>(name_, ChildClone(body_));
+        node->resolved_type_ = resolved_type_;
+        node->loc_ = loc_;
+        return node;
+    }
+};
 class FieldAccessExpr   : public Expr {
 public:
     std::unique_ptr<Expr>   base_  = nullptr;
@@ -673,65 +732,6 @@ public:
         );
         node->field_index_   = field_index_;
         node->resolved_type_ = resolved_type_;
-        node->loc_ = loc_;
-        return node;
-    }
-};
-class FnExpr            : public Expr {
-public:
-    std::string                name_        = "";
-    std::unique_ptr<TypeExpr>  return_type_ = nullptr;
-    std::unique_ptr<Exprs>     params_      = nullptr;
-    std::unique_ptr<BlockExpr> body_        = nullptr;
-
-public:
-    sema::Type*         ret_resolved_type_ = nullptr;
-    const sema::FnSign* fnsign_            = nullptr;
-
-public:
-    FnExpr(
-        std::string                name,
-        std::unique_ptr<TypeExpr>  return_type,
-        std::unique_ptr<Exprs>     params,
-        std::unique_ptr<BlockExpr> body
-    )
-    :   name_(name),
-        return_type_(std::move(return_type)),
-        params_(std::move(params)),
-        body_(std::move(body))
-    {
-        type_ = AstType::FnExpr;
-    }
-
-    std::string TypeName() const override {
-        return "FnExpr";
-    }
-
-    void PrintImpl(const std::string& prefix) override {
-        PrintLabel("name", prefix); {
-            std::cerr << COLOR_BLUE << name_ << COLOR_DEFAULT << std::endl;
-        }
-        
-        if (return_type_)
-            return_type_->Print(prefix, "return_type");
-        if (params_ && !params_->exprs_.empty())
-            params_->Print(prefix, "params");
-        if (body_)
-            body_->Print(prefix, "body");
-    }
-
-    std::unique_ptr<AstNode> Clone() const override {
-        auto node = std::make_unique<FnExpr>(
-            name_,
-            ChildClone(return_type_),
-            ChildClone(params_),
-            ChildClone(body_)
-        );
-
-        node->ret_resolved_type_ = ret_resolved_type_;
-        node->fnsign_            = fnsign_;
-
-        node->resolved_type_     = resolved_type_;
         node->loc_ = loc_;
         return node;
     }

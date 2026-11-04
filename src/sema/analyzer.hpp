@@ -8,7 +8,6 @@
 #include <functional>
 
 #include "common/defs/ast.hpp"
-#include "common/defs/path.hpp"
 #include "context/module.hpp"
 #include "sema/defs/var.hpp"
 #include "sema/defs/fn.hpp"
@@ -34,25 +33,25 @@ namespace sema {
         // Declare
 
         void Declare(FnExpr& node);     // signature of global function
-        void Declare(StructExpr& node); // signature of global struct
+        void Declare(StructDeclExpr& node); // signature of global struct
 
         void Declare(Program& node);    // module level
 
         // Process
 
         void Process(BlockExpr& node, const std::function<void()>& on_scope_ready = nullptr);
-        void Process(StructExpr& node);
         void Process(IdExpr& node);
         void Process(RefExpr& node);
         void Process(TypeExpr& node);
         void Process(DeclExpr& node);
         void Process(OperExpr& node);
         void Process(RangeExpr& node);
-        void Process(ArrayExpr& node);
+        void Process(ArrayLitExpr& node);
+        void Process(FnExpr& node);
         void Process(FnCallExpr& node);
         void Process(MethodCallExpr& node);
+        void Process(StructDeclExpr& node);
         void Process(FieldAccessExpr& node);
-        void Process(FnExpr& node);
 
         void Process(NumConst& node);
         void Process(BoolConst& node);
@@ -87,11 +86,10 @@ namespace sema {
 
         void Declare(AstNode& node) {
             switch (node.type_) {
-                case AstType::FnExpr:  Declare((FnExpr&)node);  return;
+                case AstType::FnExpr:           Declare((FnExpr&)node);         return;
+                case AstType::StructDeclExpr:   Declare((StructDeclExpr&)node); return;
 
-                case AstType::StructExpr: Declare((StructExpr&)node); return;
-
-                case AstType::Program: Declare((Program&)node); return;
+                case AstType::Program:          Declare((Program&)node);        return;
 
                 default: return;
             }
@@ -102,18 +100,18 @@ namespace sema {
         void Process(AstNode& node) {
             switch (node.type_) {
                 case AstType::BlockExpr:        Process((BlockExpr&)node);         return;
-                case AstType::StructExpr:       Process((StructExpr&)node);        return;
                 case AstType::IdExpr:           Process((IdExpr&)node);            return;
                 case AstType::RefExpr:          Process((RefExpr&)node);           return;
                 case AstType::TypeExpr:         Process((TypeExpr&)node);          return;
                 case AstType::DeclExpr:         Process((DeclExpr&)node);          return;
                 case AstType::OperExpr:         Process((OperExpr&)node);          return;
                 case AstType::RangeExpr:        Process((RangeExpr&)node);         return;
-                case AstType::ArrayExpr:        Process((ArrayExpr&)node);         return;
+                case AstType::ArrayLitExpr:     Process((ArrayLitExpr&)node);      return;
+                case AstType::FnExpr:           Process((FnExpr&)node);            return;
                 case AstType::FnCallExpr:       Process((FnCallExpr&)node);        return;
                 case AstType::MethodCallExpr:   Process((MethodCallExpr&)node);    return;
+                case AstType::StructDeclExpr:   Process((StructDeclExpr&)node);    return;
                 case AstType::FieldAccessExpr:  Process((FieldAccessExpr&)node);   return;
-                case AstType::FnExpr:           Process((FnExpr&)node);            return;
 
                 case AstType::NumConst:         Process((NumConst&)node);          return;
                 case AstType::BoolConst:        Process((BoolConst&)node);         return;
