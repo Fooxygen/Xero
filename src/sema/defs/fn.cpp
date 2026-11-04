@@ -154,14 +154,14 @@ namespace sema {
             if (*sign) return *sign;
             else {
                 throw LogErr(LogStage::Sema, std::format(
-                    "ambiguous signature {} for method '{}'",
+                    "ambiguous signature {} for function '{}'",
                     FnSign(nullptr, args_type).ParamsPrint(), name_
                 ), loc);
             }
         }
 
         throw LogErr(LogStage::Sema, std::format(
-            "undefined signature {} for method '{}'",
+            "undefined signature {} for function '{}'",
             FnSign(nullptr, args_type).ParamsPrint(), name_
         ), loc);
     }
