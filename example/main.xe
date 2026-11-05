@@ -15,13 +15,44 @@ fn line_print(l: line&) {
 
 fn main() {
     l1: line;
-    l1.from.x = 1;
-    l1.from.y = 2;
-    l1.to.x   = 4;
-    l1.to.y   = 8;
 
-    l2: line  = l1;
-    l2.to.x   = 8;
+    l1.from = point { x = 1, y = 2 };
+    l1.to   = point { x = 4, y = 8 };
+
+    ## l1 = line {
+        from = point { x = 1, y = 2 },
+        to   = point { x = 4, y = 8 }
+    }; ##
+
+    ## l1 = line {
+        from = point { x = 1, y = 2 },
+        to   = point { x = 4 }
+    }; ##
+
+    ## l1 = line {
+        from = point { x = 1, y = 2 },
+        to   = point { x = 4, z = 8 }       # undefined field 'z' in type 'main::point'
+    }; ##
+
+    ## l1 = line {
+        from = point { x = 1, y = 2 },
+        to   = point { x = 4, x = 8 }       # duplicate field 'x' in struct literal of type 'main::point'
+    }; ##
+
+    ## p: point;
+    p = line {
+        from = point { x = 1, y = 2 },      # cannot make type 'main::line' compatible with 'main::point'
+        to   = point { x = 4, y = 8 }
+    }; ##
+
+    ## p: point;
+    p = line {                              # Literal Checking predates Assign Type Checking
+        from = point { x = 1, y = 2 },
+        to   = point { x = 4, z = 8 }       # undefined field 'z' in type 'main::point'
+    }; ##
+
+    l2: line = l1;
+    l2.to.x  = 8;
 
     line_print(&l1);
     line_print(&l2);

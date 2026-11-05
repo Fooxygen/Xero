@@ -30,12 +30,20 @@ namespace sema {
 
         size_t fn_depth_ = 0;
 
+        // Type
+
+        bool AssignableCheck(Type* from, Type* to) {
+            if (from == to) return true;
+            if (dynamic_cast<ReferenceType*>(to)) return false;
+            return TypeTable::CommonTypeGet({ from->ReferenceUnwrap(), to }) == to;
+        }
+
         // Declare
 
-        void Declare(FnExpr& node);     // signature of global function
+        void Declare(FnExpr& node);         // signature of global function
         void Declare(StructDeclExpr& node); // signature of global struct
 
-        void Declare(Program& node);    // module level
+        void Declare(Program& node);        // module level
 
         // Process
 
@@ -51,6 +59,7 @@ namespace sema {
         void Process(FnCallExpr& node);
         void Process(MethodCallExpr& node);
         void Process(StructDeclExpr& node);
+        void Process(StructLitExpr& node);
         void Process(FieldAccessExpr& node);
 
         void Process(NumConst& node);
@@ -72,7 +81,7 @@ namespace sema {
 
         FnScope&   fn_scope()   { return fn_scope_; }
         TypeScope& type_scope() { return type_scope_; }
-    
+
     public:
         // Builtin
 
@@ -111,6 +120,7 @@ namespace sema {
                 case AstType::FnCallExpr:       Process((FnCallExpr&)node);        return;
                 case AstType::MethodCallExpr:   Process((MethodCallExpr&)node);    return;
                 case AstType::StructDeclExpr:   Process((StructDeclExpr&)node);    return;
+                case AstType::StructLitExpr:    Process((StructLitExpr&)node);     return;
                 case AstType::FieldAccessExpr:  Process((FieldAccessExpr&)node);   return;
 
                 case AstType::NumConst:         Process((NumConst&)node);          return;

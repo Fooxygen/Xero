@@ -102,7 +102,7 @@ namespace xcompiler {
         state_.release_scopes_.pop_back();
         return nullptr;
     }
-    
+
     llvm::Value* IRGen::Process(IdExpr& node) {
         auto var       = IdResolve(node);
         auto llvm_type = LlvmType(node.resolved_type_->ReferenceUnwrap());
@@ -313,7 +313,7 @@ namespace xcompiler {
             }
         }
     }
-    
+
     llvm::Value* IRGen::Process(RangeExpr& node) {
 
         // Value
@@ -527,7 +527,7 @@ namespace xcompiler {
             "undefined function '{}'", sign->name()
         ), node.loc_);
     }
-    
+
     llvm::Value* IRGen::Process(MethodCallExpr& node) {
         
         // Sign
@@ -617,9 +617,82 @@ namespace xcompiler {
         ), node.loc_);
     }
 
+    llvm::Value* IRGen::Process(StructLitExpr& node) {
+        auto* struct_type      = (sema::StructType*)node.lit_type_->resolved_type_;
+        auto  struct_llvm_type = StructTypeGet(struct_type);
+
+        // Null Value
+        llvm::Value* value = llvm::Constant::getNullValue(struct_llvm_type);
+
+        std::function<void(FieldInitExpr&)> FieldInitProcess = [&](FieldInitExpr& init) {
+            auto& field = struct_type->fields()[struct_type->field_indices().at(init.id_->name_)];
+
+            // Reference Type
+            if (dynamic_cast<sema::ReferenceType*>(field.type_)) {
+                if (auto* idexpr = dynamic_cast<IdExpr*>(init.value_.get())) {
+                    value = llvm_builder().CreateInsertValue(
+                        value, IdResolve(*idexpr), field.index_
+                    );
+                }
+                else {
+                    value = llvm_builder().CreateInsertValue(
+                        value, Process(*init.value_), field.index_
+                    );
+                }
+            }
+
+            // Non-Reference Type
+            else {
+                auto*        value_type = init.value_->resolved_type_->ReferenceUnwrap();
+                llvm::Value* field_val  = nullptr;
+
+                // = a, IdExpr
+                if (auto* idexpr = dynamic_cast<IdExpr*>(init.value_.get())) {
+                    field_val = TypeImplTable::Lookup(value_type)->MethodCall(*this, "@copy", {
+                        Arg(IdResolve(*idexpr), sema::TypeTable::ReferenceTypeGet(value_type))
+                    });
+                }
+
+                // = s[0], Reference
+                else if (dynamic_cast<sema::ReferenceType*>(init.value_->resolved_type_)) {
+                    field_val = TypeImplTable::Lookup(value_type)->MethodCall(*this, "@copy", {
+                        Arg(Process(*init.value_), sema::TypeTable::ReferenceTypeGet(value_type))
+                    });
+                }
+
+                // = 1 + 2, Temporary Value
+                else {
+                    field_val = ExprLoad(*init.value_);
+                }
+
+                // Cast
+                if (value_type != field.type_) {
+                    field_val = TypeImplTable::Cast(
+                        *this, field_val, value_type, field.type_, node.loc_
+                    );
+                }
+
+                value = llvm_builder().CreateInsertValue(value, field_val, field.index_);
+            }
+        };
+
+        for (auto& child : node.body_->children_) {
+            if (child->type_ == AstType::Exprs) {
+                for (auto& expr : ((Exprs&)*child).exprs_) {
+                    FieldInitProcess((FieldInitExpr&)*expr);
+                }
+            }
+            else {
+                FieldInitProcess((FieldInitExpr&)*child);
+            }
+        }
+
+        return value;
+    }
+
     llvm::Value* IRGen::Process(FieldAccessExpr& node) {
-        auto* type      = (sema::StructType*)node.base_->resolved_type_->ReferenceUnwrap();
-        auto  llvm_type = StructTypeGet(type);
+        auto* struct_type      = (sema::StructType*)node.base_->resolved_type_->ReferenceUnwrap();
+        auto  struct_llvm_type = StructTypeGet(struct_type);
 
         llvm::Value* base_addr = nullptr;
         if (auto* idexpr = dynamic_cast<IdExpr*>(node.base_.get())) {
@@ -629,10 +702,10 @@ namespace xcompiler {
             base_addr = Process(*node.base_);
         }
         else {
-            base_addr = ValMaterialize(ExprLoad(*node.base_), type);
+            base_addr = ValMaterialize(ExprLoad(*node.base_), struct_type);
         }
 
-        return llvm_builder().CreateStructGEP(llvm_type, base_addr, node.field_index_);
+        return llvm_builder().CreateStructGEP(struct_llvm_type, base_addr, node.field_index_);
     }
 
     // └─ Const
@@ -820,7 +893,7 @@ namespace xcompiler {
         llvm_builder().SetInsertPoint(block_end);
         return nullptr;
     }
-        
+
     llvm::Value* IRGen::Process(LoopSignalStmt& node) {
         if (state_.loop_nextblocks_.empty()) {
             throw LogErr(LogStage::Xcompiler, "'break' or 'continue' outside of loop", node.loc_);
@@ -1083,7 +1156,7 @@ namespace xcompiler {
         llvm_builder().SetInsertPoint(block_end);
         return nullptr;
     }
-    
+
     // └─ Program
 
     llvm::Value* IRGen::Process(Program& node) {

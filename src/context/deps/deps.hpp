@@ -30,6 +30,8 @@ namespace context {
         void Process(OperExpr& node);
         void Process(RangeExpr& node);
         void Process(ArrayLitExpr& node);
+        void Process(StructLitExpr& node);
+        void Process(FieldInitExpr& node);
         void Process(FnExpr& node);
         void Process(FnCallExpr& node);
         void Process(MethodCallExpr& node);
@@ -64,6 +66,8 @@ namespace context {
                 case AstType::OperExpr:         Process((OperExpr&)node);         return;
                 case AstType::RangeExpr:        Process((RangeExpr&)node);        return;
                 case AstType::ArrayLitExpr:     Process((ArrayLitExpr&)node);     return;
+                case AstType::StructLitExpr:    Process((StructLitExpr&)node);    return;
+                case AstType::FieldInitExpr:    Process((FieldInitExpr&)node);    return;
                 case AstType::FnExpr:           Process((FnExpr&)node);           return;
                 case AstType::FnCallExpr:       Process((FnCallExpr&)node);       return;
                 case AstType::MethodCallExpr:   Process((MethodCallExpr&)node);   return;

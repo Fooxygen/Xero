@@ -145,7 +145,8 @@ namespace parser {
                 {}, {}, {},
                 TTS_INIT{
                     TT::Comma,  TT::Semicolon,
-                    TT::RParen, TT::RBkt, TT::REBkt
+                    TT::RParen, TT::RBkt, TT::REBkt,
+                    TT::RBrace
                 }
             );
         }
@@ -166,7 +167,8 @@ namespace parser {
                 {}, {}, {},
                 TTS_INIT{
                     TT::Comma,  TT::Semicolon,
-                    TT::RParen, TT::RBkt, TT::REBkt
+                    TT::RParen, TT::RBkt, TT::REBkt,
+                    TT::RBrace
                 }
             );
         }
@@ -468,6 +470,36 @@ namespace parser {
             );
         }
 
+        // └─ <id, pathexpr> blockexpr -> structlitexpr
+        {
+            RuleAdd(
+                PATS_INIT{
+                    SymbolPattern({ AT::IdExpr, AT::PathExpr }),
+                    AT::BlockExpr
+                },
+                [this](auto) {
+                    std::unique_ptr<TypeExpr> type_expr = nullptr;
+
+                    if (IsPattern(1, AT::IdExpr)) {
+                        type_expr = std::make_unique<TypeExpr>(
+                            Move<IdExpr>(1)->name_, nullptr, false
+                        );
+                    }
+                    else {
+                        type_expr = std::make_unique<TypeExpr>(
+                            PathGet(Move<PathExpr>(1)), nullptr, false
+                        );
+                    }
+
+                    return std::make_unique<StructLitExpr>(
+                        std::move(type_expr),
+                        Move<BlockExpr>(2)
+                    );
+                },
+                PATS_INIT{ TT::Arrow, TT::Struct }
+            );
+        }
+
         // └─ expr.id -> fieldaccessexpr
         {
             RuleAdd(
@@ -482,6 +514,24 @@ namespace parser {
                         Move<IdExpr>(3)
                     );
                 }
+            );
+        }
+
+        // └─ id = expr -> fieldinitexpr
+        {
+            RuleAdd(
+                PATS_INIT{
+                    AT::IdExpr,
+                    TT::Assign,
+                    AT::Expr
+                },
+                [this](auto) {
+                    return std::make_unique<FieldInitExpr>(
+                        Move<IdExpr>(1),
+                        Move<Expr>(3)
+                    );
+                },
+                {}, {}, {}, TTS_INIT{ TT::Comma, TT::RBrace }
             );
         }
 

@@ -49,7 +49,9 @@ enum class AstType {
     FnCallExpr,         //  function calling
     MethodCallExpr,     //  method calling
     StructDeclExpr,     //  struct declaration
+    StructLitExpr,      //  struct literal
     FieldAccessExpr,    //  accessing field
+    FieldInitExpr,      //  field initializer
     FnExpr,             //  function
     PathExpr,           //  a::b::c
     UseExpr,            //  use a::b::c
@@ -91,7 +93,9 @@ inline AstType BaseOfAstType(AstType type) {
         case FnCallExpr:
         case MethodCallExpr:
         case StructDeclExpr:
+        case StructLitExpr:
         case FieldAccessExpr:
+        case FieldInitExpr:
         case PathExpr:
         case UseExpr:
             return Expr;
@@ -731,6 +735,70 @@ public:
             ChildClone(field_)
         );
         node->field_index_   = field_index_;
+        node->resolved_type_ = resolved_type_;
+        node->loc_ = loc_;
+        return node;
+    }
+};
+class StructLitExpr     : public Expr {
+public:
+    std::unique_ptr<TypeExpr>  lit_type_ = nullptr;
+    std::unique_ptr<BlockExpr> body_     = nullptr;
+
+public:
+    StructLitExpr(std::unique_ptr<TypeExpr> lit_type, std::unique_ptr<BlockExpr> body)
+    :   lit_type_(std::move(lit_type)),
+        body_(std::move(body))
+    {
+        type_ = AstType::StructLitExpr;
+    }
+
+    std::string TypeName() const override {
+        return "StructLitExpr";
+    }
+
+    void PrintImpl(const std::string& prefix) override {
+        if (lit_type_) lit_type_->Print(prefix, "type");
+        if (body_)     body_->Print(prefix, "body");
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        auto node = std::make_unique<StructLitExpr>(
+            ChildClone(lit_type_),
+            ChildClone(body_)
+        );
+        node->resolved_type_ = resolved_type_;
+        node->loc_ = loc_;
+        return node;
+    }
+};
+class FieldInitExpr     : public Expr {
+public:
+    std::unique_ptr<IdExpr> id_    = nullptr;
+    std::unique_ptr<Expr>   value_ = nullptr;
+
+public:
+    FieldInitExpr(std::unique_ptr<IdExpr> id, std::unique_ptr<Expr> value)
+    :   id_(std::move(id)),
+        value_(std::move(value))
+    {
+        type_ = AstType::FieldInitExpr;
+    }
+
+    std::string TypeName() const override {
+        return "FieldInitExpr";
+    }
+
+    void PrintImpl(const std::string& prefix) override {
+        if (id_)    id_->Print(prefix, "id");
+        if (value_) value_->Print(prefix, "value");
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        auto node = std::make_unique<FieldInitExpr>(
+            ChildClone(id_),
+            ChildClone(value_)
+        );
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;

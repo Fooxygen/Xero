@@ -49,6 +49,14 @@ namespace context {
         if (node.elems_) Process(*node.elems_);
     }
 
+    void Deps::Process(StructLitExpr& node) {
+        if (node.body_) Process(*node.body_);
+    }
+
+    void Deps::Process(FieldInitExpr& node) {
+        if (node.value_) Process(*node.value_);
+    }
+
     void Deps::Process(FnExpr& node) {
         if (node.return_type_) Process(*node.return_type_);
         if (node.params_)      Process(*node.params_);

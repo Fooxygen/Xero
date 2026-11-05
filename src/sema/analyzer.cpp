@@ -13,7 +13,7 @@ namespace sema {
 
     void Analyzer::Declare(FnExpr& node) {
         node.resolved_type_ = TypeTable::Lookup("function");
-        
+
         // Return Type
         if (node.return_type_) {
             Process(*node.return_type_);
@@ -159,7 +159,7 @@ namespace sema {
                     ), e->loc_);
                 }
             }
-            
+
             if (params.empty())
                 resolved = basic_type;
             else
@@ -367,7 +367,7 @@ namespace sema {
         if      (auto* idexpr   = dynamic_cast<IdExpr*>(node.callee_.get())) {
             fn = fn_scope_.Lookup(idexpr->name_, idexpr->loc_);
         }
-        
+
         // Call a::b::fn
         else if (auto* pathexpr = dynamic_cast<PathExpr*>(node.callee_.get())) {
             Path segments = {};
@@ -469,6 +469,76 @@ namespace sema {
         CycleDefinitionCheck(struct_type);
     }
 
+    void Analyzer::Process(StructLitExpr& node) {
+        Process(*node.lit_type_);
+        auto* struct_type = dynamic_cast<StructType*>(node.lit_type_->resolved_type_);
+
+        // Non-Struct Type
+        if (!struct_type) {
+            throw LogErr(LogStage::Sema, std::format(
+                "type of struct literal must be a struct type, not '{}'",
+                node.lit_type_->resolved_type_->name()
+            ), node.loc_);
+        }
+
+        // Struct Type
+        else {
+            std::set<std::string> initialized = {};
+
+            std::function<void(AstNode&)> FieldInitProcess = [&](AstNode& child) {
+                auto* init = dynamic_cast<FieldInitExpr*>(&child);
+                if (!init) {
+                    throw LogErr(LogStage::Sema, std::format(
+                        "member of struct literal must be a field initializer, not '{}'",
+                        child.TypeName()
+                    ), child.loc_);
+                }
+
+                // Undefined Field
+                auto it = struct_type->field_indices().find(init->id_->name_);
+                if (it == struct_type->field_indices().end()) {
+                    throw LogErr(LogStage::Sema, std::format(
+                        "undefined field '{}' in type '{}'",
+                        init->id_->name_, struct_type->name()
+                    ), init->id_->loc_);
+                }
+
+                // Duplicated Field
+                if (!initialized.emplace(init->id_->name_).second) {
+                    throw LogErr(LogStage::Sema, std::format(
+                        "duplicate field '{}' in struct literal of type '{}'",
+                        init->id_->name_, struct_type->name()
+                    ), init->id_->loc_);
+                }
+
+                // Field Value
+                Process(*init->value_);
+                auto* value_type = init->value_->resolved_type_;
+                auto& field      = struct_type->fields()[it->second];
+
+                if (!AssignableCheck(value_type, field.type_)) {
+                    throw LogErr(LogStage::Sema, std::format(
+                        "cannot make type '{}' compatible with '{}'",
+                        value_type->name(), field.type_->name()
+                    ), init->value_->loc_);
+                }
+            };
+
+            for (auto& child : node.body_->children_) {
+                if (child->type_ == AstType::Exprs) {
+                    for (auto& expr : ((Exprs&)*child).exprs_) {
+                        FieldInitProcess(*expr);
+                    }
+                }
+                else {
+                    FieldInitProcess(*child);
+                }
+            }
+
+            node.resolved_type_ = struct_type;
+        }
+    }
+
     void Analyzer::Process(FieldAccessExpr& node) {
         Process(*node.base_);
         auto* base_type = node.base_->resolved_type_->ReferenceUnwrap();
@@ -502,7 +572,7 @@ namespace sema {
 
         // Integer
         if (!numstr.contains(".")) {
-            
+
             // i32
             {
                 int32_t x = 0;
@@ -593,6 +663,16 @@ namespace sema {
 
         Process(*node.target_);
         Process(*node.value_);
+
+        auto* target_type = node.target_->resolved_type_->ReferenceUnwrap();
+        auto* value_type  = node.value_->resolved_type_;
+
+        if (!AssignableCheck(value_type, target_type)) {
+            throw LogErr(LogStage::Sema, std::format(
+                "cannot make type '{}' compatible with '{}'",
+                value_type->name(), target_type->name()
+            ), node.value_->loc_);
+        }
     }
 
     void Analyzer::Process(CondStmt& node) {
