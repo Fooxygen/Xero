@@ -114,12 +114,10 @@ namespace xcompiler {
     }
 
     llvm::Value* IRGen::Process(DeclExpr& node) {
-
-        // Variable
         auto var_type = node.resolved_type_;
         auto var_slot = SlotCreate(LlvmType(var_type), node.id_);
         
-        // Set to Null when there is no initial value
+        // Null Value
         if (!node.value_) {
             llvm_builder().CreateStore(
                 llvm::Constant::getNullValue(var_slot->getAllocatedType()), var_slot
@@ -127,17 +125,16 @@ namespace xcompiler {
         }
 
         // Reference Type
-        // x: i32& = y;
         if (dynamic_cast<sema::ReferenceType*>(node.resolved_type_)) {
             auto idexpr = (IdExpr*)(node.value_.get());
             auto addr   = IdResolve(*idexpr);
+
             llvm_builder().CreateStore(addr, var_slot);
             slot_scope_.Declare(node.id_, var_slot);
             return nullptr;
         }
 
         // Non-Reference Type
-        // x: i32 = y;
         else {
             if (node.value_) {
                 llvm::Value* val = nullptr;
@@ -157,7 +154,7 @@ namespace xcompiler {
                     });
                 }
 
-                // = 1 + 2, temp value
+                // = 1 + 2, Temporary Value
                 else {
                     val = ExprLoad(*node.value_);
                 }

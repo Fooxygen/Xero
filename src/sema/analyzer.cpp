@@ -177,20 +177,42 @@ namespace sema {
     void Analyzer::Process(DeclExpr& node) {
         Process(*node.bind_type_);
 
-        // ReferenceType
-        if (node.bind_type_->is_referred_) {
-            
-            // x: i32&;
-            if (!node.value_) {
-                throw LogErr(LogStage::Sema, "reference type must be initialized with a value", node.loc_);
-            }
+        // Assignable Check
+        {
+            // Reference Type
+            if (node.bind_type_->is_referred_) {
+                // x: i32& = y;
+                if (node.value_)  {
+                    Process(*node.value_);
+                
+                    // x: i32& = 3;
+                    if (!dynamic_cast<IdExpr*>(node.value_.get())) {
+                        throw LogErr(LogStage::Sema, std::format(
+                            "cannot assign non-reference value to reference type '{}'",
+                            node.bind_type_->resolved_type_->name()
+                        ), node.value_->loc_);
+                    }
+                }
 
-            // x: i32& = 3;
-            if (!dynamic_cast<IdExpr*>(node.value_.get())) {
-                throw LogErr(LogStage::Sema, std::format(
-                    "cannot assign non-reference value to reference type '{}'",
-                    node.bind_type_->resolved_type_->name()
-                ), node.value_->loc_);
+                // x: i32&;
+                else {
+                    throw LogErr(LogStage::Sema, "reference type must be initialized with a value", node.loc_);
+                }
+            }
+        
+            // Non-Reference Type
+            else {
+                if (node.value_) {
+                    Process(*node.value_);
+
+                    if (!AssignableCheck(node.value_->resolved_type_, node.bind_type_->resolved_type_)) {
+                        throw LogErr(LogStage::Sema, std::format(
+                            "cannot make type '{}' compatible with '{}'",
+                            node.value_->resolved_type_->name(),
+                            node.bind_type_->resolved_type_->name()
+                        ), node.value_->loc_);
+                    }
+                }
             }
         }
         node.resolved_type_ = node.bind_type_->resolved_type_;
@@ -198,7 +220,6 @@ namespace sema {
         var_scope_.Add(std::make_unique<Var>(
             node.id_, node.resolved_type_, node.loc_
         ));
-        if (node.value_) Process(*node.value_);
     }
 
     void Analyzer::Process(OperExpr& node) {
@@ -664,14 +685,16 @@ namespace sema {
         Process(*node.target_);
         Process(*node.value_);
 
-        auto* target_type = node.target_->resolved_type_->ReferenceUnwrap();
-        auto* value_type  = node.value_->resolved_type_;
-
-        if (!AssignableCheck(value_type, target_type)) {
-            throw LogErr(LogStage::Sema, std::format(
-                "cannot make type '{}' compatible with '{}'",
-                value_type->name(), target_type->name()
-            ), node.value_->loc_);
+        // Assignable Check
+        {
+            auto* target_type = node.target_->resolved_type_->ReferenceUnwrap();
+            auto* value_type  = node.value_->resolved_type_;
+            if (!AssignableCheck(value_type, target_type)) {
+                throw LogErr(LogStage::Sema, std::format(
+                    "cannot make type '{}' compatible with '{}'",
+                    value_type->name(), target_type->name()
+                ), node.value_->loc_);
+            }
         }
     }
 
