@@ -74,6 +74,7 @@ namespace xcompiler {
     private:
         // Declare
         void Declare(FnExpr& node);
+        void Declare(StructDeclExpr& node);
 
         void Declare(Program& node);
 
@@ -89,6 +90,7 @@ namespace xcompiler {
         llvm::Value* Process(FnExpr& node);
         llvm::Value* Process(FnCallExpr& node);
         llvm::Value* Process(MethodCallExpr& node);
+        llvm::Value* Process(StructDeclExpr& node);
         llvm::Value* Process(StructLitExpr& node);
         llvm::Value* Process(FieldAccessExpr& node);
 
@@ -154,9 +156,10 @@ namespace xcompiler {
 
         void Declare(AstNode& node) {
             switch (node.type_) {
-                case AstType::FnExpr:  Declare((FnExpr&)node);  return;
+                case AstType::FnExpr:         Declare((FnExpr&)node);         return;
+                case AstType::StructDeclExpr: Declare((StructDeclExpr&)node); return;
 
-                case AstType::Program: Declare((Program&)node); return;
+                case AstType::Program:        Declare((Program&)node);        return;
 
                 default: return;
             }
@@ -176,6 +179,7 @@ namespace xcompiler {
                 case AstType::FnExpr:           return Process((FnExpr&)node);
                 case AstType::FnCallExpr:       return Process((FnCallExpr&)node);
                 case AstType::MethodCallExpr:   return Process((MethodCallExpr&)node);
+                case AstType::StructDeclExpr:   return Process((StructDeclExpr&)node);
                 case AstType::StructLitExpr:    return Process((StructLitExpr&)node);
                 case AstType::FieldAccessExpr:  return Process((FieldAccessExpr&)node);
                 

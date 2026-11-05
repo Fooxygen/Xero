@@ -40,10 +40,10 @@ namespace sema {
 
         // Declare
 
-        void Declare(FnExpr& node);         // signature of global function
-        void Declare(StructDeclExpr& node); // signature of global struct
+        void Declare(FnExpr& node, FnScope& fn_scope, bool is_named = true);    // signature of function
+        void Declare(StructDeclExpr& node);                                     // signature of global struct
 
-        void Declare(Program& node);        // module level
+        void Declare(Program& node);                                            // module level
 
         // Process
 
@@ -95,10 +95,10 @@ namespace sema {
 
         void Declare(AstNode& node) {
             switch (node.type_) {
-                case AstType::FnExpr:           Declare((FnExpr&)node);         return;
-                case AstType::StructDeclExpr:   Declare((StructDeclExpr&)node); return;
+                case AstType::FnExpr:           Declare((FnExpr&)node, fn_scope_);  return;
+                case AstType::StructDeclExpr:   Declare((StructDeclExpr&)node);     return;
 
-                case AstType::Program:          Declare((Program&)node);        return;
+                case AstType::Program:          Declare((Program&)node);            return;
 
                 default: return;
             }

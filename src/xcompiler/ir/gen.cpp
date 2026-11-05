@@ -21,15 +21,21 @@ namespace xcompiler {
     // └─ Expr
 
     void IRGen::Declare(FnExpr& node) {
+        auto* caller      = node.fnsign_->caller_type();
+        bool  is_function = caller == nullptr;
+        bool  is_main     = is_function && node.name_ == "main";
 
         // Return Type
         auto return_llvm_type = LlvmType(node.ret_resolved_type_);
-        if (node.name_ == "main") {
+        if (is_main) {
             return_llvm_type = llvm::Type::getInt32Ty(llvm_context());
         }
 
         // Params Type
         std::vector<llvm::Type*> params_type = {};
+        if (!is_function) {
+            params_type.emplace_back(llvm::PointerType::get(llvm_context(), 0));    // self
+        }
         if (node.params_) {
             for (auto& e : node.params_->exprs_) {
                 auto param = (DeclExpr*)(e.get());
@@ -38,12 +44,17 @@ namespace xcompiler {
         }
 
         // Llvm Function
-        auto fn_name = node.name_ == "main"
-            ? std::string("main")
-            : module_name_full_ + "::" + node.name_ + node.fnsign_->ParamsPrint();
+        std::string fn_name = "main";
+        if (!is_main) {
+            if (is_function) fn_name = module_name_full_ + "::";
+            else             fn_name = caller->name() + "::";
+            fn_name += node.name_ + node.fnsign_->ParamsPrint();
+        }
+
         auto fn_llvm_type = llvm::FunctionType::get(
             return_llvm_type, params_type, false    // non-variable params
         );
+        
         auto fn = llvm::Function::Create(
             fn_llvm_type,
             llvm::Function::ExternalLinkage,
@@ -53,8 +64,19 @@ namespace xcompiler {
         llvm_fn_table_.Add(&node, fn);
 
         // Implement
-        if (node.name_ != "main") {
+        if (caller) {
+            TypeImplTable::Lookup(caller)->MethodAdd(
+                node.name_, fn, *node.fnsign_
+            );
+        }
+        else if (node.name_ != "main") {
             FnImplTable::Add(node.name_, node.fnsign_, std::make_unique<LangFnImpl>(fn));
+        }
+    }
+
+    void IRGen::Declare(StructDeclExpr& node) {
+        for (auto& child : node.body_->children_) {
+            if (child->type_ == AstType::FnExpr) Declare((FnExpr&)*child);
         }
     }
 
@@ -412,11 +434,18 @@ namespace xcompiler {
         state_.fn_return_type_ = node.ret_resolved_type_;
 
         // Args Name
+        auto*  caller = node.fnsign_->caller_type();
+        size_t offset = caller ? 1 : 0;
         {
             size_t i = 0;
             for (auto& arg : fn->args()) {
-                auto p = (DeclExpr*)(node.params_->exprs_[i].get());
-                arg.setName(p->id_);
+                if (i == 0 && caller) {
+                    arg.setName("self");
+                }
+                else {
+                    auto p = (DeclExpr*)(node.params_->exprs_[i - offset].get());
+                    arg.setName(p->id_);
+                }
                 i++;
             }
         }
@@ -425,7 +454,18 @@ namespace xcompiler {
         Process(*node.body_, [&]() {
             size_t i = 0;
             for (auto& arg : fn->args()) {
-                auto param      = (DeclExpr*)node.params_->exprs_[i].get();
+
+                // Self
+                if (i == 0 && caller) {
+                    auto self_slot = SlotCreate(arg.getType(), "self");
+
+                    llvm_builder().CreateStore(&arg, self_slot);
+                    slot_scope_.Declare("self", self_slot);
+                    i++;
+                    continue;
+                }
+
+                auto param      = (DeclExpr*)node.params_->exprs_[i - offset].get();
                 auto param_type = param->resolved_type_;
                 auto var_name   = arg.getName().str();
                 auto var_slot   = SlotCreate(arg.getType(), var_name);
@@ -433,7 +473,7 @@ namespace xcompiler {
                 // Store Arg's Value
                 llvm_builder().CreateStore(&arg, var_slot);
 
-                // Copy if not ReferenceType
+                // Copy if not Reference Type
                 if (!dynamic_cast<sema::ReferenceType*>(param_type)) {
                     auto copied = TypeImplTable::Lookup(param_type)->MethodCall(*this, "@copy", {
                         Arg(var_slot, sema::TypeTable::ReferenceTypeGet(param_type))
@@ -685,6 +725,13 @@ namespace xcompiler {
         }
 
         return value;
+    }
+
+    llvm::Value* IRGen::Process(StructDeclExpr& node) {
+        for (auto& child : node.body_->children_) {
+            if (child->type_ == AstType::FnExpr) Process((FnExpr&)*child);
+        }
+        return nullptr;
     }
 
     llvm::Value* IRGen::Process(FieldAccessExpr& node) {

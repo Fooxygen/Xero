@@ -25,7 +25,7 @@ namespace sema {
             res += "...";
         }
 
-        return res.empty() ? "(empty)" : '(' + res + ')';
+        return res.empty() ? "()" : '(' + res + ')';
     }
 
     std::string FnSign::ParamsPrint() const {
