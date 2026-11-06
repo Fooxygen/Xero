@@ -35,7 +35,7 @@ namespace xcompiler {
             auto& builder   = gen.llvm_builder();
             auto& module    = *gen.llvm_module();
 
-            auto  addr      = gen.ArgAddr(arg);
+            auto  addr      = gen.ArgAddrGet(arg);
             auto  type      = arg.ReferenceUnwrap();
             auto  llvm_type = gen.LlvmType(type->BasicTypeGet());
             auto  val       = builder.CreateLoad(llvm_type, addr);
@@ -72,7 +72,7 @@ namespace xcompiler {
             auto& builder   = gen.llvm_builder();
             auto& module    = *gen.llvm_module();
 
-            auto  addr      = gen.ArgAddr(arg);
+            auto  addr      = gen.ArgAddrGet(arg);
             auto  type      = arg.ReferenceUnwrap();
             auto  llvm_type = gen.LlvmType(type);
             auto  val       = builder.CreateLoad(llvm_type, addr);
@@ -615,10 +615,10 @@ namespace xcompiler {
             return Print(gen, ArrayLoad(gen, args[0]));
         }, sema::FnSign(none_));
         impl->MethodAdd("@pick",        [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return PickIndex(gen, ArrayLoad(gen, args[0]), gen.ArgLoad(args[1]));
+            return PickIndex(gen, ArrayLoad(gen, args[0]), gen.ArgValGet(args[1]));
         }, sema::FnSign(sema::TypeTable::ReferenceTypeGet(T), { i64_ }));
         impl->MethodAdd("@pick",        [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return PickRange(gen, ArrayLoad(gen, args[0]), gen.ArgLoad(args[1]));
+            return PickRange(gen, ArrayLoad(gen, args[0]), gen.ArgValGet(args[1]));
         }, sema::FnSign(sema::TypeTable::ParametricTypeGet(arrayview_, { T }), { range_ }));
 
         impl->MethodAdd("@neg",         [](IRGen& gen, ARGS& args) -> llvm::Value* {
@@ -897,7 +897,7 @@ namespace xcompiler {
         // @copy and @release
 
         impl->MethodAdd("@copy",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return gen.ArgLoad(args[0]);
+            return gen.ArgValGet(args[0]);
         }, sema::FnSign(arrayview_));
         impl->MethodAdd("@release", [](IRGen&, ARGS&) -> llvm::Value* {
             return nullptr;
@@ -909,7 +909,7 @@ namespace xcompiler {
             auto& builder   = gen.llvm_builder();
             auto  lval      = ArrayViewLoad(gen, args[0]);
 
-            auto  rval      = gen.ArgLoad(args[1]);
+            auto  rval      = gen.ArgValGet(args[1]);
             auto  rval_data = builder.CreateExtractValue(rval, 0);
             auto  rval_len  = builder.CreateExtractValue(rval, 1);
 
@@ -926,7 +926,7 @@ namespace xcompiler {
         impl->MethodAdd("@assign",  [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder  = gen.llvm_builder();
             auto  lval     = ArrayViewLoad(gen, args[0]);
-            auto  rval     = gen.ArgLoad(args[1]);
+            auto  rval     = gen.ArgValGet(args[1]);
             auto  rval_ref = gen.ArgRefMake(rval, lval.elem_type);
 
             // Blocks
@@ -975,10 +975,10 @@ namespace xcompiler {
             return Print(gen, ArrayViewLoad(gen, args[0]));
         }, sema::FnSign(none_));
         impl->MethodAdd("@pick",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return PickIndex(gen, ArrayViewLoad(gen, args[0]), gen.ArgLoad(args[1]));
+            return PickIndex(gen, ArrayViewLoad(gen, args[0]), gen.ArgValGet(args[1]));
         }, sema::FnSign(sema::TypeTable::ReferenceTypeGet(T), { i64_ }));
         impl->MethodAdd("@pick",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return PickRange(gen, ArrayViewLoad(gen, args[0]), gen.ArgLoad(args[1]));
+            return PickRange(gen, ArrayViewLoad(gen, args[0]), gen.ArgValGet(args[1]));
         }, sema::FnSign(sema::TypeTable::ParametricTypeGet(arrayview_, { T }), { range_ }));
 
         impl->MethodAdd("@neg",     [](IRGen& gen, ARGS& args) -> llvm::Value* {

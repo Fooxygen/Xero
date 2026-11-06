@@ -21,7 +21,7 @@ namespace xcompiler {
         // @copy and @release
 
         impl->MethodAdd("@copy",    [](IRGen& gen, ARGS& args) {
-            return gen.ArgLoad(args[0]);
+            return gen.ArgValGet(args[0]);
         }, sema::FnSign(range_));
         impl->MethodAdd("@release", [](IRGen&, ARGS&) -> llvm::Value* {
             return nullptr;
@@ -32,7 +32,7 @@ namespace xcompiler {
         impl->MethodAdd("@print",   [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
 
-            auto  range_val      = gen.ArgLoad(args[0]);
+            auto  range_val      = gen.ArgValGet(args[0]);
             auto  range_type     = (sema::ParametricType*)args[0].ReferenceUnwrap();
             auto  iter_type      = range_type->params()[0];
             auto  iter_type_impl = TypeImplTable::Lookup(iter_type);

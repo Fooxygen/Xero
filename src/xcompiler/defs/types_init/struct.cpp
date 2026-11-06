@@ -24,7 +24,7 @@ namespace xcompiler {
             auto& builder   = gen.llvm_builder();
             auto* type      = (sema::StructType*)args[0].type()->ReferenceUnwrap();
             auto  llvm_type = gen.StructTypeGet(type);
-            auto  addr      = gen.ArgAddr(args[0]);
+            auto  addr      = gen.ArgAddrGet(args[0]);
             auto  value     = (llvm::Value*)llvm::PoisonValue::get(llvm_type);
 
             for (auto& field : type->fields()) {
@@ -55,7 +55,7 @@ namespace xcompiler {
             auto& builder   = gen.llvm_builder();
             auto* type      = (sema::StructType*)args[0].type()->ReferenceUnwrap();
             auto  llvm_type = gen.StructTypeGet(type);
-            auto  addr      = gen.ArgAddr(args[0]);
+            auto  addr      = gen.ArgAddrGet(args[0]);
 
             for (auto it = type->fields().rbegin(); it != type->fields().rend(); ++it) {
                 if (dynamic_cast<sema::ReferenceType*>(it->type_)) continue;

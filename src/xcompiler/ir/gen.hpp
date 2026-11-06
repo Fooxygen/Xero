@@ -138,19 +138,16 @@ namespace xcompiler {
 
         // └─ Expr
 
-        // e.g. x: i32 = 3; z: i32& = x;
-        //      IdAddrGet(x): get address of x
-        //      IdAddrGet(z): get address of x actually
         llvm::Value*      IdAddrGet(IdExpr& node);                                      // get address from idexpr
         llvm::Value*      ExprValGet(Expr& node);                                       // get value from expr
-        
-        llvm::Value*      ValMaterialize(llvm::Value* val, sema::Type* type);           // allocate memory for value to store
+
         llvm::Value*      ValCopy(Expr& node);                                          // get copied value from expr
-        llvm::Value*      ValOwn(llvm::Value* val, sema::Type* type);                   // materialize value and register for release
+        llvm::Value*      ValBorrow(llvm::Value* val, sema::Type* type);                // allocate slot for value, borrow it
+        llvm::Value*      ValOwn(llvm::Value* val, sema::Type* type);                   // allocate slot for value, own it and register
         
         Arg               ArgRefMake(llvm::Value* val, sema::Type* type);               // wrap value as ref arg
-        llvm::Value*      ArgLoad(const Arg& arg);                                      // take value from arg
-        llvm::Value*      ArgAddr(const Arg& arg);                                      // take address from arg
+        llvm::Value*      ArgValGet(const Arg& arg);                                    // get value from arg
+        llvm::Value*      ArgAddrGet(const Arg& arg);                                   // get address from arg
 
         // Module
 

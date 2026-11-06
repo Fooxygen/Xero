@@ -21,7 +21,7 @@ namespace xcompiler {
         // @copy and @release
 
         impl->MethodAdd("@copy",    [](IRGen& gen, ARGS& args) {
-            return gen.ArgLoad(args[0]);
+            return gen.ArgValGet(args[0]);
         }, sema::FnSign(bool_));
         impl->MethodAdd("@release", [](IRGen&, ARGS&) -> llvm::Value* {
             return nullptr;
@@ -34,25 +34,25 @@ namespace xcompiler {
             auto  str_fmt    = builder.CreateGlobalString("%s",    ".fmt.str");
             auto  str_true   = builder.CreateGlobalString("true",  ".true");
             auto  str_false  = builder.CreateGlobalString("false", ".false");
-            auto  str_output = builder.CreateSelect(gen.ArgLoad(args[0]), str_true, str_false);
+            auto  str_output = builder.CreateSelect(gen.ArgValGet(args[0]), str_true, str_false);
             builder.CreateCall(LibC_printf(gen), { str_fmt, str_output });
             return nullptr;
         }, sema::FnSign(none_));
         
         impl->MethodAdd("@eq",      [](IRGen& gen, ARGS& args) {
-            return gen.llvm_builder().CreateICmpEQ(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
+            return gen.llvm_builder().CreateICmpEQ(gen.ArgValGet(args[0]), gen.ArgValGet(args[1]));
         }, sema::FnSign(bool_, { bool_ }));
         impl->MethodAdd("@neq",     [](IRGen& gen, ARGS& args) {
-            return gen.llvm_builder().CreateICmpNE(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
+            return gen.llvm_builder().CreateICmpNE(gen.ArgValGet(args[0]), gen.ArgValGet(args[1]));
         }, sema::FnSign(bool_, { bool_ }));
         impl->MethodAdd("@and",     [](IRGen& gen, ARGS& args) {
-            return gen.llvm_builder().CreateAnd(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
+            return gen.llvm_builder().CreateAnd(gen.ArgValGet(args[0]), gen.ArgValGet(args[1]));
         }, sema::FnSign(bool_, { bool_ }));
         impl->MethodAdd("@or",      [](IRGen& gen, ARGS& args) {
-            return gen.llvm_builder().CreateOr(gen.ArgLoad(args[0]), gen.ArgLoad(args[1]));
+            return gen.llvm_builder().CreateOr(gen.ArgValGet(args[0]), gen.ArgValGet(args[1]));
         }, sema::FnSign(bool_, { bool_ }));
         impl->MethodAdd("@not",     [](IRGen& gen, ARGS& args) {
-            return gen.llvm_builder().CreateNot(gen.ArgLoad(args[0]));
+            return gen.llvm_builder().CreateNot(gen.ArgValGet(args[0]));
         }, sema::FnSign(bool_));
     }
 }

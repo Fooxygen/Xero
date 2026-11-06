@@ -29,7 +29,7 @@ namespace xcompiler {
 
         StringInfo   StringLoad(IRGen& gen, const Arg& arg) {
             auto& builder   = gen.llvm_builder();
-            auto  addr      = gen.ArgAddr(arg);
+            auto  addr      = gen.ArgAddrGet(arg);
             auto  llvm_type = gen.LlvmType(arg.ReferenceUnwrap());
             auto  val       = builder.CreateLoad(llvm_type, addr);
 
@@ -47,7 +47,7 @@ namespace xcompiler {
 
         StringInfo   StringViewLoad(IRGen& gen, const Arg& arg) {
             auto& builder   = gen.llvm_builder();
-            auto  addr      = gen.ArgAddr(arg);
+            auto  addr      = gen.ArgAddrGet(arg);
             auto  llvm_type = gen.LlvmType(arg.ReferenceUnwrap());
             auto  val       = builder.CreateLoad(llvm_type, addr);
 
@@ -407,10 +407,10 @@ namespace xcompiler {
         }, sema::FnSign(none_));
         
         impl->MethodAdd("@pick",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return PickIndex(gen, StringLoad(gen, args[0]), gen.ArgLoad(args[1]));
+            return PickIndex(gen, StringLoad(gen, args[0]), gen.ArgValGet(args[1]));
         }, sema::FnSign(sema::TypeTable::ReferenceTypeGet(char_), { i64_ }));
         impl->MethodAdd("@pick",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return PickRange(gen, StringLoad(gen, args[0]), gen.ArgLoad(args[1]));
+            return PickRange(gen, StringLoad(gen, args[0]), gen.ArgValGet(args[1]));
         }, sema::FnSign(stringview_, { range_ }));
         impl->MethodAdd("@plus",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
@@ -519,7 +519,7 @@ namespace xcompiler {
         // @copy and @release
 
         impl->MethodAdd("@copy",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return gen.ArgLoad(args[0]);
+            return gen.ArgValGet(args[0]);
         }, sema::FnSign(stringview_));
         impl->MethodAdd("@release", [](IRGen&, ARGS&) -> llvm::Value* {
             return nullptr;
@@ -548,7 +548,7 @@ namespace xcompiler {
             auto& builder   = gen.llvm_builder();
             auto  lval      = StringViewLoad(gen, args[0]);
 
-            auto  rval      = gen.ArgLoad(args[1]);
+            auto  rval      = gen.ArgValGet(args[1]);
             auto  rval_data = builder.CreateExtractValue(rval, 0);
             auto  rval_len  = builder.CreateExtractValue(rval, 1);
 
@@ -565,7 +565,7 @@ namespace xcompiler {
         impl->MethodAdd("@assign",  [](IRGen& gen, ARGS& args) -> llvm::Value* {
             auto& builder = gen.llvm_builder();
             auto  lval    = StringViewLoad(gen, args[0]);
-            auto  rval    = gen.ArgLoad(args[1]);
+            auto  rval    = gen.ArgValGet(args[1]);
 
             // Blocks
             auto fn          = builder.GetInsertBlock()->getParent();
@@ -604,10 +604,10 @@ namespace xcompiler {
         }, sema::FnSign(none_));
         
         impl->MethodAdd("@pick",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return PickIndex(gen, StringViewLoad(gen, args[0]), gen.ArgLoad(args[1]));
+            return PickIndex(gen, StringViewLoad(gen, args[0]), gen.ArgValGet(args[1]));
         }, sema::FnSign(sema::TypeTable::ReferenceTypeGet(char_), { i64_ }));
         impl->MethodAdd("@pick",    [](IRGen& gen, ARGS& args) -> llvm::Value* {
-            return PickRange(gen, StringViewLoad(gen, args[0]), gen.ArgLoad(args[1]));
+            return PickRange(gen, StringViewLoad(gen, args[0]), gen.ArgValGet(args[1]));
         }, sema::FnSign(stringview_, { range_ }));
         impl->MethodAdd("@neg",     [](IRGen& gen, ARGS& args) -> llvm::Value* {
             return Reverse(gen, StringViewLoad(gen, args[0]));

@@ -827,7 +827,7 @@ namespace xcompiler {
         // Use @assign
         if (sema::TypeTable::MethodLookupTry(target_type, "@assign")) {
             auto target_val  = Process(*node.target_);
-            auto target_addr = ValMaterialize(target_val, target_type);
+            auto target_addr = ValBorrow(target_val, target_type);
 
             auto val_type = node.value_->resolved_type_->ReferenceUnwrap();
             auto val      = ExprValGet(*node.value_);

@@ -155,7 +155,7 @@ namespace xcompiler {
     llvm::Value*      IRGen::IdAddrGet(IdExpr& node) {
         auto var = slot_scope_.Lookup(node.name_, node.loc_);
 
-        // ReferenceType
+        // Reference Type
         if (dynamic_cast<sema::ReferenceType*>(node.resolved_type_)) {
             var = llvm_builder().CreateLoad(
                 llvm::PointerType::get(llvm_context(), 0), var,
@@ -169,7 +169,7 @@ namespace xcompiler {
     llvm::Value*      IRGen::ExprValGet(Expr& node) {
         auto val = Process(node);
 
-        // ReferenceType
+        // Reference Type
         // Non-IdExpr
         if (node.resolved_type_ &&
             dynamic_cast<sema::ReferenceType*>(node.resolved_type_) &&
@@ -182,14 +182,14 @@ namespace xcompiler {
         return val;
     }
 
-    llvm::Value*      IRGen::ValMaterialize(llvm::Value* val, sema::Type* type) {
+    llvm::Value*      IRGen::ValBorrow(llvm::Value* val, sema::Type* type) {
         auto slot = SlotCreate(LlvmType(type), ".val.slot");
         llvm_builder().CreateStore(val, slot);
         return slot;
     }
 
     llvm::Value*      IRGen::ValOwn(llvm::Value* val, sema::Type* type) {
-        auto slot = ValMaterialize(val, type);
+        auto slot = ValBorrow(val, type);
         state_.release_val_scopes_.back().emplace_back(slot, type);
         return slot;
     }
@@ -219,21 +219,24 @@ namespace xcompiler {
     }
 
     Arg               IRGen::ArgRefMake(llvm::Value* val, sema::Type* type) {
-        // RefArg
+        // Reference Type
         if (dynamic_cast<sema::ReferenceType*>(type)) return Arg(val, type);
-        return Arg(ValMaterialize(val, type), sema::TypeTable::ReferenceTypeGet(type));
+        return Arg(ValBorrow(val, type), sema::TypeTable::ReferenceTypeGet(type));
     }
     
-    llvm::Value*      IRGen::ArgLoad(const Arg& arg) {
+    llvm::Value*      IRGen::ArgValGet(const Arg& arg) {
         if (arg.IsReferenceType()) {
             auto reference_type = (sema::ReferenceType*)arg.type();
-            return llvm_builder().CreateLoad(LlvmType(reference_type->referred()), arg.val());
+            return llvm_builder().CreateLoad(
+                LlvmType(reference_type->referred()),
+                arg.val()
+            );
         }
         return arg.val();
     }
     
-    llvm::Value*      IRGen::ArgAddr(const Arg& arg) {
+    llvm::Value*      IRGen::ArgAddrGet(const Arg& arg) {
         if (arg.IsReferenceType()) return arg.val();
-        return ValMaterialize(arg.val(), arg.type());
+        return ValBorrow(arg.val(), arg.type());
     }
 }
