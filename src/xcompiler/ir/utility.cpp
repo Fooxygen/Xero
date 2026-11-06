@@ -189,9 +189,20 @@ namespace xcompiler {
     }
 
     llvm::Value*      IRGen::ValOwn(llvm::Value* val, sema::Type* type) {
+
+        // Nothing to own
+        if (!val || !type) return val;
+        if (val->getType()->isVoidTy() || type->Is("none")) return val;
+
+        // Reference Type
+        if (dynamic_cast<sema::ReferenceType*>(type)) return val;
+
+        // No block scope to release the value in
+        if (state_.release_val_scopes_.empty()) return val;
+
         auto slot = ValBorrow(val, type);
         state_.release_val_scopes_.back().emplace_back(slot, type);
-        return slot;
+        return val;
     }
 
     llvm::Value*      IRGen::ValCopy(Expr& node) {
@@ -212,7 +223,8 @@ namespace xcompiler {
         }
 
         // = 1 + 2, Value
-        auto addr = ValOwn(ExprValGet(node), type);
+        // The value is owned by its producer, so borrow its address for copy
+        auto addr = ValBorrow(ExprValGet(node), type);
         return TypeImplTable::Lookup(type)->MethodCall(*this, "@copy", {
             Arg(addr, sema::TypeTable::ReferenceTypeGet(type))
         });

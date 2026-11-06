@@ -196,7 +196,7 @@ namespace xcompiler {
                     caller_addr = Process(*node.lexpr_);
                 }
                 else {
-                    caller_addr = ValOwn(ExprValGet(*node.lexpr_), node.lexpr_->resolved_type_);
+                    caller_addr = ValBorrow(ExprValGet(*node.lexpr_), node.lexpr_->resolved_type_);
                 }
             }
             auto caller_arg = Arg(
@@ -219,7 +219,10 @@ namespace xcompiler {
         }
 
         auto call = [&](sema::Type* type, const std::string& name, std::vector<Arg> args) {
-            return TypeImplTable::Lookup(type, node.loc_)->MethodCall(*this, name, std::move(args), node.loc_);
+            return ValOwn(
+                TypeImplTable::Lookup(type, node.loc_)->MethodCall(*this, name, std::move(args), node.loc_),
+                node.resolved_type_
+            );
         };
 
         // Unary
@@ -279,7 +282,7 @@ namespace xcompiler {
                 phi->addIncoming(rval, rval_end);
             }
 
-            return phi;
+            return ValOwn(phi, node.resolved_type_);
         }
 
         auto rval = ExprValGet(*node.rexpr_);
@@ -367,10 +370,10 @@ namespace xcompiler {
             auto null_data = llvm::ConstantPointerNull::get(
                 llvm::PointerType::get(llvm_context(), 0)
             );
-            return StructTypeValCreate(
+            return ValOwn(StructTypeValCreate(
                 LlvmType(node.resolved_type_),
                 { null_data, llvm_builder().getInt64(0) }
-            );
+            ), node.resolved_type_);
         }
 
         // Non-Empty
@@ -397,10 +400,10 @@ namespace xcompiler {
             }
 
             // Package
-            return StructTypeValCreate(
+            return ValOwn(StructTypeValCreate(
                 LlvmType(node.resolved_type_),
                 { data, llvm_builder().getInt64(len) }
-            );
+            ), node.resolved_type_);
         }
     }
 
@@ -526,12 +529,6 @@ namespace xcompiler {
                         arg_type = param;
                     }
 
-                    if (!dynamic_cast<IdExpr*>(expr.get()) &&
-                        !dynamic_cast<sema::ReferenceType*>(expr->resolved_type_))
-                    {
-                        ValOwn(arg_val, arg_type);
-                    }
-
                     args.emplace_back(arg_val, arg_type);
                 }
             }
@@ -540,14 +537,16 @@ namespace xcompiler {
         // Call
         if (auto impl = FnImplTable::LookupTry(sign)) {
             if (auto native = dynamic_cast<NativeFnImpl*>(impl)) {
-                return native->impl()(*this, args);
+                return ValOwn(native->impl()(*this, args), node.resolved_type_);
             }
             if (auto lang   = dynamic_cast<LangFnImpl*>(impl)) {
                 std::vector<llvm::Value*> vals = {};
                 for (auto& arg : args) {
                     vals.emplace_back(arg.val());
                 }
-                return llvm_builder().CreateCall(lang->impl(), vals);
+                return ValOwn(
+                    llvm_builder().CreateCall(lang->impl(), vals), node.resolved_type_
+                );
             }
         }
 
@@ -580,7 +579,7 @@ namespace xcompiler {
 
             // 3.plus(4)
             else {
-                caller_addr = ValOwn(ExprValGet(*node.caller_), node.caller_->resolved_type_);
+                caller_addr = ValBorrow(ExprValGet(*node.caller_), node.caller_->resolved_type_);
             }
         }
 
@@ -622,12 +621,6 @@ namespace xcompiler {
                         arg_type = param;
                     }
 
-                    if (!dynamic_cast<IdExpr*>(expr.get()) &&
-                        !dynamic_cast<sema::ReferenceType*>(expr->resolved_type_))
-                    {
-                        ValOwn(arg_val, arg_type);
-                    }
-
                     args.emplace_back(arg_val, arg_type);
                 }
             }
@@ -636,14 +629,16 @@ namespace xcompiler {
         // Call
         if (auto impl = caller_type_impl->MethodLookupTry(sign)) {
             if (auto native = dynamic_cast<NativeFnImpl*>(impl)) {
-                return native->impl()(*this, args);
+                return ValOwn(native->impl()(*this, args), node.resolved_type_);
             }
             if (auto lang   = dynamic_cast<LangFnImpl*>(impl)) {
                 std::vector<llvm::Value*> vals = {};
                 for (auto& arg : args) {
                     vals.emplace_back(arg.val());
                 }
-                return llvm_builder().CreateCall(lang->impl(), vals);
+                return ValOwn(
+                    llvm_builder().CreateCall(lang->impl(), vals), node.resolved_type_
+                );
             }
         }
 
@@ -703,7 +698,7 @@ namespace xcompiler {
             }
         }
 
-        return value;
+        return ValOwn(value, node.resolved_type_);
     }
 
     llvm::Value* IRGen::Process(StructDeclExpr& node) {
@@ -725,7 +720,7 @@ namespace xcompiler {
             base_addr = Process(*node.base_);
         }
         else {
-            base_addr = ValOwn(ExprValGet(*node.base_), struct_type);
+            base_addr = ValBorrow(ExprValGet(*node.base_), struct_type);
         }
 
         return llvm_builder().CreateStructGEP(struct_llvm_type, base_addr, node.field_index_);
@@ -796,10 +791,10 @@ namespace xcompiler {
         }
 
         // Package
-        return StructTypeValCreate(
+        return ValOwn(StructTypeValCreate(
             LlvmType(node.resolved_type_),
             { data, llvm_builder().getInt64(len) }
-        );
+        ), node.resolved_type_);
     }
 
     // └─ Stmt
@@ -807,17 +802,7 @@ namespace xcompiler {
     llvm::Value* IRGen::Process(ExprStmt& node) {
         if (!node.expr_) return nullptr;
 
-        auto  val  = ExprValGet(*node.expr_);
-        auto* type = node.expr_->resolved_type_;
-
-        if (!val || !type || val->getType()->isVoidTy()) return nullptr;
-
-        if (!dynamic_cast<IdExpr*>(node.expr_.get()) &&
-            !dynamic_cast<sema::ReferenceType*>(type))
-        {
-            ValOwn(val, type->ReferenceUnwrap());
-        }
-
+        ExprValGet(*node.expr_);
         return nullptr;
     }
 
@@ -831,12 +816,6 @@ namespace xcompiler {
 
             auto val_type = node.value_->resolved_type_->ReferenceUnwrap();
             auto val      = ExprValGet(*node.value_);
-
-            if (!dynamic_cast<IdExpr*>(node.value_.get()) &&
-                !dynamic_cast<sema::ReferenceType*>(node.value_->resolved_type_))
-            {
-                ValOwn(val, val_type);
-            }
 
             TypeImplTable::Lookup(target_type, node.loc_)->MethodCall(*this, "@assign", {
                 Arg(target_addr, sema::TypeTable::ReferenceTypeGet(target_type)),
@@ -954,12 +933,6 @@ namespace xcompiler {
 
     llvm::Value* IRGen::Process(ForStmt& node) {
         auto data = ExprValGet(*node.data_);
-
-        if (!dynamic_cast<IdExpr*>(node.data_.get()) &&
-            !dynamic_cast<sema::ReferenceType*>(node.data_->resolved_type_))
-        {
-            ValOwn(data, node.data_->resolved_type_->ReferenceUnwrap());
-        }
 
         auto iterate = [&](llvm::Value* data_ptr, llvm::Value* offset, llvm::Value* len, llvm::Type* elem_llvm_type) {
             auto& builder   = llvm_builder();
