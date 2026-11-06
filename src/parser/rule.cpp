@@ -355,6 +355,7 @@ namespace parser {
                 }
             );
         }
+        
         // └─ id: id -> declareexpr
         {
             RuleAdd(
@@ -395,6 +396,27 @@ namespace parser {
                 }
             );
         }
+        // └─ id: pathexpr -> declareexpr
+        {
+            RuleAdd(
+                PATS_INIT{
+                    AT::IdExpr,
+                    TT::Colon,
+                    AT::PathExpr
+                },
+                [this](auto) {
+                    return std::make_unique<DeclExpr>(
+                        Move<IdExpr>(1)->name_,
+                        std::make_unique<TypeExpr>(
+                            PathGet(Move<PathExpr>(3)),
+                            nullptr,
+                            false
+                        ),
+                        nullptr
+                    );
+                }
+            );
+        }
         // └─ declareexpr = expr -> declareexpr
         {
             RuleAdd(
@@ -417,6 +439,7 @@ namespace parser {
                 }
             );
         }
+        
         // └─ expr assignoper expr; -> assignstmt
         {
             RuleAdd(
@@ -619,6 +642,37 @@ namespace parser {
                 }
             );
         }
+        // └─ fn id?(exprs?) -> pathexpr blockexpr -> fnexpr
+        {
+            RuleAdd(
+                PATS_INIT{
+                    TT::Fn,
+                    SymbolPattern::Opt(AT::IdExpr),
+                    TT::LParen,
+                    SymbolPattern::Opt({ AT::Expr, AT::Exprs }),
+                    TT::RParen,
+                    TT::Arrow,
+                    AT::PathExpr,
+                    AT::BlockExpr
+                },
+                [this](auto) {
+                    std::string name = "";
+                    if (!IsOptPatternEmpty(2))
+                        name = Move<IdExpr>(2)->name_;
+
+                    return std::make_unique<FnExpr>(
+                        name,
+                        std::make_unique<TypeExpr>(
+                            PathGet(Move<PathExpr>(7)),
+                            nullptr,
+                            false
+                        ),
+                        Pack2Exprs(*this, 4),
+                        Move<BlockExpr>(8)
+                    );
+                }
+            );
+        }
         // └─ fn id?(exprs?) blockexpr -> fnexpr
         {
             RuleAdd(
@@ -643,6 +697,7 @@ namespace parser {
                 }
             );
         }
+        
         // └─ return expr?; -> returnsignalstmt
         {
             RuleAdd(
@@ -833,7 +888,6 @@ namespace parser {
                 }
             );
         }
-
         // └─ expr..expr -> rangeexpr
         {
             RuleAdd(
@@ -989,7 +1043,6 @@ namespace parser {
                 }
             );
         }
-
         // └─ condstmt else stmt -> condstmt
         {
             RuleAdd(
@@ -1044,6 +1097,7 @@ namespace parser {
                 }
             );
         }
+        
         // └─ for ( x in expr ) stmt -> forstmt
         {
             RuleAdd(
@@ -1065,6 +1119,7 @@ namespace parser {
                 }
             );
         }
+        
         // └─ while ( cond ) stmt -> whilestmt
         {
             RuleAdd(
