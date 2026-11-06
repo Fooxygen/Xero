@@ -55,7 +55,8 @@ namespace xcompiler {
                 sema::Type*  type = nullptr;
             };
 
-            std::vector<std::vector<ReleaseSlot>> release_scopes_ = {};
+            std::vector<std::vector<ReleaseSlot>> release_var_scopes_ = {};
+            std::vector<std::vector<ReleaseSlot>> release_val_scopes_ = {};
         };
     
     private:
@@ -141,8 +142,11 @@ namespace xcompiler {
         //      IdAddrGet(x): get address of x
         //      IdAddrGet(z): get address of x actually
         llvm::Value*      IdAddrGet(IdExpr& node);                                      // get address from idexpr
-        llvm::Value*      ValMaterialize(llvm::Value* val, sema::Type* type);           // allocate memory for value to store
         llvm::Value*      ExprValGet(Expr& node);                                       // get value from expr
+        
+        llvm::Value*      ValMaterialize(llvm::Value* val, sema::Type* type);           // allocate memory for value to store
+        llvm::Value*      ValCopy(Expr& node);                                          // get copied value from expr
+        llvm::Value*      ValOwn(llvm::Value* val, sema::Type* type);                   // materialize value and register for release
         
         Arg               ArgRefMake(llvm::Value* val, sema::Type* type);               // wrap value as ref arg
         llvm::Value*      ArgLoad(const Arg& arg);                                      // take value from arg

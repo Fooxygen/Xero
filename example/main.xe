@@ -1,40 +1,12 @@
 
-struct point {
-    x: i32;
-    y: i32;
-
-    fn distance2() -> f32 {
-        return self.x * self.x + self.y * self.y;
-    }
-
-    fn add(dx: i32, dy: i32) {
-        self.x += dx;
-        self.y += dy;
-    }
-
-    fn reserve() -> point {
-        return point{ x = self.y, y = self.x };
-    }
-
-    fn print() {
-        println(self.x, self.y);
-        println(self.distance2());
-    }
-
-    ## fn f(self: point&) {}               # redefinition of variable 'self' in same scope ##
-
-    ## fn () {}                            # function must have a name ##
+fn sink(s: string) {
 }
 
 fn main() {
-    p: point = point{ x = 1, y = 2 };
-
-    p.print();
-    p.add(3, 4);
-    p.print();
-    p.reserve().print();
-
-    ## p.undefined_method();               # undefined method 'undefined_method' ##
-
-    ## p.add(1);                           # undefined signature (i32) for method 'add' ##
+    i: i32 = 0;
+    while (i < 30000000) {
+        sink("hello");
+        i += 1;
+    }
+    println("done");
 }

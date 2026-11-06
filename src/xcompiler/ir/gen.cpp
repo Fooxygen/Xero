@@ -96,7 +96,8 @@ namespace xcompiler {
 
         // Scope Push
         slot_scope_.Push();
-        state_.release_scopes_.emplace_back();
+        state_.release_var_scopes_.emplace_back();
+        state_.release_val_scopes_.emplace_back();
         if (on_scope_ready) on_scope_ready();
 
         try {
@@ -109,7 +110,8 @@ namespace xcompiler {
 
             // Scope Pop
             slot_scope_.Pop();
-            state_.release_scopes_.pop_back();
+            state_.release_var_scopes_.pop_back();
+            state_.release_val_scopes_.pop_back();
             throw;
         }
 
@@ -117,11 +119,12 @@ namespace xcompiler {
         // For normal block, it will release all normal variables.
         // But if it belongs to a block that contains an early exit stmt,
         // this stmt will concurrently perform the ReleaseEmit() when it is executed
-        if (!HasBlockTerm()) ReleaseEmit(state_.release_scopes_.size() - 1);
+        if (!HasBlockTerm()) ReleaseEmit(state_.release_var_scopes_.size() - 1);
 
         // Scope Pop
         slot_scope_.Pop();
-        state_.release_scopes_.pop_back();
+        state_.release_var_scopes_.pop_back();
+        state_.release_val_scopes_.pop_back();
         return nullptr;
     }
 
@@ -159,27 +162,8 @@ namespace xcompiler {
         // Non-Reference Type
         else {
             if (node.value_) {
-                llvm::Value* val = nullptr;
-                auto val_type    = node.value_->resolved_type_->ReferenceUnwrap();
-
-                // = a, IdExpr
-                if (auto idexpr = dynamic_cast<IdExpr*>(node.value_.get())) {
-                    val = TypeImplTable::Lookup(val_type, node.loc_)->MethodCall(*this, "@copy", {
-                        Arg(IdAddrGet(*idexpr), sema::TypeTable::ReferenceTypeGet(val_type))
-                    });
-                }
-
-                // = s[0], Address
-                else if (dynamic_cast<sema::ReferenceType*>(node.value_->resolved_type_)) {
-                    val = TypeImplTable::Lookup(val_type, node.loc_)->MethodCall(*this, "@copy", {
-                        Arg(Process(*node.value_), sema::TypeTable::ReferenceTypeGet(val_type))
-                    });
-                }
-
-                // = 1 + 2, Temporary Value
-                else {
-                    val = ExprValGet(*node.value_);
-                }
+                auto val_type = node.value_->resolved_type_->ReferenceUnwrap();
+                auto val      = ValCopy(*node.value_);
 
                 llvm_builder().CreateStore(
                     TypeImplTable::Cast(*this, val, val_type, var_type, node.loc_),
@@ -188,7 +172,7 @@ namespace xcompiler {
             }
 
             // Register for release at scope exit
-            state_.release_scopes_.back().emplace_back(var_slot, var_type);
+            state_.release_var_scopes_.back().emplace_back(var_slot, var_type);
 
             slot_scope_.Declare(node.id_, var_slot);
             return nullptr;
@@ -212,7 +196,7 @@ namespace xcompiler {
                     caller_addr = Process(*node.lexpr_);
                 }
                 else {
-                    caller_addr = ValMaterialize(ExprValGet(*node.lexpr_), node.lexpr_->resolved_type_);
+                    caller_addr = ValOwn(ExprValGet(*node.lexpr_), node.lexpr_->resolved_type_);
                 }
             }
             auto caller_arg = Arg(
@@ -409,7 +393,7 @@ namespace xcompiler {
                         llvm_builder().getInt64(i * size_elem)
                     }
                 );
-                llvm_builder().CreateStore(ExprValGet(*exprs[i]), addr);
+                llvm_builder().CreateStore(ValCopy(*exprs[i]), addr);
             }
 
             // Package
@@ -480,7 +464,7 @@ namespace xcompiler {
                     });
                     
                     llvm_builder().CreateStore(copied, var_slot);
-                    state_.release_scopes_.back().emplace_back(var_slot, param_type);
+                    state_.release_var_scopes_.back().emplace_back(var_slot, param_type);
                 }
 
                 slot_scope_.Declare(var_name, var_slot);
@@ -541,6 +525,13 @@ namespace xcompiler {
                         arg_val  = TypeImplTable::Cast(*this, arg_val, arg_type, param, node.loc_);
                         arg_type = param;
                     }
+
+                    if (!dynamic_cast<IdExpr*>(expr.get()) &&
+                        !dynamic_cast<sema::ReferenceType*>(expr->resolved_type_))
+                    {
+                        ValOwn(arg_val, arg_type);
+                    }
+
                     args.emplace_back(arg_val, arg_type);
                 }
             }
@@ -589,7 +580,7 @@ namespace xcompiler {
 
             // 3.plus(4)
             else {
-                caller_addr = ValMaterialize(ExprValGet(*node.caller_), node.caller_->resolved_type_);
+                caller_addr = ValOwn(ExprValGet(*node.caller_), node.caller_->resolved_type_);
             }
         }
 
@@ -630,6 +621,13 @@ namespace xcompiler {
                         arg_val  = TypeImplTable::Cast(*this, arg_val, arg_type, param, node.loc_);
                         arg_type = param;
                     }
+
+                    if (!dynamic_cast<IdExpr*>(expr.get()) &&
+                        !dynamic_cast<sema::ReferenceType*>(expr->resolved_type_))
+                    {
+                        ValOwn(arg_val, arg_type);
+                    }
+
                     args.emplace_back(arg_val, arg_type);
                 }
             }
@@ -680,32 +678,13 @@ namespace xcompiler {
 
             // Non-Reference Type
             else {
-                auto*        value_type = init.value_->resolved_type_->ReferenceUnwrap();
-                llvm::Value* field_val  = nullptr;
-
-                // = a, IdExpr
-                if (auto* idexpr = dynamic_cast<IdExpr*>(init.value_.get())) {
-                    field_val = TypeImplTable::Lookup(value_type)->MethodCall(*this, "@copy", {
-                        Arg(IdAddrGet(*idexpr), sema::TypeTable::ReferenceTypeGet(value_type))
-                    });
-                }
-
-                // = s[0], Reference
-                else if (dynamic_cast<sema::ReferenceType*>(init.value_->resolved_type_)) {
-                    field_val = TypeImplTable::Lookup(value_type)->MethodCall(*this, "@copy", {
-                        Arg(Process(*init.value_), sema::TypeTable::ReferenceTypeGet(value_type))
-                    });
-                }
-
-                // = 1 + 2, Temporary Value
-                else {
-                    field_val = ExprValGet(*init.value_);
-                }
+                auto*        field_val_type = init.value_->resolved_type_->ReferenceUnwrap();
+                llvm::Value* field_val      = ValCopy(*init.value_);
 
                 // Cast
-                if (value_type != field.type_) {
+                if (field_val_type != field.type_) {
                     field_val = TypeImplTable::Cast(
-                        *this, field_val, value_type, field.type_, node.loc_
+                        *this, field_val, field_val_type, field.type_, node.loc_
                     );
                 }
 
@@ -746,7 +725,7 @@ namespace xcompiler {
             base_addr = Process(*node.base_);
         }
         else {
-            base_addr = ValMaterialize(ExprValGet(*node.base_), struct_type);
+            base_addr = ValOwn(ExprValGet(*node.base_), struct_type);
         }
 
         return llvm_builder().CreateStructGEP(struct_llvm_type, base_addr, node.field_index_);
@@ -826,7 +805,19 @@ namespace xcompiler {
     // └─ Stmt
 
     llvm::Value* IRGen::Process(ExprStmt& node) {
-        if (node.expr_) return Process(*node.expr_);
+        if (!node.expr_) return nullptr;
+
+        auto  val  = ExprValGet(*node.expr_);
+        auto* type = node.expr_->resolved_type_;
+
+        if (!val || !type || val->getType()->isVoidTy()) return nullptr;
+
+        if (!dynamic_cast<IdExpr*>(node.expr_.get()) &&
+            !dynamic_cast<sema::ReferenceType*>(type))
+        {
+            ValOwn(val, type->ReferenceUnwrap());
+        }
+
         return nullptr;
     }
 
@@ -840,6 +831,12 @@ namespace xcompiler {
 
             auto val_type = node.value_->resolved_type_->ReferenceUnwrap();
             auto val      = ExprValGet(*node.value_);
+
+            if (!dynamic_cast<IdExpr*>(node.value_.get()) &&
+                !dynamic_cast<sema::ReferenceType*>(node.value_->resolved_type_))
+            {
+                ValOwn(val, val_type);
+            }
 
             TypeImplTable::Lookup(target_type, node.loc_)->MethodCall(*this, "@assign", {
                 Arg(target_addr, sema::TypeTable::ReferenceTypeGet(target_type)),
@@ -862,27 +859,8 @@ namespace xcompiler {
             }
 
             // Value
-            llvm::Value* val = nullptr;
-            auto val_type    = node.value_->resolved_type_->ReferenceUnwrap();
-            
-            // = a, IdExpr
-            if (auto idexpr = dynamic_cast<IdExpr*>(node.value_.get())) {
-                val = TypeImplTable::Lookup(val_type, node.loc_)->MethodCall(*this, "@copy", {
-                    Arg(IdAddrGet(*idexpr), sema::TypeTable::ReferenceTypeGet(val_type))
-                }, node.loc_);
-            }
-
-            // = s[0], Address
-            else if (dynamic_cast<sema::ReferenceType*>(node.value_->resolved_type_)) {
-                val = TypeImplTable::Lookup(val_type, node.loc_)->MethodCall(*this, "@copy", {
-                    Arg(Process(*node.value_), sema::TypeTable::ReferenceTypeGet(val_type))
-                }, node.loc_);
-            }
-
-            // = 1 + 2, temp value
-            else {
-                val = ExprValGet(*node.value_);
-            }
+            auto val_type = node.value_->resolved_type_->ReferenceUnwrap();
+            auto val      = ValCopy(*node.value_);
 
             // Release Var's Value
             TypeImplTable::Lookup(target_type, node.loc_)->MethodCall(*this, "@release", {
@@ -957,27 +935,8 @@ namespace xcompiler {
 
     llvm::Value* IRGen::Process(ReturnSignalStmt& node) {
         if (node.value_) {
-            auto val_type    = node.value_->resolved_type_->ReferenceUnwrap();
-            llvm::Value* val = nullptr;
-            
-            // = a, IdExpr
-            if (auto idexpr = dynamic_cast<IdExpr*>(node.value_.get())) {
-                val = TypeImplTable::Lookup(val_type, node.loc_)->MethodCall(*this, "@copy", {
-                    Arg(IdAddrGet(*idexpr), sema::TypeTable::ReferenceTypeGet(val_type))
-                });
-            }
-
-            // = s[0], Address
-            else if (dynamic_cast<sema::ReferenceType*>(node.value_->resolved_type_)) {
-                val = TypeImplTable::Lookup(val_type, node.loc_)->MethodCall(*this, "@copy", {
-                    Arg(Process(*node.value_), sema::TypeTable::ReferenceTypeGet(val_type))
-                });
-            }
-
-            // = 1 + 2, temp value
-            else {
-                val = ExprValGet(*node.value_);
-            }
+            auto val_type = node.value_->resolved_type_->ReferenceUnwrap();
+            auto val      = ValCopy(*node.value_);
 
             // Release all scopes before leaving the function
             ReleaseEmit(0);
@@ -995,6 +954,12 @@ namespace xcompiler {
 
     llvm::Value* IRGen::Process(ForStmt& node) {
         auto data = ExprValGet(*node.data_);
+
+        if (!dynamic_cast<IdExpr*>(node.data_.get()) &&
+            !dynamic_cast<sema::ReferenceType*>(node.data_->resolved_type_))
+        {
+            ValOwn(data, node.data_->resolved_type_->ReferenceUnwrap());
+        }
 
         auto iterate = [&](llvm::Value* data_ptr, llvm::Value* offset, llvm::Value* len, llvm::Type* elem_llvm_type) {
             auto& builder   = llvm_builder();
@@ -1027,7 +992,7 @@ namespace xcompiler {
                 builder.CreateStore(builder.CreateLoad(elem_llvm_type, elem), iter_slot);
 
                 state_.loop_nextblocks_.emplace_back(State::LoopNextBlock{
-                    block_step, block_end, state_.release_scopes_.size()
+                    block_step, block_end, state_.release_var_scopes_.size()
                 });
                 Process(*node.body_, [&] { slot_scope_.Declare(node.iter_->name_, iter_slot); });
                 state_.loop_nextblocks_.pop_back();
@@ -1097,7 +1062,7 @@ namespace xcompiler {
             llvm_builder().SetInsertPoint(block_body);
             {
                 state_.loop_nextblocks_.emplace_back(State::LoopNextBlock{
-                    block_step, block_end, state_.release_scopes_.size()
+                    block_step, block_end, state_.release_var_scopes_.size()
                 });
                 Process(*node.body_, [&] { slot_scope_.Declare(node.iter_->name_, iter_slot); });
                 state_.loop_nextblocks_.pop_back();
@@ -1191,7 +1156,7 @@ namespace xcompiler {
         state_.loop_nextblocks_.emplace_back(State::LoopNextBlock{
             .continue_            = block_cond,
             .break_               = block_end,
-            .release_scope_depth_ = state_.release_scopes_.size()
+            .release_scope_depth_ = state_.release_var_scopes_.size()
         });
         Process(*node.body_);
         state_.loop_nextblocks_.pop_back();

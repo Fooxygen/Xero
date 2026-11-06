@@ -117,12 +117,26 @@ namespace xcompiler {
     }
 
     void              IRGen::ReleaseEmit(size_t target_depth) {
-        for (size_t depth = state_.release_scopes_.size(); depth > target_depth; depth--) {
-            auto& scope = state_.release_scopes_[depth - 1];
-            for (auto scope_it = scope.rbegin(); scope_it != scope.rend(); ++scope_it) {
-                TypeImplTable::Lookup(scope_it->type)->MethodCall(*this, "@release", {
-                    Arg(scope_it->slot, sema::TypeTable::ReferenceTypeGet(scope_it->type))
-                });
+        for (size_t depth = state_.release_var_scopes_.size(); depth > target_depth; depth--) {
+
+            // Variables
+            {
+                auto& scope = state_.release_var_scopes_[depth - 1];
+                for (auto scope_it = scope.rbegin(); scope_it != scope.rend(); ++scope_it) {
+                    TypeImplTable::Lookup(scope_it->type)->MethodCall(*this, "@release", {
+                        Arg(scope_it->slot, sema::TypeTable::ReferenceTypeGet(scope_it->type))
+                    });
+                }
+            }
+
+            // Values
+            {
+                auto& scope = state_.release_val_scopes_[depth - 1];
+                for (auto scope_it = scope.rbegin(); scope_it != scope.rend(); ++scope_it) {
+                    TypeImplTable::Lookup(scope_it->type)->MethodCall(*this, "@release", {
+                        Arg(scope_it->slot, sema::TypeTable::ReferenceTypeGet(scope_it->type))
+                    });
+                }
             }
         }
     }
@@ -152,12 +166,6 @@ namespace xcompiler {
         return var;
     }
 
-    llvm::Value*      IRGen::ValMaterialize(llvm::Value* val, sema::Type* type) {
-        auto slot = SlotCreate(LlvmType(type), ".val.slot");
-        llvm_builder().CreateStore(val, slot);
-        return slot;
-    }
-    
     llvm::Value*      IRGen::ExprValGet(Expr& node) {
         auto val = Process(node);
 
@@ -172,6 +180,42 @@ namespace xcompiler {
             );
         }
         return val;
+    }
+
+    llvm::Value*      IRGen::ValMaterialize(llvm::Value* val, sema::Type* type) {
+        auto slot = SlotCreate(LlvmType(type), ".val.slot");
+        llvm_builder().CreateStore(val, slot);
+        return slot;
+    }
+
+    llvm::Value*      IRGen::ValOwn(llvm::Value* val, sema::Type* type) {
+        auto slot = ValMaterialize(val, type);
+        state_.release_val_scopes_.back().emplace_back(slot, type);
+        return slot;
+    }
+
+    llvm::Value*      IRGen::ValCopy(Expr& node) {
+        auto* type = node.resolved_type_->ReferenceUnwrap();
+
+        // = a, IdExpr
+        if (auto* idexpr = dynamic_cast<IdExpr*>(&node)) {
+            return TypeImplTable::Lookup(type)->MethodCall(*this, "@copy", {
+                Arg(IdAddrGet(*idexpr), sema::TypeTable::ReferenceTypeGet(type))
+            });
+        }
+
+        // = s[0], Address
+        if (dynamic_cast<sema::ReferenceType*>(node.resolved_type_)) {
+            return TypeImplTable::Lookup(type)->MethodCall(*this, "@copy", {
+                Arg(Process(node), sema::TypeTable::ReferenceTypeGet(type))
+            });
+        }
+
+        // = 1 + 2, Value
+        auto addr = ValOwn(ExprValGet(node), type);
+        return TypeImplTable::Lookup(type)->MethodCall(*this, "@copy", {
+            Arg(addr, sema::TypeTable::ReferenceTypeGet(type))
+        });
     }
 
     Arg               IRGen::ArgRefMake(llvm::Value* val, sema::Type* type) {
