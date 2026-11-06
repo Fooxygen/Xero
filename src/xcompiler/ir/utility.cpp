@@ -138,7 +138,7 @@ namespace xcompiler {
 
     // Expr
 
-    llvm::Value*      IRGen::IdResolve(IdExpr& node) {
+    llvm::Value*      IRGen::IdAddrGet(IdExpr& node) {
         auto var = slot_scope_.Lookup(node.name_, node.loc_);
 
         // ReferenceType
@@ -153,12 +153,12 @@ namespace xcompiler {
     }
 
     llvm::Value*      IRGen::ValMaterialize(llvm::Value* val, sema::Type* type) {
-        auto slot = SlotCreate(LlvmType(type), ".arg.slot");
+        auto slot = SlotCreate(LlvmType(type), ".val.slot");
         llvm_builder().CreateStore(val, slot);
         return slot;
     }
     
-    llvm::Value*      IRGen::ExprLoad(Expr& node) {
+    llvm::Value*      IRGen::ExprValGet(Expr& node) {
         auto val = Process(node);
 
         // ReferenceType

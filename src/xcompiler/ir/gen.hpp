@@ -138,14 +138,14 @@ namespace xcompiler {
         // └─ Expr
 
         // e.g. x: i32 = 3; z: i32& = x;
-        //      IdResolve(x): getting address of x
-        //      IdResolve(z): getting address of x actually
-        llvm::Value*      IdResolve(IdExpr& node);
+        //      IdAddrGet(x): get address of x
+        //      IdAddrGet(z): get address of x actually
+        llvm::Value*      IdAddrGet(IdExpr& node);                                      // get address from idexpr
+        llvm::Value*      ValMaterialize(llvm::Value* val, sema::Type* type);           // allocate memory for value to store
+        llvm::Value*      ExprValGet(Expr& node);                                       // get value from expr
         
-        llvm::Value*      ValMaterialize(llvm::Value* val, sema::Type* type);           // allocating memory for val to store
-        llvm::Value*      ExprLoad(Expr& node);                                         // loading val from expr
         Arg               ArgRefMake(llvm::Value* val, sema::Type* type);               // wrap value as ref arg
-        llvm::Value*      ArgLoad(const Arg& arg);                                      // take value   from arg
+        llvm::Value*      ArgLoad(const Arg& arg);                                      // take value from arg
         llvm::Value*      ArgAddr(const Arg& arg);                                      // take address from arg
 
         // Module
