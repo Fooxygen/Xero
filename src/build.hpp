@@ -13,7 +13,7 @@ public:
         Snapshot, Beta, RC, Release
     };
 
-    inline static const Channel     channel_       = Channel::RC;
+    inline static const Channel     channel_       = Channel::Release;
     inline static const std::string channel_iter_  = "1";
 
     inline static const std::string version_major_ = "2026";
