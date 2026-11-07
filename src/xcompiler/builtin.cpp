@@ -3,7 +3,10 @@
 //  Copyright (c) 2026 Fooxygen.
 //  Licensed under the MIT License.
 
+#include <optional>
+
 #include "llvm/IR/Function.h"
+#include "llvm/IR/Intrinsics.h"
 
 #include "sema/defs/fn.hpp"
 #include "sema/defs/type.hpp"
@@ -19,12 +22,7 @@ namespace xcompiler {
         auto module = gen.llvm_module();
         if (auto fn = module->getFunction(name)) return fn;
 
-        return llvm::Function::Create(
-            fntype,
-            llvm::Function::ExternalLinkage,
-            name,
-            module
-        );
+        return llvm::Function::Create(fntype, llvm::Function::ExternalLinkage, name, module);
     }
     
     llvm::Function* LibC_printf(IRGen& gen) {
@@ -122,6 +120,72 @@ namespace xcompiler {
 
             Register(sema::FnSign(none_, {}, nullptr, {}, "print"),   Impl_print);
             Register(sema::FnSign(none_, {}, nullptr, {}, "println"), Impl_println);
+        }
+
+        // Math
+        {
+            auto f32_ = sema::TypeTable::Lookup("f32");
+            auto f64_ = sema::TypeTable::Lookup("f64");
+
+            auto Impl_sqrt = [](IRGen& gen, const std::vector<Arg>& args) -> llvm::Value* {
+                auto type = gen.LlvmType(args[0].type());
+                auto fn   = llvm::Intrinsic::getOrInsertDeclaration(
+                    gen.llvm_module(), llvm::Intrinsic::sqrt, { type }
+                );
+                return gen.llvm_builder().CreateCall(fn, {
+                    gen.ArgValGet(args[0])
+                });
+            };
+
+            auto Impl_libm_unary = [](const std::string& name) -> NativeFnImpl::Impl {
+                return [name](IRGen& gen, const std::vector<Arg>& args) -> llvm::Value* {
+                    auto type   = gen.LlvmType(args[0].type());
+                    auto fntype = llvm::FunctionType::get(type, { type }, false);
+                    auto fn     = LibCLookup(gen, name, fntype);
+                    return gen.llvm_builder().CreateCall(fn, {
+                        gen.ArgValGet(args[0])
+                    });
+                };
+            };
+
+            auto Impl_libm_binary = [](const std::string& name) -> NativeFnImpl::Impl {
+                return [name](IRGen& gen, const std::vector<Arg>& args) -> llvm::Value* {
+                    auto type   = gen.LlvmType(args[0].type());
+                    auto fntype = llvm::FunctionType::get(type, { type, type }, false);
+                    auto fn     = LibCLookup(gen, name, fntype);
+                    return gen.llvm_builder().CreateCall(fn, {
+                        gen.ArgValGet(args[0]),
+                        gen.ArgValGet(args[1])
+                    });
+                };
+            };
+
+            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "@sqrt"),     Impl_sqrt);
+            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "@sqrt"),     Impl_sqrt);
+
+            Register(sema::FnSign(f32_, { f32_, f32_ }, std::nullopt, {}, "@pow"),      Impl_libm_binary("powf"));
+            Register(sema::FnSign(f64_, { f64_, f64_ }, std::nullopt, {}, "@pow"),      Impl_libm_binary("pow"));
+
+            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "@exp"),      Impl_libm_unary("expf"));
+            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "@exp"),      Impl_libm_unary("exp"));
+
+            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "@ln"),       Impl_libm_unary("logf"));
+            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "@ln"),       Impl_libm_unary("log"));
+
+            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "@log2"),     Impl_libm_unary("log2f"));
+            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "@log2"),     Impl_libm_unary("log2"));
+
+            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "@log10"),    Impl_libm_unary("log10f"));
+            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "@log10"),    Impl_libm_unary("log10"));
+
+            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "@sin"),      Impl_libm_unary("sinf"));
+            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "@sin"),      Impl_libm_unary("sin"));
+
+            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "@cos"),      Impl_libm_unary("cosf"));
+            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "@cos"),      Impl_libm_unary("cos"));
+
+            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "@tan"),      Impl_libm_unary("tanf"));
+            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "@tan"),      Impl_libm_unary("tan"));
         }
     }
 }

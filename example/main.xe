@@ -1,12 +1,48 @@
 
-fn sink(s: string) {
-}
+use xero::math
 
 fn main() {
-    i: i32 = 0;
-    while (i < 30000000) {
-        sink("hello");
-        i += 1;
-    }
-    println("done");
+    # f64
+    zero64:       f64 = 0.0;
+    one64:        f64 = 1.0;
+    two64:        f64 = 2.0;
+    eight64:      f64 = 8.0;
+    ten64:        f64 = 10.0;
+    hundred64:    f64 = 100.0;
+    half_pi64:    f64 = 1.5707963267948966;
+    quarter_pi64: f64 = 0.7853981633974483;
+
+    println("== f64 ==");
+    println("sqrt(2)     =", math::sqrt(two64));           # 1.414214
+    println("pow(2, 10)  =", math::pow(two64, ten64));     # 1024.000000
+    println("exp(1)      =", math::exp(one64));            # 2.718282
+    println("ln(2)       =", math::ln(two64));             # 0.693147
+    println("log2(8)     =", math::log2(eight64));         # 3.000000
+    println("log10(100)  =", math::log10(hundred64));      # 2.000000
+    println("sin(pi/2)   =", math::sin(half_pi64));        # 1.000000
+    println("cos(0)      =", math::cos(zero64));           # 1.000000
+    println("tan(pi/4)   =", math::tan(quarter_pi64));     # 1.000000
+    println("log(8, 2)   =", math::log(eight64, two64));   # 3.000000
+
+    # f32
+    zero32:       f32 = 0.0;
+    one32:        f32 = 1.0;
+    two32:        f32 = 2.0;
+    eight32:      f32 = 8.0;
+    ten32:        f32 = 10.0;
+    hundred32:    f32 = 100.0;
+    half_pi32:    f32 = 1.5707963;
+    quarter_pi32: f32 = 0.7853982;
+
+    println("== f32 ==");
+    println("sqrt(2)     =", math::sqrt(two32));           # 1.414214
+    println("pow(2, 10)  =", math::pow(two32, ten32));     # 1024.000000
+    println("exp(1)      =", math::exp(one32));            # 2.718282
+    println("ln(2)       =", math::ln(two32));             # 0.693147
+    println("log2(8)     =", math::log2(eight32));         # 3.000000
+    println("log10(100)  =", math::log10(hundred32));      # 2.000000
+    println("sin(pi/2)   =", math::sin(half_pi32));        # 1.000000
+    println("cos(0)      =", math::cos(zero32));           # 1.000000
+    println("tan(pi/4)   =", math::tan(quarter_pi32));     # 1.000000
+    println("log(8, 2)   =", math::log(eight32, two32));   # 3.000000
 }

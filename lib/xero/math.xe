@@ -44,13 +44,41 @@ fn fract(x: f32) -> f32 { return x %% 1.0; }
 fn fract(x: f64) -> f64 { return x %% 1.0; }
 
 # sqrt
+fn sqrt(x: f32) -> f32 { return @sqrt(x); }
+fn sqrt(x: f64) -> f64 { return @sqrt(x); }
+
 # pow
+fn pow(x: f32, y: f32) -> f32 { return @pow(x, y); }
+fn pow(x: f64, y: f64) -> f64 { return @pow(x, y); }
+
 # exp
-# log
-# log2
-# log10
+fn exp(x: f32) -> f32 { return @exp(x); }
+fn exp(x: f64) -> f64 { return @exp(x); }
+
 # ln
+fn ln(x: f32) -> f32 { return @ln(x); }
+fn ln(x: f64) -> f64 { return @ln(x); }
+
+# log2
+fn log2(x: f32) -> f32 { return @log2(x); }
+fn log2(x: f64) -> f64 { return @log2(x); }
+
+# log10
+fn log10(x: f32) -> f32 { return @log10(x); }
+fn log10(x: f64) -> f64 { return @log10(x); }
+
+# log
+fn log(x: f32, base: f32) -> f32 { return ln(x) / ln(base); }
+fn log(x: f64, base: f64) -> f64 { return ln(x) / ln(base); }
 
 # sin
+fn sin(x: f32) -> f32 { return @sin(x); }
+fn sin(x: f64) -> f64 { return @sin(x); }
+
 # cos
+fn cos(x: f32) -> f32 { return @cos(x); }
+fn cos(x: f64) -> f64 { return @cos(x); }
+
 # tan
+fn tan(x: f32) -> f32 { return @tan(x); }
+fn tan(x: f64) -> f64 { return @tan(x); }
