@@ -127,6 +127,16 @@ namespace xcompiler {
             auto f32_ = sema::TypeTable::Lookup("f32");
             auto f64_ = sema::TypeTable::Lookup("f64");
 
+            auto Impl_abs = [](IRGen& gen, const std::vector<Arg>& args) -> llvm::Value* {
+                auto type = gen.LlvmType(args[0].type());
+                auto fn   = llvm::Intrinsic::getOrInsertDeclaration(
+                    gen.llvm_module(), llvm::Intrinsic::fabs, { type }
+                );
+                return gen.llvm_builder().CreateCall(fn, {
+                    gen.ArgValGet(args[0])
+                });
+            };
+
             auto Impl_sqrt = [](IRGen& gen, const std::vector<Arg>& args) -> llvm::Value* {
                 auto type = gen.LlvmType(args[0].type());
                 auto fn   = llvm::Intrinsic::getOrInsertDeclaration(
@@ -159,6 +169,15 @@ namespace xcompiler {
                     });
                 };
             };
+
+            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "@abs"),      Impl_abs);
+            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "@abs"),      Impl_abs);
+
+            Register(sema::FnSign(f32_, { f32_, f32_ }, std::nullopt, {}, "@min"),      Impl_libm_binary("fminf"));
+            Register(sema::FnSign(f64_, { f64_, f64_ }, std::nullopt, {}, "@min"),      Impl_libm_binary("fmin"));
+
+            Register(sema::FnSign(f32_, { f32_, f32_ }, std::nullopt, {}, "@max"),      Impl_libm_binary("fmaxf"));
+            Register(sema::FnSign(f64_, { f64_, f64_ }, std::nullopt, {}, "@max"),      Impl_libm_binary("fmax"));
 
             Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "@sqrt"),     Impl_sqrt);
             Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "@sqrt"),     Impl_sqrt);

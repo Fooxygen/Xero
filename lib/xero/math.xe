@@ -5,12 +5,18 @@
 
 fn abs(x: i32) -> i32 { if (x < 0) { return -x; } return x; }
 fn abs(x: i64) -> i64 { if (x < 0) { return -x; } return x; }
+fn abs(x: f32) -> f32 { return @abs(x); }
+fn abs(x: f64) -> f64 { return @abs(x); }
 
 fn min(a: i32, b: i32) -> i32 { if (a < b) { return a; } return b; }
 fn min(a: i64, b: i64) -> i64 { if (a < b) { return a; } return b; }
+fn min(a: f32, b: f32) -> f32 { return @min(a, b); }
+fn min(a: f64, b: f64) -> f64 { return @min(a, b); }
 
 fn max(a: i32, b: i32) -> i32 { if (a < b) { return b; } return a; }
 fn max(a: i64, b: i64) -> i64 { if (a < b) { return b; } return a; }
+fn max(a: f32, b: f32) -> f32 { return @max(a, b); }
+fn max(a: f64, b: f64) -> f64 { return @max(a, b); }
 
 fn clamp(x: i32, l: i32, h: i32) -> i32 {
     if (x < l) return l;
@@ -18,6 +24,16 @@ fn clamp(x: i32, l: i32, h: i32) -> i32 {
     return x;
 }
 fn clamp(x: i64, l: i64, h: i64) -> i64 {
+    if (x < l) return l;
+    if (x > h) return h;
+    return x;
+}
+fn clamp(x: f32, l: f32, h: f32) -> f32 {
+    if (x < l) return l;
+    if (x > h) return h;
+    return x;
+}
+fn clamp(x: f64, l: f64, h: f64) -> f64 {
     if (x < l) return l;
     if (x > h) return h;
     return x;

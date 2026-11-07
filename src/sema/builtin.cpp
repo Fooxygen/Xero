@@ -23,6 +23,15 @@ namespace sema {
 
         // Math
         {
+            fn_scope_.Add("@abs",   FnSign(f32_, { f32_ }));
+            fn_scope_.Add("@abs",   FnSign(f64_, { f64_ }));
+
+            fn_scope_.Add("@min",   FnSign(f32_, { f32_, f32_ }));
+            fn_scope_.Add("@min",   FnSign(f64_, { f64_, f64_ }));
+
+            fn_scope_.Add("@max",   FnSign(f32_, { f32_, f32_ }));
+            fn_scope_.Add("@max",   FnSign(f64_, { f64_, f64_ }));
+
             fn_scope_.Add("@sqrt",  FnSign(f32_, { f32_ }));
             fn_scope_.Add("@sqrt",  FnSign(f64_, { f64_ }));
 
