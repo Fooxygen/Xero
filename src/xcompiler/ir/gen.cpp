@@ -218,7 +218,7 @@ namespace xcompiler {
             }
         }
 
-        auto call = [&](sema::Type* type, const std::string& name, std::vector<Arg> args) {
+        auto OperCall = [&](sema::Type* type, const std::string& name, std::vector<Arg> args) {
             return ValOwn(
                 TypeImplTable::Lookup(type, node.loc_)->MethodCall(*this, name, std::move(args), node.loc_),
                 node.resolved_type_
@@ -230,8 +230,8 @@ namespace xcompiler {
         {
             auto ltype = node.lexpr_->resolved_type_->ReferenceUnwrap();
             switch (node.oper_type_) {
-                case Neg: return call(ltype, "@neg", { ArgRefMake(lval, ltype) });  // tmp value is packaged as arg
-                case Not: return call(ltype, "@not", { ArgRefMake(lval, ltype) });
+                case Neg: return OperCall(ltype, "@neg", { ArgRefMake(lval, ltype) });  // tmp value is packaged as arg
+                case Not: return OperCall(ltype, "@not", { ArgRefMake(lval, ltype) });
                 default:  break;
             }
         }
@@ -301,20 +301,20 @@ namespace xcompiler {
             rval = TypeImplTable::Cast(*this, rval, rtype, com_type, node.loc_);
 
             switch (node.oper_type_) {
-                case Plus:  return call(com_type, "@plus",  { ArgRefMake(lval, com_type), Arg(rval, com_type) });
-                case Minus: return call(com_type, "@minus", { ArgRefMake(lval, com_type), Arg(rval, com_type) });
-                case Star:  return call(com_type, "@star",  { ArgRefMake(lval, com_type), Arg(rval, com_type) });
-                case Slash: return call(com_type, "@slash", { ArgRefMake(lval, com_type), Arg(rval, com_type) });
-                case ModT:  return call(com_type, "@modt",  { ArgRefMake(lval, com_type), Arg(rval, com_type) });
-                case ModF:  return call(com_type, "@modf",  { ArgRefMake(lval, com_type), Arg(rval, com_type) });
-                case Gt:    return call(com_type, "@gt",    { ArgRefMake(lval, com_type), Arg(rval, com_type) });
-                case Lt:    return call(com_type, "@lt",    { ArgRefMake(lval, com_type), Arg(rval, com_type) });
-                case Ge:    return call(com_type, "@ge",    { ArgRefMake(lval, com_type), Arg(rval, com_type) });
-                case Le:    return call(com_type, "@le",    { ArgRefMake(lval, com_type), Arg(rval, com_type) });
-                case Eq:    return call(com_type, "@eq",    { ArgRefMake(lval, com_type), Arg(rval, com_type) });
-                case Neq:   return call(com_type, "@neq",   { ArgRefMake(lval, com_type), Arg(rval, com_type) });
-                case And:   return call(com_type, "@and",   { ArgRefMake(lval, com_type), Arg(rval, com_type) });
-                case Or:    return call(com_type, "@or",    { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case Plus:  return OperCall(com_type, "@plus",  { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case Minus: return OperCall(com_type, "@minus", { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case Star:  return OperCall(com_type, "@star",  { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case Slash: return OperCall(com_type, "@slash", { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case ModT:  return OperCall(com_type, "@modt",  { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case ModF:  return OperCall(com_type, "@modf",  { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case Gt:    return OperCall(com_type, "@gt",    { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case Lt:    return OperCall(com_type, "@lt",    { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case Ge:    return OperCall(com_type, "@ge",    { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case Le:    return OperCall(com_type, "@le",    { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case Eq:    return OperCall(com_type, "@eq",    { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case Neq:   return OperCall(com_type, "@neq",   { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case And:   return OperCall(com_type, "@and",   { ArgRefMake(lval, com_type), Arg(rval, com_type) });
+                case Or:    return OperCall(com_type, "@or",    { ArgRefMake(lval, com_type), Arg(rval, com_type) });
                 default:    return nullptr;
             }
         }
@@ -859,7 +859,7 @@ namespace xcompiler {
         auto fn        = llvm_builder().GetInsertBlock()->getParent();
         auto block_end = BlockCreate(".cond.end", fn);
 
-        std::function<void(CondStmt&)> emit = [&](CondStmt& node_sub) {
+        std::function<void(CondStmt&)> Emit = [&](CondStmt& node_sub) {
 
             // Cond
             if (!node_sub.cond_) {
@@ -885,12 +885,12 @@ namespace xcompiler {
             // Else Block
             llvm_builder().SetInsertPoint(block_else);
             if (node_sub.next_)
-                emit(*node_sub.next_);
+                Emit(*node_sub.next_);
             else
                 BlockTermCreate(block_end);
         };
 
-        emit(node);
+        Emit(node);
         llvm_builder().SetInsertPoint(block_end);
         return nullptr;
     }
@@ -934,7 +934,7 @@ namespace xcompiler {
     llvm::Value* IRGen::Process(ForStmt& node) {
         auto data = ExprValGet(*node.data_);
 
-        auto iterate = [&](llvm::Value* data_ptr, llvm::Value* offset, llvm::Value* len, llvm::Type* elem_llvm_type) {
+        auto Iterate = [&](llvm::Value* data_ptr, llvm::Value* offset, llvm::Value* len, llvm::Type* elem_llvm_type) {
             auto& builder   = llvm_builder();
             auto  elem_size = llvm_module()->getDataLayout().getTypeAllocSize(elem_llvm_type);
             auto  iter_slot = SlotCreate(elem_llvm_type, node.iter_->name_);
@@ -995,7 +995,7 @@ namespace xcompiler {
             auto step_val       = llvm_builder().CreateExtractValue(data, 2);
             auto is_closed_val  = llvm_builder().CreateExtractValue(data, 3);
 
-            auto cmp = [&](const std::string& name, llvm::Value* a, llvm::Value* b) {
+            auto Cmp = [&](const std::string& name, llvm::Value* a, llvm::Value* b) {
                 return iter_type_impl->MethodCall(*this, name, {
                     ArgRefMake(a, iter_type), Arg(b, iter_type)
                 }, node.loc_);
@@ -1018,16 +1018,16 @@ namespace xcompiler {
             {
                 auto iter_val = llvm_builder().CreateLoad(LlvmType(iter_type), iter_slot);
 
-                auto is_up = cmp("@ge", right_val, left_val);   // increasing
-                auto ge    = cmp("@ge", iter_val, right_val);
-                auto gt    = cmp("@gt", iter_val, right_val);
-                auto le    = cmp("@le", iter_val, right_val);
-                auto lt    = cmp("@lt", iter_val, right_val);
+                auto is_up = Cmp("@ge", right_val, left_val);   // increasing
+                auto ge    = Cmp("@ge", iter_val, right_val);
+                auto gt    = Cmp("@gt", iter_val, right_val);
+                auto le    = Cmp("@le", iter_val, right_val);
+                auto lt    = Cmp("@lt", iter_val, right_val);
 
                 auto overstep_inc = llvm_builder().CreateSelect(is_closed_val, gt, ge);
                 auto overstep_dec = llvm_builder().CreateSelect(is_closed_val, lt, le);
                 auto overstep     = llvm_builder().CreateSelect(is_up, overstep_inc, overstep_dec);
-                
+
                 llvm_builder().CreateCondBr(overstep, block_end, block_body);
             }
 
@@ -1050,7 +1050,7 @@ namespace xcompiler {
             llvm_builder().SetInsertPoint(block_step);
             {
                 auto iter_val      = llvm_builder().CreateLoad(LlvmType(iter_type), iter_slot);
-                auto iter_val_next = cmp("@plus", iter_val, step_val);
+                auto iter_val_next = Cmp("@plus", iter_val, step_val);
                 llvm_builder().CreateStore(iter_val_next, iter_slot);
                 llvm_builder().CreateBr(block_cond);
             }
@@ -1063,7 +1063,7 @@ namespace xcompiler {
         else if (node.data_->resolved_type_->Is("array")) {
             auto array_type = (sema::ParametricType*)node.data_->resolved_type_->ReferenceUnwrap();
             auto elem_type  = array_type->params()[0];
-            iterate(
+            Iterate(
                 llvm_builder().CreateExtractValue(data, 0),
                 llvm_builder().getInt64(0),
                 llvm_builder().CreateExtractValue(data, 1),
@@ -1076,7 +1076,7 @@ namespace xcompiler {
             auto view_type = (sema::ParametricType*)node.data_->resolved_type_->ReferenceUnwrap();
             auto elem_type = view_type->params()[0];
             auto arr_val   = llvm_builder().CreateLoad(LlvmType(sema::TypeTable::Lookup("array")), llvm_builder().CreateExtractValue(data, 0));
-            iterate(
+            Iterate(
                 llvm_builder().CreateExtractValue(arr_val, 0),
                 llvm_builder().CreateExtractValue(data, 1),
                 llvm_builder().CreateExtractValue(data, 2),
@@ -1086,7 +1086,7 @@ namespace xcompiler {
 
         // string
         else if (node.data_->resolved_type_->Is("string")) {
-            iterate(
+            Iterate(
                 llvm_builder().CreateExtractValue(data, 0),
                 llvm_builder().getInt64(0),
                 llvm_builder().CreateExtractValue(data, 1),
@@ -1097,7 +1097,7 @@ namespace xcompiler {
         // stringview
         else if (node.data_->resolved_type_->Is("stringview")) {
             auto str_val = llvm_builder().CreateLoad(LlvmType(sema::TypeTable::Lookup("string")), llvm_builder().CreateExtractValue(data, 0));
-            iterate(
+            Iterate(
                 llvm_builder().CreateExtractValue(str_val, 0),
                 llvm_builder().CreateExtractValue(data, 1),
                 llvm_builder().CreateExtractValue(data, 2),

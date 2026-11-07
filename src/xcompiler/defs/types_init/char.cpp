@@ -55,11 +55,11 @@ namespace xcompiler {
             );
 
             // Store
-            auto store_byte = [&](llvm::Value* val, uint32_t idx) {
+            auto ByteStore = [&](llvm::Value* val, uint32_t idx) {
                 auto ptr = builder.CreateGEP(builder.getInt8Ty(), buf, { builder.getInt32(idx) });
                 builder.CreateStore(builder.CreateTrunc(val, builder.getInt8Ty()), ptr);
             };
-            auto store_null = [&](uint32_t idx) {
+            auto NullStore = [&](uint32_t idx) {
                 auto ptr = builder.CreateGEP(builder.getInt8Ty(), buf, { builder.getInt32(idx) });
                 builder.CreateStore(builder.getInt8(0), ptr);
             };
@@ -78,8 +78,8 @@ namespace xcompiler {
             builder.CreateCondBr(builder.CreateICmpULT(codepoint, builder.getInt32(0x80)), block_encode_1, block_encode_or234);
             builder.SetInsertPoint(block_encode_1);
             {
-                store_byte(codepoint, 0);
-                store_null(1);
+                ByteStore(codepoint, 0);
+                NullStore(1);
                 builder.CreateBr(block_end);
             }
 
@@ -88,9 +88,9 @@ namespace xcompiler {
             builder.CreateCondBr(builder.CreateICmpULT(codepoint, builder.getInt32(0x800)), block_encode_2, block_encode_or34);
             builder.SetInsertPoint(block_encode_2);
             {
-                store_byte(builder.CreateOr(builder.getInt32(0xc0), builder.CreateLShr(codepoint, builder.getInt32(6))), 0);
-                store_byte(builder.CreateOr(builder.getInt32(0x80), builder.CreateAnd(codepoint, builder.getInt32(0x3f))), 1);
-                store_null(2);
+                ByteStore(builder.CreateOr(builder.getInt32(0xc0), builder.CreateLShr(codepoint, builder.getInt32(6))), 0);
+                ByteStore(builder.CreateOr(builder.getInt32(0x80), builder.CreateAnd(codepoint, builder.getInt32(0x3f))), 1);
+                NullStore(2);
                 builder.CreateBr(block_end);
             }
 
@@ -99,27 +99,27 @@ namespace xcompiler {
             builder.CreateCondBr(builder.CreateICmpULT(codepoint, builder.getInt32(0x10000)), block_encode_3, block_encode_4);
             builder.SetInsertPoint(block_encode_3);
             {
-                store_byte(builder.CreateOr(builder.getInt32(0xe0), builder.CreateLShr(codepoint, builder.getInt32(12))), 0);
-                store_byte(builder.CreateOr(builder.getInt32(0x80),
+                ByteStore(builder.CreateOr(builder.getInt32(0xe0), builder.CreateLShr(codepoint, builder.getInt32(12))), 0);
+                ByteStore(builder.CreateOr(builder.getInt32(0x80),
                     builder.CreateAnd(builder.CreateLShr(codepoint, builder.getInt32(6)), builder.getInt32(0x3f))
                 ), 1);
-                store_byte(builder.CreateOr(builder.getInt32(0x80), builder.CreateAnd(codepoint, builder.getInt32(0x3f))), 2);
-                store_null(3);
+                ByteStore(builder.CreateOr(builder.getInt32(0x80), builder.CreateAnd(codepoint, builder.getInt32(0x3f))), 2);
+                NullStore(3);
                 builder.CreateBr(block_end);
             }
 
             // 4 Bytes Block
             builder.SetInsertPoint(block_encode_4);
             {
-                store_byte(builder.CreateOr(builder.getInt32(0xf0), builder.CreateLShr(codepoint, builder.getInt32(18))), 0);
-                store_byte(builder.CreateOr(builder.getInt32(0x80),
+                ByteStore(builder.CreateOr(builder.getInt32(0xf0), builder.CreateLShr(codepoint, builder.getInt32(18))), 0);
+                ByteStore(builder.CreateOr(builder.getInt32(0x80),
                     builder.CreateAnd(builder.CreateLShr(codepoint, builder.getInt32(12)), builder.getInt32(0x3f))
                 ), 1);
-                store_byte(builder.CreateOr(builder.getInt32(0x80),
+                ByteStore(builder.CreateOr(builder.getInt32(0x80),
                     builder.CreateAnd(builder.CreateLShr(codepoint, builder.getInt32(6)), builder.getInt32(0x3f))
                 ), 2);
-                store_byte(builder.CreateOr(builder.getInt32(0x80), builder.CreateAnd(codepoint, builder.getInt32(0x3f))), 3);
-                store_null(4);
+                ByteStore(builder.CreateOr(builder.getInt32(0x80), builder.CreateAnd(codepoint, builder.getInt32(0x3f))), 3);
+                NullStore(4);
                 builder.CreateBr(block_end);
             }
 

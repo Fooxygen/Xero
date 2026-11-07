@@ -82,32 +82,35 @@ namespace xcompiler {
     void BuiltinFnRegister(sema::FnScope& fn_scope) {
         auto none_ = sema::TypeTable::Lookup("none");
 
+        auto Register = [&](sema::FnSign sign_reference, NativeFnImpl::Impl impl) {
+            auto sign = fn_scope.Lookup(sign_reference.name())->SignLookup(sign_reference);
+            FnImplTable::Add(sign_reference.name(), sign, std::make_unique<NativeFnImpl>(impl));
+        };
+
         // print and println
         {
-            auto impl_print_one = [](IRGen& gen, const Arg& arg) {
-                auto caller     = gen.ArgRefMake(arg.val(), arg.type());  // x -> &x, &x -> &x
+            auto Impl_print_one = [](IRGen& gen, const Arg& arg) {
+                auto caller      = gen.ArgRefMake(arg.val(), arg.type());  // x -> &x, &x -> &x
                 auto type        = arg.type();
                 auto method      = ((sema::BasicType*)type->BasicTypeGet())->method_table().Lookup("@print");
                 auto method_sign = method->SignLookup(caller.type(), {});
                 auto method_impl = TypeImplTable::Lookup(type)->MethodLookup(method_sign);
                 ((NativeFnImpl*)method_impl)->impl()(gen, { caller });
             };
-
-            auto impl_print = [impl_print_one](IRGen& gen, const std::vector<Arg>& args) -> llvm::Value* {
+            auto Impl_print     = [Impl_print_one](IRGen& gen, const std::vector<Arg>& args) -> llvm::Value* {
                 auto& builder = gen.llvm_builder();
                 for (size_t i = 0; i < args.size(); i++) {
                     if (i != 0) builder.CreateCall(LibC_printf(gen), {
                         builder.CreateGlobalString(" ", ".delim")
                     });
-                    impl_print_one(gen, args[i]);
+                    Impl_print_one(gen, args[i]);
                 }
 
                 return nullptr;
             };
-
-            auto impl_println = [impl_print_one, impl_print](IRGen& gen, const std::vector<Arg>& args) -> llvm::Value* {
+            auto Impl_println   = [Impl_print](IRGen& gen, const std::vector<Arg>& args) -> llvm::Value* {
                 auto& builder = gen.llvm_builder();
-                impl_print(gen, args);
+                Impl_print(gen, args);
 
                 // Line Break
                 builder.CreateCall(LibC_printf(gen), {
@@ -117,10 +120,8 @@ namespace xcompiler {
                 return nullptr;
             };
 
-            auto sign_print   = fn_scope.Lookup("print")->SignLookup(sema::FnSign(none_, {}, nullptr, {}, "print"));
-            auto sign_println = fn_scope.Lookup("println")->SignLookup(sema::FnSign(none_, {}, nullptr, {}, "println"));
-            FnImplTable::Add("print", sign_print,   std::make_unique<NativeFnImpl>(impl_print));
-            FnImplTable::Add("println", sign_println, std::make_unique<NativeFnImpl>(impl_println));
+            Register(sema::FnSign(none_, {}, nullptr, {}, "print"),   Impl_print);
+            Register(sema::FnSign(none_, {}, nullptr, {}, "println"), Impl_println);
         }
     }
 }

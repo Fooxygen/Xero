@@ -14,7 +14,7 @@ namespace parser {
         // Oper Auxiliary
 
         static auto IsOperPriority = [](TT a, TT b) {
-            auto group = [](TT type) {
+            auto GroupGet = [](TT type) {
                 switch (type) {
                     case TT::LBkt:
                     case TT::LParen:
@@ -51,7 +51,7 @@ namespace parser {
                         return -7;
                 }
             };
-            return group(a) > group(b);
+            return GroupGet(a) > GroupGet(b);
         };
 
         static auto TokenType2OperType = [](TT token, bool is_unary) {
@@ -98,7 +98,7 @@ namespace parser {
             children.emplace_back(std::move(stmt));
             return std::make_unique<BlockExpr>(children);
         };
-        
+
         static auto PathGet       = [](std::unique_ptr<PathExpr> pathexpr) {
             Path path = {};
             for (auto& seg : pathexpr->segments_) {
