@@ -91,13 +91,43 @@ namespace sema {
         // Struct Member Decl
         for (auto& child : node_children) {
             if (child->type_ == AstType::StructDeclExpr) {
-                auto& declexpr    = (StructDeclExpr&)*child;
-                auto* struct_type = (StructType*)declexpr.resolved_type_;
+                auto& struct_decl = (StructDeclExpr&)*child;
+                auto* struct_type = (StructType*)struct_decl.resolved_type_;
 
-                for (auto& member : declexpr.body_->children_) {
+                for (auto& member : struct_decl.body_->children_) {
+
+                    if      (auto* stmt = dynamic_cast<ExprStmt*>(member.get())) {
+                        auto member_child = stmt->expr_.get();
+                        
+                        // Field
+                        if (member_child->type_ == AstType::DeclExpr) {
+                            auto* field_decl = dynamic_cast<DeclExpr*>(member_child);
+
+                            Process(*field_decl->bind_type_);
+                            auto* field_type  = field_decl->bind_type_->resolved_type_;
+                            auto  field_index = struct_type->fields().size();
+
+                            if (!struct_type->field_indices().emplace(field_decl->id_, field_index).second) {
+                                throw LogErr(LogStage::Sema, std::format(
+                                    "redefinition of field '{}' in type '{}'",
+                                    field_decl->id_, struct_type->name()
+                                ), field_decl->loc_);
+                            }
+                            struct_type->fields().emplace_back(Field{field_decl->id_, field_type, field_index});
+                        }
+                    }
+
                     // Method
-                    if (member->type_ == AstType::FnExpr) {
+                    else if (member->type_ == AstType::FnExpr) {
                         Declare((FnExpr&)*member, struct_type->method_table());
+                    }
+
+                    else if (member->type_ == AstType::DeclExpr) {
+                        throw LogErr(LogStage::Sema, "struct field must end with ';'", member->loc_);
+                    }
+                    
+                    else {
+                        throw LogErr(LogStage::Sema, "member of struct must be a field declaration", member->loc_);
                     }
                 }
             }
@@ -468,38 +498,8 @@ namespace sema {
             );
         }
 
-        // Fields
+        // Cycle Definition Check
         {
-            for (auto& child : node.body_->children_) {
-                if (child->type_ == AstType::FnExpr) continue;
-
-                auto* decl = dynamic_cast<DeclExpr*>(child.get());
-                if (!decl) {
-                    if (auto* stmt = dynamic_cast<ExprStmt*>(child.get())) {
-                        decl = dynamic_cast<DeclExpr*>(stmt->expr_.get());
-                    }
-                }
-                if (!decl || !decl->bind_type_) {
-                    throw LogErr(LogStage::Sema, std::format(
-                        "member of struct must be a field declaration, not '{}'",
-                        child->TypeName()
-                    ), child->loc_);
-                }
-
-                Process(*decl->bind_type_);
-                auto* field_type  = decl->bind_type_->resolved_type_;
-                auto  field_index = struct_type->fields().size();
-
-                if (!struct_type->field_indices().emplace(decl->id_, field_index).second) {
-                    throw LogErr(LogStage::Sema, std::format(
-                        "redefinition of field '{}' in type '{}'",
-                        decl->id_, struct_type->name()
-                    ), decl->loc_);
-                }
-                struct_type->fields().emplace_back(Field{decl->id_, field_type, field_index});
-            }
-
-            // Cycle Definition Check
             std::set<StructType*> visiting = {};
             std::function<void(StructType*)> CycleDefinitionCheck = [&](StructType* type) {
                 if (!visiting.insert(type).second) {

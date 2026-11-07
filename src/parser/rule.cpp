@@ -241,7 +241,8 @@ namespace parser {
                         std::move(pathexpr),
                         std::move(alias)
                     );
-                }
+                },
+                {}, {}, TTS_INIT{ TT::ColonColon }
             );
         }
 
@@ -376,7 +377,7 @@ namespace parser {
                     );
                 },
                 {}, {},
-                TTS_INIT{ TT::LEBkt, TT::Amper }
+                TTS_INIT{ TT::LEBkt, TT::Amper, TT::ColonColon }
             );
         }
         // └─ id: typeexpr -> declareexpr
