@@ -32,6 +32,18 @@ namespace sema {
             fn_scope_.Add("@max",   FnSign(f32_, { f32_, f32_ }));
             fn_scope_.Add("@max",   FnSign(f64_, { f64_, f64_ }));
 
+            fn_scope_.Add("@trunc", FnSign(f32_, { f32_ }));
+            fn_scope_.Add("@trunc", FnSign(f64_, { f64_ }));
+
+            fn_scope_.Add("@floor", FnSign(f32_, { f32_ }));
+            fn_scope_.Add("@floor", FnSign(f64_, { f64_ }));
+
+            fn_scope_.Add("@ceil",  FnSign(f32_, { f32_ }));
+            fn_scope_.Add("@ceil",  FnSign(f64_, { f64_ }));
+
+            fn_scope_.Add("@round", FnSign(f32_, { f32_ }));
+            fn_scope_.Add("@round", FnSign(f64_, { f64_ }));
+
             fn_scope_.Add("@sqrt",  FnSign(f32_, { f32_ }));
             fn_scope_.Add("@sqrt",  FnSign(f64_, { f64_ }));
 

@@ -40,24 +40,24 @@ fn clamp(x: f64, l: f64, h: f64) -> f64 {
 }
 
 # Round toward zero
-fn trunc(x: f32) -> f32 { return x - (x % 1.0); }   # x % 1.0  = x - trunc(x)
-fn trunc(x: f64) -> f64 { return x - (x % 1.0); }
+fn trunc(x: f32) -> f32 { return @trunc(x); }
+fn trunc(x: f64) -> f64 { return @trunc(x); }
 
 # Round down
-fn floor(x: f32) -> f32 { return x - (x %% 1.0); }  # x %% 1.0 = x - floor(x)
-fn floor(x: f64) -> f64 { return x - (x %% 1.0); }
+fn floor(x: f32) -> f32 { return @floor(x); }
+fn floor(x: f64) -> f64 { return @floor(x); }
 
 # Round up
-fn ceil(x: f32) -> f32 { return x + ((-x) %% 1.0); }
-fn ceil(x: f64) -> f64 { return x + ((-x) %% 1.0); }
+fn ceil(x: f32) -> f32 { return @ceil(x); }
+fn ceil(x: f64) -> f64 { return @ceil(x); }
 
-# Round to nearest
-fn round(x: f32) -> f32 { return floor(x + 0.5); }
-fn round(x: f64) -> f64 { return floor(x + 0.5); }
+# Round to nearest, halfway away from zero
+fn round(x: f32) -> f32 { return @round(x); }
+fn round(x: f64) -> f64 { return @round(x); }
 
 # Fractional part in [0, 1)
-fn fract(x: f32) -> f32 { return x %% 1.0; }
-fn fract(x: f64) -> f64 { return x %% 1.0; }
+fn fract(x: f32) -> f32 { return x - floor(x); }
+fn fract(x: f64) -> f64 { return x - floor(x); }
 
 # sqrt
 fn sqrt(x: f32) -> f32 { return @sqrt(x); }

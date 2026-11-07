@@ -2,47 +2,170 @@
 use xero::math
 
 fn main() {
-    # f64
-    zero64:       f64 = 0.0;
-    one64:        f64 = 1.0;
-    two64:        f64 = 2.0;
-    eight64:      f64 = 8.0;
-    ten64:        f64 = 10.0;
-    hundred64:    f64 = 100.0;
+    println("== 1. integer basic ==");
+
+    i32_neg:   i32 = -42;
+    i32_a:     i32 = -5;
+    i32_b:     i32 = 3;
+    i32_val:   i32 = 15;
+    i32_low:   i32 = 0;
+    i32_high:  i32 = 10;
+
+    i64_neg:   i64 = -42;
+    i64_a:     i64 = -5;
+    i64_b:     i64 = 3;
+    i64_val:   i64 = 15;
+    i64_low:   i64 = 0;
+    i64_high:  i64 = 10;
+
+    println("abs(i32)   =", math::abs(i32_neg));              # abs(i32)   = 42
+    println("abs(i64)   =", math::abs(i64_neg));              # abs(i64)   = 42
+    println("min(i32)   =", math::min(i32_a, i32_b));         # min(i32)   = -5
+    println("min(i64)   =", math::min(i64_a, i64_b));         # min(i64)   = -5
+    println("max(i32)   =", math::max(i32_a, i32_b));         # max(i32)   = 3
+    println("max(i64)   =", math::max(i64_a, i64_b));         # max(i64)   = 3
+    println("clamp(i32) =", math::clamp(i32_val, i32_low, i32_high));   # clamp(i32) = 10
+    println("clamp(i64) =", math::clamp(i64_val, i64_low, i64_high));   # clamp(i64) = 10
+
+    println("== 2. float basic f64 ==");
+
+    f64_neg:   f64 = -3.5;
+    f64_a:     f64 = 3.5;
+    f64_b:     f64 = 2.5;
+    f64_val:   f64 = 5.0;
+    f64_low:   f64 = 0.0;
+    f64_high:  f64 = 10.0;
+
+    println("abs(f64)    =", math::abs(f64_neg));             # abs(f64)    = 3.500000
+    println("min(f64)    =", math::min(f64_a, f64_b));        # min(f64)    = 2.500000
+    println("max(f64)    =", math::max(f64_a, f64_b));        # max(f64)    = 3.500000
+    println("clamp(f64)  =", math::clamp(f64_val, f64_low, f64_high));  # clamp(f64)  = 5.000000
+
+    println("== 3. float basic f32 ==");
+
+    f32_neg:   f32 = -3.5;
+    f32_a:     f32 = 3.5;
+    f32_b:     f32 = 2.5;
+    f32_val:   f32 = 5.0;
+    f32_low:   f32 = 0.0;
+    f32_high:  f32 = 10.0;
+
+    println("abs(f32)    =", math::abs(f32_neg));                       # abs(f32)    = 3.500000
+    println("min(f32)    =", math::min(f32_a, f32_b));                  # min(f32)    = 2.500000
+    println("max(f32)    =", math::max(f32_a, f32_b));                  # max(f32)    = 3.500000
+    println("clamp(f32)  =", math::clamp(f32_val, f32_low, f32_high));  # clamp(f32)  = 5.000000
+
+    println("== 4. rounding f64 ==");
+
+    p17_64:  f64 = 1.7;
+    n17_64:  f64 = -1.7;
+    p12_64:  f64 = 1.2;
+    n12_64:  f64 = -1.2;
+    p15_64:  f64 = 1.5;
+    n15_64:  f64 = -1.5;
+    p25_64:  f64 = 2.5;
+    n25_64:  f64 = -2.5;
+
+    println("trunc(1.7)   =", math::trunc(p17_64));                     # trunc(1.7)   = 1.000000
+    println("trunc(-1.7)  =", math::trunc(n17_64));                     # trunc(-1.7)  = -1.000000
+    println("floor(1.7)   =", math::floor(p17_64));                     # floor(1.7)   = 1.000000
+    println("floor(-1.2)  =", math::floor(n12_64));                     # floor(-1.2)  = -2.000000
+    println("ceil(1.2)    =", math::ceil(p12_64));                      # ceil(1.2)    = 2.000000
+    println("ceil(-1.2)   =", math::ceil(n12_64));                      # ceil(-1.2)   = -1.000000
+    println("round(1.5)   =", math::round(p15_64));                     # round(1.5)   = 2.000000
+    println("round(-1.5)  =", math::round(n15_64));                     # round(-1.5)  = -2.000000
+    println("round(2.5)   =", math::round(p25_64));                     # round(2.5)   = 3.000000
+    println("round(-2.5)  =", math::round(n25_64));                     # round(-2.5)  = -3.000000
+    println("fract(1.7)   =", math::fract(p17_64));                     # fract(1.7)   = 0.700000
+    println("fract(-1.2)  =", math::fract(n12_64));                     # fract(-1.2)  = 0.800000
+
+    println("== 5. rounding f32 ==");
+
+    p17_32:  f32 = 1.7;
+    n17_32:  f32 = -1.7;
+    p12_32:  f32 = 1.2;
+    n12_32:  f32 = -1.2;
+    p15_32:  f32 = 1.5;
+    n15_32:  f32 = -1.5;
+
+    println("trunc(1.7)   =", math::trunc(p17_32));                     # trunc(1.7)   = 1.000000
+    println("trunc(-1.7)  =", math::trunc(n17_32));                     # trunc(-1.7)  = -1.000000
+    println("floor(1.7)   =", math::floor(p17_32));                     # floor(1.7)   = 1.000000
+    println("floor(-1.2)  =", math::floor(n12_32));                     # floor(-1.2)  = -2.000000
+    println("ceil(1.2)    =", math::ceil(p12_32));                      # ceil(1.2)    = 2.000000
+    println("ceil(-1.2)   =", math::ceil(n12_32));                      # ceil(-1.2)   = -1.000000
+    println("round(1.5)   =", math::round(p15_32));                     # round(1.5)   = 2.000000
+    println("round(-1.5)  =", math::round(n15_32));                     # round(-1.5)  = -2.000000
+    println("fract(1.7)   =", math::fract(p17_32));                     # fract(1.7)   = 0.700000
+    println("fract(-1.2)  =", math::fract(n12_32));                     # fract(-1.2)  = 0.800000
+
+    println("== 6. powers and logs f64 ==");
+
+    zero64:   f64 = 0.0;
+    one64:    f64 = 1.0;
+    two64:    f64 = 2.0;
+    four64:   f64 = 4.0;
+    eight64:  f64 = 8.0;
+    ten64:    f64 = 10.0;
+    hundred64: f64 = 100.0;
+    neg_two64: f64 = -2.0;
+    eighty_one64: f64 = 81.0;
+    three64:  f64 = 3.0;
+
+    println("sqrt(4)       =", math::sqrt(four64));                     # sqrt(4)       = 2.000000
+    println("sqrt(2)       =", math::sqrt(two64));                      # sqrt(2)       = 1.414214
+    println("pow(2, 10)    =", math::pow(two64, ten64));                # pow(2, 10)    = 1024.000000
+    println("pow(2, -2)    =", math::pow(two64, neg_two64));            # pow(2, -2)    = 0.250000
+    println("exp(1)        =", math::exp(one64));                       # exp(1)        = 2.718282
+    println("exp(0)        =", math::exp(zero64));                      # exp(0)        = 1.000000
+    println("ln(2)         =", math::ln(two64));                        # ln(2)         = 0.693147
+    println("ln(1)         =", math::ln(one64));                        # ln(1)         = 0.000000
+    println("log2(8)       =", math::log2(eight64));                    # log2(8)       = 3.000000
+    println("log10(100)    =", math::log10(hundred64));                 # log10(100)    = 2.000000
+    println("log(81, 3)    =", math::log(eighty_one64, three64));       # log(81, 3)    = 4.000000
+    println("log(8, 2)     =", math::log(eight64, two64));              # log(8, 2)     = 3.000000
+
+    println("== 7. powers and logs f32 ==");
+
+    zero32:   f32 = 0.0;
+    one32:    f32 = 1.0;
+    two32:    f32 = 2.0;
+    four32:   f32 = 4.0;
+    eight32:  f32 = 8.0;
+    ten32:    f32 = 10.0;
+    hundred32: f32 = 100.0;
+    neg_two32: f32 = -2.0;
+    eighty_one32: f32 = 81.0;
+    three32:  f32 = 3.0;
+
+    println("sqrt(4)       =", math::sqrt(four32));                     # sqrt(4)       = 2.000000
+    println("sqrt(2)       =", math::sqrt(two32));                      # sqrt(2)       = 1.414214
+    println("pow(2, 10)    =", math::pow(two32, ten32));                # pow(2, 10)    = 1024.000000
+    println("pow(2, -2)    =", math::pow(two32, neg_two32));            # pow(2, -2)    = 0.250000
+    println("exp(1)        =", math::exp(one32));                       # exp(1)        = 2.718282
+    println("exp(0)        =", math::exp(zero32));                      # exp(0)        = 1.000000
+    println("ln(2)         =", math::ln(two32));                        # ln(2)         = 0.693147
+    println("ln(1)         =", math::ln(one32));                        # ln(1)         = 0.000000
+    println("log2(8)       =", math::log2(eight32));                    # log2(8)       = 3.000000
+    println("log10(100)    =", math::log10(hundred32));                 # log10(100)    = 2.000000
+    println("log(81, 3)    =", math::log(eighty_one32, three32));       # log(81, 3)    = 4.000000
+    println("log(8, 2)     =", math::log(eight32, two32));              # log(8, 2)     = 3.000000
+
+    println("== 8. trigonometry f64 ==");
+
     half_pi64:    f64 = 1.5707963267948966;
     quarter_pi64: f64 = 0.7853981633974483;
 
-    println("== f64 ==");
-    println("sqrt(2)     =", math::sqrt(two64));           # 1.414214
-    println("pow(2, 10)  =", math::pow(two64, ten64));     # 1024.000000
-    println("exp(1)      =", math::exp(one64));            # 2.718282
-    println("ln(2)       =", math::ln(two64));             # 0.693147
-    println("log2(8)     =", math::log2(eight64));         # 3.000000
-    println("log10(100)  =", math::log10(hundred64));      # 2.000000
-    println("sin(pi/2)   =", math::sin(half_pi64));        # 1.000000
-    println("cos(0)      =", math::cos(zero64));           # 1.000000
-    println("tan(pi/4)   =", math::tan(quarter_pi64));     # 1.000000
-    println("log(8, 2)   =", math::log(eight64, two64));   # 3.000000
+    println("sin(pi/2)     =", math::sin(half_pi64));                   # sin(pi/2)     = 1.000000
+    println("cos(0)        =", math::cos(zero64));                      # cos(0)        = 1.000000
+    println("tan(pi/4)     =", math::tan(quarter_pi64));                # tan(pi/4)     = 1.000000
 
-    # f32
-    zero32:       f32 = 0.0;
-    one32:        f32 = 1.0;
-    two32:        f32 = 2.0;
-    eight32:      f32 = 8.0;
-    ten32:        f32 = 10.0;
-    hundred32:    f32 = 100.0;
+    println("== 9. trigonometry f32 ==");
+
     half_pi32:    f32 = 1.5707963;
     quarter_pi32: f32 = 0.7853982;
 
-    println("== f32 ==");
-    println("sqrt(2)     =", math::sqrt(two32));           # 1.414214
-    println("pow(2, 10)  =", math::pow(two32, ten32));     # 1024.000000
-    println("exp(1)      =", math::exp(one32));            # 2.718282
-    println("ln(2)       =", math::ln(two32));             # 0.693147
-    println("log2(8)     =", math::log2(eight32));         # 3.000000
-    println("log10(100)  =", math::log10(hundred32));      # 2.000000
-    println("sin(pi/2)   =", math::sin(half_pi32));        # 1.000000
-    println("cos(0)      =", math::cos(zero32));           # 1.000000
-    println("tan(pi/4)   =", math::tan(quarter_pi32));     # 1.000000
-    println("log(8, 2)   =", math::log(eight32, two32));   # 3.000000
+    println("sin(pi/2)     =", math::sin(half_pi32));                   # sin(pi/2)     = 1.000000
+    println("cos(0)        =", math::cos(zero32));                      # cos(0)        = 1.000000
+    println("tan(pi/4)     =", math::tan(quarter_pi32));                # tan(pi/4)     = 1.000000
 }
