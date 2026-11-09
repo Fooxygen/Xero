@@ -809,7 +809,9 @@ namespace parser {
                         nullptr
                     );
                 },
-                PATS_INIT{ AT::Expr }
+                PATS_INIT{ AT::Expr },
+                {},
+                TTS_INIT{ TT::Dot, TT::LBkt, TT::LParen, TT::ColonColon }
             );
         }
         
