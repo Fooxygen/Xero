@@ -1,0 +1,101 @@
+
+#   Xero
+#   Copyright (c) 2026 Fooxygen.
+#   Licensed under the MIT License.
+
+use xero::math
+
+struct vec2 {
+    x: f64;
+    y: f64;
+
+    fn @print() {
+        print("(");
+        print(self.x);
+        print(", ");
+        print(self.y);
+        print(")");
+    }
+
+    # Arithmetic
+
+    fn @plus(v: vec2)  -> vec2 {
+        return vec2 { x = self.x + v.x, y = self.y + v.y };
+    }
+    fn @minus(v: vec2) -> vec2 {
+        return vec2 { x = self.x - v.x, y = self.y - v.y };
+    }
+    fn @star(s: f64)   -> vec2 {
+        return vec2 { x = self.x * s, y = self.y * s };
+    }
+    fn @slash(s: f64)  -> vec2 {
+        return vec2 { x = self.x / s, y = self.y / s };
+    }
+    fn @neg()          -> vec2 {
+        return vec2 { x = -self.x, y = -self.y };
+    }
+
+    # Comparison
+
+    fn @eq(v: vec2)  -> bool {
+        return abs(self.x - v.x) < 0.000001 &&
+               abs(self.y - v.y) < 0.000001;
+    }
+    fn @neq(v: vec2) -> bool {
+        return !(self == v);
+    }
+
+    # Measurement
+    
+    fn length_squared()          -> f64 {
+        return self.x * self.x + self.y * self.y;
+    }
+    fn length()                  -> f64 {
+        return sqrt(self.length_squared());
+    }
+    fn distance_squared(v: vec2) -> f64 {
+        dx: f64 = self.x - v.x;
+        dy: f64 = self.y - v.y;
+        return dx * dx + dy * dy;
+    }
+    fn distance(v: vec2)         -> f64 {
+        return sqrt(self.distance_squared(v));
+    }
+
+    fn length_manhattan()          -> f64 {
+        return abs(self.x) + abs(self.y);
+    }
+    fn distance_manhattan(v: vec2) -> f64 {
+        return abs(self.x - v.x) + abs(self.y - v.y);
+    }
+
+    # Direction
+
+    fn normalized() -> vec2 {
+        len: f64 = self.length();
+        if (len < 0.000001) {
+            return vec2 { x = 0.0, y = 0.0 };
+        }
+        return vec2 { x = self.x / len, y = self.y / len };
+    }
+    fn normalize() {
+        self = self.normalized();
+    }
+
+    # Product
+
+    fn dot(v: vec2) -> f64 {
+        return self.x * v.x + self.y * v.y;
+    }
+
+    # Similarity
+
+    fn cosine(v: vec2) -> f64 {
+        len_a: f64 = self.length();
+        len_b: f64 = v.length();
+        if (len_a < 0.000001 || len_b < 0.000001) {
+            return 0.0;
+        }
+        return self.dot(v) / (len_a * len_b);
+    }
+}
