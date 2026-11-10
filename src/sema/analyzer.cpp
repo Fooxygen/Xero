@@ -306,35 +306,63 @@ namespace sema {
                 return;
             }
 
-            // Boolean
-            switch (node.oper_type_) {
-                case Gt:
-                case Lt:
-                case Ge:
-                case Le:
-                case Eq:
-                case Neq:
-                case And:
-                case Or:
-                    node.resolved_type_ = TypeTable::Lookup("bool");
-                    return;
+            // Left, Right and Common Type
+            auto ltype  = node.lexpr_->resolved_type_->ReferenceUnwrap();
+            auto rtype  = node.rexpr_->resolved_type_->ReferenceUnwrap();
+            if (auto com_type = TypeTable::CommonTypeGet({ ltype, rtype })) {
+                switch (node.oper_type_) {
+                    case Gt:
+                    case Lt:
+                    case Ge:
+                    case Le:
+                    case Eq:
+                    case Neq:
+                    case And:
+                    case Or:
+                        node.resolved_type_ = TypeTable::Lookup("bool");
+                        return;
 
+                    default:
+                        node.resolved_type_ = com_type;
+                        return;
+                }
+            }
+
+            // Left Fallback
+            const char* method_name = nullptr;
+            switch (node.oper_type_) {
+                case Plus:  method_name = "@plus";  break;
+                case Minus: method_name = "@minus"; break;
+                case Star:  method_name = "@star";  break;
+                case Slash: method_name = "@slash"; break;
+                case ModT:  method_name = "@modt";  break;
+                case ModF:  method_name = "@modf";  break;
+                case Gt:    method_name = "@gt";    break;
+                case Lt:    method_name = "@lt";    break;
+                case Ge:    method_name = "@ge";    break;
+                case Le:    method_name = "@le";    break;
+                case Eq:    method_name = "@eq";    break;
+                case Neq:   method_name = "@neq";   break;
                 default: break;
             }
 
-            // Arith
-            node.resolved_type_ = TypeTable::CommonTypeGet({
-                node.lexpr_->resolved_type_->ReferenceUnwrap(),
-                node.rexpr_->resolved_type_->ReferenceUnwrap()
-            });
-
-            if (!node.resolved_type_) {
+            if (!method_name) {
                 throw LogErr(LogStage::Sema, std::format(
                     "cannot make type '{}' compatible with '{}'",
-                    node.lexpr_->resolved_type_->name(),
-                    node.rexpr_->resolved_type_->name()
+                    ltype->name(), rtype->name()
                 ), node.loc_);
             }
+
+            auto method = TypeTable::MethodLookupTry(ltype, method_name);
+            if (!method) {
+                throw LogErr(LogStage::Sema, std::format(
+                    "cannot make type '{}' compatible with '{}'",
+                    ltype->name(), rtype->name()
+                ), node.loc_);
+            }
+
+            auto sign = method->SignLookup(ltype, { rtype }, node.loc_);
+            node.resolved_type_ = sign->return_type();
         }
     }
 

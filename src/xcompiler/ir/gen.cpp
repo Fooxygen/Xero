@@ -182,6 +182,15 @@ namespace xcompiler {
     llvm::Value* IRGen::Process(OperExpr& node) {
         using enum OperType;
 
+        auto OperCall = [&](sema::Type* type, const std::string& name, std::vector<Arg> args) {
+            return ValOwn(
+                TypeImplTable::Lookup(type, node.loc_)->MethodCall(*this, name, std::move(args), node.loc_),
+                node.resolved_type_
+            );
+        };
+
+        // Binary: Pick
+
         if (node.oper_type_ == Pick) {
             auto caller_type      = node.lexpr_->resolved_type_;
             auto caller_type_impl = TypeImplTable::Lookup(caller_type, node.loc_);
@@ -218,14 +227,8 @@ namespace xcompiler {
             }
         }
 
-        auto OperCall = [&](sema::Type* type, const std::string& name, std::vector<Arg> args) {
-            return ValOwn(
-                TypeImplTable::Lookup(type, node.loc_)->MethodCall(*this, name, std::move(args), node.loc_),
-                node.resolved_type_
-            );
-        };
-
         // Unary
+
         auto lval = ExprValGet(*node.lexpr_);
         {
             auto ltype = node.lexpr_->resolved_type_->ReferenceUnwrap();
@@ -238,7 +241,7 @@ namespace xcompiler {
 
         // Binary
 
-        // Short Circuit Boolean Evaluation
+        // └─ Short Circuit Boolean Evaluation
         if (node.oper_type_ == OperType::And || node.oper_type_ == OperType::Or) {
 
             // Blocks
@@ -287,19 +290,54 @@ namespace xcompiler {
 
         auto rval = ExprValGet(*node.rexpr_);
         {
+            // Left, Right and Common Type
             auto ltype    = node.lexpr_->resolved_type_->ReferenceUnwrap();
             auto rtype    = node.rexpr_->resolved_type_->ReferenceUnwrap();
             auto com_type = sema::TypeTable::CommonTypeGet({ ltype, rtype });
+
+            // Left Fallback
             if (!com_type) {
-                throw LogErr(LogStage::Xcompiler, std::format(
-                    "cannot make type '{}' compatible with '{}'",
-                    ltype->name(), rtype->name()
-                ), node.loc_);
+                const char* method_name = nullptr;
+                switch (node.oper_type_) {
+                    case Plus:  method_name = "@plus";  break;
+                    case Minus: method_name = "@minus"; break;
+                    case Star:  method_name = "@star";  break;
+                    case Slash: method_name = "@slash"; break;
+                    case ModT:  method_name = "@modt";  break;
+                    case ModF:  method_name = "@modf";  break;
+                    case Gt:    method_name = "@gt";    break;
+                    case Lt:    method_name = "@lt";    break;
+                    case Ge:    method_name = "@ge";    break;
+                    case Le:    method_name = "@le";    break;
+                    case Eq:    method_name = "@eq";    break;
+                    case Neq:   method_name = "@neq";   break;
+                    default: break;
+                }
+
+                if (!method_name) {
+                    throw LogErr(LogStage::Xcompiler, std::format(
+                        "cannot make type '{}' compatible with '{}'",
+                        ltype->name(), rtype->name()
+                    ), node.loc_);
+                }
+
+                auto method        = sema::TypeTable::MethodLookup(ltype, method_name, node.loc_);
+                auto method_sign   = method->SignLookup(ltype, { rtype }, node.loc_);
+                auto method_params = method_sign->params_type_fix()[0];
+
+                if (rtype != method_params) {
+                    rval = TypeImplTable::Cast(*this, rval, rtype, method_params, node.loc_);
+                }
+
+                return OperCall(ltype, method_name, {
+                    ArgRefMake(lval, ltype),
+                    Arg(rval, method_params)
+                });
             }
 
+            // Call
             lval = TypeImplTable::Cast(*this, lval, ltype, com_type, node.loc_);
             rval = TypeImplTable::Cast(*this, rval, rtype, com_type, node.loc_);
-
             switch (node.oper_type_) {
                 case Plus:  return OperCall(com_type, "@plus",  { ArgRefMake(lval, com_type), Arg(rval, com_type) });
                 case Minus: return OperCall(com_type, "@minus", { ArgRefMake(lval, com_type), Arg(rval, com_type) });
