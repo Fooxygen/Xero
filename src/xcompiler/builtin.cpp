@@ -93,7 +93,19 @@ namespace xcompiler {
                 auto method      = ((sema::BasicType*)type->BasicTypeGet())->method_table().Lookup("@print");
                 auto method_sign = method->SignLookup(caller.type(), {});
                 auto method_impl = TypeImplTable::Lookup(type)->MethodLookup(method_sign);
-                ((NativeFnImpl*)method_impl)->impl()(gen, { caller });
+
+                if (auto native = dynamic_cast<NativeFnImpl*>(method_impl)) {
+                    native->impl()(gen, { caller });
+                }
+                else if (auto lang = dynamic_cast<LangFnImpl*>(method_impl)) {
+                    gen.llvm_builder().CreateCall(lang->impl(), { caller.val() });
+                }
+                else {
+                    throw LogErr(LogStage::Xcompiler, std::format(
+                        "undefined implementation of method '@print' for type '{}'",
+                        type->name()
+                    ));
+                }
             };
             auto Impl_print     = [Impl_print_one](IRGen& gen, const std::vector<Arg>& args) -> llvm::Value* {
                 auto& builder = gen.llvm_builder();
