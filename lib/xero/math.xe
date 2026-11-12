@@ -3,6 +3,10 @@
 #   Copyright (c) 2026 Fooxygen.
 #   Licensed under the MIT License.
 
+const pi: f64 = 3.141592653589793;
+const e: f64 = 2.718281828459045;
+const tau: f64 = pi * 2.0;
+
 fn abs(x: i32) -> i32 { if (x < 0) { return -x; } return x; }
 fn abs(x: i64) -> i64 { if (x < 0) { return -x; } return x; }
 fn abs(x: f32) -> f32 { return @abs(x); }

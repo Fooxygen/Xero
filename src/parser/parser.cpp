@@ -133,6 +133,9 @@ namespace parser {
                 else if (token.lexeme_ == "struct") {
                     token = Token(Struct, token.lexeme_, token.loc_);
                 }
+                else if (token.lexeme_ == "const") {
+                    token = Token(Const, token.lexeme_, token.loc_);
+                }
 
                 break;
             }

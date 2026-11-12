@@ -101,6 +101,7 @@ public:
         Return,             // return
         Fn,                 // fn
         Struct,             // struct
+        Const,              // const
     };
 
     Type        type_   = Type::Undefined;
@@ -190,6 +191,7 @@ public:
             case Return:
             case Fn:
             case Struct:
+            case Const:
                 return Keyword;
 
             default:
@@ -273,6 +275,7 @@ public:
             case Return:        return "return";
             case Fn:            return "fn";
             case Struct:        return "struct";
+            case Const:         return "const";
 
             default: 
                 LogWarn(LogStage::Lexer, "undefined print name for TokenType").Print();

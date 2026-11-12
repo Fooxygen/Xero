@@ -205,7 +205,7 @@ namespace parser {
         }
 
         // Package and Module
-        
+
         // └─ use id -> useexpr
         {
             RuleAdd(
@@ -247,7 +247,7 @@ namespace parser {
         }
 
         // Type, Declare and Assign
-        
+
         // └─ id & -> typeexpr
         {
             RuleAdd(
@@ -440,7 +440,22 @@ namespace parser {
                 }
             );
         }
-        
+        // └─ const declareexpr ; -> declareexpr
+        {
+            RuleAdd(
+                PATS_INIT{
+                    TT::Const,
+                    AT::DeclExpr,
+                    TT::Semicolon
+                },
+                [this](auto) {
+                    auto decl = Move<DeclExpr>(2);
+                    decl->modifier_ |= VarModifier::Const;
+                    return decl;
+                }
+            );
+        }
+
         // └─ expr assignoper expr; -> assignstmt
         {
             RuleAdd(
@@ -474,7 +489,7 @@ namespace parser {
                 }
             );
         }
-        
+
         // Struct and Field
 
         // └─ struct id blockexpr -> structdeclexpr
@@ -560,7 +575,7 @@ namespace parser {
         }
 
         // Function and Method
-       
+
         // └─ fieldaccessexpr(exprs?) -> methodcallexpr
         {
             RuleAdd(
@@ -599,7 +614,7 @@ namespace parser {
                 PATS_INIT{ TT::Fn }
             );
         }
-        
+
         // └─ fn id?(exprs?) -> <id, typeexpr> blockexpr -> fnexpr
         {
             RuleAdd(
@@ -698,7 +713,7 @@ namespace parser {
                 }
             );
         }
-        
+
         // └─ return expr?; -> returnsignalstmt
         {
             RuleAdd(
@@ -716,7 +731,7 @@ namespace parser {
         }
 
         // Expr
-        
+
         // └─ &expr -> refexpr
         {
             RuleAdd(
@@ -768,7 +783,7 @@ namespace parser {
                 }
             );
         }
-        
+
         // └─ Binary
         {
             RuleAdd(
@@ -814,7 +829,7 @@ namespace parser {
                 TTS_INIT{ TT::Dot, TT::LBkt, TT::LParen, TT::ColonColon }
             );
         }
-        
+
         // Array
 
         // └─ [exprs?] -> arraylitexpr
@@ -1069,7 +1084,7 @@ namespace parser {
                 }
             );
         }
-    
+
         // Loop
 
         // └─ break; -> loopsignalstmt
@@ -1100,7 +1115,7 @@ namespace parser {
                 }
             );
         }
-        
+
         // └─ for ( x in expr ) stmt -> forstmt
         {
             RuleAdd(
@@ -1122,7 +1137,7 @@ namespace parser {
                 }
             );
         }
-        
+
         // └─ while ( cond ) stmt -> whilestmt
         {
             RuleAdd(
@@ -1141,7 +1156,7 @@ namespace parser {
                 }
             );
         }
-    
+
         // Stmt
 
         // └─ expr; -> exprstmt

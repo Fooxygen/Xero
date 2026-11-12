@@ -150,6 +150,200 @@ namespace xcompiler {
         return value;
     }
 
+    // Constant
+
+    llvm::Constant* IRGen::ConstValueGet(const DeclExpr* node) {
+        if (auto it = const_values_.find(node); it != const_values_.end()) {
+            return it->second;
+        }
+
+        if (!const_visiting_.insert(node).second) {
+            throw LogErr(LogStage::Xcompiler, std::format(
+                "cyclic constant definition involving '{}'", node->id_
+            ), node->loc_);
+        }
+
+        auto value = ConstEval(*node->value_, node->resolved_type_);
+
+        const_visiting_.erase(node);
+        const_values_[node] = value;
+        return value;
+    }
+
+    llvm::Constant* IRGen::ConstCast(
+        llvm::Constant* value,
+        sema::Type* from,
+        sema::Type* to
+    ) {
+        if (from == to) return value;
+
+        const auto& f = from->name();
+        const auto& t = to->name();
+
+        if (f == "i32" && t == "i64")
+            return llvm::ConstantExpr::getCast(
+                llvm::Instruction::SExt, value,
+                llvm::Type::getInt64Ty(llvm_context())
+            );
+        if ((f == "i32" || f == "i64") && t == "f32")
+            return llvm::ConstantExpr::getCast(
+                llvm::Instruction::SIToFP, value,
+                llvm::Type::getFloatTy(llvm_context())
+            );
+        if ((f == "i32" || f == "i64") && t == "f64")
+            return llvm::ConstantExpr::getCast(
+                llvm::Instruction::SIToFP, value,
+                llvm::Type::getDoubleTy(llvm_context())
+            );
+        if (f == "f32" && t == "f64")
+            return llvm::ConstantExpr::getCast(
+                llvm::Instruction::FPExt, value,
+                llvm::Type::getDoubleTy(llvm_context())
+            );
+        if (f == "f64" && t == "f32")
+            return llvm::ConstantExpr::getCast(
+                llvm::Instruction::FPTrunc, value,
+                llvm::Type::getFloatTy(llvm_context())
+            );
+
+        throw LogErr(LogStage::Xcompiler, std::format(
+            "cannot cast constant from '{}' to '{}'", f, t
+        ));
+    }
+
+    llvm::Constant* IRGen::ConstEval(Expr& node, sema::Type* expected) {
+        using enum OperType;
+
+        if (auto* num = dynamic_cast<NumConst*>(&node)) {
+            return ConstCast(
+                (llvm::Constant*)Process(*num),
+                num->resolved_type_,
+                expected
+            );
+        }
+        if (auto* boolean = dynamic_cast<BoolConst*>(&node)) {
+            return ConstCast(
+                (llvm::Constant*)Process(*boolean),
+                boolean->resolved_type_,
+                expected
+            );
+        }
+        if (auto* character = dynamic_cast<CharConst*>(&node)) {
+            return ConstCast(
+                (llvm::Constant*)Process(*character),
+                character->resolved_type_,
+                expected
+            );
+        }
+        if (auto* id = dynamic_cast<IdExpr*>(&node)) {
+            if (!id->const_decl_) {
+                throw LogErr(LogStage::Xcompiler, std::format(
+                    "identifier '{}' is not a constant", id->name_
+                ), id->loc_);
+            }
+            return ConstCast(
+                ConstValueGet(id->const_decl_),
+                id->const_decl_->resolved_type_,
+                expected
+            );
+        }
+        if (auto* path = dynamic_cast<PathExpr*>(&node)) {
+            if (!path->const_decl_) {
+                throw LogErr(LogStage::Xcompiler,
+                    "path is not a constant", path->loc_);
+            }
+            return ConstCast(
+                ConstValueGet(path->const_decl_),
+                path->const_decl_->resolved_type_,
+                expected
+            );
+        }
+
+        auto* op = dynamic_cast<OperExpr*>(&node);
+        if (!op) {
+            throw LogErr(LogStage::Xcompiler, std::format(
+                "expression '{}' is not a constant expression",
+                node.TypeName()
+            ), node.loc_);
+        }
+
+        if (op->oper_type_ == Neg) {
+            auto* type  = op->lexpr_->resolved_type_->ReferenceUnwrap();
+            auto* value = ConstEval(*op->lexpr_, type);
+            auto* result = value->getType()->isFloatingPointTy()
+                ? llvm::ConstantFoldUnaryInstruction(llvm::Instruction::FNeg, value)
+                : llvm::ConstantExpr::getNeg(value);
+            return ConstCast(result, op->resolved_type_, expected);
+        }
+
+        auto* ltype  = op->lexpr_->resolved_type_->ReferenceUnwrap();
+        auto* rtype  = op->rexpr_->resolved_type_->ReferenceUnwrap();
+        auto* common = sema::TypeTable::CommonTypeGet({ ltype, rtype });
+        if (!common) {
+            throw LogErr(LogStage::Xcompiler, std::format(
+                "cannot make type '{}' compatible with '{}'",
+                ltype->name(), rtype->name()
+            ), op->loc_);
+        }
+
+        auto* lhs = ConstEval(*op->lexpr_, common);
+        auto* rhs = ConstEval(*op->rexpr_, common);
+        auto  is_float = lhs->getType()->isFloatingPointTy();
+
+        llvm::Constant* result = nullptr;
+        switch (op->oper_type_) {
+            case Plus:
+                result = llvm::ConstantFoldBinaryInstruction(
+                    is_float ? llvm::Instruction::FAdd : llvm::Instruction::Add,
+                    lhs, rhs
+                );
+                break;
+            case Minus:
+                result = llvm::ConstantFoldBinaryInstruction(
+                    is_float ? llvm::Instruction::FSub : llvm::Instruction::Sub,
+                    lhs, rhs
+                );
+                break;
+            case Star:
+                result = llvm::ConstantFoldBinaryInstruction(
+                    is_float ? llvm::Instruction::FMul : llvm::Instruction::Mul,
+                    lhs, rhs
+                );
+                break;
+            case Slash:
+                result = llvm::ConstantFoldBinaryInstruction(
+                    is_float ? llvm::Instruction::FDiv : llvm::Instruction::SDiv,
+                    lhs, rhs
+                );
+                break;
+            case ModT:
+                result = llvm::ConstantFoldBinaryInstruction(
+                    is_float ? llvm::Instruction::FRem : llvm::Instruction::SRem,
+                    lhs, rhs
+                );
+                break;
+            case Eq:
+                result = llvm::ConstantFoldCompareInstruction(
+                    is_float ? llvm::CmpInst::FCMP_OEQ : llvm::CmpInst::ICMP_EQ,
+                    lhs, rhs
+                );
+                break;
+            case Neq:
+                result = llvm::ConstantFoldCompareInstruction(
+                    is_float ? llvm::CmpInst::FCMP_ONE : llvm::CmpInst::ICMP_NE,
+                    lhs, rhs
+                );
+                break;
+            default:
+                throw LogErr(LogStage::Xcompiler, std::format(
+                    "unsupported constant operator '{}'",
+                    OperTypeName(op->oper_type_)
+                ), op->loc_);
+        }
+
+        return ConstCast(result, op->resolved_type_, expected);
+    }
+
     // Expr
 
     llvm::Value*      IRGen::IdAddrGet(IdExpr& node) {

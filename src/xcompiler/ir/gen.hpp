@@ -8,10 +8,12 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Constants.h"
 
 #include "common/defs/ast.hpp"
 #include "sema/defs/type.hpp"
@@ -72,6 +74,11 @@ namespace xcompiler {
 
         std::unordered_map<sema::StructType*, llvm::StructType*> struct_types_ = {};
 
+        // Constant
+
+        std::unordered_map<const DeclExpr*, llvm::Constant*> const_values_   = {};
+        std::unordered_set<const DeclExpr*>                  const_visiting_ = {};
+
     private:
         // Declare
         void Declare(FnExpr& node);
@@ -82,9 +89,9 @@ namespace xcompiler {
         // Process
 
         llvm::Value* Process(BlockExpr& node, const std::function<void()>& on_scope_ready = nullptr);
+        llvm::Value* Process(DeclExpr& node);
         llvm::Value* Process(IdExpr& node);
         llvm::Value* Process(RefExpr& node);
-        llvm::Value* Process(DeclExpr& node);
         llvm::Value* Process(OperExpr& node);
         llvm::Value* Process(RangeExpr& node);
         llvm::Value* Process(ArrayLitExpr& node);
@@ -94,6 +101,7 @@ namespace xcompiler {
         llvm::Value* Process(StructDeclExpr& node);
         llvm::Value* Process(StructLitExpr& node);
         llvm::Value* Process(FieldAccessExpr& node);
+        llvm::Value* Process(PathExpr& node);
 
         llvm::Value* Process(NumConst& node);
         llvm::Value* Process(BoolConst& node);
@@ -136,6 +144,12 @@ namespace xcompiler {
         void              ReleaseEmit(size_t target_depth);
         llvm::Value*      StructTypeValCreate(llvm::Type* type, llvm::ArrayRef<llvm::Value*> fields);
 
+        // └─ Constant
+
+        llvm::Constant*   ConstValueGet(const DeclExpr* node);
+        llvm::Constant*   ConstEval(Expr& node, sema::Type* expected);
+        llvm::Constant*   ConstCast(llvm::Constant* value, sema::Type* from, sema::Type* to);
+
         // └─ Expr
 
         llvm::Value*      IdAddrGet(IdExpr& node);                                      // get address from idexpr
@@ -171,9 +185,9 @@ namespace xcompiler {
         llvm::Value* Process(AstNode& node) {
             switch (node.type_) {
                 case AstType::BlockExpr:        return Process((BlockExpr&)node);
+                case AstType::DeclExpr:         return Process((DeclExpr&)node);
                 case AstType::IdExpr:           return Process((IdExpr&)node);
                 case AstType::RefExpr:          return Process((RefExpr&)node);
-                case AstType::DeclExpr:         return Process((DeclExpr&)node);
                 case AstType::OperExpr:         return Process((OperExpr&)node);
                 case AstType::RangeExpr:        return Process((RangeExpr&)node);
                 case AstType::ArrayLitExpr:     return Process((ArrayLitExpr&)node);
@@ -183,6 +197,7 @@ namespace xcompiler {
                 case AstType::StructDeclExpr:   return Process((StructDeclExpr&)node);
                 case AstType::StructLitExpr:    return Process((StructLitExpr&)node);
                 case AstType::FieldAccessExpr:  return Process((FieldAccessExpr&)node);
+                case AstType::PathExpr:         return Process((PathExpr&)node);
                 
                 case AstType::NumConst:         return Process((NumConst&)node);
                 case AstType::BoolConst:        return Process((BoolConst&)node);

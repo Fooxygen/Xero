@@ -6,6 +6,11 @@
 #include <format>
 #include <vector>
 
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/ConstantFold.h"
+#include "llvm/IR/InstrTypes.h"
+#include "llvm/IR/Instructions.h"
+
 #include "common/log.hpp"
 #include "common/defs/opertype.hpp"
 #include "common/utils/utf8.hpp"
@@ -128,16 +133,6 @@ namespace xcompiler {
         return nullptr;
     }
 
-    llvm::Value* IRGen::Process(IdExpr& node) {
-        auto var       = IdAddrGet(node);
-        auto llvm_type = LlvmType(node.resolved_type_->ReferenceUnwrap());
-        return llvm_builder().CreateLoad(llvm_type, var, node.name_);
-    }
-
-    llvm::Value* IRGen::Process(RefExpr& node) {
-        return IdAddrGet(*(IdExpr*)node.target_.get());
-    }
-
     llvm::Value* IRGen::Process(DeclExpr& node) {
         auto var_type = node.resolved_type_;
         auto var_slot = SlotCreate(LlvmType(var_type), node.id_);
@@ -177,6 +172,20 @@ namespace xcompiler {
             slot_scope_.Declare(node.id_, var_slot);
             return nullptr;
         }
+    }
+
+    llvm::Value* IRGen::Process(IdExpr& node) {
+        if (node.const_decl_) {
+            return ConstValueGet(node.const_decl_);
+        }
+
+        auto var       = IdAddrGet(node);
+        auto llvm_type = LlvmType(node.resolved_type_->ReferenceUnwrap());
+        return llvm_builder().CreateLoad(llvm_type, var, node.name_);
+    }
+
+    llvm::Value* IRGen::Process(RefExpr& node) {
+        return IdAddrGet(*(IdExpr*)node.target_.get());
     }
 
     llvm::Value* IRGen::Process(OperExpr& node) {
@@ -685,6 +694,13 @@ namespace xcompiler {
         ), node.loc_);
     }
 
+    llvm::Value* IRGen::Process(StructDeclExpr& node) {
+        for (auto& child : node.body_->children_) {
+            if (child->type_ == AstType::FnExpr) Process((FnExpr&)*child);
+        }
+        return nullptr;
+    }
+
     llvm::Value* IRGen::Process(StructLitExpr& node) {
         auto* struct_type      = (sema::StructType*)node.lit_type_->resolved_type_;
         auto  struct_llvm_type = StructTypeGet(struct_type);
@@ -739,13 +755,6 @@ namespace xcompiler {
         return ValOwn(value, node.resolved_type_);
     }
 
-    llvm::Value* IRGen::Process(StructDeclExpr& node) {
-        for (auto& child : node.body_->children_) {
-            if (child->type_ == AstType::FnExpr) Process((FnExpr&)*child);
-        }
-        return nullptr;
-    }
-
     llvm::Value* IRGen::Process(FieldAccessExpr& node) {
         auto* struct_type      = (sema::StructType*)node.base_->resolved_type_->ReferenceUnwrap();
         auto  struct_llvm_type = StructTypeGet(struct_type);
@@ -765,6 +774,19 @@ namespace xcompiler {
     }
 
     // └─ Const
+
+    llvm::Value* IRGen::Process(PathExpr& node) {
+        if (node.const_decl_) {
+            return ConstValueGet(node.const_decl_);
+        }
+
+        Path path = {};
+        for (auto& segment : node.segments_) path.Add(segment->name_);
+
+        throw LogErr(LogStage::Xcompiler, std::format(
+            "undefined constant '{}'", path.Print()
+        ), node.loc_);
+    }
 
     llvm::Value* IRGen::Process(NumConst& node) {
         auto type = node.resolved_type_;
@@ -1180,7 +1202,15 @@ namespace xcompiler {
     // └─ Program
 
     llvm::Value* IRGen::Process(Program& node) {
-        for (auto& child : node.children_) Process(*child);
+        for (auto& child : node.children_) {
+            if (child->type_ == AstType::DeclExpr &&
+                (((DeclExpr&)*child).modifier_ & VarModifier::Const) ==
+                    VarModifier::Const)
+            {
+                continue;
+            }
+            Process(*child);
+        }
         return nullptr;
     }
 }

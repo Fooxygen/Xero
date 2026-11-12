@@ -32,6 +32,14 @@ namespace sema {
     inline FnModifier operator &(FnModifier a, FnModifier b) {
         return FnModifier((int)a & (int)b);
     }
+    inline FnModifier operator |=(FnModifier a, FnModifier b) {
+        a = a | b;
+        return a;
+    }
+    inline FnModifier operator &=(FnModifier a, FnModifier b) {
+        a = a & b;
+        return a;
+    }
 
     // Signature
     class  FnSign {

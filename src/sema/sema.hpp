@@ -23,7 +23,7 @@ namespace sema {
 
     public:
         void Run(std::vector<context::Module>& modules) {
-            
+
             // TypeTable
             TypeTable::Init();
 
@@ -35,12 +35,14 @@ namespace sema {
                 analyzer_.ModuleSet(module);
                 analyzer_.fn_scope().Enter(module.namespaces());
                 analyzer_.type_scope().Enter(module.namespaces());
+                analyzer_.module_const_scope().Enter(module.namespaces());
                 analyzer_.Declare(*module.root());
             }
             for (auto& module : modules) {
                 analyzer_.ModuleSet(module);
                 analyzer_.fn_scope().Enter(module.namespaces());
                 analyzer_.type_scope().Enter(module.namespaces());
+                analyzer_.module_const_scope().Enter(module.namespaces());
                 analyzer_.Process(*module.root());
                 LogBuild(LogStage::Sema, module.name_full()).Print();
             }

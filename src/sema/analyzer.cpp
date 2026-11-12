@@ -7,6 +7,45 @@
 
 namespace sema {
 
+    // Constant
+
+    bool Analyzer::ConstantCheck(Expr& node) {
+        using enum OperType;
+
+        if (dynamic_cast<NumConst*>(&node))  return true;
+        if (dynamic_cast<BoolConst*>(&node)) return true;
+        if (dynamic_cast<CharConst*>(&node)) return true;
+
+        if (auto id = dynamic_cast<IdExpr*>(&node)) {
+            return id->const_decl_ != nullptr;
+        }
+        if (auto path = dynamic_cast<PathExpr*>(&node)) {
+            return path->const_decl_ != nullptr;
+        }
+
+        if (auto op = dynamic_cast<OperExpr*>(&node)) {
+            switch (op->oper_type_) {
+                case Plus:
+                case Minus:
+                case Star:
+                case Slash:
+                case ModT:
+                case Neg:
+                case Eq:
+                case Neq:
+                    break;
+                default:
+                    return false;
+            }
+
+            if (!ConstantCheck(*op->lexpr_)) return false;
+            if (op->rexpr_ && !ConstantCheck(*op->rexpr_)) return false;
+            return true;
+        }
+
+        return false;
+    }
+
     // Declare
 
     // └─ Expr
@@ -79,6 +118,26 @@ namespace sema {
     }
 
     // └─ Common
+
+    void Analyzer::Declare(DeclExpr& node) {
+
+        // Module-Level Constant
+        if (node.modifier_ & VarModifier::Const) {
+            if (!node.value_) {
+                throw LogErr(LogStage::Sema, "constant must have an initializer", node.loc_);
+            }
+
+            module_const_scope_.Declare(node.id_, &node);
+        }
+
+        // Module-Level Variable
+        else {
+            throw LogErr(LogStage::Sema, "module-level variable is not supported", node.loc_);
+        }
+
+        Process(*node.bind_type_);
+        node.resolved_type_ = node.bind_type_->resolved_type_;
+    }
 
     void Analyzer::Declare(Program& node) {
         auto& node_children = ((BlockExpr&)node).children_;
@@ -160,26 +219,6 @@ namespace sema {
         var_scope_.Pop();
     }
 
-    void Analyzer::Process(IdExpr& node) {
-        if (auto var = var_scope_.LookupTry(node.name_)) {
-            node.resolved_type_ = var->type_;
-            return;
-        }
-
-        throw LogErr(LogStage::Sema, std::format(
-            "undefined identifier '{}'", node.name_
-        ), node.loc_);
-    }
-
-    void Analyzer::Process(RefExpr& node) {
-        if (!dynamic_cast<IdExpr*>(node.target_.get())) {
-            throw LogErr(LogStage::Sema, "cannot reference a non-referenceable value", node.loc_);
-        }
-
-        Process(*node.target_);
-        node.resolved_type_ = TypeTable::ReferenceTypeGet(node.target_->resolved_type_->ReferenceUnwrap());
-    }
-
     void Analyzer::Process(TypeExpr& node) {
         auto* aliases    = module_ ? &module_->namespaces_alias() : nullptr;
         auto  basic_type = type_scope_.Resolve(node.basic_type_, aliases, node.loc_);
@@ -226,6 +265,45 @@ namespace sema {
 
     void Analyzer::Process(DeclExpr& node) {
         Process(*node.bind_type_);
+        node.resolved_type_ = node.bind_type_->resolved_type_;
+
+        // Constant
+        if (node.modifier_ & VarModifier::Const) {
+
+            // Module-Level
+            if (fn_depth_ == 0) {
+
+                // Reference Type
+                if (node.bind_type_->is_referred_) {
+                    throw LogErr(LogStage::Sema, "constant cannot have a reference type", node.loc_);
+                }
+
+                Process(*node.value_);
+
+                if (!AssignableCheck(node.value_->resolved_type_, node.bind_type_->resolved_type_)) {
+                    throw LogErr(LogStage::Sema, std::format(
+                        "cannot make type '{}' compatible with '{}'",
+                        node.value_->resolved_type_->name(),
+                        node.bind_type_->resolved_type_->name()
+                    ), node.value_->loc_);
+                }
+
+                if (!ConstantCheck(*node.value_)) {
+                    throw LogErr(LogStage::Sema, std::format(
+                        "initializer of constant must be a constant expression, not '{}'",
+                        node.id_
+                    ), node.value_->loc_);
+                }
+                return;
+            }
+
+            // Local-Level
+            else {
+                if (!node.value_) {
+                    throw LogErr(LogStage::Sema, "constant must have an initializer", node.loc_);
+                }
+            }
+        }
 
         // Assignable Check
         {
@@ -267,9 +345,45 @@ namespace sema {
         }
         node.resolved_type_ = node.bind_type_->resolved_type_;
 
-        var_scope_.Add(std::make_unique<Var>(
-            node.id_, node.resolved_type_, node.loc_
+        var_scope_.Declare(std::make_unique<Var>(
+            node.id_, node.resolved_type_, node.loc_, node.modifier_
         ));
+    }
+
+    void Analyzer::Process(IdExpr& node) {
+        if (auto var = var_scope_.LookupTry(node.name_)) {
+            node.resolved_type_ = var->type_;
+            return;
+        }
+        if (auto constant = module_const_scope_.LookupTry(
+            Path::Resolve({ node.name_ }, module_->namespaces_alias())
+        )) {
+            node.const_decl_    = constant;
+            node.resolved_type_ = constant->resolved_type_;
+            return;
+        }
+
+        throw LogErr(LogStage::Sema, std::format(
+            "undefined identifier '{}'", node.name_
+        ), node.loc_);
+    }
+
+    void Analyzer::Process(RefExpr& node) {
+        if (auto idexpr = dynamic_cast<IdExpr*>(node.target_.get())) {
+            Process(*node.target_);
+            auto var = var_scope_.LookupTry(idexpr->name_);
+
+            if (var && (var->modifier_ & VarModifier::Const)) {
+                throw LogErr(LogStage::Sema, std::format(
+                    "cannot make a reference to constant '{}'", var->name_
+                ), node.loc_);
+            }
+
+            node.resolved_type_ = TypeTable::ReferenceTypeGet(node.target_->resolved_type_->ReferenceUnwrap());
+            return;
+        }
+
+        throw LogErr(LogStage::Sema, "cannot make a reference to a non-referenceable value", node.loc_);
     }
 
     void Analyzer::Process(OperExpr& node) {
@@ -437,14 +551,14 @@ namespace sema {
                 Process(*node.body_, [&]() {
                     // Self
                     if (owner) {
-                        var_scope_.Add(std::make_unique<Var>(
+                        var_scope_.Declare(std::make_unique<Var>(
                             "self", TypeTable::ReferenceTypeGet(owner), node.loc_)
                         );
                     }
 
                     for (size_t i = 0; i < params_expr.size(); i++) {
                         auto expr = (DeclExpr*)(params_expr[i].get());
-                        var_scope_.Add(std::make_unique<Var>(
+                        var_scope_.Declare(std::make_unique<Var>(
                             expr->id_, expr->resolved_type_, expr->loc_)
                         );
                     }
@@ -654,6 +768,27 @@ namespace sema {
         }
     }
 
+    void Analyzer::Process(PathExpr& node) {
+        Path path = {};
+        for (auto& segment : node.segments_) {
+            path.Add(segment->name_);
+        }
+        path = Path::Resolve(path, module_->namespaces_alias());
+
+        // FnCall:   a::b.c(), reduce as FnCallExpr or MethodCallExpr
+
+        // Constant: a::b::constant
+        if (auto* constant = module_const_scope_.LookupTry(path)) {
+            node.const_decl_    = constant;
+            node.resolved_type_ = constant->resolved_type_;
+        }
+        else {
+            throw LogErr(LogStage::Sema, std::format(
+                "undefined constant '{}'", path.Print()
+            ), node.loc_);
+        }
+    }
+
     // └─ Const
 
     void Analyzer::Process(NumConst& node) {
@@ -753,6 +888,20 @@ namespace sema {
         Process(*node.target_);
         Process(*node.value_);
 
+        if (auto id = dynamic_cast<IdExpr*>(node.target_.get())) {
+            auto var = var_scope_.LookupTry(id->name_);
+            if (var && (var->modifier_ & VarModifier::Const)) {
+                throw LogErr(LogStage::Sema, std::format(
+                    "cannot assign to constant '{}'", id->name_
+                ), node.target_->loc_);
+            }
+        }
+        if (auto path = dynamic_cast<PathExpr*>(node.target_.get())) {
+            if (path->const_decl_) {
+                throw LogErr(LogStage::Sema, "cannot assign to a constant", node.target_->loc_);
+            }
+        }
+
         // Assignable Check
         {
             auto* target_type = node.target_->resolved_type_->ReferenceUnwrap();
@@ -820,7 +969,7 @@ namespace sema {
         }
 
         Process(*node.body_, [&]() {
-            var_scope_.Add(std::make_unique<Var>(
+            var_scope_.Declare(std::make_unique<Var>(
                 node.iter_->name_, iter_type, node.iter_->loc_)
             );
         });

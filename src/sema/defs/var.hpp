@@ -12,6 +12,7 @@
 #include <optional>
 
 #include "common/log.hpp"
+#include "common/defs/var.hpp"
 #include "common/defs/loc.hpp"
 #include "common/defs/scope.hpp"
 #include "sema/defs/type.hpp"
@@ -20,12 +21,18 @@ namespace sema {
 
     class Var {
     public:
-        std::string name_ = "";
-        Type*       type_ = nullptr;
-        Loc         loc_;
-    
-        Var(std::string name, Type* type, Loc loc)
-        :   name_(name), type_(type), loc_(loc) {}
+        std::string  name_     = "";
+        Type*        type_     = nullptr;
+        Loc          loc_;
+        VarModifier  modifier_ = VarModifier::None;
+
+        Var(
+            std::string  name,
+            Type*        type,
+            Loc          loc,
+            VarModifier  modifier = VarModifier::None
+        )
+        :   name_(name), type_(type), loc_(loc), modifier_(modifier) {}
     };
 
     class VarScope {
@@ -36,7 +43,7 @@ namespace sema {
         void Push() { scope_.Push(); }
         void Pop()  { scope_.Pop(); }
 
-        void Add(std::unique_ptr<Var>&& var) {
+        void Declare(std::unique_ptr<Var>&& var) {
             auto name = var->name_;
             auto loc  = var->loc_;
 
@@ -52,7 +59,7 @@ namespace sema {
                 ), loc);
             }
         }
-        
+
         const Var* Lookup(const std::string& name, std::optional<Loc> loc = std::nullopt) {
             auto var = LookupTry(name);
             if (!var) {
@@ -63,6 +70,31 @@ namespace sema {
         const Var* LookupTry(const std::string& name) {
             auto var = scope_.LookupTry(name);
             return var ? var->get() : nullptr;
+        }
+    };
+
+    class ModuleConstantScope {
+    private:
+        Namespace<DeclExpr*> scope_;
+
+    public:
+        void Enter(const Path &path) {
+            scope_.Enter(path);
+        }
+
+        void Declare(const std::string& name, DeclExpr* declexpr) {
+            auto declared = scope_.Declare(name, declexpr);
+            if (!declared.second) {
+                throw LogErr(LogStage::Sema, std::format(
+                    "redefinition of constant '{}' in same scope",
+                    name
+                ), declexpr->loc_);
+            }
+        }
+
+        DeclExpr* LookupTry(const Path& path) {
+            auto declexpr = scope_.LookupTry(path);
+            return declexpr ? *declexpr : nullptr;
         }
     };
 }

@@ -18,9 +18,10 @@ namespace sema {
     private:
         // Table
 
-        VarScope  var_scope_;    // scope variable table
-        TypeScope type_scope_;   // global type scope
-        FnScope&  fn_scope_;     // global function scope
+        VarScope            var_scope_;             // scope variable table
+        ModuleConstantScope module_const_scope_;    // module-level constant table
+        TypeScope           type_scope_;            // global type scope
+        FnScope&            fn_scope_;              // global function scope
 
         // Module
 
@@ -29,6 +30,10 @@ namespace sema {
         // Function
 
         size_t fn_depth_ = 0;
+
+        // Constant
+
+        bool ConstantCheck(Expr& node);
 
         // Type
 
@@ -40,6 +45,7 @@ namespace sema {
 
         // Declare
 
+        void Declare(DeclExpr& node);                                           // signature of global constant
         void Declare(FnExpr& node, FnScope& fn_scope, bool is_named = true);    // signature of function
         void Declare(StructDeclExpr& node);                                     // signature of global struct
 
@@ -48,10 +54,10 @@ namespace sema {
         // Process
 
         void Process(BlockExpr& node, const std::function<void()>& on_scope_ready = nullptr);
-        void Process(IdExpr& node);
-        void Process(RefExpr& node);
         void Process(TypeExpr& node);
         void Process(DeclExpr& node);
+        void Process(IdExpr& node);
+        void Process(RefExpr& node);
         void Process(OperExpr& node);
         void Process(RangeExpr& node);
         void Process(ArrayLitExpr& node);
@@ -61,6 +67,7 @@ namespace sema {
         void Process(StructDeclExpr& node);
         void Process(StructLitExpr& node);
         void Process(FieldAccessExpr& node);
+        void Process(PathExpr& node);
 
         void Process(NumConst& node);
         void Process(BoolConst& node);
@@ -79,8 +86,9 @@ namespace sema {
     public:
         Analyzer(FnScope& fn_scope) : fn_scope_(fn_scope) {}
 
-        FnScope&   fn_scope()   { return fn_scope_; }
-        TypeScope& type_scope() { return type_scope_; }
+        ModuleConstantScope& module_const_scope() { return module_const_scope_; }
+        TypeScope&           type_scope()         { return type_scope_; }
+        FnScope&             fn_scope()           { return fn_scope_; }
 
     public:
         // Builtin
@@ -95,6 +103,7 @@ namespace sema {
 
         void Declare(AstNode& node) {
             switch (node.type_) {
+                case AstType::DeclExpr:         Declare((DeclExpr&)node);           return;
                 case AstType::FnExpr:           Declare((FnExpr&)node, fn_scope_);  return;
                 case AstType::StructDeclExpr:   Declare((StructDeclExpr&)node);     return;
 
@@ -109,10 +118,10 @@ namespace sema {
         void Process(AstNode& node) {
             switch (node.type_) {
                 case AstType::BlockExpr:        Process((BlockExpr&)node);         return;
-                case AstType::IdExpr:           Process((IdExpr&)node);            return;
-                case AstType::RefExpr:          Process((RefExpr&)node);           return;
                 case AstType::TypeExpr:         Process((TypeExpr&)node);          return;
                 case AstType::DeclExpr:         Process((DeclExpr&)node);          return;
+                case AstType::IdExpr:           Process((IdExpr&)node);            return;
+                case AstType::RefExpr:          Process((RefExpr&)node);           return;
                 case AstType::OperExpr:         Process((OperExpr&)node);          return;
                 case AstType::RangeExpr:        Process((RangeExpr&)node);         return;
                 case AstType::ArrayLitExpr:     Process((ArrayLitExpr&)node);      return;
@@ -122,6 +131,7 @@ namespace sema {
                 case AstType::StructDeclExpr:   Process((StructDeclExpr&)node);    return;
                 case AstType::StructLitExpr:    Process((StructLitExpr&)node);     return;
                 case AstType::FieldAccessExpr:  Process((FieldAccessExpr&)node);   return;
+                case AstType::PathExpr:         Process((PathExpr&)node);          return;
 
                 case AstType::NumConst:         Process((NumConst&)node);          return;
                 case AstType::BoolConst:        Process((BoolConst&)node);         return;
