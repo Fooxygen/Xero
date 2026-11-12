@@ -356,7 +356,7 @@ public:
     std::string name_ = "";
 
 public:
-    const DeclExpr* const_decl_ = nullptr;
+    const DeclExpr* module_const_decl_ = nullptr;
     
 public:
     IdExpr(const std::string& name) : name_(name) {
@@ -374,8 +374,8 @@ public:
 
     std::unique_ptr<AstNode> Clone() const override {
         auto node = std::make_unique<IdExpr>(name_);
-        node->const_decl_    = const_decl_;
-        node->resolved_type_ = resolved_type_;
+        node->module_const_decl_ = module_const_decl_;
+        node->resolved_type_     = resolved_type_;
         node->loc_ = loc_;
         return node;
     }
@@ -816,7 +816,7 @@ public:
     std::vector<std::unique_ptr<IdExpr>> segments_ = {};
 
 public:
-    const DeclExpr* const_decl_ = nullptr;
+    const DeclExpr* module_const_decl_ = nullptr;
 
 public:
     PathExpr(std::vector<std::unique_ptr<IdExpr>>& segments)
@@ -840,8 +840,8 @@ public:
         }
         
         auto node = std::make_unique<PathExpr>(segments);
-        node->const_decl_    = const_decl_;
-        node->resolved_type_ = resolved_type_;
+        node->module_const_decl_ = module_const_decl_;
+        node->resolved_type_     = resolved_type_;
         node->loc_ = loc_;
         return node;
     }

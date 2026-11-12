@@ -134,6 +134,14 @@ namespace xcompiler {
     }
 
     llvm::Value* IRGen::Process(DeclExpr& node) {
+        // Module-Level: only constants are allowed, and they have no storage
+        if (!state_.fn_) {
+            if (node.modifier_ & VarModifier::Const) return nullptr;
+
+            throw LogErr(LogStage::Xcompiler,
+                "unsupported module variable", node.loc_);
+        }
+
         auto var_type = node.resolved_type_;
         auto var_slot = SlotCreate(LlvmType(var_type), node.id_);
         
@@ -175,8 +183,8 @@ namespace xcompiler {
     }
 
     llvm::Value* IRGen::Process(IdExpr& node) {
-        if (node.const_decl_) {
-            return ConstValueGet(node.const_decl_);
+        if (node.module_const_decl_) {
+            return ModuleConstantValueGet(node.module_const_decl_);
         }
 
         auto var       = IdAddrGet(node);
@@ -533,6 +541,7 @@ namespace xcompiler {
                 llvm_builder().CreateRet(llvm::ConstantInt::get(return_llvm_type, 0));
         });
 
+        state_.fn_ = nullptr;
         return nullptr;
     }
 
@@ -776,15 +785,15 @@ namespace xcompiler {
     // └─ Const
 
     llvm::Value* IRGen::Process(PathExpr& node) {
-        if (node.const_decl_) {
-            return ConstValueGet(node.const_decl_);
+        if (node.module_const_decl_) {
+            return ModuleConstantValueGet(node.module_const_decl_);
         }
 
         Path path = {};
         for (auto& segment : node.segments_) path.Add(segment->name_);
 
         throw LogErr(LogStage::Xcompiler, std::format(
-            "undefined constant '{}'", path.Print()
+            "undefined identifier '{}'", path.Print()
         ), node.loc_);
     }
 
@@ -1202,15 +1211,7 @@ namespace xcompiler {
     // └─ Program
 
     llvm::Value* IRGen::Process(Program& node) {
-        for (auto& child : node.children_) {
-            if (child->type_ == AstType::DeclExpr &&
-                (((DeclExpr&)*child).modifier_ & VarModifier::Const) ==
-                    VarModifier::Const)
-            {
-                continue;
-            }
-            Process(*child);
-        }
+        for (auto& child : node.children_) Process(*child);
         return nullptr;
     }
 }

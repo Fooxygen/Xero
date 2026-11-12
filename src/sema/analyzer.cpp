@@ -7,23 +7,32 @@
 
 namespace sema {
 
-    // Constant
+    // Module Constant
 
-    bool Analyzer::ConstantCheck(Expr& node) {
+    void Analyzer::ModuleConstantTypeCacheInit() {
+        module_constant_i32_  = TypeTable::Lookup("i32");
+        module_constant_i64_  = TypeTable::Lookup("i64");
+        module_constant_f32_  = TypeTable::Lookup("f32");
+        module_constant_f64_  = TypeTable::Lookup("f64");
+        module_constant_bool_ = TypeTable::Lookup("bool");
+        module_constant_char_ = TypeTable::Lookup("char");
+    }
+
+    bool Analyzer::ModuleConstantStructureCheck(Expr& node) {
         using enum OperType;
 
+        // Number, Bool or Char
         if (dynamic_cast<NumConst*>(&node))  return true;
         if (dynamic_cast<BoolConst*>(&node)) return true;
         if (dynamic_cast<CharConst*>(&node)) return true;
 
-        if (auto id = dynamic_cast<IdExpr*>(&node)) {
-            return id->const_decl_ != nullptr;
+        if (auto id   = dynamic_cast<IdExpr*>(&node)) {
+            return id->module_const_decl_ != nullptr;
         }
         if (auto path = dynamic_cast<PathExpr*>(&node)) {
-            return path->const_decl_ != nullptr;
+            return path->module_const_decl_ != nullptr;
         }
-
-        if (auto op = dynamic_cast<OperExpr*>(&node)) {
+        if (auto op   = dynamic_cast<OperExpr*>(&node)) {
             switch (op->oper_type_) {
                 case Plus:
                 case Minus:
@@ -38,10 +47,103 @@ namespace sema {
                     return false;
             }
 
-            if (!ConstantCheck(*op->lexpr_)) return false;
-            if (op->rexpr_ && !ConstantCheck(*op->rexpr_)) return false;
+            if (!ModuleConstantStructureCheck(*op->lexpr_)) return false;
+            if (op->rexpr_ && !ModuleConstantStructureCheck(*op->rexpr_)) return false;
             return true;
         }
+
+        return false;
+    }
+
+    void Analyzer::ModuleConstantTypeCheck(Expr& node, Type* expected) {
+        using enum OperType;
+
+        auto* type = node.resolved_type_->ReferenceUnwrap();
+
+        // Type Supported
+        if (!ModuleConstantTypeSupported(type)) {
+            throw LogErr(LogStage::Sema, std::format(
+                "unsupported type '{}' in module constant", type->name()
+            ), node.loc_);
+        }
+
+        // Type Cast Supported
+        if (!ModuleConstantCastSupported(type, expected)) {
+            throw LogErr(LogStage::Sema, std::format(
+                "cannot convert module constant from '{}' to '{}'",
+                type->name(), expected->name()
+            ), node.loc_);
+        }
+
+        // Operation
+        auto* op = dynamic_cast<OperExpr*>(&node);
+        if (!op) return;
+
+        // └─ Unary
+
+        if (op->oper_type_ == Neg) {
+            ModuleConstantTypeCheck(
+                *op->lexpr_, op->lexpr_->resolved_type_->ReferenceUnwrap()
+            );
+            return;
+        }
+
+        // └─ Binary
+
+        auto* ltype    = op->lexpr_->resolved_type_->ReferenceUnwrap();
+        auto* rtype    = op->rexpr_->resolved_type_->ReferenceUnwrap();
+        auto* com_type = TypeTable::CommonTypeGet({ ltype, rtype });
+        if (!com_type) {
+            throw LogErr(LogStage::Sema, std::format(
+                "cannot make type '{}' compatible with '{}'",
+                ltype->name(), rtype->name()
+            ), op->loc_);
+        }
+
+        // Type Supported
+        if (!ModuleConstantTypeSupported(com_type)) {
+            throw LogErr(LogStage::Sema, std::format(
+                "unsupported type '{}' in module constant expression", com_type->name()
+            ), op->loc_);
+        }
+
+        // Type Cast Supported
+        if (!ModuleConstantCastSupported(ltype, com_type) ||
+            !ModuleConstantCastSupported(rtype, com_type))
+        {
+            throw LogErr(LogStage::Sema, std::format(
+                "cannot convert module constant operands from '{}' and '{}' to '{}'",
+                ltype->name(), rtype->name(), com_type->name()
+            ), op->loc_);
+        }
+
+        ModuleConstantTypeCheck(*op->lexpr_, com_type);
+        ModuleConstantTypeCheck(*op->rexpr_, com_type);
+    }
+
+    bool Analyzer::ModuleConstantTypeSupported(Type* type) {
+        auto* basic = type->BasicTypeGet();
+        return basic == module_constant_i32_  || basic == module_constant_i64_ ||
+               basic == module_constant_f32_  || basic == module_constant_f64_ ||
+               basic == module_constant_bool_ || basic == module_constant_char_;
+    }
+
+    bool Analyzer::ModuleConstantCastSupported(Type* from, Type* to) {
+        if (from == to) return true;
+
+        auto* from_basic = from->BasicTypeGet();
+        auto* to_basic   = to->BasicTypeGet();
+
+        if (from_basic == module_constant_i32_ && to_basic == module_constant_i64_) return true;
+
+        if ((from_basic == module_constant_i32_ || from_basic == module_constant_i64_) &&
+            (to_basic   == module_constant_f32_ || to_basic   == module_constant_f64_))
+        {
+            return true;
+        }
+
+        if (from_basic == module_constant_f32_ && to_basic == module_constant_f64_) return true;
+        if (from_basic == module_constant_f64_ && to_basic == module_constant_f32_) return true;
 
         return false;
     }
@@ -121,18 +223,18 @@ namespace sema {
 
     void Analyzer::Declare(DeclExpr& node) {
 
-        // Module-Level Constant
+        // Module Constant
         if (node.modifier_ & VarModifier::Const) {
             if (!node.value_) {
-                throw LogErr(LogStage::Sema, "constant must have an initializer", node.loc_);
+                throw LogErr(LogStage::Sema, "module constant must have an initializer", node.loc_);
             }
 
             module_const_scope_.Declare(node.id_, &node);
         }
 
-        // Module-Level Variable
+        // Module Variable
         else {
-            throw LogErr(LogStage::Sema, "module-level variable is not supported", node.loc_);
+            throw LogErr(LogStage::Sema, "unsupported module variable", node.loc_);
         }
 
         Process(*node.bind_type_);
@@ -270,12 +372,12 @@ namespace sema {
         // Constant
         if (node.modifier_ & VarModifier::Const) {
 
-            // Module-Level
+            // Module
             if (fn_depth_ == 0) {
 
                 // Reference Type
                 if (node.bind_type_->is_referred_) {
-                    throw LogErr(LogStage::Sema, "constant cannot have a reference type", node.loc_);
+                    throw LogErr(LogStage::Sema, "module constant cannot have a reference type", node.loc_);
                 }
 
                 Process(*node.value_);
@@ -288,16 +390,22 @@ namespace sema {
                     ), node.value_->loc_);
                 }
 
-                if (!ConstantCheck(*node.value_)) {
-                    throw LogErr(LogStage::Sema, std::format(
-                        "initializer of constant must be a constant expression, not '{}'",
-                        node.id_
-                    ), node.value_->loc_);
+                if (!ModuleConstantStructureCheck(*node.value_)) {
+                    throw LogErr(LogStage::Sema, "initializer of module constant must be a constant expression", node.value_->loc_);
                 }
+
+                if (!ModuleConstantTypeSupported(node.bind_type_->resolved_type_)) {
+                    throw LogErr(LogStage::Sema, std::format(
+                        "unsupported module-level constant type '{}'",
+                        node.bind_type_->resolved_type_->name()
+                    ), node.loc_);
+                }
+
+                ModuleConstantTypeCheck(*node.value_, node.bind_type_->resolved_type_);
                 return;
             }
 
-            // Local-Level
+            // Local
             else {
                 if (!node.value_) {
                     throw LogErr(LogStage::Sema, "constant must have an initializer", node.loc_);
@@ -355,11 +463,11 @@ namespace sema {
             node.resolved_type_ = var->type_;
             return;
         }
-        if (auto constant = module_const_scope_.LookupTry(
+        if (auto module_constant = module_const_scope_.LookupTry(
             Path::Resolve({ node.name_ }, module_->namespaces_alias())
         )) {
-            node.const_decl_    = constant;
-            node.resolved_type_ = constant->resolved_type_;
+            node.module_const_decl_ = module_constant;
+            node.resolved_type_     = module_constant->resolved_type_;
             return;
         }
 
@@ -373,9 +481,11 @@ namespace sema {
             Process(*node.target_);
             auto var = var_scope_.LookupTry(idexpr->name_);
 
-            if (var && (var->modifier_ & VarModifier::Const)) {
+            if (idexpr->module_const_decl_ ||                       // module constant
+                (var && (var->modifier_ & VarModifier::Const)))     // local  constant
+            {
                 throw LogErr(LogStage::Sema, std::format(
-                    "cannot make a reference to constant '{}'", var->name_
+                    "cannot make a reference to constant '{}'", idexpr->name_
                 ), node.loc_);
             }
 
@@ -775,16 +885,16 @@ namespace sema {
         }
         path = Path::Resolve(path, module_->namespaces_alias());
 
-        // FnCall:   a::b.c(), reduce as FnCallExpr or MethodCallExpr
+        // FnCall:              a::b.c(), reduce as FnCallExpr or MethodCallExpr
 
-        // Constant: a::b::constant
-        if (auto* constant = module_const_scope_.LookupTry(path)) {
-            node.const_decl_    = constant;
-            node.resolved_type_ = constant->resolved_type_;
+        // Module Constant:     a::b::constant
+        if (auto* module_constant = module_const_scope_.LookupTry(path)) {
+            node.module_const_decl_ = module_constant;
+            node.resolved_type_     = module_constant->resolved_type_;
         }
         else {
             throw LogErr(LogStage::Sema, std::format(
-                "undefined constant '{}'", path.Print()
+                "undefined identifier '{}'", path.Print()
             ), node.loc_);
         }
     }
@@ -829,27 +939,27 @@ namespace sema {
                 ), node.loc_);
             }
 
-            // f32
-            {
-                float x = 0.0f;
-                auto [ptr, ec] = std::from_chars(numstr.data(), numstr.data() + numstr.size(), x);
-                if (ec == std::errc{}) {
-                    node.resolved_type_ = TypeTable::Lookup("f32");
-                    node.resolved_value_.floating_ = x;
-                    return;
-                }
+            // f64
+            double x = 0.0;
+            auto [ptr, ec] = std::from_chars(numstr.data(), numstr.data() + numstr.size(), x);
+            if (ec != std::errc{}) {
+                throw LogErr(LogStage::Sema, std::format(
+                    "numeric overflow '{}'", numstr
+                ), node.loc_);
             }
 
-            // f64
+            // f32
+            if (x >= -std::numeric_limits<float>::max() &&
+                x <=  std::numeric_limits<float>::max())
             {
-                double x = 0.0;
-                auto [ptr, ec] = std::from_chars(numstr.data(), numstr.data() + numstr.size(), x);
-                if (ec == std::errc{}) {
-                    node.resolved_type_ = TypeTable::Lookup("f64");
-                    node.resolved_value_.floating_ = x;
-                    return;
-                }
+                node.resolved_type_ = TypeTable::Lookup("f32");
+                node.resolved_value_.floating_ = (float)x;
             }
+            else {
+                node.resolved_type_ = TypeTable::Lookup("f64");
+                node.resolved_value_.floating_ = x;
+            }
+            return;
         }
 
         throw LogErr(LogStage::Sema, std::format(
@@ -889,16 +999,26 @@ namespace sema {
         Process(*node.value_);
 
         if (auto id = dynamic_cast<IdExpr*>(node.target_.get())) {
-            auto var = var_scope_.LookupTry(id->name_);
-            if (var && (var->modifier_ & VarModifier::Const)) {
+            // Module Constant
+            if (id->module_const_decl_) {
                 throw LogErr(LogStage::Sema, std::format(
-                    "cannot assign to constant '{}'", id->name_
+                    "cannot assign to constant '{}'", id->module_const_decl_->id_
                 ), node.target_->loc_);
+            }
+            if (auto var = var_scope_.LookupTry(id->name_)) {
+                // Local Constant
+                if (var->modifier_ & VarModifier::Const) {
+                    throw LogErr(LogStage::Sema, std::format(
+                        "cannot assign to constant '{}'", id->name_
+                    ), node.target_->loc_);
+                }
             }
         }
         if (auto path = dynamic_cast<PathExpr*>(node.target_.get())) {
-            if (path->const_decl_) {
-                throw LogErr(LogStage::Sema, "cannot assign to a constant", node.target_->loc_);
+            if (path->module_const_decl_) {
+                throw LogErr(LogStage::Sema, std::format(
+                    "cannot assign to constant '{}'", path->module_const_decl_->id_
+                ), node.target_->loc_);
             }
         }
 

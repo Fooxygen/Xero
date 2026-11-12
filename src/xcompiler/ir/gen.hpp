@@ -74,10 +74,10 @@ namespace xcompiler {
 
         std::unordered_map<sema::StructType*, llvm::StructType*> struct_types_ = {};
 
-        // Constant
+        // Module Constant
 
-        std::unordered_map<const DeclExpr*, llvm::Constant*> const_values_   = {};
-        std::unordered_set<const DeclExpr*>                  const_visiting_ = {};
+        std::unordered_map<const DeclExpr*, llvm::Constant*> module_constant_values_   = {};
+        std::unordered_set<const DeclExpr*>                  module_constant_visiting_ = {};
 
     private:
         // Declare
@@ -144,11 +144,11 @@ namespace xcompiler {
         void              ReleaseEmit(size_t target_depth);
         llvm::Value*      StructTypeValCreate(llvm::Type* type, llvm::ArrayRef<llvm::Value*> fields);
 
-        // └─ Constant
+        // └─ Module Constant
 
-        llvm::Constant*   ConstValueGet(const DeclExpr* node);
-        llvm::Constant*   ConstEval(Expr& node, sema::Type* expected);
-        llvm::Constant*   ConstCast(llvm::Constant* value, sema::Type* from, sema::Type* to);
+        llvm::Constant*   ModuleConstantValueGet(const DeclExpr* node);
+        llvm::Constant*   ModuleConstantEval(Expr& node, sema::Type* expected);
+        llvm::Constant*   ModuleConstantCast(llvm::Constant* value, sema::Type* from, sema::Type* to);
 
         // └─ Expr
 

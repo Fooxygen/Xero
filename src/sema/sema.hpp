@@ -27,6 +27,9 @@ namespace sema {
             // TypeTable
             TypeTable::Init();
 
+            // Module Constant
+            analyzer_.ModuleConstantTypeCacheInit();
+
             // Builtin
             analyzer_.BuiltinFnRegister();
 

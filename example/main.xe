@@ -1,49 +1,74 @@
 
-use xero::math::linalg
+use xero::math
 
+const pi: f64 = 3.141592653589793;
 fn main() {
-    a: linalg::vec2 = linalg::vec2 { x = 1.0, y = 2.0 };
-    b: linalg::vec2 = linalg::vec2 { x = 3.0, y = 4.0 };
-
-    c: linalg::vec2 = a + b;
-    println(c);                         # 4.000000 6.000000
-
-    d: linalg::vec2 = a - b;
-    println(d);                         # -2.000000 -2.000000
-
-    e: linalg::vec2 = -a;
-    println(e);                         # -1.000000 -2.000000
-
-    f: linalg::vec2 = a * 2.0;
-    println(f);                         # 2.000000 4.000000
-
-    g: linalg::vec2 = a / 2.0;
-    println(g);                         # 0.500000 1.000000
-
-    println(a == a);                    # true
-    println(a == b);                    # false
-    println(a != b);                    # true
-
-    n: linalg::vec2 = a.normalized();
-    println(n);                         # 0.447214 0.894427
-
-    println(a.dot(b));                  # 11.000000
-    println(a.length());                # 2.236068
-    println(a.distance(b));             # 2.828427
-
-    println(a.length_manhattan());      # 3.000000
-    println(a.distance_manhattan(b));   # 4.000000
-    println(a.cosine(b));               # 0.983870
-
-    a += b;
-    println(a);                         # 4.000000 6.000000
-
-    a -= b;
-    println(a);                         # 1.000000 2.000000
-
-    a *= 2.0;
-    println(a);                         # 2.000000 4.000000
-
-    a /= 2.0;
-    println(a);                         # 1.000000 2.000000
+    println(pi);
 }
+
+## const pi:  f64 = 3.141592653589793;
+const tau: f64 = pi * 2.0;
+fn main() {
+    println(tau);
+} ##
+
+## const tau: f64 = math::pi * 2.0;
+fn main() {
+    println(tau);
+} ##
+
+## counter: i32 = 0;
+fn main() {
+    println(counter);
+} ##
+
+## const s: string = "hello";
+fn main() {
+    println(s);
+} ##
+
+## const c: i32 = 'a';
+fn main() {
+    println(c);
+} ##
+
+## fn value() -> i32 {
+    return 1;
+}
+const x: i32 = value();
+fn main() {
+    println(x);
+} ##
+
+## const b: bool = !true;
+fn main() {
+    println(b);
+} ##
+
+## const a: i32 = b;
+const b: i32 = a;
+fn main() {
+    println(a);
+} ##
+
+## const x: i32 = 1;
+fn main() {
+    x = 2;
+} ##
+
+## const x: i32 = 1;
+fn main() {
+    y: i32& = &x;
+    println(y);
+} ##
+
+## fn main() {
+    const x: i32 = 1;
+    x = 2;
+} ##
+
+## fn main() {
+    const x: i32 = 1;
+    y: i32& = &x;
+    println(y);
+} ##

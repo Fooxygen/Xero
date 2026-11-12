@@ -16,11 +16,11 @@ inline VarModifier operator |(VarModifier a, VarModifier b) {
 inline VarModifier operator &(VarModifier a, VarModifier b) {
     return VarModifier((int)a & (int)b);
 }
-inline VarModifier operator |=(VarModifier a, VarModifier b) {
+inline VarModifier operator |=(VarModifier& a, VarModifier b) {
     a = a | b;
     return a;
 }
-inline VarModifier operator &=(VarModifier a, VarModifier b) {
+inline VarModifier operator &=(VarModifier& a, VarModifier b) {
     a = a & b;
     return a;
 }

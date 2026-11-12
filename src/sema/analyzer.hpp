@@ -31,9 +31,19 @@ namespace sema {
 
         size_t fn_depth_ = 0;
 
-        // Constant
+        // Module Constant
 
-        bool ConstantCheck(Expr& node);
+        Type* module_constant_i32_  = nullptr;
+        Type* module_constant_i64_  = nullptr;
+        Type* module_constant_f32_  = nullptr;
+        Type* module_constant_f64_  = nullptr;
+        Type* module_constant_bool_ = nullptr;
+        Type* module_constant_char_ = nullptr;
+
+        bool ModuleConstantStructureCheck(Expr& node);
+        void ModuleConstantTypeCheck(Expr& node, Type* expected);
+        bool ModuleConstantTypeSupported(Type* type);
+        bool ModuleConstantCastSupported(Type* from, Type* to);
 
         // Type
 
@@ -94,6 +104,10 @@ namespace sema {
         // Builtin
 
         void BuiltinFnRegister();
+
+        // Module Constant
+
+        void ModuleConstantTypeCacheInit();     // init supported type for constant
 
         // Module
 
