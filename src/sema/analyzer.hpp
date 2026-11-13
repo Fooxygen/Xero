@@ -59,7 +59,7 @@ namespace sema {
         void Declare(FnExpr& node, FnScope& fn_scope, bool is_named = true);    // signature of function
         void Declare(StructDeclExpr& node);                                     // signature of global struct
 
-        void Declare(Program& node);                                            // module level
+        void Declare(Program& node);                                            // module scope
 
         // Process
 

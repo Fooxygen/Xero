@@ -226,7 +226,7 @@ namespace sema {
         // Module Constant
         if (node.modifier_ & VarModifier::Const) {
             if (!node.value_) {
-                throw LogErr(LogStage::Sema, "module constant must have an initializer", node.loc_);
+                throw LogErr(LogStage::Sema, "constant must have an initializer", node.loc_);
             }
 
             module_const_scope_.Declare(node.id_, &node);
@@ -288,7 +288,7 @@ namespace sema {
                     }
                     
                     else {
-                        throw LogErr(LogStage::Sema, "member of struct must be a field declaration", member->loc_);
+                        throw LogErr(LogStage::Sema, "invalid struct member", member->loc_);
                     }
                 }
             }
@@ -396,7 +396,7 @@ namespace sema {
 
                 if (!ModuleConstantTypeSupported(node.bind_type_->resolved_type_)) {
                     throw LogErr(LogStage::Sema, std::format(
-                        "unsupported module-level constant type '{}'",
+                        "unsupported module constant type '{}'",
                         node.bind_type_->resolved_type_->name()
                     ), node.loc_);
                 }
@@ -600,7 +600,11 @@ namespace sema {
             node.rexpr_->resolved_type_->ReferenceUnwrap()
         });
         if (!boundary_type) {
-            throw LogErr(LogStage::Sema, "'left bound type of range' must be compatible with 'right bound type of range'", node.loc_);
+            throw LogErr(LogStage::Sema, std::format(
+                "left bound type '{}' must be compatible with right bound type '{}'",
+                node.lexpr_->resolved_type_->ReferenceUnwrap()->name(),
+                node.rexpr_->resolved_type_->ReferenceUnwrap()->name()
+            ), node.loc_);
         }
 
         // Step
@@ -609,7 +613,10 @@ namespace sema {
             Process(*node.step_);
             step_type = node.step_->resolved_type_->ReferenceUnwrap();
             if (TypeTable::CommonTypeGet({ step_type, boundary_type }) != boundary_type) {
-                throw LogErr(LogStage::Sema, "'step type of range' must be compatible with 'boundary type of range'", node.loc_);
+                throw LogErr(LogStage::Sema, std::format(
+                    "step type '{}' must be compatible with boundary type '{}'",
+                    step_type->name(), boundary_type->name()
+                ), node.loc_);
             }
         }
 
@@ -745,7 +752,7 @@ namespace sema {
         auto* struct_type = (StructType*)node.resolved_type_;
         if (!struct_type) {
             throw LogErr(LogStage::Sema,
-                "struct declaration must be at module level",
+                "struct declaration must be at module scope",
                 node.loc_
             );
         }
@@ -756,7 +763,7 @@ namespace sema {
             std::function<void(StructType*)> CycleDefinitionCheck = [&](StructType* type) {
                 if (!visiting.insert(type).second) {
                     throw LogErr(LogStage::Sema, std::format(
-                        "struct '{}' must not contain itself by value", type->name()
+                        "cyclic definition of struct '{}' by value", type->name()
                     ));
                 }
 
@@ -1083,8 +1090,7 @@ namespace sema {
 
         if (!iter_type) {
             throw LogErr(LogStage::Sema, std::format(
-                "'iterated value type' must be iterable, not '{}'",
-                data_type->name()
+                "type '{}' must be iterable", data_type->name()
             ), node.data_->loc_);
         }
 

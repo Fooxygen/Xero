@@ -141,7 +141,7 @@ namespace sema {
         auto sign = SignLookupTry(sign_reference);
         if (!sign) {
             throw LogErr(LogStage::Sema, std::format(
-                "undefined signature {} for function '{}'",
+                "undefined signature {} of function '{}'",
                 sign_reference.ParamsPrint(), name_
             ), loc);
         }
@@ -154,14 +154,14 @@ namespace sema {
             if (*sign) return *sign;
             else {
                 throw LogErr(LogStage::Sema, std::format(
-                    "ambiguous signature {} for function '{}'",
+                    "ambiguous signature {} of function '{}'",
                     FnSign(nullptr, args_type).ParamsPrint(), name_
                 ), loc);
             }
         }
 
         throw LogErr(LogStage::Sema, std::format(
-            "undefined signature {} for function '{}'",
+            "undefined signature {} of function '{}'",
             FnSign(nullptr, args_type).ParamsPrint(), name_
         ), loc);
     }
@@ -172,14 +172,14 @@ namespace sema {
             if (*sign) return *sign;
             else {
                 throw LogErr(LogStage::Sema, std::format(
-                    "ambiguous signature {} for method '{}'",
+                    "ambiguous signature {} of method '{}'",
                     FnSign(nullptr, args_type).ParamsPrint(), name_
                 ), loc);
             }
         }
 
         throw LogErr(LogStage::Sema, std::format(
-            "undefined signature {} for method '{}'",
+            "undefined signature {} of method '{}'",
             FnSign(nullptr, args_type).ParamsPrint(), name_
         ), loc);
     }

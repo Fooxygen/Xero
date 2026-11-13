@@ -162,7 +162,7 @@ namespace xcompiler {
         // Ciclic Definition
         if (!module_constant_visiting_.insert(node).second) {
             throw LogErr(LogStage::Xcompiler, std::format(
-                "cyclic module constant definition involving '{}'", node->id_
+                "cyclic definition of module constant '{}'", node->id_
             ), node->loc_);
         }
 
@@ -362,7 +362,7 @@ namespace xcompiler {
                 break;
             default:
                 throw LogErr(LogStage::Xcompiler, std::format(
-                    "unsupported module constant operator '{}'",
+                    "unsupported operator '{}' in module constant expression",
                     OperTypeName(op->oper_type_)
                 ), op->loc_);
         }

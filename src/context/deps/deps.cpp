@@ -96,7 +96,7 @@ namespace context {
             auto  it      = aliases.find(alias);
             if (it != aliases.end() && it->second != namespaces) {
                 throw LogErr(LogStage::Sema, std::format(
-                    "redefinition of alias '{}'", alias
+                    "redefinition of alias '{}' in same module", alias
                 ), node.loc_);
             }
             aliases[alias] = namespaces;

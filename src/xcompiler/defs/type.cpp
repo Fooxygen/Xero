@@ -87,7 +87,8 @@ namespace xcompiler {
         }
 
         throw LogErr(LogStage::Xcompiler, std::format(
-            "unsupported method '{}'", name
+            "undefined implementation of method '{}' for type '{}'",
+            name, def_->name()
         ), loc);
     }
 
