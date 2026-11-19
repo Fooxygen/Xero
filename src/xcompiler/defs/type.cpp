@@ -129,17 +129,27 @@ namespace xcompiler {
         const sema::FnSign* method_sign = nullptr;
 
         if (auto from_parametric = dynamic_cast<sema::ParametricType*>(from)) {
-            for (auto& [cast_type, sign] : from_basic->casts_fnsign()) {
-                auto resolved = sema::TypeTable::BindingTypeReplace(cast_type, from_basic, from_parametric->params());
-                if (resolved == to) {
-                    method_sign = sign;
-                    break;
+            for (auto* casts : { &from_basic->casts(), &from_basic->casts_lossy() }) {
+                for (auto& [cast_type, sign] : *casts) {
+                    auto resolved = sema::TypeTable::BindingTypeReplace(cast_type, from_basic, from_parametric->params());
+                    if (resolved == to) {
+                        method_sign = sign;
+                        break;
+                    }
                 }
+                if (method_sign) break;
             }
         }
         else {
-            auto it = from_basic->casts_fnsign().find(to);
-            if (it != from_basic->casts_fnsign().end()) method_sign = it->second;
+            auto* casts = &from_basic->casts();
+            auto  it    = casts->find(to);
+
+            if (it == casts->end()) {
+                casts = &from_basic->casts_lossy();
+                it    = casts->find(to);
+            }
+
+            if (it != casts->end()) method_sign = it->second;
         }
 
         if (!method_sign) {

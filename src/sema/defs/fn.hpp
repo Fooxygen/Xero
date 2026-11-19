@@ -22,8 +22,9 @@ namespace sema {
     // Modifier
 
     enum   FnModifier : int {
-        None = 0,
-        Cast = 1 << 0,
+        None      = 0,
+        Cast      = 1 << 0,
+        CastLossy = 1 << 1,
     };
 
     inline FnModifier operator |(FnModifier a, FnModifier b) {

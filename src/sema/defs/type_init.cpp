@@ -34,13 +34,25 @@ namespace sema {
         // @cast
         {
             i32_->method_table().Add("@cast",           FnSign(i64_, {}, std::nullopt, FnModifier::Cast));
-            i32_->method_table().Add("@cast",           FnSign(f32_, {}, std::nullopt, FnModifier::Cast));
+            i32_->method_table().Add("@cast",           FnSign(f32_, {}, std::nullopt, FnModifier::CastLossy));
             i32_->method_table().Add("@cast",           FnSign(f64_, {}, std::nullopt, FnModifier::Cast));
-            i64_->method_table().Add("@cast",           FnSign(f32_, {}, std::nullopt, FnModifier::Cast));
-            i64_->method_table().Add("@cast",           FnSign(f64_, {}, std::nullopt, FnModifier::Cast));
+            
+            i64_->method_table().Add("@cast",           FnSign(i32_, {}, std::nullopt, FnModifier::CastLossy));
+            i64_->method_table().Add("@cast",           FnSign(f32_, {}, std::nullopt, FnModifier::CastLossy));
+            i64_->method_table().Add("@cast",           FnSign(f64_, {}, std::nullopt, FnModifier::CastLossy));
+            
+            f32_->method_table().Add("@cast",           FnSign(i32_, {}, std::nullopt, FnModifier::CastLossy));
+            f32_->method_table().Add("@cast",           FnSign(i64_, {}, std::nullopt, FnModifier::CastLossy));
             f32_->method_table().Add("@cast",           FnSign(f64_, {}, std::nullopt, FnModifier::Cast));
+            
+            f64_->method_table().Add("@cast",           FnSign(f32_, {}, std::nullopt, FnModifier::CastLossy));
+            f64_->method_table().Add("@cast",           FnSign(i32_, {}, std::nullopt, FnModifier::CastLossy));
+            f64_->method_table().Add("@cast",           FnSign(i64_, {}, std::nullopt, FnModifier::CastLossy));
+            
             char_->method_table().Add("@cast",          FnSign(string_, {}, std::nullopt, FnModifier::Cast));
+            
             stringview_->method_table().Add("@cast",    FnSign(string_, {}, std::nullopt, FnModifier::Cast));
+            
             arrayview_->method_table().Add("@cast",     FnSign(
                 ParametricTypeGet(array_, { arrayview_->params_binding()[0] }), {}, std::nullopt, FnModifier::Cast
             ));

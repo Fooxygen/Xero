@@ -600,6 +600,7 @@ public:
 
 public:
     const sema::FnSign* callee_fnsign_ = nullptr;
+    sema::Type*         cast_type_     = nullptr;
 
 public:
     FnCallExpr(
@@ -627,6 +628,7 @@ public:
             ChildClone(args_)
         );
         node->callee_fnsign_ = callee_fnsign_;
+        node->cast_type_     = cast_type_;
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;
         return node;

@@ -26,13 +26,16 @@ namespace sema {
         if (dynamic_cast<BoolConst*>(&node)) return true;
         if (dynamic_cast<CharConst*>(&node)) return true;
 
-        if (auto id   = dynamic_cast<IdExpr*>(&node)) {
+        if (auto id      = dynamic_cast<IdExpr*>(&node)) {
             return id->module_const_decl_ != nullptr;
         }
-        if (auto path = dynamic_cast<PathExpr*>(&node)) {
+        if (auto path  = dynamic_cast<PathExpr*>(&node)) {
             return path->module_const_decl_ != nullptr;
         }
-        if (auto op   = dynamic_cast<OperExpr*>(&node)) {
+        if (auto fncall = dynamic_cast<FnCallExpr*>(&node); fncall && fncall->cast_type_) {
+            return ModuleConstantStructureCheck(*fncall->args_->exprs_[0]);
+        }
+        if (auto op     = dynamic_cast<OperExpr*>(&node)) {
             switch (op->oper_type_) {
                 case Plus:
                 case Minus:
@@ -73,6 +76,22 @@ namespace sema {
                 "cannot convert module constant from '{}' to '{}'",
                 type->name(), expected->name()
             ), node.loc_);
+        }
+
+        // Cast
+        if (auto* call = dynamic_cast<FnCallExpr*>(&node); call && call->cast_type_) {
+            auto& arg  = *call->args_->exprs_[0];
+            auto* from = arg.resolved_type_->ReferenceUnwrap();
+
+            if (!ModuleConstantCastSupported(from, call->cast_type_)) {
+                throw LogErr(LogStage::Sema, std::format(
+                    "cannot cast module constant from '{}' to '{}'",
+                    from->name(), call->cast_type_->name()
+                ), node.loc_);
+            }
+
+            ModuleConstantTypeCheck(arg, from);
+            return;
         }
 
         // Operation
@@ -135,6 +154,7 @@ namespace sema {
         auto* to_basic   = to->BasicTypeGet();
 
         if (from_basic == module_constant_i32_ && to_basic == module_constant_i64_) return true;
+        if (from_basic == module_constant_i64_ && to_basic == module_constant_i32_) return true;
 
         if ((from_basic == module_constant_i32_ || from_basic == module_constant_i64_) &&
             (to_basic   == module_constant_f32_ || to_basic   == module_constant_f64_))
@@ -144,6 +164,12 @@ namespace sema {
 
         if (from_basic == module_constant_f32_ && to_basic == module_constant_f64_) return true;
         if (from_basic == module_constant_f64_ && to_basic == module_constant_f32_) return true;
+
+        if ((from_basic == module_constant_f32_ || from_basic == module_constant_f64_) &&
+            (to_basic   == module_constant_i32_ || to_basic   == module_constant_i64_))
+        {
+            return true;
+        }
 
         return false;
     }
@@ -698,32 +724,71 @@ namespace sema {
             args_type.emplace_back(e->resolved_type_);
         }
 
-        // Callee
-        Fn* fn = nullptr;
-        
-        // Call fn
+        // Callee Path
+        Path callee_path = {};
         if      (auto* idexpr   = dynamic_cast<IdExpr*>(node.callee_.get())) {
-            fn = fn_scope_.Lookup(idexpr->name_, idexpr->loc_);
+            callee_path.Add(idexpr->name_);
         }
-
-        // Call a::b::fn
         else if (auto* pathexpr = dynamic_cast<PathExpr*>(node.callee_.get())) {
-            Path segments = {};
             for (auto& seg : pathexpr->segments_) {
-                segments.Add(seg->name_);
+                callee_path.Add(seg->name_);
             }
 
             // Alias: a::b::c::fn -> d::fn
             if (module_) {
-                segments = Path::Resolve(segments, module_->namespaces_alias());
+                callee_path = Path::Resolve(callee_path, module_->namespaces_alias());
             }
-
-            fn = fn_scope_.Lookup(segments, pathexpr->loc_);
+        }
+        else {
+            throw LogErr(LogStage::Sema, std::format(
+                "invalid callee '{}'", node.callee_->TypeName()
+            ), node.loc_);
         }
 
-        auto sign = fn->SignLookup(args_type, node.callee_->loc_);
-        node.resolved_type_ = sign->return_type();
-        node.callee_fnsign_ = sign;
+        // Call fn
+        if (auto* fn = fn_scope_.LookupTry(callee_path)) {
+            auto sign = fn->SignLookup(args_type, node.callee_->loc_);
+            node.resolved_type_ = sign->return_type();
+            node.callee_fnsign_ = sign;
+            return;
+        }
+
+        // Cast T(x)
+        auto* type = type_scope_.LookupTry(callee_path);
+        if (!type) type = TypeTable::LookupTry(callee_path.Print());
+
+        if (type) {
+            auto IsNumeric = [](Type* type) {
+                return type->Is("i32") || type->Is("i64") ||
+                       type->Is("f32") || type->Is("f64");
+            };
+
+            if (args_type.size() == 1) {
+                auto* from = args_type[0]->ReferenceUnwrap();
+
+                if (IsNumeric(from) && IsNumeric(type)) {
+                    auto* from_basic = (BasicType*)from->BasicTypeGet();
+
+                    if (from != type &&
+                        !from_basic->casts().contains(type) &&
+                        !from_basic->casts_lossy().contains(type))
+                    {
+                        throw LogErr(LogStage::Sema, std::format(
+                            "cannot cast type from '{}' to '{}'",
+                            from->name(), type->name()
+                        ), node.loc_);
+                    }
+
+                    node.cast_type_     = type;
+                    node.resolved_type_ = type;
+                    return;
+                }
+            }
+        }
+
+        throw LogErr(LogStage::Sema, std::format(
+            "undefined function '{}'", callee_path.Print()
+        ), node.loc_);
     }
 
     void Analyzer::Process(MethodCallExpr& node) {
@@ -955,17 +1020,8 @@ namespace sema {
                 ), node.loc_);
             }
 
-            // f32
-            if (x >= -std::numeric_limits<float>::max() &&
-                x <=  std::numeric_limits<float>::max())
-            {
-                node.resolved_type_ = TypeTable::Lookup("f32");
-                node.resolved_value_.floating_ = (float)x;
-            }
-            else {
-                node.resolved_type_ = TypeTable::Lookup("f64");
-                node.resolved_value_.floating_ = x;
-            }
+            node.resolved_type_ = TypeTable::Lookup("f64");
+            node.resolved_value_.floating_ = x;
             return;
         }
 

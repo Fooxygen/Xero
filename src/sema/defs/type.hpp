@@ -34,8 +34,8 @@ namespace sema {
         std::string name_       = "";
         Using       type_using_ = Using::Basic;
 
-        std::set<Type*>                          casts_;
-        std::unordered_map<Type*, const FnSign*> casts_fnsign_;     // signature of cast method
+        std::unordered_map<Type*, const FnSign*> casts_;            // lossless cast
+        std::unordered_map<Type*, const FnSign*> casts_lossy_;      // lossy cast
 
     public:
         Type(std::string name, Using type_using)
@@ -46,8 +46,8 @@ namespace sema {
         const std::string& name()       const { return name_; }
         Using              type_using() const { return type_using_; }
 
-        std::set<Type*>& casts() { return casts_; }
-        std::unordered_map<Type*, const FnSign*>& casts_fnsign() { return casts_fnsign_; }
+        std::unordered_map<Type*, const FnSign*>& casts()       { return casts_; }
+        std::unordered_map<Type*, const FnSign*>& casts_lossy() { return casts_lossy_; }
 
     public:
         bool IsNone();

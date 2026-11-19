@@ -266,8 +266,7 @@ namespace sema {
         // Clear
         for (auto& [type_name, type] : table_) {
             type->casts().clear();
-            type->casts_fnsign().clear();
-            type->casts().emplace(type.get());
+            type->casts_lossy().clear();
         }
 
         // Recompute
@@ -276,9 +275,13 @@ namespace sema {
                 auto& method_table = basic_type->method_table();
                 for (auto& [method_name, method] : method_table.table()) {
                     for (auto& sign : method.signs()) {
-                        if (sign->modifier() & FnModifier::Cast && sign->return_type()) {
-                            type->casts().emplace(sign->return_type());
-                            type->casts_fnsign()[sign->return_type()] = sign.get();
+                        if (!sign->return_type()) continue;
+
+                        if (sign->modifier() & FnModifier::Cast) {
+                            type->casts()[sign->return_type()] = sign.get();
+                        }
+                        if (sign->modifier() & FnModifier::CastLossy) {
+                            type->casts_lossy()[sign->return_type()] = sign.get();
                         }
                     }
                 }
@@ -296,36 +299,34 @@ namespace sema {
         if (it != commons_cache_.end()) return it->second;
 
         // Get Common
-        std::set<Type*> common;
-        {
-            bool is_first_add = false;
-            for (auto t : ts) {
-                if (!is_first_add) {
-                    is_first_add = true;
-                    common = t->casts();
-                    continue;
-                }
+        auto* first = *ts.begin();
 
-                std::set<Type*> tmp;
-                std::set_intersection(
-                    common.begin(), common.end(),
-                    t->casts().begin(), t->casts().end(),
-                    std::inserter(tmp, tmp.begin())
-                );
-                common = std::move(tmp);
+        std::vector<Type*> common = {};
+        common.reserve(first->casts().size() + 1);
+        common.emplace_back(first);
 
-                if (common.empty()) {
-                    commons_cache_[ts] = nullptr;
-                    return nullptr;
-                }
-            }
+        for (auto& [to, sign] : first->casts()) {
+            common.emplace_back(to);
         }
 
+        common.erase(
+            std::remove_if(common.begin(), common.end(),
+                [&](Type* candidate) {
+                    for (auto* type : ts) {
+                        if (type == candidate) continue;
+                        if (!type->casts().contains(candidate)) return true;
+                    }
+                    return false;
+                }
+            ),
+            common.end()
+        );
+
         // Find Minimal
-        for (auto& i : common) {
+        for (auto* i : common) {
             bool is_find = true;
 
-            for (auto& j : common) {
+            for (auto* j : common) {
                 if (i == j) continue;
                 if (j->casts().contains(i)) {
                     is_find = false;
@@ -339,6 +340,7 @@ namespace sema {
             }
         }
 
+        commons_cache_[ts] = nullptr;
         return nullptr;
     }
 }

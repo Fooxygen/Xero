@@ -3,6 +3,8 @@
 //  Copyright (c) 2026 Fooxygen.
 //  Licensed under the MIT License.
 
+#include "llvm/ADT/APSInt.h"
+
 #include "xcompiler/defs/fn.hpp"
 #include "xcompiler/defs/type.hpp"
 #include "xcompiler/ir/gen.hpp"
@@ -187,39 +189,74 @@ namespace xcompiler {
         const auto& f = from->name();
         const auto& t = to->name();
 
-        if (f == "i32" && t == "i64") {
+        // Number
+
+        if (f  == "i32" && t == "i64") {
             auto* ci = llvm::cast<llvm::ConstantInt>(value);
             return llvm::ConstantInt::get(
                 llvm::Type::getInt64Ty(llvm_context()),
                 ci->getValue().sext(64)
             );
         }
+        if (f  == "i64" && t == "i32") {
+            auto* ci = llvm::cast<llvm::ConstantInt>(value);
+            return llvm::ConstantInt::get(
+                llvm::Type::getInt32Ty(llvm_context()),
+                ci->getValue().trunc(32)
+            );
+        }
         if ((f == "i32" || f == "i64") && t == "f32") {
             auto* ci = llvm::cast<llvm::ConstantInt>(value);
             return llvm::ConstantFP::get(
                 llvm::Type::getFloatTy(llvm_context()),
-                static_cast<double>(ci->getSExtValue())
+                (double)(ci->getSExtValue())
             );
         }
         if ((f == "i32" || f == "i64") && t == "f64") {
             auto* ci = llvm::cast<llvm::ConstantInt>(value);
             return llvm::ConstantFP::get(
                 llvm::Type::getDoubleTy(llvm_context()),
-                static_cast<double>(ci->getSExtValue())
+                (double)(ci->getSExtValue())
             );
         }
-        if (f == "f32" && t == "f64") {
+        if (f  == "f32" && t == "f64") {
             auto* fp = llvm::cast<llvm::ConstantFP>(value);
             return llvm::ConstantFP::get(
                 llvm::Type::getDoubleTy(llvm_context()),
                 fp->getValueAPF().convertToDouble()
             );
         }
-        if (f == "f64" && t == "f32") {
+        if (f  == "f64" && t == "f32") {
             auto* fp = llvm::cast<llvm::ConstantFP>(value);
             return llvm::ConstantFP::get(
                 llvm::Type::getFloatTy(llvm_context()),
                 fp->getValueAPF().convertToFloat()
+            );
+        }
+        if ((f == "f32" || f == "f64") && t == "i32") {
+            auto* fp = llvm::cast<llvm::ConstantFP>(value);
+
+            llvm::APSInt result(32, false);
+            bool         is_exact = false;
+            fp->getValueAPF().convertToInteger(
+                result, llvm::APFloat::rmTowardZero, &is_exact
+            );
+
+            return llvm::ConstantInt::get(
+                llvm::Type::getInt32Ty(llvm_context()), result
+            );
+        }
+        if ((f == "f32" || f == "f64") && t == "i64") {
+            auto* fp = llvm::cast<llvm::ConstantFP>(value);
+
+            llvm::APSInt result(64, false);
+            bool         is_exact = false;
+            fp->getValueAPF().convertToInteger(
+                result, llvm::APFloat::rmTowardZero, &is_exact
+            );
+
+            return llvm::ConstantInt::get(
+                llvm::Type::getInt64Ty(llvm_context()), result
             );
         }
 
@@ -252,6 +289,18 @@ namespace xcompiler {
                 expected
             );
         }
+        if (auto* fncall    = dynamic_cast<FnCallExpr*>(&node); fncall && fncall->cast_type_) {
+            auto& arg  = *fncall->args_->exprs_[0];
+            auto* from = arg.resolved_type_->ReferenceUnwrap();
+            auto* result = ModuleConstantCast(
+                ModuleConstantEval(arg, from),
+                from,
+                fncall->cast_type_
+            );
+
+            return ModuleConstantCast(result, fncall->cast_type_, expected);
+        }
+
         if (auto* id        = dynamic_cast<IdExpr*>(&node)) {
             if (!id->module_const_decl_) {
                 throw LogErr(LogStage::Xcompiler, std::format(

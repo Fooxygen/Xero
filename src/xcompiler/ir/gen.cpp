@@ -547,68 +547,83 @@ namespace xcompiler {
 
     llvm::Value* IRGen::Process(FnCallExpr& node) {
 
-        // Sign
-        auto  sign       = node.callee_fnsign_;
-        auto& params_fix = sign->params_type_fix();
+        // Cast: i32(expr)
+        if (node.cast_type_) {
+            auto& arg  = *node.args_->exprs_[0];
+            auto  val  = ExprValGet(arg);
+            auto  from = arg.resolved_type_->ReferenceUnwrap();
 
-        // Args
-        std::vector<Arg> args = {};
-        if (node.args_) {
-            for (size_t i = 0; i < node.args_->exprs_.size(); i++) {
-                auto& expr = node.args_->exprs_[i];
+            return ValOwn(
+                TypeImplTable::Cast(*this, val, from, node.cast_type_, node.loc_),
+                node.resolved_type_
+            );
+        }
+        
+        // FnCall: fn(expr)
+        else {
+            // Sign
+            auto  sign       = node.callee_fnsign_;
+            auto& params_fix = sign->params_type_fix();
 
-                // Reference Type
-                if (i < params_fix.size() && dynamic_cast<sema::ReferenceType*>(params_fix[i])) {
-                    llvm::Value* addr = nullptr;
+            // Args
+            std::vector<Arg> args = {};
+            if (node.args_) {
+                for (size_t i = 0; i < node.args_->exprs_.size(); i++) {
+                    auto& expr = node.args_->exprs_[i];
 
-                    // call fn(a), a: i32;
-                    if (auto idexpr = dynamic_cast<IdExpr*>(expr.get())) {
-                        addr = IdAddrGet(*idexpr);
+                    // Reference Type
+                    if (i < params_fix.size() && dynamic_cast<sema::ReferenceType*>(params_fix[i])) {
+                        llvm::Value* addr = nullptr;
+
+                        // call fn(a), a: i32;
+                        if (auto idexpr = dynamic_cast<IdExpr*>(expr.get())) {
+                            addr = IdAddrGet(*idexpr);
+                        }
+
+                        // call fn(&a)
+                        else {
+                            addr = Process(*expr);
+                        }
+
+                        args.emplace_back(addr, params_fix[i]);
                     }
 
-                    // call fn(&a)
+                    // Non-Reference Type
                     else {
-                        addr = Process(*expr);
+                        auto arg_val  = ExprValGet(*expr);
+                        auto arg_type = expr->resolved_type_->ReferenceUnwrap();
+                        auto param    = (i < params_fix.size()) ? params_fix[i] : nullptr;
+
+                        if (param && arg_type != param) {
+                            arg_val  = TypeImplTable::Cast(*this, arg_val, arg_type, param, node.loc_);
+                            arg_type = param;
+                        }
+
+                        args.emplace_back(arg_val, arg_type);
                     }
-
-                    args.emplace_back(addr, params_fix[i]);
                 }
+            }
 
-                // Non-Reference Type
-                else {
-                    auto arg_val  = ExprValGet(*expr);
-                    auto arg_type = expr->resolved_type_->ReferenceUnwrap();
-                    auto param    = (i < params_fix.size()) ? params_fix[i] : nullptr;
-
-                    if (param && arg_type != param) {
-                        arg_val  = TypeImplTable::Cast(*this, arg_val, arg_type, param, node.loc_);
-                        arg_type = param;
+            // Call
+            if (auto impl = FnImplTable::LookupTry(sign)) {
+                if (auto native = dynamic_cast<NativeFnImpl*>(impl)) {
+                    return ValOwn(native->impl()(*this, args), node.resolved_type_);
+                }
+                if (auto lang   = dynamic_cast<LangFnImpl*>(impl)) {
+                    std::vector<llvm::Value*> vals = {};
+                    for (auto& arg : args) {
+                        vals.emplace_back(arg.val());
                     }
-
-                    args.emplace_back(arg_val, arg_type);
+                    return ValOwn(
+                        llvm_builder().CreateCall(lang->impl(), vals), node.resolved_type_
+                    );
                 }
             }
-        }
 
-        // Call
-        if (auto impl = FnImplTable::LookupTry(sign)) {
-            if (auto native = dynamic_cast<NativeFnImpl*>(impl)) {
-                return ValOwn(native->impl()(*this, args), node.resolved_type_);
-            }
-            if (auto lang   = dynamic_cast<LangFnImpl*>(impl)) {
-                std::vector<llvm::Value*> vals = {};
-                for (auto& arg : args) {
-                    vals.emplace_back(arg.val());
-                }
-                return ValOwn(
-                    llvm_builder().CreateCall(lang->impl(), vals), node.resolved_type_
-                );
-            }
+            throw LogErr(LogStage::Xcompiler, std::format(
+                "undefined function '{}'", sign->name()
+            ), node.loc_);
         }
-
-        throw LogErr(LogStage::Xcompiler, std::format(
-            "undefined function '{}'", sign->name()
-        ), node.loc_);
     }
 
     llvm::Value* IRGen::Process(MethodCallExpr& node) {

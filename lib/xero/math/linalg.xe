@@ -38,8 +38,8 @@ struct vec2 {
     # Comparison
 
     fn @eq(v: vec2)  -> bool {
-        return abs(self.x - v.x) < 0.000001 &&
-               abs(self.y - v.y) < 0.000001;
+        return abs(self.x - v.x) < eps &&
+               abs(self.y - v.y) < eps;
     }
     fn @neq(v: vec2) -> bool {
         return !(self == v);
@@ -73,7 +73,7 @@ struct vec2 {
 
     fn normalized() -> vec2 {
         len: f64 = self.length();
-        if (len < 0.000001) {
+        if (len < eps) {
             return vec2 { x = 0.0, y = 0.0 };
         }
         return vec2 { x = self.x / len, y = self.y / len };
@@ -93,7 +93,7 @@ struct vec2 {
     fn cosine(v: vec2) -> f64 {
         len_a: f64 = self.length();
         len_b: f64 = v.length();
-        if (len_a < 0.000001 || len_b < 0.000001) {
+        if (len_a < eps || len_b < eps) {
             return 0.0;
         }
         return self.dot(v) / (len_a * len_b);

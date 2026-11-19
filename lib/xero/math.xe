@@ -5,8 +5,9 @@
 
 # Constant
 
-const pi: f64 = 3.141592653589793;
-const e:  f64 = 2.718281828459045;
+const eps: f64 = 0.000001;
+const pi:  f64 = 3.141592653589793;
+const e:   f64 = 2.718281828459045;
 
 # Range
 
