@@ -21,20 +21,24 @@ namespace sema {
     bool Analyzer::ModuleConstantStructureCheck(Expr& node) {
         using enum OperType;
 
-        // Number, Bool or Char
         if (dynamic_cast<NumConst*>(&node))  return true;
         if (dynamic_cast<BoolConst*>(&node)) return true;
         if (dynamic_cast<CharConst*>(&node)) return true;
-
-        if (auto id      = dynamic_cast<IdExpr*>(&node)) {
+        
+        // = expr, expr is constant
+        if (auto id     = dynamic_cast<IdExpr*>(&node)) {
             return id->module_const_decl_ != nullptr;
         }
-        if (auto path  = dynamic_cast<PathExpr*>(&node)) {
+        if (auto path   = dynamic_cast<PathExpr*>(&node)) {
             return path->module_const_decl_ != nullptr;
         }
+        
+        // = T(expr), expr is constant expr
         if (auto fncall = dynamic_cast<FnCallExpr*>(&node); fncall && fncall->cast_type_) {
             return ModuleConstantStructureCheck(*fncall->args_->exprs_[0]);
         }
+        
+        // = x + y..., simple expr
         if (auto op     = dynamic_cast<OperExpr*>(&node)) {
             switch (op->oper_type_) {
                 case Plus:
@@ -58,120 +62,11 @@ namespace sema {
         return false;
     }
 
-    void Analyzer::ModuleConstantTypeCheck(Expr& node, Type* expected) {
-        using enum OperType;
-
-        auto* type = node.resolved_type_->ReferenceUnwrap();
-
-        // Type Supported
-        if (!ModuleConstantTypeSupported(type)) {
-            throw LogErr(LogStage::Sema, std::format(
-                "unsupported type '{}' in module constant", type->name()
-            ), node.loc_);
-        }
-
-        // Type Cast Supported
-        if (!ModuleConstantCastSupported(type, expected)) {
-            throw LogErr(LogStage::Sema, std::format(
-                "cannot convert module constant from '{}' to '{}'",
-                type->name(), expected->name()
-            ), node.loc_);
-        }
-
-        // Cast
-        if (auto* call = dynamic_cast<FnCallExpr*>(&node); call && call->cast_type_) {
-            auto& arg  = *call->args_->exprs_[0];
-            auto* from = arg.resolved_type_->ReferenceUnwrap();
-
-            if (!ModuleConstantCastSupported(from, call->cast_type_)) {
-                throw LogErr(LogStage::Sema, std::format(
-                    "cannot cast module constant from '{}' to '{}'",
-                    from->name(), call->cast_type_->name()
-                ), node.loc_);
-            }
-
-            ModuleConstantTypeCheck(arg, from);
-            return;
-        }
-
-        // Operation
-        auto* op = dynamic_cast<OperExpr*>(&node);
-        if (!op) return;
-
-        // └─ Unary
-
-        if (op->oper_type_ == Neg) {
-            ModuleConstantTypeCheck(
-                *op->lexpr_, op->lexpr_->resolved_type_->ReferenceUnwrap()
-            );
-            return;
-        }
-
-        // └─ Binary
-
-        auto* ltype    = op->lexpr_->resolved_type_->ReferenceUnwrap();
-        auto* rtype    = op->rexpr_->resolved_type_->ReferenceUnwrap();
-        auto* com_type = TypeTable::CommonTypeGet({ ltype, rtype });
-        if (!com_type) {
-            throw LogErr(LogStage::Sema, std::format(
-                "cannot make type '{}' compatible with '{}'",
-                ltype->name(), rtype->name()
-            ), op->loc_);
-        }
-
-        // Type Supported
-        if (!ModuleConstantTypeSupported(com_type)) {
-            throw LogErr(LogStage::Sema, std::format(
-                "unsupported type '{}' in module constant expression", com_type->name()
-            ), op->loc_);
-        }
-
-        // Type Cast Supported
-        if (!ModuleConstantCastSupported(ltype, com_type) ||
-            !ModuleConstantCastSupported(rtype, com_type))
-        {
-            throw LogErr(LogStage::Sema, std::format(
-                "cannot convert module constant operands from '{}' and '{}' to '{}'",
-                ltype->name(), rtype->name(), com_type->name()
-            ), op->loc_);
-        }
-
-        ModuleConstantTypeCheck(*op->lexpr_, com_type);
-        ModuleConstantTypeCheck(*op->rexpr_, com_type);
-    }
-
     bool Analyzer::ModuleConstantTypeSupported(Type* type) {
         auto* basic = type->BasicTypeGet();
         return basic == module_constant_i32_  || basic == module_constant_i64_ ||
                basic == module_constant_f32_  || basic == module_constant_f64_ ||
                basic == module_constant_bool_ || basic == module_constant_char_;
-    }
-
-    bool Analyzer::ModuleConstantCastSupported(Type* from, Type* to) {
-        if (from == to) return true;
-
-        auto* from_basic = from->BasicTypeGet();
-        auto* to_basic   = to->BasicTypeGet();
-
-        if (from_basic == module_constant_i32_ && to_basic == module_constant_i64_) return true;
-        if (from_basic == module_constant_i64_ && to_basic == module_constant_i32_) return true;
-
-        if ((from_basic == module_constant_i32_ || from_basic == module_constant_i64_) &&
-            (to_basic   == module_constant_f32_ || to_basic   == module_constant_f64_))
-        {
-            return true;
-        }
-
-        if (from_basic == module_constant_f32_ && to_basic == module_constant_f64_) return true;
-        if (from_basic == module_constant_f64_ && to_basic == module_constant_f32_) return true;
-
-        if ((from_basic == module_constant_f32_ || from_basic == module_constant_f64_) &&
-            (to_basic   == module_constant_i32_ || to_basic   == module_constant_i64_))
-        {
-            return true;
-        }
-
-        return false;
     }
 
     // Declare
@@ -426,8 +321,7 @@ namespace sema {
                         node.bind_type_->resolved_type_->name()
                     ), node.loc_);
                 }
-
-                ModuleConstantTypeCheck(*node.value_, node.bind_type_->resolved_type_);
+                
                 return;
             }
 
@@ -1061,7 +955,7 @@ namespace sema {
         Process(*node.target_);
         Process(*node.value_);
 
-        if (auto id = dynamic_cast<IdExpr*>(node.target_.get())) {
+        if (auto id   = dynamic_cast<IdExpr*>(node.target_.get())) {
             // Module Constant
             if (id->module_const_decl_) {
                 throw LogErr(LogStage::Sema, std::format(

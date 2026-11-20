@@ -41,9 +41,7 @@ namespace sema {
         Type* module_constant_char_ = nullptr;
 
         bool ModuleConstantStructureCheck(Expr& node);
-        void ModuleConstantTypeCheck(Expr& node, Type* expected);
         bool ModuleConstantTypeSupported(Type* type);
-        bool ModuleConstantCastSupported(Type* from, Type* to);
 
         // Type
 
