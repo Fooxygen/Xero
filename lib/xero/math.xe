@@ -5,14 +5,30 @@
 
 # Constant
 
-const eps: f64 = 0.000001;
-const pi:  f64 = 3.141592653589793;
-const e:   f64 = 2.718281828459045;
+const i32_min: i32 = -2147483648;
+const i32_max: i32 =  2147483647;
+const i64_min: i64 = -9223372036854775808;
+const i64_max: i64 =  9223372036854775807;
+
+const eps:     f64 = 0.000001;
+const eps2:    f64 = eps * eps;
+const pi:      f64 = 3.141592653589793;
+const pi_inv:  f64 = 0.3183098861837907;
+const tau:     f64 = pi * 2;
+const e:       f64 = 2.718281828459045;
 
 # Range
 
-fn abs(x: i32) -> i32 { if (x < 0) { return -x; } return x; }
-fn abs(x: i64) -> i64 { if (x < 0) { return -x; } return x; }
+fn abs(x: i32) -> i32 {
+    if (x == i32_min) return i32_max;
+    if (x < 0) return -x;
+    return x;
+}
+fn abs(x: i64) -> i64 {
+    if (x == i64_min) return i64_max;
+    if (x < 0) return -x;
+    return x;
+}
 fn abs(x: f32) -> f32 { return @abs(x); }
 fn abs(x: f64) -> f64 { return @abs(x); }
 
@@ -26,26 +42,10 @@ fn max(a: i64, b: i64) -> i64 { if (a < b) { return b; } return a; }
 fn max(a: f32, b: f32) -> f32 { return @max(a, b); }
 fn max(a: f64, b: f64) -> f64 { return @max(a, b); }
 
-fn clamp(x: i32, l: i32, h: i32) -> i32 {
-    if (x < l) return l;
-    if (x > h) return h;
-    return x;
-}
-fn clamp(x: i64, l: i64, h: i64) -> i64 {
-    if (x < l) return l;
-    if (x > h) return h;
-    return x;
-}
-fn clamp(x: f32, l: f32, h: f32) -> f32 {
-    if (x < l) return l;
-    if (x > h) return h;
-    return x;
-}
-fn clamp(x: f64, l: f64, h: f64) -> f64 {
-    if (x < l) return l;
-    if (x > h) return h;
-    return x;
-}
+fn clamp(x: i32, l: i32, h: i32) -> i32 { return min(max(x, l), h); }
+fn clamp(x: i64, l: i64, h: i64) -> i64 { return min(max(x, l), h); }
+fn clamp(x: f32, l: f32, h: f32) -> f32 { return min(max(x, l), h); }
+fn clamp(x: f64, l: f64, h: f64) -> f64 { return min(max(x, l), h); }
 
 # Round toward zero
 fn trunc(x: f32) -> f32 { return @trunc(x); }

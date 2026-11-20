@@ -1,99 +1,15 @@
 
 use xero::math::linalg
 
-const c_i32: i32 = i32(3.9);
-const c_i64: i64 = i64(1);
-const c_f32: f32 = f32(1.5);
-const c_f64: f64 = f64(1);
-const c_trunc: i32 = i32(3000000000);
-
 fn main() {
-    v1: linalg::vec2 = linalg::vec2 { x = 1.0, y = 2.0 };
-    v2: linalg::vec2 = linalg::vec2 { x = 1.0000001, y = 1.9999999 };
-    v3: linalg::vec2 = linalg::vec2 { x = 1.00001,   y = 1.99999 };
-    println(v1 == v2);                  # true
-    println(v1 == v3);                  # false
+    v1: linalg::vec2 = linalg::vec2 { x = 8.0, y = 16.0 };
+    v2: linalg::vec2 = linalg::vec2 { x = 4.0, y = 32.0 };
+    println(v1.min(v2));        # (4.000000, 16.000000)
+    println(v1.cross(v2));      # > 0, left
+    println(v2.cross(v1));      # < 0, right
 
-    i: i32 = 16777217;
-    l: i64 = 9007199254740993;
-    f: f32 = f32(3.9);
-    d: f64 = 3.9;
-
-    println(i64(i));                    # 16777217
-    println(f32(i));                    # 16777216.000000
-    println(f64(i));                    # 16777217.000000
-
-    println(i32(l));                    # 1
-    println(f32(l));                    # 9007199254740992.000000
-    println(f64(l));                    # 9007199254740992.000000
-
-    println(i32(f));                    # 3
-    println(i64(f));                    # 3
-    println(f64(f));                    # 3.900000
-
-    println(i32(d));                    # 3
-    println(i64(d));                    # 3
-    println(f32(d));                    # 3.900000
-
-    a: i64 = i;
-    b: f64 = i;
-    c: f64 = f;
-    println(a);                         # 16777217
-    println(b);                         # 16777217.000000
-    println(c);                         # 3.900000
-
-    ca: i32 = 16777217;
-    cb: f32 = f32(1.0);
-    cc: f64 = 1.0;
-    println(ca + cb);                   # 16777218.000000
-    println(ca + cc);                   # 16777218.000000
-    println(cb + cc);                   # 2.000000
-
-    println(c_i32);                     # 3
-    println(c_i64);                     # 1
-    println(c_f32);                     # 1.500000
-    println(c_f64);                     # 1.000000
-    println(c_trunc);                   # -1294967296
+    v3: linalg::vec2 = linalg::vec2 { x = 2.0, y = 3.0 };
+    v4: linalg::vec2 = linalg::vec2 { x = 4.0, y = 1.0 };
+    println(v3.project(v4));
+    println((-v3).reflect(v4));
 }
-
-## fn main() {
-    l: i64 = 1;
-    a: i32 = l;                         # error: cannot make type 'i64' compatible with 'i32'
-    # a: i32 = i32(l);                    # 1
-    println(a);
-} ##
-
-## fn main() {
-    l: i64 = 1;
-    a: f32 = l;                         # error: cannot make type 'i64' compatible with 'f32'
-    # a: f32 = f32(l);                    # 1.000000
-    println(a);
-} ##
-
-## fn main() {
-    d: f64 = 1.0;
-    a: f32 = d;                         # error: cannot make type 'f64' compatible with 'f32'
-    # a: f32 = f32(d);                    # 1.000000
-    println(a);
-} ##
-
-## fn main() {
-    d: f64 = 1.0;
-    a: i32 = d;                         # error: cannot make type 'f64' compatible with 'i32'
-    # a: i32 = i32(d);                    # 1
-    println(a);
-} ##
-
-## fn main() {
-    l: i64 = 1;
-    f: f32 = f32(1.0);
-    println(l + f);                     # error: undefined signature (f32) of method '@plus'
-    # println(f32(l) + f);                # 2.000000
-} ##
-
-## fn main() {
-    l: i64 = 1;
-    d: f64 = 1.0;
-    println(l + d);                     # error: undefined signature (f64) of method '@plus'
-    # println(f64(l) + d);                # 2.000000
-} ##

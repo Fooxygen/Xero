@@ -22,7 +22,7 @@ namespace xcompiler {
             if (lval->getType()->isFloatingPointTy()) {
                 auto zero = llvm::ConstantFP::get(lval->getType(), 0.0);
                 auto modt = builder.CreateFRem(lval, rval);
-                auto is_modt_neq_zero = builder.CreateFCmpONE(modt, zero);
+                auto is_modt_neq_zero = builder.CreateFCmpUNE(modt, zero);
                 auto is_sign_diff     = builder.CreateXor(
                     builder.CreateFCmpOLT(modt, zero), builder.CreateFCmpOLT(rval, zero)
                 );
@@ -301,7 +301,7 @@ namespace xcompiler {
             return gen.llvm_builder().CreateFCmpOEQ(gen.ArgValGet(args[0]), gen.ArgValGet(args[1]));
         }, sema::FnSign(bool_, { f32_ }));
         impl->MethodAdd("@neq",     [](IRGen& gen, ARGS& args) {
-            return gen.llvm_builder().CreateFCmpONE(gen.ArgValGet(args[0]), gen.ArgValGet(args[1]));
+            return gen.llvm_builder().CreateFCmpUNE(gen.ArgValGet(args[0]), gen.ArgValGet(args[1]));
         }, sema::FnSign(bool_, { f32_ }));
     }
 
@@ -387,7 +387,7 @@ namespace xcompiler {
             return gen.llvm_builder().CreateFCmpOEQ(gen.ArgValGet(args[0]), gen.ArgValGet(args[1]));
         }, sema::FnSign(bool_, { f64_ }));
         impl->MethodAdd("@neq",     [](IRGen& gen, ARGS& args) {
-            return gen.llvm_builder().CreateFCmpONE(gen.ArgValGet(args[0]), gen.ArgValGet(args[1]));
+            return gen.llvm_builder().CreateFCmpUNE(gen.ArgValGet(args[0]), gen.ArgValGet(args[1]));
         }, sema::FnSign(bool_, { f64_ }));
     }
 }

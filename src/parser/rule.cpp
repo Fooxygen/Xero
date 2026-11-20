@@ -818,9 +818,23 @@ namespace parser {
                     AT::Expr
                 },
                 [this](auto) {
+                    auto token_type = PatternTokenTypeGet(1);
+                    auto oper       = Move<Expr>(2);
+
+                    if (token_type == TT::Minus) {
+                        if (auto* num = dynamic_cast<NumConst*>(oper.get());
+                            num && !num->value_.contains(".") &&
+                                   !num->value_.starts_with("-")
+                        ) {
+                            auto folded = std::make_unique<NumConst>("-" + num->value_);
+                            folded->loc_ = num->loc_;
+                            return ASTNODE(std::move(folded));
+                        }
+                    }
+
                     return std::make_unique<OperExpr>(
-                        TokenType2OperType(PatternTokenTypeGet(1), true),
-                        Move<Expr>(2),
+                        TokenType2OperType(token_type, true),
+                        oper,
                         nullptr
                     );
                 },
