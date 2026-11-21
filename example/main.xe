@@ -4,12 +4,12 @@ use xero::math::linalg
 fn main() {
     v1: linalg::vec2 = linalg::vec2 { x = 8.0, y = 16.0 };
     v2: linalg::vec2 = linalg::vec2 { x = 4.0, y = 32.0 };
-    println(v1.min(v2));        # (4.000000, 16.000000)
-    println(v1.cross(v2));      # > 0, left
-    println(v2.cross(v1));      # < 0, right
+    println(v1.min(v2));                                        # (4.000000, 16.000000)
+    println(v1.cross(v2));                                      #  192.000000 > 0, left
+    println(v2.cross(v1));                                      # -192.000000 < 0, right
 
     v3: linalg::vec2 = linalg::vec2 { x = 2.0, y = 3.0 };
     v4: linalg::vec2 = linalg::vec2 { x = 4.0, y = 1.0 };
-    println(v3.project(v4));
-    println((-v3).reflect(v4));
+    println(v3.project(v4));                                    # (2.588235, 0.647059)
+    println((-v3).reflect(v4));                                 # (3.176471, -1.705882)
 }

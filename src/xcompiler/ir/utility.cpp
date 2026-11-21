@@ -484,6 +484,11 @@ namespace xcompiler {
 
         // = a, IdExpr
         if (auto* idexpr = dynamic_cast<IdExpr*>(&node)) {
+            // Module Constant
+            if (idexpr->module_const_decl_) {
+                return ModuleConstantValueGet(idexpr->module_const_decl_);
+            }
+
             return TypeImplTable::Lookup(type)->MethodCall(*this, "@copy", {
                 Arg(IdAddrGet(*idexpr), sema::TypeTable::ReferenceTypeGet(type))
             });

@@ -817,7 +817,7 @@ namespace parser {
                     SymbolPattern({ TT::Minus, TT::Not }),
                     AT::Expr
                 },
-                [this](auto) {
+                [this](auto) -> ASTNODE {
                     auto token_type = PatternTokenTypeGet(1);
                     auto oper       = Move<Expr>(2);
 
@@ -834,7 +834,7 @@ namespace parser {
 
                     return std::make_unique<OperExpr>(
                         TokenType2OperType(token_type, true),
-                        oper,
+                        std::move(oper),
                         nullptr
                     );
                 },
