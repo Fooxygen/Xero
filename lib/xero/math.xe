@@ -29,18 +29,18 @@ fn abs(x: i64) -> i64 {
     if (x < 0) return -x;
     return x;
 }
-fn abs(x: f32) -> f32 { return @abs(x); }
-fn abs(x: f64) -> f64 { return @abs(x); }
+fn abs(x: f32) -> f32 { return __abs(x); }
+fn abs(x: f64) -> f64 { return __abs(x); }
 
 fn min(a: i32, b: i32) -> i32 { if (a < b) { return a; } return b; }
 fn min(a: i64, b: i64) -> i64 { if (a < b) { return a; } return b; }
-fn min(a: f32, b: f32) -> f32 { return @min(a, b); }
-fn min(a: f64, b: f64) -> f64 { return @min(a, b); }
+fn min(a: f32, b: f32) -> f32 { return __min(a, b); }
+fn min(a: f64, b: f64) -> f64 { return __min(a, b); }
 
 fn max(a: i32, b: i32) -> i32 { if (a < b) { return b; } return a; }
 fn max(a: i64, b: i64) -> i64 { if (a < b) { return b; } return a; }
-fn max(a: f32, b: f32) -> f32 { return @max(a, b); }
-fn max(a: f64, b: f64) -> f64 { return @max(a, b); }
+fn max(a: f32, b: f32) -> f32 { return __max(a, b); }
+fn max(a: f64, b: f64) -> f64 { return __max(a, b); }
 
 fn clamp(x: i32, l: i32, h: i32) -> i32 { return min(max(x, l), h); }   # HACK: l must be less than h
 fn clamp(x: i64, l: i64, h: i64) -> i64 { return min(max(x, l), h); }
@@ -48,61 +48,61 @@ fn clamp(x: f32, l: f32, h: f32) -> f32 { return min(max(x, l), h); }
 fn clamp(x: f64, l: f64, h: f64) -> f64 { return min(max(x, l), h); }
 
 # Round toward zero
-fn trunc(x: f32) -> f32 { return @trunc(x); }
-fn trunc(x: f64) -> f64 { return @trunc(x); }
+fn trunc(x: f32) -> f32 { return __trunc(x); }
+fn trunc(x: f64) -> f64 { return __trunc(x); }
 
 # Round down
-fn floor(x: f32) -> f32 { return @floor(x); }
-fn floor(x: f64) -> f64 { return @floor(x); }
+fn floor(x: f32) -> f32 { return __floor(x); }
+fn floor(x: f64) -> f64 { return __floor(x); }
 
 # Round up
-fn ceil(x: f32) -> f32 { return @ceil(x); }
-fn ceil(x: f64) -> f64 { return @ceil(x); }
+fn ceil(x: f32) -> f32 { return __ceil(x); }
+fn ceil(x: f64) -> f64 { return __ceil(x); }
 
 # Round to nearest, halfway away from zero
-fn round(x: f32) -> f32 { return @round(x); }
-fn round(x: f64) -> f64 { return @round(x); }
+fn round(x: f32) -> f32 { return __round(x); }
+fn round(x: f64) -> f64 { return __round(x); }
 
 # Fractional part in [0, 1)
 fn fract(x: f32) -> f32 { return x - floor(x); }
 fn fract(x: f64) -> f64 { return x - floor(x); }
 
 # sqrt
-fn sqrt(x: f32) -> f32 { return @sqrt(x); }
-fn sqrt(x: f64) -> f64 { return @sqrt(x); }
+fn sqrt(x: f32) -> f32 { return __sqrt(x); }
+fn sqrt(x: f64) -> f64 { return __sqrt(x); }
 
 # pow
-fn pow(x: f32, y: f32) -> f32 { return @pow(x, y); }
-fn pow(x: f64, y: f64) -> f64 { return @pow(x, y); }
+fn pow(x: f32, y: f32) -> f32 { return __pow(x, y); }
+fn pow(x: f64, y: f64) -> f64 { return __pow(x, y); }
 
 # exp
-fn exp(x: f32) -> f32 { return @exp(x); }
-fn exp(x: f64) -> f64 { return @exp(x); }
+fn exp(x: f32) -> f32 { return __exp(x); }
+fn exp(x: f64) -> f64 { return __exp(x); }
 
 # ln
-fn ln(x: f32) -> f32 { return @ln(x); }
-fn ln(x: f64) -> f64 { return @ln(x); }
+fn ln(x: f32) -> f32 { return __ln(x); }
+fn ln(x: f64) -> f64 { return __ln(x); }
 
 # log2
-fn log2(x: f32) -> f32 { return @log2(x); }
-fn log2(x: f64) -> f64 { return @log2(x); }
+fn log2(x: f32) -> f32 { return __log2(x); }
+fn log2(x: f64) -> f64 { return __log2(x); }
 
 # log10
-fn log10(x: f32) -> f32 { return @log10(x); }
-fn log10(x: f64) -> f64 { return @log10(x); }
+fn log10(x: f32) -> f32 { return __log10(x); }
+fn log10(x: f64) -> f64 { return __log10(x); }
 
 # log
 fn log(x: f32, base: f32) -> f32 { return ln(x) / ln(base); }
 fn log(x: f64, base: f64) -> f64 { return ln(x) / ln(base); }
 
 # sin
-fn sin(x: f32) -> f32 { return @sin(x); }
-fn sin(x: f64) -> f64 { return @sin(x); }
+fn sin(x: f32) -> f32 { return __sin(x); }
+fn sin(x: f64) -> f64 { return __sin(x); }
 
 # cos
-fn cos(x: f32) -> f32 { return @cos(x); }
-fn cos(x: f64) -> f64 { return @cos(x); }
+fn cos(x: f32) -> f32 { return __cos(x); }
+fn cos(x: f64) -> f64 { return __cos(x); }
 
 # tan
-fn tan(x: f32) -> f32 { return @tan(x); }
-fn tan(x: f64) -> f64 { return @tan(x); }
+fn tan(x: f32) -> f32 { return __tan(x); }
+fn tan(x: f64) -> f64 { return __tan(x); }

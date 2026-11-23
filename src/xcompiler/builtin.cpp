@@ -174,53 +174,53 @@ namespace xcompiler {
                 };
             };
 
-            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "@abs"),      Impl_intrinsic_unary(llvm::Intrinsic::fabs));
-            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "@abs"),      Impl_intrinsic_unary(llvm::Intrinsic::fabs));
+            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "__abs"),     Impl_intrinsic_unary(llvm::Intrinsic::fabs));
+            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "__abs"),     Impl_intrinsic_unary(llvm::Intrinsic::fabs));
 
-            Register(sema::FnSign(f32_, { f32_, f32_ }, std::nullopt, {}, "@min"),      Impl_libm_binary("fminf"));
-            Register(sema::FnSign(f64_, { f64_, f64_ }, std::nullopt, {}, "@min"),      Impl_libm_binary("fmin"));
+            Register(sema::FnSign(f32_, { f32_, f32_ }, std::nullopt, {}, "__min"),     Impl_libm_binary("fminf"));
+            Register(sema::FnSign(f64_, { f64_, f64_ }, std::nullopt, {}, "__min"),     Impl_libm_binary("fmin"));
 
-            Register(sema::FnSign(f32_, { f32_, f32_ }, std::nullopt, {}, "@max"),      Impl_libm_binary("fmaxf"));
-            Register(sema::FnSign(f64_, { f64_, f64_ }, std::nullopt, {}, "@max"),      Impl_libm_binary("fmax"));
+            Register(sema::FnSign(f32_, { f32_, f32_ }, std::nullopt, {}, "__max"),     Impl_libm_binary("fmaxf"));
+            Register(sema::FnSign(f64_, { f64_, f64_ }, std::nullopt, {}, "__max"),     Impl_libm_binary("fmax"));
 
-            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "@trunc"),    Impl_intrinsic_unary(llvm::Intrinsic::trunc));
-            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "@trunc"),    Impl_intrinsic_unary(llvm::Intrinsic::trunc));
+            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "__trunc"),   Impl_intrinsic_unary(llvm::Intrinsic::trunc));
+            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "__trunc"),   Impl_intrinsic_unary(llvm::Intrinsic::trunc));
 
-            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "@floor"),    Impl_intrinsic_unary(llvm::Intrinsic::floor));
-            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "@floor"),    Impl_intrinsic_unary(llvm::Intrinsic::floor));
+            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "__floor"),   Impl_intrinsic_unary(llvm::Intrinsic::floor));
+            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "__floor"),   Impl_intrinsic_unary(llvm::Intrinsic::floor));
 
-            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "@ceil"),     Impl_intrinsic_unary(llvm::Intrinsic::ceil));
-            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "@ceil"),     Impl_intrinsic_unary(llvm::Intrinsic::ceil));
+            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "__ceil"),    Impl_intrinsic_unary(llvm::Intrinsic::ceil));
+            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "__ceil"),    Impl_intrinsic_unary(llvm::Intrinsic::ceil));
 
-            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "@round"),    Impl_intrinsic_unary(llvm::Intrinsic::round));
-            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "@round"),    Impl_intrinsic_unary(llvm::Intrinsic::round));
+            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "__round"),   Impl_intrinsic_unary(llvm::Intrinsic::round));
+            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "__round"),   Impl_intrinsic_unary(llvm::Intrinsic::round));
 
-            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "@sqrt"),     Impl_intrinsic_unary(llvm::Intrinsic::sqrt));
-            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "@sqrt"),     Impl_intrinsic_unary(llvm::Intrinsic::sqrt));
+            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "__sqrt"),    Impl_intrinsic_unary(llvm::Intrinsic::sqrt));
+            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "__sqrt"),    Impl_intrinsic_unary(llvm::Intrinsic::sqrt));
 
-            Register(sema::FnSign(f32_, { f32_, f32_ }, std::nullopt, {}, "@pow"),      Impl_libm_binary("powf"));
-            Register(sema::FnSign(f64_, { f64_, f64_ }, std::nullopt, {}, "@pow"),      Impl_libm_binary("pow"));
+            Register(sema::FnSign(f32_, { f32_, f32_ }, std::nullopt, {}, "__pow"),     Impl_libm_binary("powf"));
+            Register(sema::FnSign(f64_, { f64_, f64_ }, std::nullopt, {}, "__pow"),     Impl_libm_binary("pow"));
 
-            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "@exp"),      Impl_libm_unary("expf"));
-            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "@exp"),      Impl_libm_unary("exp"));
+            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "__exp"),     Impl_libm_unary("expf"));
+            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "__exp"),     Impl_libm_unary("exp"));
 
-            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "@ln"),       Impl_libm_unary("logf"));
-            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "@ln"),       Impl_libm_unary("log"));
+            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "__ln"),      Impl_libm_unary("logf"));
+            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "__ln"),      Impl_libm_unary("log"));
 
-            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "@log2"),     Impl_libm_unary("log2f"));
-            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "@log2"),     Impl_libm_unary("log2"));
+            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "__log2"),    Impl_libm_unary("log2f"));
+            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "__log2"),    Impl_libm_unary("log2"));
 
-            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "@log10"),    Impl_libm_unary("log10f"));
-            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "@log10"),    Impl_libm_unary("log10"));
+            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "__log10"),   Impl_libm_unary("log10f"));
+            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "__log10"),   Impl_libm_unary("log10"));
 
-            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "@sin"),      Impl_libm_unary("sinf"));
-            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "@sin"),      Impl_libm_unary("sin"));
+            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "__sin"),     Impl_libm_unary("sinf"));
+            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "__sin"),     Impl_libm_unary("sin"));
 
-            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "@cos"),      Impl_libm_unary("cosf"));
-            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "@cos"),      Impl_libm_unary("cos"));
+            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "__cos"),     Impl_libm_unary("cosf"));
+            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "__cos"),     Impl_libm_unary("cos"));
 
-            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "@tan"),      Impl_libm_unary("tanf"));
-            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "@tan"),      Impl_libm_unary("tan"));
+            Register(sema::FnSign(f32_, { f32_ },       std::nullopt, {}, "__tan"),     Impl_libm_unary("tanf"));
+            Register(sema::FnSign(f64_, { f64_ },       std::nullopt, {}, "__tan"),     Impl_libm_unary("tan"));
         }
     }
 }
