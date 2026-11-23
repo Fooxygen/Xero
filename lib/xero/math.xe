@@ -42,7 +42,7 @@ fn max(a: i64, b: i64) -> i64 { if (a < b) { return b; } return a; }
 fn max(a: f32, b: f32) -> f32 { return @max(a, b); }
 fn max(a: f64, b: f64) -> f64 { return @max(a, b); }
 
-fn clamp(x: i32, l: i32, h: i32) -> i32 { return min(max(x, l), h); }
+fn clamp(x: i32, l: i32, h: i32) -> i32 { return min(max(x, l), h); }   # HACK: l must be less than h
 fn clamp(x: i64, l: i64, h: i64) -> i64 { return min(max(x, l), h); }
 fn clamp(x: f32, l: f32, h: f32) -> f32 { return min(max(x, l), h); }
 fn clamp(x: f64, l: f64, h: f64) -> f64 { return min(max(x, l), h); }

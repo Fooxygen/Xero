@@ -137,7 +137,7 @@ fn trim_start(s: string&, chars: string) -> string {
     if (i < 0) return "";
     return s[i..s.len()];
 }
-fn trim_start(s: string, chars: string) -> string { return trim_start(&s, chars); }
+fn trim_start(s: string, chars: string)  -> string { return trim_start(&s, chars); }
 fn trim_start(s: string&) -> string { return trim_start(s, " \t\n\r"); }
 fn trim_start(s: string)  -> string { return trim_start(&s, " \t\n\r"); }
 
@@ -146,7 +146,7 @@ fn trim_end(s: string&, chars: string) -> string {
     if (i < 0) return "";
     return s[0..=i];
 }
-fn trim_end(s: string, chars: string) -> string { return trim_end(&s, chars); }
+fn trim_end(s: string, chars: string)  -> string { return trim_end(&s, chars); }
 fn trim_end(s: string&) -> string { return trim_end(s, " \t\n\r"); }
 fn trim_end(s: string)  -> string { return trim_end(&s, " \t\n\r"); }
 
@@ -156,13 +156,13 @@ fn trim(s: string&, chars: string) -> string {
     r: i64 = find_last_out(s, chars);
     return s[l..=r];
 }
-fn trim(s: string, chars: string) -> string { return trim(&s, chars); }
+fn trim(s: string, chars: string)  -> string { return trim(&s, chars); }
 fn trim(s: string&) -> string { return trim(s, " \t\n\r"); }
 fn trim(s: string)  -> string { return trim(&s, " \t\n\r"); }
 
 # Join
 
-fn join(parts: array[=string=]&, sep: string) -> string {
+fn join(parts: array[=string=]&, sep: string)    -> string {
     result: string = "";
     for (i in 0..parts.len()) {
         if (i > 0) result += sep;
@@ -170,7 +170,15 @@ fn join(parts: array[=string=]&, sep: string) -> string {
     }
     return result;
 }
-fn join(parts: array[=string=], sep: string) -> string { return join(&parts, sep); }
+fn join(parts: array[=string=], sep: string)     -> string { return join(&parts, sep); }
+fn join(parts: arrayview[=string=], sep: string) -> string {
+    result: string = "";
+    for (i in 0..parts.len()) {
+        if (i > 0) result += sep;
+        result += parts[i];
+    }
+    return result;
+}
 
 # Split
 
@@ -188,4 +196,4 @@ fn split(s: string&, sep: char) -> array[=string=] {
     
     return result;
 }
-fn split(s: string, sep: char) -> array[=string=] { return split(&s, sep); }
+fn split(s: string, sep: char)  -> array[=string=] { return split(&s, sep); }
