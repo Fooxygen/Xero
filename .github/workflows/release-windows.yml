@@ -20,7 +20,7 @@ jobs:
                         mingw-w64-ucrt-x86_64-gcc
                         mingw-w64-ucrt-x86_64-cmake
                         mingw-w64-ucrt-x86_64-ninja
-                        mingw-w64-ucrt-x86_64-llvm
+                        mingw-w64-ucrt-x86_64-llvm22
                         zip
 
             -   name: Configure and Build
@@ -28,7 +28,7 @@ jobs:
                 run: |
                     cmake -S src -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
                         -DCMAKE_CXX_COMPILER=g++ \
-                        -DLLVM_DIR="$MINGW_PREFIX/lib/cmake/llvm" \
+                        -DLLVM_DIR="$MINGW_PREFIX/opt/llvm22/lib/cmake/llvm" \
                         -DCMAKE_EXE_LINKER_FLAGS="-static -static-libgcc -static-libstdc++"
                     cmake --build build
 
