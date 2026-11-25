@@ -56,6 +56,7 @@ namespace sema {
         void Declare(DeclExpr& node);                                           // signature of global constant
         void Declare(FnExpr& node, FnScope& fn_scope, bool is_named = true);    // signature of function
         void Declare(StructDeclExpr& node);                                     // signature of global struct
+        void Declare(EnumDeclExpr& node);                                       // signature of global enum
 
         void Declare(Program& node);                                            // module scope
 
@@ -75,6 +76,7 @@ namespace sema {
         void Process(StructDeclExpr& node);
         void Process(StructLitExpr& node);
         void Process(FieldAccessExpr& node);
+        void Process(EnumDeclExpr& node);
         void Process(PathExpr& node);
 
         void Process(NumConst& node);
@@ -118,6 +120,7 @@ namespace sema {
                 case AstType::DeclExpr:         Declare((DeclExpr&)node);           return;
                 case AstType::FnExpr:           Declare((FnExpr&)node, fn_scope_);  return;
                 case AstType::StructDeclExpr:   Declare((StructDeclExpr&)node);     return;
+                case AstType::EnumDeclExpr:     Declare((EnumDeclExpr&)node);       return;
 
                 case AstType::Program:          Declare((Program&)node);            return;
 
@@ -143,6 +146,7 @@ namespace sema {
                 case AstType::StructDeclExpr:   Process((StructDeclExpr&)node);    return;
                 case AstType::StructLitExpr:    Process((StructLitExpr&)node);     return;
                 case AstType::FieldAccessExpr:  Process((FieldAccessExpr&)node);   return;
+                case AstType::EnumDeclExpr:     Process((EnumDeclExpr&)node);      return;
                 case AstType::PathExpr:         Process((PathExpr&)node);          return;
 
                 case AstType::NumConst:         Process((NumConst&)node);          return;

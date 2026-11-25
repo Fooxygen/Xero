@@ -70,6 +70,9 @@ namespace xcompiler {
         if (auto struct_type = dynamic_cast<sema::StructType*>(type)) {
             return StructTypeGet(struct_type);
         }
+        if (dynamic_cast<sema::EnumType*>(type)) {
+            return llvm::Type::getInt32Ty(llvm_context());
+        }
 
         throw LogErr(LogStage::Xcompiler, std::format(
             "undefined type '{}'", type->name()
@@ -260,6 +263,24 @@ namespace xcompiler {
             );
         }
 
+        // Enum
+
+        if (dynamic_cast<sema::EnumType*>(from)) {
+            auto* ci = llvm::cast<llvm::ConstantInt>(value);
+            if (t == "i32") {
+                return llvm::ConstantInt::get(
+                    llvm::Type::getInt32Ty(llvm_context()),
+                    ci->getValue().zextOrTrunc(32)
+                );
+            }
+            if (t == "i64") {
+                return llvm::ConstantInt::get(
+                    llvm::Type::getInt64Ty(llvm_context()),
+                    ci->getValue().zext(64)
+                );
+            }
+        }
+
         throw LogErr(LogStage::Xcompiler, std::format(
             "cannot cast module constant from '{}' to '{}'", f, t
         ));
@@ -314,15 +335,23 @@ namespace xcompiler {
             );
         }
         if (auto* path      = dynamic_cast<PathExpr*>(&node)) {
-            if (!path->module_const_decl_) {
-                throw LogErr(LogStage::Xcompiler,
-                    "path is not a module constant", path->loc_);
+            if (auto* decl    = path->ModuleConstDeclGet()) {
+                return ModuleConstantCast(
+                    ModuleConstantValueGet(decl),
+                    decl->resolved_type_,
+                    expected
+                );
             }
-            return ModuleConstantCast(
-                ModuleConstantValueGet(path->module_const_decl_),
-                path->module_const_decl_->resolved_type_,
-                expected
-            );
+            if (auto* variant = path->EnumVariantGet()) {
+                return ModuleConstantCast(
+                    llvm::ConstantInt::get(LlvmType(path->resolved_type_), variant->index_),
+                    path->resolved_type_,
+                    expected
+                );
+            }
+
+            throw LogErr(LogStage::Xcompiler,
+                "path is not a module constant or enum variant", path->loc_);
         }
 
         // Operation

@@ -535,7 +535,7 @@ namespace parser {
                         Move<BlockExpr>(2)
                     );
                 },
-                PATS_INIT{ TT::Arrow, TT::Struct }
+                PATS_INIT{ TT::Arrow, TT::Struct, TT::Enum }
             );
         }
 
@@ -571,6 +571,25 @@ namespace parser {
                     );
                 },
                 {}, {}, {}, TTS_INIT{ TT::Comma, TT::RBrace }
+            );
+        }
+
+        // Enum
+
+        // └─ enum id blockexpr -> enumdeclexpr
+        {
+            RuleAdd(
+                PATS_INIT{
+                    TT::Enum,
+                    AT::IdExpr,
+                    AT::BlockExpr
+                },
+                [this](auto) {
+                    return std::make_unique<EnumDeclExpr>(
+                        Move<IdExpr>(2)->name_,
+                        Move<BlockExpr>(3)
+                    );
+                }
             );
         }
 
@@ -1181,8 +1200,17 @@ namespace parser {
                     TT::Semicolon
                 },
                 [this](auto) {
+                    auto expr = Move<Expr>(1);
+                    if (expr->type_ == AT::StructDeclExpr) {
+                        throw LogErr(LogStage::Parser,
+                            "unexpected semicolon after struct declaration", PatternLocGet(2));
+                    }
+                    if (expr->type_ == AT::EnumDeclExpr) {
+                        throw LogErr(LogStage::Parser,
+                            "unexpected semicolon after enum declaration", PatternLocGet(2));
+                    }
                     return std::make_unique<ExprStmt>(
-                        Move<Expr>(1)
+                        std::move(expr)
                     );
                 }
             );

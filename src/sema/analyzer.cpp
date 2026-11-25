@@ -3,6 +3,8 @@
 //  Copyright (c) 2026 Fooxygen.
 //  Licensed under the MIT License.
 
+#include <limits>
+
 #include "sema/analyzer.hpp"
 
 namespace sema {
@@ -30,7 +32,8 @@ namespace sema {
             return id->module_const_decl_ != nullptr;
         }
         if (auto path   = dynamic_cast<PathExpr*>(&node)) {
-            return path->module_const_decl_ != nullptr;
+            return path->ModuleConstDeclGet() != nullptr ||
+                   path->EnumVariantGet()     != nullptr;
         }
         
         // = T(expr), expr is constant expr
@@ -66,7 +69,8 @@ namespace sema {
         auto* basic = type->BasicTypeGet();
         return basic == module_constant_i32_  || basic == module_constant_i64_ ||
                basic == module_constant_f32_  || basic == module_constant_f64_ ||
-               basic == module_constant_bool_ || basic == module_constant_char_;
+               basic == module_constant_bool_ || basic == module_constant_char_ ||
+               dynamic_cast<EnumType*>(basic) != nullptr;
     }
 
     // Declare
@@ -140,6 +144,33 @@ namespace sema {
         node.resolved_type_ = type_raw;
     }
 
+    void Analyzer::Declare(EnumDeclExpr& node) {
+
+        // Path
+        Path full_path = module_->namespaces();
+        full_path.Add(node.name_);
+
+        if (TypeTable::LookupTry(full_path.Print())) {
+            throw LogErr(LogStage::Sema, std::format(
+                "redefinition of type '{}'", full_path.Print()
+            ), node.loc_);
+        }
+
+        // Type
+        auto  type      = std::make_unique<EnumType>(full_path.Print());
+        auto  type_raw  = type.get();
+        auto* none_type = TypeTable::Lookup("none");
+        {
+            type_raw->method_table().Add("@copy",    FnSign(type_raw));
+            type_raw->method_table().Add("@release", FnSign(none_type));
+
+            TypeTable::Set(std::move(type));
+            type_scope_.Declare(node.name_, type_raw);
+        }
+
+        node.resolved_type_ = type_raw;
+    }
+
     // └─ Common
 
     void Analyzer::Declare(DeclExpr& node) {
@@ -165,19 +196,23 @@ namespace sema {
     void Analyzer::Declare(Program& node) {
         auto& node_children = ((BlockExpr&)node).children_;
 
-        // Struct Name Decl
+        // Decl for Struct and Enum
         for (auto& child : node_children) {
             if (child->type_ == AstType::StructDeclExpr) Declare((StructDeclExpr&)*child);
+            if (child->type_ == AstType::EnumDeclExpr)   Declare((EnumDeclExpr&)*child);
         }
 
-        // Struct Member Decl
+        // Member Decl for Struct and Enum
+        bool has_enum_decl = false;
         for (auto& child : node_children) {
-            if (child->type_ == AstType::StructDeclExpr) {
+            if      (child->type_ == AstType::StructDeclExpr) {
                 auto& struct_decl = (StructDeclExpr&)*child;
                 auto* struct_type = (StructType*)struct_decl.resolved_type_;
 
+                // Members
                 for (auto& member : struct_decl.body_->children_) {
 
+                    // Expr wrapped by ExprStmt
                     if      (auto* stmt = dynamic_cast<ExprStmt*>(member.get())) {
                         auto member_child = stmt->expr_.get();
                         
@@ -195,7 +230,7 @@ namespace sema {
                                     field_decl->id_, struct_type->name()
                                 ), field_decl->loc_);
                             }
-                            struct_type->fields().emplace_back(Field{field_decl->id_, field_type, field_index});
+                            struct_type->fields().emplace_back(StructField{field_decl->id_, field_type, field_index});
                         }
                     }
 
@@ -213,11 +248,95 @@ namespace sema {
                     }
                 }
             }
+            else if (child->type_ == AstType::EnumDeclExpr) {
+                has_enum_decl = true;
+
+                auto& enum_decl = (EnumDeclExpr&)*child;
+                auto* enum_type = (EnumType*)enum_decl.resolved_type_;
+
+                auto* none_ = TypeTable::Lookup("none");
+                auto* bool_ = TypeTable::Lookup("bool");
+                auto* i32_  = TypeTable::Lookup("i32");
+                auto* i64_  = TypeTable::Lookup("i64");
+
+                // Members
+                for (auto& member : enum_decl.body_->children_) {
+
+                    // Expr wrapped by ExprStmt
+                    if      (auto* stmt = dynamic_cast<ExprStmt*>(member.get())) {
+                        auto* member_child = stmt->expr_.get();
+
+                        // Variant
+                        if (auto* variant_id = dynamic_cast<IdExpr*>(member_child)) {
+                            auto variant_index = enum_type->variants().size();
+                            auto variant_max   = static_cast<size_t>(std::numeric_limits<int32_t>::max());
+                            if (variant_index >= variant_max) {
+                                throw LogErr(LogStage::Sema, std::format(
+                                    "enum '{}' expects at most {} variants, got {}",
+                                    enum_type->name(), variant_max, variant_index + 1
+                                ), variant_id->loc_);
+                            }
+                            if (!enum_type->variant_indices().emplace(variant_id->name_, variant_index).second) {
+                                throw LogErr(LogStage::Sema, std::format(
+                                    "redefinition of variant '{}' in enum '{}'",
+                                    variant_id->name_, enum_type->name()
+                                ), variant_id->loc_);
+                            }
+                            enum_type->variants().emplace_back(EnumVariant{variant_id->name_, variant_index});
+                        }
+                        else {
+                            throw LogErr(LogStage::Sema, "invalid enum member", member->loc_);
+                        }
+                    }
+
+                    // Method
+                    else if (member->type_ == AstType::FnExpr) {
+                        auto& fn_expr = (FnExpr&)*member;
+                        if (fn_expr.name_ == "@copy" || fn_expr.name_ == "@release" ||
+                            fn_expr.name_ == "@eq"   || fn_expr.name_ == "@neq"     ||
+                            fn_expr.name_ == "@cast")
+                        {
+                            throw LogErr(LogStage::Sema, std::format(
+                                "redefinition of built-in method '{}' in enum '{}'",
+                                fn_expr.name_, enum_type->name()
+                            ), fn_expr.loc_);
+                        }
+
+                        Declare(fn_expr, enum_type->method_table());
+                    }
+
+                    else if (member->type_ == AstType::IdExpr) {
+                        throw LogErr(LogStage::Sema, "enum variant must end with ';'", member->loc_);
+                    }
+
+                    else {
+                        throw LogErr(LogStage::Sema, "invalid enum member", member->loc_);
+                    }
+                }
+
+                if (enum_type->variants().empty()) {
+                    throw LogErr(LogStage::Sema, std::format(
+                        "enum '{}' must have at least one variant", enum_type->name()
+                    ), enum_decl.loc_);
+                }
+
+                // Built-in Methods
+                enum_type->method_table().Add("@eq",   FnSign(bool_, { enum_type }));
+                enum_type->method_table().Add("@neq",  FnSign(bool_, { enum_type }));
+                enum_type->method_table().Add("@cast", FnSign(i32_,  {}, std::nullopt, FnModifier::CastLossy));
+                enum_type->method_table().Add("@cast", FnSign(i64_,  {}, std::nullopt, FnModifier::CastLossy));
+                enum_type->method_table().Add("@print", FnSign(none_));
+            }
         }
+        if (has_enum_decl) TypeTable::CastRecompute();
 
         // Other Global Decl
         for (auto& child : node_children) {
-            if (child->type_ != AstType::StructDeclExpr) Declare(*child);
+            if (child->type_ != AstType::StructDeclExpr &&
+                child->type_ != AstType::EnumDeclExpr)
+            {
+                Declare(*child);
+            }
         }
     }
 
@@ -639,7 +758,7 @@ namespace sema {
             ), node.loc_);
         }
 
-        // Call fn
+        // Function Call: callee.fn()
         if (auto* fn = fn_scope_.LookupTry(callee_path)) {
             auto sign = fn->SignLookup(args_type, node.callee_->loc_);
             node.resolved_type_ = sign->return_type();
@@ -647,7 +766,7 @@ namespace sema {
             return;
         }
 
-        // Cast T(x)
+        // Type Cast: T(expr)
         auto* type = type_scope_.LookupTry(callee_path);
         if (!type) type = TypeTable::LookupTry(callee_path.Print());
 
@@ -660,7 +779,9 @@ namespace sema {
             if (args_type.size() == 1) {
                 auto* from = args_type[0]->ReferenceUnwrap();
 
-                if (IsNumeric(from) && IsNumeric(type)) {
+                if ((IsNumeric(from) && IsNumeric(type)) ||
+                    (dynamic_cast<EnumType*>(from) && (type->Is("i32") || type->Is("i64"))))
+                {
                     auto* from_basic = (BasicType*)from->BasicTypeGet();
 
                     if (from != type &&
@@ -844,25 +965,84 @@ namespace sema {
         }
     }
 
+    void Analyzer::Process(EnumDeclExpr& node) {
+        auto* enum_type = (EnumType*)node.resolved_type_;
+        if (!enum_type) {
+            throw LogErr(LogStage::Sema,
+                "enum declaration must be at module scope",
+                node.loc_
+            );
+        }
+
+        // Methods
+        {
+            for (auto& child : node.body_->children_) {
+                if (child->type_ == AstType::FnExpr) Process((FnExpr&)*child);
+            }
+        }
+    }
+
     void Analyzer::Process(PathExpr& node) {
-        Path path = {};
+        Path path = {}, path_prefix = {};
+
         for (auto& segment : node.segments_) {
             path.Add(segment->name_);
         }
         path = Path::Resolve(path, module_->namespaces_alias());
-
-        // FnCall:              a::b.c(), reduce as FnCallExpr or MethodCallExpr
-
-        // Module Constant:     a::b::constant
-        if (auto* module_constant = module_const_scope_.LookupTry(path)) {
-            node.module_const_decl_ = module_constant;
-            node.resolved_type_     = module_constant->resolved_type_;
+        for (size_t i = 0; i + 1 < path.Length(); i++) {
+            path_prefix.Add(path[i]);
         }
-        else {
+
+        // Resolve
+
+        auto* resolve_module_constant = module_const_scope_.LookupTry(path);
+        auto* resolve_type            = type_scope_.LookupTry(path_prefix);
+
+        if (resolve_module_constant && resolve_type) {
             throw LogErr(LogStage::Sema, std::format(
-                "undefined identifier '{}'", path.Print()
+                "ambiguous path '{}'", path.Print()
             ), node.loc_);
         }
+
+        {
+            // Function:            a::callee.fn(), reduce as FnCallExpr or MethodCallExpr
+
+            // Module Constant:     a::constant
+            if (resolve_module_constant) {
+                node.resolved_target_ = resolve_module_constant;
+                node.resolved_type_   = resolve_module_constant->resolved_type_;
+                return;
+            }
+
+            // Type Member:         a::type::...
+            if (resolve_type) {
+                const auto& member    = path.Back();
+
+                // Enum Variant:    a::enum::variant
+                if (auto* enum_type = dynamic_cast<EnumType*>(resolve_type)) {
+                    auto it = enum_type->variant_indices().find(member);
+                    if (it == enum_type->variant_indices().end()) {
+                        throw LogErr(LogStage::Sema, std::format(
+                            "undefined variant '{}' in enum '{}'",
+                            member, enum_type->name()
+                        ), node.loc_);
+                    }
+
+                    node.resolved_target_ = &enum_type->variants()[it->second];
+                    node.resolved_type_   = enum_type;
+                    return;
+                }           
+            
+                throw LogErr(LogStage::Sema, std::format(
+                    "undefined member '{}' in type '{}'",
+                    member, resolve_type->name()
+                ), node.loc_);
+            }
+        }
+
+        throw LogErr(LogStage::Sema, std::format(
+            "undefined identifier '{}'", path.Print()
+        ), node.loc_);
     }
 
     // └─ Const
@@ -940,12 +1120,6 @@ namespace sema {
 
     void Analyzer::Process(ExprStmt& node) {
         node.resolved_type_ = TypeTable::Lookup("none");
-
-        if (node.expr_->type_ == AstType::StructDeclExpr) {
-            throw LogErr(LogStage::Sema,
-                "unexpected semicolon after struct declaration", node.loc_);
-        }
-
         Process(*node.expr_);
     }
 
@@ -962,6 +1136,7 @@ namespace sema {
                     "cannot assign to constant '{}'", id->module_const_decl_->id_
                 ), node.target_->loc_);
             }
+            // Variable
             if (auto var = var_scope_.LookupTry(id->name_)) {
                 // Local Constant
                 if (var->modifier_ & VarModifier::Const) {
@@ -972,9 +1147,16 @@ namespace sema {
             }
         }
         if (auto path = dynamic_cast<PathExpr*>(node.target_.get())) {
-            if (path->module_const_decl_) {
+            // Constant
+            if (auto* module_constant = path->ModuleConstDeclGet()) {
                 throw LogErr(LogStage::Sema, std::format(
-                    "cannot assign to constant '{}'", path->module_const_decl_->id_
+                    "cannot assign to constant '{}'", module_constant->id_
+                ), node.target_->loc_);
+            }
+            // Enum
+            if (auto* enum_variant    = path->EnumVariantGet()) {
+                throw LogErr(LogStage::Sema, std::format(
+                    "cannot assign to enum variant '{}'", enum_variant->name_
                 ), node.target_->loc_);
             }
         }
@@ -1073,14 +1255,19 @@ namespace sema {
 
         var_scope_.Push();
         try {
-            // Struct
+            // Struct and Enum
             for (auto& child : node.children_) {
                 if (child->type_ == AstType::StructDeclExpr) Process((StructDeclExpr&)*child);
+                if (child->type_ == AstType::EnumDeclExpr)   Process((EnumDeclExpr&)*child);
             }
 
             // Other
             for (auto& child : node.children_) {
-                if (child->type_ == AstType::StructDeclExpr) continue;
+                if (child->type_ == AstType::StructDeclExpr ||
+                    child->type_ == AstType::EnumDeclExpr
+                ) {
+                    continue;
+                }
                 Process(*child);
             }
         }

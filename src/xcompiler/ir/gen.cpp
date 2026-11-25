@@ -85,6 +85,12 @@ namespace xcompiler {
         }
     }
 
+    void IRGen::Declare(EnumDeclExpr& node) {
+        for (auto& child : node.body_->children_) {
+            if (child->type_ == AstType::FnExpr) Declare((FnExpr&)*child);
+        }
+    }
+
     // └─ Program
 
     void IRGen::Declare(Program& node) {
@@ -797,11 +803,19 @@ namespace xcompiler {
         return llvm_builder().CreateStructGEP(struct_llvm_type, base_addr, node.field_index_);
     }
 
-    // └─ Const
+    llvm::Value* IRGen::Process(EnumDeclExpr& node) {
+        for (auto& child : node.body_->children_) {
+            if (child->type_ == AstType::FnExpr) Process((FnExpr&)*child);
+        }
+        return nullptr;
+    }
 
     llvm::Value* IRGen::Process(PathExpr& node) {
-        if (node.module_const_decl_) {
-            return ModuleConstantValueGet(node.module_const_decl_);
+        if (auto* module_constant = node.ModuleConstDeclGet()) {
+            return ModuleConstantValueGet(module_constant);
+        }
+        if (auto* enum_variant    = node.EnumVariantGet()) {
+            return llvm::ConstantInt::get(LlvmType(node.resolved_type_), enum_variant->index_);
         }
 
         Path path = {};
@@ -811,6 +825,8 @@ namespace xcompiler {
             "undefined identifier '{}'", path.Print()
         ), node.loc_);
     }
+
+    // └─ Const
 
     llvm::Value* IRGen::Process(NumConst& node) {
         auto type = node.resolved_type_;

@@ -83,6 +83,7 @@ namespace xcompiler {
         // Declare
         void Declare(FnExpr& node);
         void Declare(StructDeclExpr& node);
+        void Declare(EnumDeclExpr& node);
 
         void Declare(Program& node);
 
@@ -101,6 +102,7 @@ namespace xcompiler {
         llvm::Value* Process(StructDeclExpr& node);
         llvm::Value* Process(StructLitExpr& node);
         llvm::Value* Process(FieldAccessExpr& node);
+        llvm::Value* Process(EnumDeclExpr& node);
         llvm::Value* Process(PathExpr& node);
 
         llvm::Value* Process(NumConst& node);
@@ -173,6 +175,7 @@ namespace xcompiler {
             switch (node.type_) {
                 case AstType::FnExpr:         Declare((FnExpr&)node);         return;
                 case AstType::StructDeclExpr: Declare((StructDeclExpr&)node); return;
+                case AstType::EnumDeclExpr:   Declare((EnumDeclExpr&)node);   return;
 
                 case AstType::Program:        Declare((Program&)node);        return;
 
@@ -197,6 +200,7 @@ namespace xcompiler {
                 case AstType::StructDeclExpr:   return Process((StructDeclExpr&)node);
                 case AstType::StructLitExpr:    return Process((StructLitExpr&)node);
                 case AstType::FieldAccessExpr:  return Process((FieldAccessExpr&)node);
+                case AstType::EnumDeclExpr:     return Process((EnumDeclExpr&)node);
                 case AstType::PathExpr:         return Process((PathExpr&)node);
                 
                 case AstType::NumConst:         return Process((NumConst&)node);

@@ -101,6 +101,7 @@ public:
         Return,             // return
         Fn,                 // fn
         Struct,             // struct
+        Enum,               // enum
         Const,              // const
     };
 
@@ -191,6 +192,7 @@ public:
             case Return:
             case Fn:
             case Struct:
+            case Enum:
             case Const:
                 return Keyword;
 
@@ -275,6 +277,7 @@ public:
             case Return:        return "return";
             case Fn:            return "fn";
             case Struct:        return "struct";
+            case Enum:          return "enum";
             case Const:         return "const";
 
             default: 

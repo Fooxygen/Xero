@@ -59,10 +59,16 @@ namespace sema {
         virtual Type* ReferenceUnwrap() = 0;
     };
 
-    class Field {
+    class StructField {
     public:
         std::string name_  = "";
         Type*       type_  = nullptr;
+        size_t      index_ = 0;
+    };
+
+    class EnumVariant {
+    public:
+        std::string name_  = "";
         size_t      index_ = 0;
     };
 
@@ -100,15 +106,29 @@ namespace sema {
 
     class StructType     : public BasicType {
     private:
-        std::vector<Field>                      fields_        = {};
+        std::vector<StructField>                fields_        = {};
         std::unordered_map<std::string, size_t> field_indices_ = {};
 
     public:
         StructType(std::string name)
         :   BasicType(std::move(name)) {}
 
-        std::vector<Field>&                      fields()        { return fields_; }
+        std::vector<StructField>&                fields()        { return fields_; }
         std::unordered_map<std::string, size_t>& field_indices() { return field_indices_; }
+    };
+
+    class EnumType       : public BasicType {
+    private:
+        std::vector<EnumVariant>                variants_        = {};
+        std::unordered_map<std::string, size_t> variant_indices_ = {};
+
+    public:
+        EnumType(std::string name)
+        :   BasicType(std::move(name)) {}
+
+        std::vector<EnumVariant>&                variants()        { return variants_; }
+        const std::vector<EnumVariant>&          variants()  const { return variants_; }
+        std::unordered_map<std::string, size_t>& variant_indices() { return variant_indices_; }
     };
 
     class ParametricType : public Type {

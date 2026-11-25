@@ -337,6 +337,11 @@ namespace parser {
             pos = move_positions_[pos - 1];
             return symbols_[symbols_.size() - pos].type_token();
         }
+        Loc         PatternLocGet(size_t pos) {
+            PatternIndexCheck(pos);
+            pos = move_positions_[pos - 1];
+            return symbols_[symbols_.size() - pos].loc();
+        }
         
         bool   IsOptPatternEmpty(size_t pos) {
             PatternIndexCheck(pos);

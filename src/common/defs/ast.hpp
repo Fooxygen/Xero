@@ -9,6 +9,7 @@
 #include <memory>
 #include <vector>
 #include <utility>
+#include <variant>
 
 #include "common/defs/loc.hpp"
 #include "common/defs/path.hpp"
@@ -21,6 +22,7 @@
 namespace sema {
     class Type;
     class FnSign;
+    class EnumVariant;
 }
 
 // Type of Abstract Syntax Tree's Node
@@ -54,6 +56,7 @@ enum class AstType {
     StructLitExpr,      //  struct literal
     FieldInitExpr,      //  field initializer
     FieldAccessExpr,    //  accessing field
+    EnumDeclExpr,       //  enum declaration
     PathExpr,           //  a::b::c
     UseExpr,            //  use a::b::c
 
@@ -97,6 +100,7 @@ inline AstType BaseOfAstType(AstType type) {
         case StructLitExpr:
         case FieldInitExpr:
         case FieldAccessExpr:
+        case EnumDeclExpr:
         case PathExpr:
         case UseExpr:
             return Expr;
@@ -813,12 +817,51 @@ public:
         return node;
     }
 };
+class EnumDeclExpr      : public Expr {
+public:
+    std::string                name_ = "";
+    std::unique_ptr<BlockExpr> body_ = nullptr;
+
+public:
+    EnumDeclExpr(const std::string& name, std::unique_ptr<BlockExpr> body)
+    :   name_(name),
+        body_(std::move(body))
+    {
+        type_ = AstType::EnumDeclExpr;
+    }
+
+    std::string TypeName() const override {
+        return "EnumDeclExpr";
+    }
+
+    void PrintImpl(const std::string& prefix) override {
+        PrintLabel("name", prefix); {
+            std::cerr << COLOR_BLUE << name_ << COLOR_DEFAULT << std::endl;
+        }
+
+        if (body_) body_->Print(prefix, "body");
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        auto node = std::make_unique<EnumDeclExpr>(name_, ChildClone(body_));
+        node->resolved_type_ = resolved_type_;
+        node->loc_ = loc_;
+        return node;
+    }
+};
 class PathExpr          : public Expr {
+public:
+    using ResolvedTarget = std::variant<
+        std::monostate,
+        const DeclExpr*,
+        const sema::EnumVariant*
+    >;
+
 public:
     std::vector<std::unique_ptr<IdExpr>> segments_ = {};
 
 public:
-    const DeclExpr* module_const_decl_ = nullptr;
+    ResolvedTarget resolved_target_;
 
 public:
     PathExpr(std::vector<std::unique_ptr<IdExpr>>& segments)
@@ -842,10 +885,20 @@ public:
         }
         
         auto node = std::make_unique<PathExpr>(segments);
-        node->module_const_decl_ = module_const_decl_;
-        node->resolved_type_     = resolved_type_;
+        node->resolved_target_ = resolved_target_;
+        node->resolved_type_   = resolved_type_;
         node->loc_ = loc_;
         return node;
+    }
+
+    const DeclExpr*          ModuleConstDeclGet() const {
+        if (auto* decl = std::get_if<const DeclExpr*>(&resolved_target_)) return *decl;
+        return nullptr;
+    }
+    
+    const sema::EnumVariant* EnumVariantGet()     const {
+        if (auto* var  = std::get_if<const sema::EnumVariant*>(&resolved_target_)) return *var;
+        return nullptr;
     }
 };
 class UseExpr           : public Expr {

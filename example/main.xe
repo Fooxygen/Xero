@@ -1,107 +1,20 @@
 
-use xero::math
+enum color {
+    red;
+    green;
+    blue;
 
-fn test_const() {
-    println("--- const ---");
-    println(math::i32_min);
-    println(math::i32_max);
-    println(math::i64_min);
-    println(math::i64_max);
-    println(math::eps);
-    println(math::eps2);
-    println(math::pi);
-    println(math::pi_inv);
-    println(math::tau);
-    println(math::e);
-}
+    fn is_warm() -> bool {
+        return self == color::red;
+    }
 
-fn test_int() {
-    println("--- int ---");
-
-    a:  i64 = -5;
-    lo: i64 = 1;
-    hi: i64 = 5;
-    x:  i64 = 9;
-
-    println(math::abs(-5));
-    println(math::abs(a));
-    println(math::abs(math::i32_min));
-    println(math::abs(math::i64_min));
-
-    println(math::min(3, 7));
-    println(math::min(a, hi));
-    println(math::max(3, 7));
-    println(math::max(a, hi));
-
-    println(math::clamp(9, 1, 5));
-    println(math::clamp(x, lo, hi));
-}
-
-fn test_f32() {
-    println("--- f32 ---");
-
-    a: f32 = f32(-2.5);
-    b: f32 = f32(2.0);
-    c: f32 = f32(3.0);
-
-    println(math::abs(a));
-    println(math::min(a, b));
-    println(math::max(a, b));
-    println(math::clamp(c, a, b));
-
-    println(math::trunc(a));
-    println(math::floor(a));
-    println(math::ceil(a));
-    println(math::round(a));
-    println(math::fract(a));
-
-    println(math::sqrt(c));
-    println(math::pow(b, c));
-    println(math::exp(b));
-    println(math::ln(b));
-    println(math::log2(c));
-    println(math::log10(c));
-    println(math::log(c, b));
-
-    println(math::sin(a));
-    println(math::cos(a));
-    println(math::tan(a));
-}
-
-fn test_f64() {
-    println("--- f64 ---");
-
-    a: f64 = -2.5;
-    b: f64 = 2.0;
-    c: f64 = 3.0;
-
-    println(math::abs(a));
-    println(math::min(a, b));
-    println(math::max(a, b));
-    println(math::clamp(c, a, b));
-
-    println(math::trunc(a));
-    println(math::floor(a));
-    println(math::ceil(a));
-    println(math::round(a));
-    println(math::fract(a));
-
-    println(math::sqrt(c));
-    println(math::pow(b, c));
-    println(math::exp(b));
-    println(math::ln(b));
-    println(math::log2(c));
-    println(math::log10(c));
-    println(math::log(c, b));
-
-    println(math::sin(a));
-    println(math::cos(a));
-    println(math::tan(a));
+    fn @print() {
+        if   (self == color::red)   print("Red");
+        elif (self == color::green) print("Green");
+        else                        print("Blue");
+    }
 }
 
 fn main() {
-    test_const();
-    test_int();
-    test_f32();
-    test_f64();
+
 }

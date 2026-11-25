@@ -36,7 +36,7 @@ namespace xcompiler {
         auto method_sign = method->SignLookup(sign);
 
         auto it = methods_.find(method_sign);
-        if (it != methods_.end()) {
+        if (it != methods_.end() && !dynamic_cast<NativeFnImpl*>(it->second.get())) {
             throw LogErr(LogStage::Xcompiler, std::format(
                 "redefinition implementation of method {} for type '{}', signature is {}",
                 name, def_basic->name(), sign.ParamsPrint()

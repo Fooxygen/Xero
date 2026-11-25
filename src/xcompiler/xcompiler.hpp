@@ -52,6 +52,11 @@ namespace xcompiler {
                                 (sema::StructType*)((StructDeclExpr&)*child).resolved_type_
                             );
                         }
+                        if (child->type_ == AstType::EnumDeclExpr) {
+                            TypeImplTable::Init_enum(
+                                (sema::EnumType*)((EnumDeclExpr&)*child).resolved_type_
+                            );
+                        }
                     }
                 }
             }

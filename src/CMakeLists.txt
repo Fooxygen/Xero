@@ -40,6 +40,7 @@ add_executable(xero
     xcompiler/defs/types_init/array.cpp
     xcompiler/defs/types_init/range.cpp
     xcompiler/defs/types_init/struct.cpp
+    xcompiler/defs/types_init/enum.cpp
     xcompiler/builtin.cpp
     xcompiler/ir/utility.cpp
     xcompiler/ir/gen.cpp

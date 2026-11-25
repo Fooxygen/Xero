@@ -69,6 +69,7 @@ namespace xcompiler {
         // Init
 
         static void Init_struct(sema::StructType* type);
+        static void Init_enum(sema::EnumType* type);
         static void Init();
 
         // Other
