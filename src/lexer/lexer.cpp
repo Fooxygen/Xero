@@ -36,6 +36,10 @@ namespace lexer {
                     CharNext();
                     return TokenGen(TT::Eq, "==");
                 }
+                if (cn == '>') {
+                    CharNext();
+                    return TokenGen(TT::FatArrow, "=>");
+                }
                 if (cn == ']') {
                     CharNext();
                     return TokenGen(TT::REBkt, "=]");
@@ -242,7 +246,7 @@ namespace lexer {
                 case 'n':  bytes += '\n'; break;
                 case 't':  bytes += '\t'; break;
                 case 'r':  bytes += '\r'; break;
-                case '\'': bytes += '\'';  break;
+                case '\'': bytes += '\''; break;
                 case '\\': bytes += '\\'; break;
                 default:
                     throw LogErr(LogStage::Lexer, std::format(

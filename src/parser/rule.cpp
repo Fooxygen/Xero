@@ -85,7 +85,15 @@ namespace parser {
             }
         };
 
-        // Pack Auxiliary
+        // Utility
+
+        static auto PathGet        = [](std::unique_ptr<PathExpr> pathexpr) {
+            Path path = {};
+            for (auto& seg : pathexpr->segments_) {
+                path.Add(seg->name_);
+            }
+            return path;
+        };
 
         static auto Pack2BlockExpr = [](ASTNODE stmt)
             -> std::unique_ptr<BlockExpr>
@@ -97,14 +105,6 @@ namespace parser {
             std::vector<ASTNODE> children;
             children.emplace_back(std::move(stmt));
             return std::make_unique<BlockExpr>(children);
-        };
-
-        static auto PathGet       = [](std::unique_ptr<PathExpr> pathexpr) {
-            Path path = {};
-            for (auto& seg : pathexpr->segments_) {
-                path.Add(seg->name_);
-            }
-            return path;
         };
 
         static auto Pack2Exprs     = [](Parser& parser, size_t pos)
@@ -122,6 +122,50 @@ namespace parser {
             std::vector<std::unique_ptr<Expr>> exprs;
             exprs.emplace_back(parser.Move<Expr>(pos));
             return std::make_unique<Exprs>(exprs);
+        };
+
+        static std::function<std::unique_ptr<Pattern>(std::unique_ptr<Expr>)>
+                    Pack2Pattern   = [](std::unique_ptr<Expr> expr)
+            -> std::unique_ptr<Pattern>
+        {
+            // Wildcard Pattern
+            if      (expr->type_ == AT::IdExpr && ((IdExpr&)*expr).name_ == "_") {
+                auto pattern = std::make_unique<WildcardPattern>();
+                pattern->loc_ = expr->loc_;
+                return pattern;
+            }
+
+            // Struct Pattern
+            else if (expr->type_ == AT::StructLitExpr) {
+                auto& structlitexpr = (StructLitExpr&)*expr;
+
+                // Fields
+                std::vector<StructPattern::Field> fields = {};
+                for (auto& child : structlitexpr.body_->children_) {
+                    auto& field = (FieldInitExpr&)*child;
+
+                    fields.emplace_back(StructPattern::Field{
+                        field.id_->name_,
+                        Pack2Pattern(std::move(field.value_)),
+                        field.loc_
+                    });
+                }
+
+                auto pattern = std::make_unique<StructPattern>(
+                    std::move(structlitexpr.lit_type_),
+                    std::move(fields)
+                );
+                pattern->loc_ = structlitexpr.loc_;
+                return pattern;
+            }
+
+            // Const Pattern
+            else {
+                Loc loc = expr->loc_;
+                auto pattern = std::make_unique<ConstPattern>(std::move(expr));
+                pattern->loc_ = loc;
+                return pattern;
+            }
         };
 
         rules_.clear();
@@ -530,9 +574,33 @@ namespace parser {
                         );
                     }
 
+                    // Fields
+                    auto blockexpr = Move<BlockExpr>(2);
+                    std::vector<ASTNODE> fields = {};
+                    for (auto& child : blockexpr->children_) {
+                        if (child->type_ == AT::Exprs) {
+                            for (auto& expr : ((Exprs&)*child).exprs_) {
+                                fields.emplace_back(std::move(expr));
+                            }
+                        }
+                        else {
+                            fields.emplace_back(std::move(child));
+                        }
+                    }
+
+                    for (auto& field : fields) {
+                        if (field->type_ != AT::FieldInitExpr) {
+                            throw LogErr(LogStage::Parser, std::format(
+                                "member of struct literal must be a field initializer, not '{}'",
+                                field->TypeName()
+                            ), field->loc_);
+                        }
+                    }
+                    blockexpr->children_ = std::move(fields);
+
                     return std::make_unique<StructLitExpr>(
                         std::move(type_expr),
-                        Move<BlockExpr>(2)
+                        std::move(blockexpr)
                     );
                 },
                 PATS_INIT{ TT::Arrow, TT::Struct, TT::Enum }
@@ -776,7 +844,7 @@ namespace parser {
                 [this](auto) -> ASTNODE {
                     return Move<Expr>(2);
                 },
-                PATS_INIT{ TT::If, TT::Elif, TT::For, TT::While },
+                PATS_INIT{ TT::If, TT::Elif, TT::For, TT::While, TT::Match },
                 {},
                 TTS_INIT{ TT::LBrace, TT::Arrow }
             );
@@ -992,7 +1060,7 @@ namespace parser {
             );
         }
 
-        // Logic Stmt
+        // Logic
 
         // └─ if (cond) stmt/blockexpr -> condstmt
         {
@@ -1114,6 +1182,74 @@ namespace parser {
                         nullptr
                     );
                     return stmt;
+                }
+            );
+        }
+
+        // Match
+
+        // └─ match ( expr ) blockexpr -> matchstmt
+        {
+            RuleAdd(
+                PATS_INIT{
+                    TT::Match,
+                    TT::LParen,
+                    AT::Expr,
+                    TT::RParen,
+                    AT::BlockExpr
+                },
+                [this](auto) {
+                    auto target = Move<Expr>(3);
+                    auto body   = Move<BlockExpr>(5);
+
+                    // Branch
+                    for (auto& child : body->children_) {
+                        if (child->type_ != AT::MatchBranchExpr) {
+                            throw LogErr(LogStage::Parser, "invalid match branch", child->loc_);
+                        }
+                    }
+
+                    return std::make_unique<MatchStmt>(
+                        std::move(target),
+                        std::move(body)
+                    );
+                }
+            );
+        }
+
+        // └─ expr => blockexpr -> matchbranchexpr
+        {
+            RuleAdd(
+                PATS_INIT{
+                    AT::Expr,
+                    TT::FatArrow,
+                    AT::BlockExpr
+                },
+                [this](auto) {
+                    return std::make_unique<MatchBranchExpr>(
+                        Pack2Pattern(Move<Expr>(1)),
+                        Move<BlockExpr>(3)
+                    );
+                }
+            );
+        }
+
+        // └─ else => blockexpr -> matchbranchexpr
+        {
+            RuleAdd(
+                PATS_INIT{
+                    TT::Else,
+                    TT::FatArrow,
+                    AT::BlockExpr
+                },
+                [this](auto) {
+                    auto pattern = std::make_unique<WildcardPattern>();
+                    pattern->loc_ = PatternLocGet(1);
+
+                    return std::make_unique<MatchBranchExpr>(
+                        std::move(pattern),
+                        Move<BlockExpr>(3)
+                    );
                 }
             );
         }

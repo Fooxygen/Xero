@@ -157,7 +157,7 @@ namespace xcompiler {
 
     // Module Constant
 
-    llvm::Constant* IRGen::ModuleConstantValueGet(const DeclExpr* node) {
+    llvm::Constant*   IRGen::ModuleConstantValueGet(const DeclExpr* node) {
 
         // Cache
         if (auto it = module_constant_values_.find(node); it != module_constant_values_.end()) {
@@ -186,7 +186,7 @@ namespace xcompiler {
         return value;
     }
 
-    llvm::Constant* IRGen::ModuleConstantCast(llvm::Constant* value, sema::Type* from, sema::Type* to) {
+    llvm::Constant*   IRGen::ModuleConstantCast(llvm::Constant* value, sema::Type* from, sema::Type* to) {
         if (from == to) return value;
 
         const auto& f = from->name();
@@ -286,72 +286,72 @@ namespace xcompiler {
         ));
     }
 
-    llvm::Constant* IRGen::ModuleConstantEval(Expr& node, sema::Type* expected) {
+    llvm::Constant*   IRGen::ModuleConstantEval(Expr& node, sema::Type* expected) {
         using enum OperType;
 
-        if (auto* num       = dynamic_cast<NumConst*>(&node)) {
+        if (auto* numconst   = dynamic_cast<NumConst*>(&node)) {
             return ModuleConstantCast(
-                (llvm::Constant*)Process(*num),
-                num->resolved_type_,
+                (llvm::Constant*)Process(*numconst),
+                numconst->resolved_type_,
                 expected
             );
         }
-        if (auto* boolean   = dynamic_cast<BoolConst*>(&node)) {
+        if (auto* boolconst  = dynamic_cast<BoolConst*>(&node)) {
             return ModuleConstantCast(
-                (llvm::Constant*)Process(*boolean),
-                boolean->resolved_type_,
+                (llvm::Constant*)Process(*boolconst),
+                boolconst->resolved_type_,
                 expected
             );
         }
-        if (auto* character = dynamic_cast<CharConst*>(&node)) {
+        if (auto* charconst  = dynamic_cast<CharConst*>(&node)) {
             return ModuleConstantCast(
-                (llvm::Constant*)Process(*character),
-                character->resolved_type_,
+                (llvm::Constant*)Process(*charconst),
+                charconst->resolved_type_,
                 expected
             );
         }
-        if (auto* fncall    = dynamic_cast<FnCallExpr*>(&node); fncall && fncall->cast_type_) {
-            auto& arg  = *fncall->args_->exprs_[0];
+        
+        if (auto* fncallexpr = dynamic_cast<FnCallExpr*>(&node); fncallexpr && fncallexpr->cast_type_) {
+            auto& arg  = *fncallexpr->args_->exprs_[0];
             auto* from = arg.resolved_type_->ReferenceUnwrap();
             auto* result = ModuleConstantCast(
                 ModuleConstantEval(arg, from),
                 from,
-                fncall->cast_type_
+                fncallexpr->cast_type_
             );
 
-            return ModuleConstantCast(result, fncall->cast_type_, expected);
+            return ModuleConstantCast(result, fncallexpr->cast_type_, expected);
         }
-
-        if (auto* id        = dynamic_cast<IdExpr*>(&node)) {
-            if (!id->module_const_decl_) {
+        if (auto* idexpr     = dynamic_cast<IdExpr*>(&node)) {
+            if (!idexpr->module_const_decl_) {
                 throw LogErr(LogStage::Xcompiler, std::format(
-                    "identifier '{}' is not a module constant", id->name_
-                ), id->loc_);
+                    "identifier '{}' is not a module constant", idexpr->name_
+                ), idexpr->loc_);
             }
             return ModuleConstantCast(
-                ModuleConstantValueGet(id->module_const_decl_),
-                id->module_const_decl_->resolved_type_,
+                ModuleConstantValueGet(idexpr->module_const_decl_),
+                idexpr->module_const_decl_->resolved_type_,
                 expected
             );
         }
-        if (auto* path      = dynamic_cast<PathExpr*>(&node)) {
-            if (auto* decl    = path->ModuleConstDeclGet()) {
+        if (auto* pathexpr   = dynamic_cast<PathExpr*>(&node)) {
+            if (auto* decl    = pathexpr->ModuleConstDeclGet()) {
                 return ModuleConstantCast(
                     ModuleConstantValueGet(decl),
                     decl->resolved_type_,
                     expected
                 );
             }
-            if (auto* variant = path->EnumVariantGet()) {
+            if (auto* variant = pathexpr->EnumVariantGet()) {
                 return ModuleConstantCast(
-                    llvm::ConstantInt::get(LlvmType(path->resolved_type_), variant->index_),
-                    path->resolved_type_,
+                    llvm::ConstantInt::get(LlvmType(pathexpr->resolved_type_), variant->index_),
+                    pathexpr->resolved_type_,
                     expected
                 );
             }
 
             throw LogErr(LogStage::Xcompiler,
-                "path is not a module constant or enum variant", path->loc_);
+                "path is not a module constant or enum variant", pathexpr->loc_);
         }
 
         // Operation

@@ -15,6 +15,120 @@ enum color {
     }
 }
 
-fn main() {
+struct point {
+    x: i32;
+    y: i32;
+}
 
+struct line {
+    start: point;
+    end: point;
+}
+
+fn match_test_enum() {
+    println("--- enum match ---");
+
+    c1: color = color::red;
+    match (c1) {
+        color::red   => { println("red"); }
+        color::green => { println("green"); }
+        color::blue  => { println("blue"); }
+    }
+
+    c2: color = color::green;
+    match (c2) {
+        color::red => { println("red"); }
+        else       => { println("non-red"); }
+    }
+}
+
+fn match_test_scalar() {
+    println("--- scalar match ---");
+
+    x: i32 = 1;
+    match (x) {
+        0 => { println("i32 zero"); }
+        1 => { println("i32 one"); }
+        else => { println("i32 other"); }
+    }
+
+    y: i32 = 2;
+    match (y) {
+        0 => { println("i32 zero"); }
+        1 => { println("i32 one"); }
+        else => { println("i32 other"); }
+    }
+
+    z: i64 = 3;
+    match (z) {
+        1 => { println("i64 one"); }
+        3 => { println("i64 three"); }
+        else => { println("i64 other"); }
+    }
+
+    w: i64 = 6;
+    match (w) {
+        1 => { println("i64 one"); }
+        3 => { println("i64 three"); }
+        else => { println("i64 other"); }
+    }
+
+    ch1: char = 'a';
+    match (ch1) {
+        'a' => { println("char a"); }
+        'b' => { println("char b"); }
+        else => { println("char other"); }
+    }
+
+    ch2: char = 'c';
+    match (ch2) {
+        'a' => { println("char a"); }
+        'b' => { println("char b"); }
+        else => { println("char other"); }
+    }
+
+    b: bool = true;
+    match (b) {
+        true  => { println("true"); }
+        false => { println("false"); }
+    }
+}
+
+fn match_test_struct() {
+    println("--- struct match ---");
+
+    p: point = point { x = 0, y = 5 };
+    match (p) {
+        point { x = 0, y = 0 } => { println("origin"); }
+        point { x = 0, y = _ } => { println("y-axis"); }
+        else                   => { println("other point"); }
+    }
+
+    q: point = point { x = 7, y = 8 };
+    match (q) {
+        point { x = 0 } => { println("x = 0"); }
+        point { }       => { println("any point"); }
+    }
+
+    l: line = line {
+        start = point { x = 0, y = 0 },
+        end   = point { x = 1, y = 2 }
+    };
+    match (l) {
+        line { start = point { x = 0, y = 0 }, end = _ } => {
+            println("start origin");
+        }
+        line { start = _, end = point { x = 1, y = 2 } } => {
+            println("end target");
+        }
+        else => {
+            println("other line");
+        }
+    }
+}
+
+fn main() {
+    match_test_enum();
+    match_test_scalar();
+    match_test_struct();
 }

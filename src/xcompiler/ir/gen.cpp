@@ -995,6 +995,144 @@ namespace xcompiler {
         return nullptr;
     }
 
+    llvm::Value* IRGen::Process(MatchStmt& node) {
+        auto* target_type = node.target_->resolved_type_->ReferenceUnwrap();
+        auto* target_val  = ExprValGet(*node.target_);
+
+        // Blocks
+        auto* fn          = llvm_builder().GetInsertBlock()->getParent();
+        auto* block_end   = BlockCreate(".match.end", fn);
+
+        // Struct Target
+        if (auto* struct_type = dynamic_cast<sema::StructType*>(target_type)) {
+            auto* target_slot = SlotCreate(LlvmType(struct_type), ".match.target");
+            llvm_builder().CreateStore(target_val, target_slot);
+
+            std::function<llvm::Value*(Pattern&, llvm::Value*, sema::Type*)>
+                PatternTest = [&](Pattern& pattern, llvm::Value* addr, sema::Type* type)
+                -> llvm::Value*
+            {
+                switch (pattern.type_) {
+
+                    // Wildcard Pattern
+                    case AstType::WildcardPattern: {
+                        return llvm_builder().getTrue();
+                    }
+
+                    // Const Pattern
+                    case AstType::ConstPattern: {
+                        auto& const_pattern = (ConstPattern&)pattern;
+                        auto* value         = llvm_builder().CreateLoad(
+                            LlvmType(type), addr
+                        );
+                        auto* constant = ModuleConstantEval(
+                            *const_pattern.value_, type
+                        );
+
+                        return llvm_builder().CreateICmpEQ(value, constant);
+                    }
+
+                    // Struct Pattern
+                    case AstType::StructPattern: {
+                        auto& struct_pattern         = (StructPattern&)pattern;
+                        auto* field_struct_type      = (sema::StructType*)type;
+                        auto* field_struct_llvm_type = StructTypeGet(field_struct_type);
+                        llvm::Value* result          = llvm_builder().getTrue();
+
+                        for (auto& field : struct_pattern.fields_) {
+                            auto  it           = field_struct_type->field_indices().find(field.id_);
+                            auto& target_field = field_struct_type->fields()[it->second];
+                            auto* field_addr   = llvm_builder().CreateStructGEP(
+                                field_struct_llvm_type, addr, target_field.index_
+                            );
+
+                            auto* test = PatternTest(
+                                *field.pattern_,
+                                field_addr,
+                                target_field.type_
+                            );
+                            result = llvm_builder().CreateAnd(result, test);
+                        }
+
+                        return result;
+                    }
+
+                    default: {
+                        throw LogErr(LogStage::Xcompiler, "invalid match pattern", pattern.loc_);
+                    }
+                }
+            };
+
+            // Branches
+            auto& branches = node.body_->children_;
+            for (size_t i = 0; i < branches.size(); i++) {
+                auto& branch = (MatchBranchExpr&)*branches[i];
+
+                // Wildcard Pattern
+                if (branch.pattern_->type_ == AstType::WildcardPattern) {
+                    Process(*branch.body_);
+                    BlockTermCreate(block_end);
+                    break;
+                }
+
+                // Test
+                auto* block_body = BlockCreate(".match.body", fn);
+                auto* block_next = i + 1 < branches.size()
+                    ? BlockCreate(".match.next", fn)
+                    : block_end;
+
+                auto* test = PatternTest(
+                    *branch.pattern_, target_slot, struct_type
+                );
+                llvm_builder().CreateCondBr(test, block_body, block_next);
+
+                // Body
+                llvm_builder().SetInsertPoint(block_body);
+                Process(*branch.body_);
+                BlockTermCreate(block_end);
+
+                if (i + 1 >= branches.size()) break;
+                llvm_builder().SetInsertPoint(block_next);
+            }
+
+            llvm_builder().SetInsertPoint(block_end);
+            return nullptr;
+        }
+
+        // Const Target
+        else {
+            auto* switch_inst = llvm_builder().CreateSwitch(target_val, block_end);
+
+            for (auto& child : node.body_->children_) {
+                auto& branch = (MatchBranchExpr&)*child;
+                auto* block  = BlockCreate(".match.branch", fn);
+
+                // Const Pattern
+                if (branch.pattern_->type_ == AstType::ConstPattern) {
+                    auto& pattern  = (ConstPattern&)*branch.pattern_;
+                    auto* constant = llvm::cast<llvm::ConstantInt>(
+                        ModuleConstantEval(*pattern.value_, target_type)
+                    );
+                    switch_inst->addCase(constant, block);
+                }
+
+                // Wildcard Pattern
+                if (branch.pattern_->type_ == AstType::WildcardPattern) {
+                    switch_inst->setDefaultDest(block);
+                }
+
+                // Body
+                llvm_builder().SetInsertPoint(block);
+                Process(*branch.body_);
+                BlockTermCreate(block_end);
+            }
+
+            llvm_builder().SetInsertPoint(block_end);
+        }
+        
+        return nullptr;
+    }
+
     llvm::Value* IRGen::Process(LoopSignalStmt& node) {
         if (state_.loop_nextblocks_.empty()) {
             throw LogErr(LogStage::Xcompiler, "'break' or 'continue' outside of loop", node.loc_);

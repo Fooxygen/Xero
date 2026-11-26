@@ -39,6 +39,12 @@ enum class AstType {
     CharConst,          //  char
     StringConst,        //  string
 
+    // Pattern
+    Pattern,            //  base ------
+    ConstPattern,       //  constant
+    WildcardPattern,    //  wildcard
+    StructPattern,      //  struct
+
     // Expr
     Expr,               //  base ------
     BlockExpr,          //  astnode list
@@ -57,6 +63,7 @@ enum class AstType {
     FieldInitExpr,      //  field initializer
     FieldAccessExpr,    //  accessing field
     EnumDeclExpr,       //  enum declaration
+    MatchBranchExpr,    //  match branch
     PathExpr,           //  a::b::c
     UseExpr,            //  use a::b::c
 
@@ -65,6 +72,7 @@ enum class AstType {
     ExprStmt,           //  expr used as stmt
     AssignStmt,         //  assignment
     CondStmt,           //  condition
+    MatchStmt,          //  match
     LoopSignalStmt,     //  loop signal
     ReturnSignalStmt,   //  return signal
     ForStmt,            //  for
@@ -85,6 +93,13 @@ inline AstType BaseOfAstType(AstType type) {
         case Const:
             return Expr;
 
+        case ConstPattern:
+        case WildcardPattern:
+        case StructPattern:
+            return Pattern;
+        case Pattern:
+            return Expr;
+
         case BlockExpr:
         case TypeExpr:
         case DeclExpr:
@@ -101,6 +116,7 @@ inline AstType BaseOfAstType(AstType type) {
         case FieldInitExpr:
         case FieldAccessExpr:
         case EnumDeclExpr:
+        case MatchBranchExpr:
         case PathExpr:
         case UseExpr:
             return Expr;
@@ -108,6 +124,7 @@ inline AstType BaseOfAstType(AstType type) {
         case ExprStmt:
         case AssignStmt:
         case CondStmt:
+        case MatchStmt:
         case LoopSignalStmt:
         case ReturnSignalStmt:
         case ForStmt:
@@ -181,6 +198,8 @@ public:
 class Expr              : public AstNode {
 };
 class Const             : public Expr {
+};
+class Pattern           : public Expr {
 };
 class Stmt              : public AstNode {
 };
@@ -849,6 +868,41 @@ public:
         return node;
     }
 };
+class MatchBranchExpr   : public Expr {
+public:
+    std::unique_ptr<Pattern>   pattern_ = nullptr;
+    std::unique_ptr<BlockExpr> body_    = nullptr;
+
+public:
+    MatchBranchExpr(
+        std::unique_ptr<Pattern>   pattern,
+        std::unique_ptr<BlockExpr> body
+    )
+    :   pattern_(std::move(pattern)),
+        body_(std::move(body))
+    {
+        type_ = AstType::MatchBranchExpr;
+    }
+
+    std::string TypeName() const override {
+        return "MatchBranchExpr";
+    }
+
+    void PrintImpl(const std::string& prefix) override {
+        if (pattern_) pattern_->Print(prefix, "pattern");
+        if (body_)    body_->Print(prefix, "body");
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        auto node = std::make_unique<MatchBranchExpr>(
+            ChildClone(pattern_),
+            ChildClone(body_)
+        );
+        node->resolved_type_ = resolved_type_;
+        node->loc_ = loc_;
+        return node;
+    }
+};
 class PathExpr          : public Expr {
 public:
     using ResolvedTarget = std::variant<
@@ -1063,6 +1117,109 @@ public:
     }
 };
 
+// Pattern
+
+class ConstPattern      : public Pattern {
+public:
+    std::unique_ptr<Expr> value_ = nullptr;
+
+public:
+    ConstPattern(std::unique_ptr<Expr> value)
+    :   value_(std::move(value))
+    {
+        type_ = AstType::ConstPattern;
+    }
+
+    std::string TypeName() const override {
+        return "ConstPattern";
+    }
+
+    void PrintImpl(const std::string& prefix) override {
+        if (value_) value_->Print(prefix, "value");
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        auto node = std::make_unique<ConstPattern>(ChildClone(value_));
+        node->resolved_type_ = resolved_type_;
+        node->loc_ = loc_;
+        return node;
+    }
+};
+class WildcardPattern   : public Pattern {
+public:
+    WildcardPattern() {
+        type_ = AstType::WildcardPattern;
+    }
+
+    std::string TypeName() const override {
+        return "WildcardPattern";
+    }
+
+    void PrintImpl(const std::string& prefix) override {
+        PrintLabel("pattern", prefix);
+        std::cerr << COLOR_MAGENTA << "_" << COLOR_DEFAULT << std::endl;
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        auto node = std::make_unique<WildcardPattern>();
+        node->resolved_type_ = resolved_type_;
+        node->loc_ = loc_;
+        return node;
+    }
+};
+class StructPattern     : public Pattern {
+public:
+    class Field {
+    public:
+        std::string              id_      = "";
+        std::unique_ptr<Pattern> pattern_ = nullptr;
+        Loc                      loc_;
+    };
+
+public:
+    std::unique_ptr<TypeExpr> lit_type_ = nullptr;
+    std::vector<Field>        fields_   = {};
+
+public:
+    StructPattern(
+        std::unique_ptr<TypeExpr> lit_type,
+        std::vector<Field>        fields
+    )
+    :   lit_type_(std::move(lit_type)),
+        fields_(std::move(fields))
+    {
+        type_ = AstType::StructPattern;
+    }
+
+    std::string TypeName() const override {
+        return "StructPattern";
+    }
+
+    void PrintImpl(const std::string& prefix) override {
+        if (lit_type_) lit_type_->Print(prefix, "type");
+        for (auto& field : fields_) {
+            if (field.pattern_) field.pattern_->Print(prefix, field.id_);
+        }
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        std::vector<Field> fields = {};
+        for (auto& field : fields_) {
+            fields.emplace_back(Field{
+                field.id_, ChildClone(field.pattern_), field.loc_
+            });
+        }
+
+        auto node = std::make_unique<StructPattern>(
+            ChildClone(lit_type_),
+            std::move(fields)
+        );
+        node->resolved_type_ = resolved_type_;
+        node->loc_ = loc_;
+        return node;
+    }
+};
+
 // Stmt
 
 class ExprStmt          : public Stmt {
@@ -1160,6 +1317,41 @@ public:
             ChildClone(cond_),
             ChildClone(then_),
             ChildClone(next_)
+        );
+        node->resolved_type_ = resolved_type_;
+        node->loc_ = loc_;
+        return node;
+    }
+};
+class MatchStmt         : public Stmt {
+public:
+    std::unique_ptr<Expr>      target_ = nullptr;
+    std::unique_ptr<BlockExpr> body_   = nullptr;
+
+public:
+    MatchStmt(
+        std::unique_ptr<Expr>      target,
+        std::unique_ptr<BlockExpr> body
+    )
+    :   target_(std::move(target)),
+        body_(std::move(body))
+    {
+        type_ = AstType::MatchStmt;
+    }
+
+    std::string TypeName() const override {
+        return "MatchStmt";
+    }
+
+    void PrintImpl(const std::string& prefix) override {
+        if (target_) target_->Print(prefix, "target");
+        if (body_)   body_->Print(prefix, "body");
+    }
+
+    std::unique_ptr<AstNode> Clone() const override {
+        auto node = std::make_unique<MatchStmt>(
+            ChildClone(target_),
+            ChildClone(body_)
         );
         node->resolved_type_ = resolved_type_;
         node->loc_ = loc_;

@@ -28,22 +28,22 @@ namespace sema {
         if (dynamic_cast<CharConst*>(&node)) return true;
         
         // = expr, expr is constant
-        if (auto id     = dynamic_cast<IdExpr*>(&node)) {
-            return id->module_const_decl_ != nullptr;
+        if (auto idexpr     = dynamic_cast<IdExpr*>(&node)) {
+            return idexpr->module_const_decl_ != nullptr;
         }
-        if (auto path   = dynamic_cast<PathExpr*>(&node)) {
-            return path->ModuleConstDeclGet() != nullptr ||
-                   path->EnumVariantGet()     != nullptr;
+        if (auto pathexpr   = dynamic_cast<PathExpr*>(&node)) {
+            return pathexpr->ModuleConstDeclGet() != nullptr ||
+                   pathexpr->EnumVariantGet()     != nullptr;
         }
         
         // = T(expr), expr is constant expr
-        if (auto fncall = dynamic_cast<FnCallExpr*>(&node); fncall && fncall->cast_type_) {
-            return ModuleConstantStructureCheck(*fncall->args_->exprs_[0]);
+        if (auto fncallexpr = dynamic_cast<FnCallExpr*>(&node); fncallexpr && fncallexpr->cast_type_) {
+            return ModuleConstantStructureCheck(*fncallexpr->args_->exprs_[0]);
         }
         
         // = x + y..., simple expr
-        if (auto op     = dynamic_cast<OperExpr*>(&node)) {
-            switch (op->oper_type_) {
+        if (auto operexpr   = dynamic_cast<OperExpr*>(&node)) {
+            switch (operexpr->oper_type_) {
                 case Plus:
                 case Minus:
                 case Star:
@@ -57,8 +57,8 @@ namespace sema {
                     return false;
             }
 
-            if (!ModuleConstantStructureCheck(*op->lexpr_)) return false;
-            if (op->rexpr_ && !ModuleConstantStructureCheck(*op->rexpr_)) return false;
+            if (!ModuleConstantStructureCheck(*operexpr->lexpr_)) return false;
+            if (operexpr->rexpr_ && !ModuleConstantStructureCheck(*operexpr->rexpr_)) return false;
             return true;
         }
 
@@ -71,6 +71,155 @@ namespace sema {
                basic == module_constant_f32_  || basic == module_constant_f64_ ||
                basic == module_constant_bool_ || basic == module_constant_char_ ||
                dynamic_cast<EnumType*>(basic) != nullptr;
+    }
+
+    // Pattern
+
+    Analyzer::PatternResult Analyzer::PatternCheck(Pattern& node, Type* target_type) {
+        switch (node.type_) {
+            // Wildcard Pattern
+            case AstType::WildcardPattern: {
+                return PatternResult{ .always_match_ = true };
+            }
+
+            // Struct Pattern
+            case AstType::StructPattern: {
+                auto& pattern = (StructPattern&)node;
+
+                if (auto* target_struct_type = dynamic_cast<StructType*>(target_type)) {
+                    Process(*pattern.lit_type_);
+
+                    if (auto* pattern_struct_type = dynamic_cast<StructType*>(pattern.lit_type_->resolved_type_);
+                        pattern_struct_type && pattern_struct_type == target_struct_type
+                    ) {
+                        std::set<std::string> field_names  = {};
+                        bool                  always_match = true;
+
+                        for (auto& field : pattern.fields_) {
+
+                            // Field
+                            auto it = target_struct_type->field_indices().find(field.id_);
+                            if (it == target_struct_type->field_indices().end()) {
+                                throw LogErr(LogStage::Sema, std::format(
+                                    "undefined field '{}' in type '{}'",
+                                    field.id_, target_struct_type->name()
+                                ), field.loc_);
+                            }
+                            if (!field_names.emplace(field.id_).second) {
+                                throw LogErr(LogStage::Sema, std::format(
+                                    "duplicate field '{}' in struct pattern of type '{}'",
+                                    field.id_, target_struct_type->name()
+                                ), field.loc_);
+                            }
+
+                            // Pattern
+                            auto result = PatternCheck(
+                                *field.pattern_,
+                                target_struct_type->fields()[it->second].type_
+                            );
+                            always_match = always_match && result.always_match_;
+                        }
+
+                        return PatternResult{
+                            .always_match_ = always_match,
+                            .case_value_   = std::nullopt
+                        };
+                    }
+                    else {
+                        throw LogErr(LogStage::Sema, std::format(
+                            "cannot make type '{}' compatible with '{}'",
+                            pattern_struct_type->name(),
+                            target_struct_type->name()
+                        ), pattern.loc_);
+                    }
+                }
+                else {
+                    throw LogErr(LogStage::Sema, std::format(
+                        "struct pattern must match a struct type, not '{}'",
+                        target_type->name()
+                    ), pattern.loc_);
+                }
+            }
+
+            // Const Pattern
+            case AstType::ConstPattern: {
+                auto& pattern = (ConstPattern&)node;
+                Process(*pattern.value_);
+
+                // Enum
+                if (auto* target_enum_type = dynamic_cast<EnumType*>(target_type)) {
+                    auto* pathexpr     = dynamic_cast<PathExpr*>(pattern.value_.get());
+                    auto* enum_variant = pathexpr ? pathexpr->EnumVariantGet() : nullptr;
+
+                    // Exist as Enum Variant
+                    if (!enum_variant) {
+                        throw LogErr(LogStage::Sema,
+                            "match pattern must be an enum variant",
+                            pattern.loc_
+                        );
+                    }
+
+                    // Belong to Enum
+                    if (pathexpr->resolved_type_ != target_enum_type) {
+                        throw LogErr(LogStage::Sema, std::format(
+                            "undefined variant '{}' in enum '{}'",
+                            enum_variant->name_, target_enum_type->name()
+                        ), pattern.loc_);
+                    }
+
+                    return { false, (int64_t)enum_variant->index_ };
+                }
+
+                // Bool
+                if (target_type->Is("bool")) {
+                    auto* value = dynamic_cast<BoolConst*>(pattern.value_.get());
+                    if (!value) {
+                        throw LogErr(LogStage::Sema,
+                            "match pattern must be a 'bool' literal",
+                            pattern.loc_
+                        );
+                    }
+
+                    return { false, value->value_ ? 1 : 0 };
+                }
+
+                // Char
+                if (target_type->Is("char")) {
+                    auto* value = dynamic_cast<CharConst*>(pattern.value_.get());
+                    if (!value) {
+                        throw LogErr(LogStage::Sema,
+                            "match pattern must be a 'char' literal",
+                            pattern.loc_
+                        );
+                    }
+
+                    return { false, value->codepoint_ };
+                }
+
+                // Integer
+                if (target_type->Is("i32") || target_type->Is("i64")) {
+                    auto* value = dynamic_cast<NumConst*>(pattern.value_.get());
+                    if (!value || !AssignableCheck(value->resolved_type_, target_type)) {
+                        throw LogErr(LogStage::Sema,
+                            "match pattern must be an integer literal",
+                            pattern.loc_
+                        );
+                    }
+
+                    return { false, value->resolved_value_.integer_ };
+                }
+
+                // Unsupported
+                throw LogErr(LogStage::Sema, std::format(
+                    "constant pattern must match an enum or scalar type, not '{}'",
+                    target_type->name()
+                ), pattern.loc_);
+            }
+
+            default: {
+                throw LogErr(LogStage::Sema, "invalid match pattern", node.loc_);
+            }
+        }
     }
 
     // Declare
@@ -366,12 +515,12 @@ namespace sema {
         auto  basic_type = type_scope_.Resolve(node.basic_type_, aliases, node.loc_);
         Type* resolved   = nullptr;
 
-        // BasicType
+        // Basic Type
         if (!node.params_) {
             resolved = basic_type;
         }
 
-        // ParametricType
+        // Parametric Type
         else {
             std::vector<Type*> params = {};
             for (auto& e : node.params_->exprs_) {
@@ -397,7 +546,7 @@ namespace sema {
                 resolved = TypeTable::ParametricTypeGet(basic_type, params, node.loc_);
         }
 
-        // ReferenceType
+        // Reference Type
         if (node.is_referred_) {
             resolved = TypeTable::ReferenceTypeGet(resolved);
         }
@@ -885,13 +1034,12 @@ namespace sema {
         else {
             std::set<std::string> initialized = {};
 
-            std::function<void(AstNode&)> FieldInitProcess = [&](AstNode& child) {
-                auto* init = dynamic_cast<FieldInitExpr*>(&child);
+            std::function<void(FieldInitExpr*)> FieldInitProcess = [&](FieldInitExpr* init) {
                 if (!init) {
                     throw LogErr(LogStage::Sema, std::format(
                         "member of struct literal must be a field initializer, not '{}'",
-                        child.TypeName()
-                    ), child.loc_);
+                        init->TypeName()
+                    ), init->loc_);
                 }
 
                 // Undefined Field
@@ -925,14 +1073,7 @@ namespace sema {
             };
 
             for (auto& child : node.body_->children_) {
-                if (child->type_ == AstType::Exprs) {
-                    for (auto& expr : ((Exprs&)*child).exprs_) {
-                        FieldInitProcess(*expr);
-                    }
-                }
-                else {
-                    FieldInitProcess(*child);
-                }
+                FieldInitProcess((FieldInitExpr*)child.get());
             }
 
             node.resolved_type_ = struct_type;
@@ -1129,32 +1270,32 @@ namespace sema {
         Process(*node.target_);
         Process(*node.value_);
 
-        if (auto id   = dynamic_cast<IdExpr*>(node.target_.get())) {
+        if (auto idexpr   = dynamic_cast<IdExpr*>(node.target_.get())) {
             // Module Constant
-            if (id->module_const_decl_) {
+            if (idexpr->module_const_decl_) {
                 throw LogErr(LogStage::Sema, std::format(
-                    "cannot assign to constant '{}'", id->module_const_decl_->id_
+                    "cannot assign to constant '{}'", idexpr->module_const_decl_->id_
                 ), node.target_->loc_);
             }
             // Variable
-            if (auto var = var_scope_.LookupTry(id->name_)) {
+            if (auto var = var_scope_.LookupTry(idexpr->name_)) {
                 // Local Constant
                 if (var->modifier_ & VarModifier::Const) {
                     throw LogErr(LogStage::Sema, std::format(
-                        "cannot assign to constant '{}'", id->name_
+                        "cannot assign to constant '{}'", idexpr->name_
                     ), node.target_->loc_);
                 }
             }
         }
-        if (auto path = dynamic_cast<PathExpr*>(node.target_.get())) {
+        if (auto pathexpr = dynamic_cast<PathExpr*>(node.target_.get())) {
             // Constant
-            if (auto* module_constant = path->ModuleConstDeclGet()) {
+            if (auto* module_constant = pathexpr->ModuleConstDeclGet()) {
                 throw LogErr(LogStage::Sema, std::format(
                     "cannot assign to constant '{}'", module_constant->id_
                 ), node.target_->loc_);
             }
             // Enum
-            if (auto* enum_variant    = path->EnumVariantGet()) {
+            if (auto* enum_variant    = pathexpr->EnumVariantGet()) {
                 throw LogErr(LogStage::Sema, std::format(
                     "cannot assign to enum variant '{}'", enum_variant->name_
                 ), node.target_->loc_);
@@ -1189,6 +1330,121 @@ namespace sema {
 
         Process(*node.then_);
         if (node.next_) Process(*node.next_);
+    }
+
+    void Analyzer::Process(MatchStmt& node) {
+        node.resolved_type_ = TypeTable::Lookup("none");
+        Process(*node.target_);
+
+        auto* target_type           = node.target_->resolved_type_->ReferenceUnwrap();
+        auto* target_enum_type      = dynamic_cast<EnumType*>(target_type);
+        bool  is_target_scalar_type =
+            target_type->Is("i32")  || target_type->Is("i64") ||
+            target_type->Is("bool") || target_type->Is("char");
+
+        // Struct Target
+        if (dynamic_cast<StructType*>(target_type)) {
+            bool has_catch_all = false;
+
+            // Branches
+            for (auto& child : node.body_->children_) {
+                auto& branch = (MatchBranchExpr&)*child;
+
+                // Unreachable: an always-match branch exists before this
+                if (has_catch_all) {
+                    LogWarn(LogStage::Sema, "unreachable pattern", branch.loc_).Print();
+                }
+
+                // Pattern
+                auto result = PatternCheck(*branch.pattern_, target_type);
+                if (result.always_match_) {
+                    has_catch_all = true;
+                }
+
+                // Body
+                Process(*branch.body_);
+            }
+
+            // No Always-Match Branch
+            if (!has_catch_all) {
+                throw LogErr(LogStage::Sema, std::format(
+                    "match on type '{}' must have an 'else' pattern",
+                    target_type->name()
+                ), node.loc_);
+            }
+            
+            return;
+        }
+
+        // Const Target
+        else if (is_target_scalar_type || target_enum_type) {
+            std::set<int64_t> cases         = {};
+            bool              has_catch_all = false;
+
+            // Domain: finite domain size
+            //     - enum:        all of variant
+            //     - bool:        2
+            //     - other const: unrestricted
+            std::optional<size_t> domain = std::nullopt;
+            if      (target_enum_type) {
+                domain = target_enum_type->variants().size();
+            }
+            else if (target_type->Is("bool")) {
+                domain = 2;
+            }
+
+            // Branches
+            for (auto& child : node.body_->children_) {
+                auto& branch = (MatchBranchExpr&)*child;
+
+                // Unreachable:
+                //     - an always-match branch exists before this
+                //     - out of domain
+                if (has_catch_all || (domain && cases.size() == *domain)) {
+                    LogWarn(LogStage::Sema, "unreachable pattern", branch.loc_).Print();
+                }
+
+                // Pattern
+                auto result = PatternCheck(*branch.pattern_, target_type);
+                if (result.always_match_) {
+                    has_catch_all = true;
+                }
+                if (result.case_value_) {
+                    if (!cases.emplace(*result.case_value_).second) {
+                        throw LogErr(LogStage::Sema, "duplicate match pattern", branch.loc_);
+                    }
+                }
+
+                // Body
+                Process(*branch.body_);
+            }
+
+            // No Always-Match Branch
+            if (!has_catch_all) {
+                // Open domain
+                if (!domain) {
+                    throw LogErr(LogStage::Sema, std::format(
+                        "match on type '{}' must have an 'else' pattern",
+                        target_type->name()
+                    ), node.loc_);
+                }
+
+                // Incomplete Finite Domain
+                if (cases.size() != *domain) {
+                    throw LogErr(LogStage::Sema, std::format(
+                        "match expects {} patterns, got {}",
+                        *domain, cases.size()
+                    ), node.loc_);
+                }
+            }
+
+            return;
+        }
+
+        throw LogErr(LogStage::Sema, std::format(
+            "match target must be an enum, scalar, or struct type, not '{}'",
+            target_type->name()
+        ), node.target_->loc_);
     }
 
     void Analyzer::Process(ReturnSignalStmt& node) {

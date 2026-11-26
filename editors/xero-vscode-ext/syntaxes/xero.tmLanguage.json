@@ -73,7 +73,7 @@
             "patterns": [
                 {
                     "name": "keyword.operator.arrow.xero",
-                    "match": "->"
+                    "match": "->|=>"
                 },
                 {
                     "name": "keyword.operator.reference.xero",
@@ -117,7 +117,7 @@
         },
         "keywords": {
             "name": "keyword.control.xero",
-            "match": "\\b(use|if|elif|else|for|while|in|break|continue|fn|return|struct|enum|const)\\b"
+            "match": "\\b(use|if|elif|else|match|for|while|in|break|continue|fn|return|struct|enum|const)\\b"
         }
     }
 }

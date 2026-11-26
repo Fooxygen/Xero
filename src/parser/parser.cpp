@@ -107,6 +107,9 @@ namespace parser {
                 else if (token.lexeme_ == "else") {
                     token = Token(Else, token.lexeme_, token.loc_);
                 }
+                else if (token.lexeme_ == "match") {
+                    token = Token(Match, token.lexeme_, token.loc_);
+                }
                 
                 else if (token.lexeme_ == "in") {
                     token = Token(In, token.lexeme_, token.loc_);

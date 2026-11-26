@@ -113,6 +113,7 @@ namespace xcompiler {
         llvm::Value* Process(ExprStmt& node);
         llvm::Value* Process(AssignStmt& node);
         llvm::Value* Process(CondStmt& node);
+        llvm::Value* Process(MatchStmt& node);
         llvm::Value* Process(LoopSignalStmt& node);
         llvm::Value* Process(ReturnSignalStmt& node);
         llvm::Value* Process(ForStmt& node);
@@ -211,6 +212,7 @@ namespace xcompiler {
                 case AstType::ExprStmt:         return Process((ExprStmt&)node);
                 case AstType::AssignStmt:       return Process((AssignStmt&)node);
                 case AstType::CondStmt:         return Process((CondStmt&)node);
+                case AstType::MatchStmt:        return Process((MatchStmt&)node);
                 case AstType::LoopSignalStmt:   return Process((LoopSignalStmt&)node);
                 case AstType::ReturnSignalStmt: return Process((ReturnSignalStmt&)node);
                 case AstType::ForStmt:          return Process((ForStmt&)node);

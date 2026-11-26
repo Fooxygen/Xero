@@ -38,6 +38,7 @@ public:
         Quote,              //  "
         QuoteSingle,        //  '
         Arrow,              //  ->
+        FatArrow,           //  =>
         Amper,              //  &
         ColonColon,         //  ::
 
@@ -93,6 +94,7 @@ public:
         If,                 // if
         Elif,               // else if
         Else,               // else
+        Match,              // match
         In,                 // in
         For,                // for
         While,              // while
@@ -137,6 +139,7 @@ public:
             case Quote:
             case QuoteSingle:
             case Arrow:
+            case FatArrow:
             case Amper:
             case ColonColon:
                 return Unsemantic;
@@ -184,6 +187,7 @@ public:
             case If:
             case Elif:
             case Else:
+            case Match:
             case In:
             case For:
             case While:
@@ -228,6 +232,7 @@ public:
             case Quote:         return "Quote";
             case QuoteSingle:   return "QuoteSingle";
             case Arrow:         return "Arrow";
+            case FatArrow:      return "FatArrow";
             case Amper:         return "Amper";
             case ColonColon:    return "ColonColon";
 
@@ -269,6 +274,7 @@ public:
             case If:            return "if";
             case Elif:          return "elif";
             case Else:          return "else";
+            case Match:         return "match";
             case In:            return "in";
             case For:           return "for";
             case While:         return "while";

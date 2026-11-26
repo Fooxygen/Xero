@@ -51,6 +51,15 @@ namespace sema {
             return TypeTable::CommonTypeGet({ from->ReferenceUnwrap(), to }) == to;
         }
 
+        // Pattern
+
+        struct PatternResult {
+            bool                   always_match_ = false;
+            std::optional<int64_t> case_value_   = std::nullopt;
+        };
+
+        PatternResult PatternCheck(Pattern& node, Type* target_type);
+
         // Declare
 
         void Declare(DeclExpr& node);                                           // signature of global constant
@@ -87,6 +96,7 @@ namespace sema {
         void Process(ExprStmt& node);
         void Process(AssignStmt& node);
         void Process(CondStmt& node);
+        void Process(MatchStmt& node);
         void Process(ReturnSignalStmt& node);
         void Process(ForStmt& node);
         void Process(WhileStmt& node);
@@ -157,6 +167,7 @@ namespace sema {
                 case AstType::ExprStmt:         Process((ExprStmt&)node);          return;
                 case AstType::AssignStmt:       Process((AssignStmt&)node);        return;
                 case AstType::CondStmt:         Process((CondStmt&)node);          return;
+                case AstType::MatchStmt:        Process((MatchStmt&)node);         return;
                 case AstType::ReturnSignalStmt: Process((ReturnSignalStmt&)node);  return;
                 case AstType::ForStmt:          Process((ForStmt&)node);           return;
                 case AstType::WhileStmt:        Process((WhileStmt&)node);         return;
