@@ -247,17 +247,10 @@ namespace sema {
         std::vector<Type*> params_type = {};
         auto& params_expr = node.params_->exprs_;
         for (auto& e : params_expr) {
-            if (e->type_ != AstType::DeclExpr) {
-                throw LogErr(LogStage::Sema, std::format(
-                    "parameter of function must be a declaration, not '{}'",
-                    e->TypeName()
-                ), e->loc_);
-            }
-
-            auto expr = (DeclExpr*)e.get();
-            Process(*expr->bind_type_);
-            expr->resolved_type_ = expr->bind_type_->resolved_type_;
-            params_type.emplace_back(expr->resolved_type_);
+            auto declexpr = (DeclExpr*)e.get();
+            Process(*declexpr->bind_type_);
+            declexpr->resolved_type_ = declexpr->bind_type_->resolved_type_;
+            params_type.emplace_back(declexpr->resolved_type_);
         }
 
         // Signature

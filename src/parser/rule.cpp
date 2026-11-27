@@ -534,6 +534,132 @@ namespace parser {
             );
         }
 
+        // Function and Method
+
+        // └─ fieldaccessexpr(exprs?) -> methodcallexpr
+        {
+            RuleAdd(
+                PATS_INIT{
+                    AT::FieldAccessExpr,
+                    TT::LParen,
+                    SymbolPattern::Opt({ AT::Expr, AT::Exprs}),
+                    TT::RParen
+                },
+                [this](auto) {
+                    auto access = Move<FieldAccessExpr>(1);
+                    return std::make_unique<MethodCallExpr>(
+                        std::move(access->base_),
+                        std::move(access->field_),
+                        Pack2Exprs(*this, 3)
+                    );
+                }
+            );
+        }
+
+        // └─ <id, pathexpr> (exprs?) -> fncallexpr
+        {
+            RuleAdd(
+                PATS_INIT{
+                    SymbolPattern({ AT::IdExpr, AT::PathExpr }),
+                    TT::LParen,
+                    SymbolPattern::Opt({ AT::Expr, AT::Exprs}),
+                    TT::RParen
+                },
+                [this](auto) {
+                    return std::make_unique<FnCallExpr>(
+                        Move<Expr>(1),
+                        Pack2Exprs(*this, 3)
+                    );
+                },
+                PATS_INIT{ TT::Fn }
+            );
+        }
+
+        // └─ fn id?(exprs?) ->? <id, typeexpr, pathexpr>? blockexpr -> fnexpr
+        {
+            RuleAdd(
+                PATS_INIT{
+                    TT::Fn,
+                    SymbolPattern::Opt(AT::IdExpr),
+                    TT::LParen,
+                    SymbolPattern::Opt({ AT::Expr, AT::Exprs }),
+                    TT::RParen,
+                    SymbolPattern::Opt(TT::Arrow),
+                    SymbolPattern::Opt({ AT::IdExpr, AT::TypeExpr, AT::PathExpr }),
+                    AT::BlockExpr
+                },
+                [this](auto) -> ASTNODE {
+                    // Name
+                    std::string name = "";
+                    if (!IsOptPatternEmpty(2)) {
+                        name = Move<IdExpr>(2)->name_;
+                    }
+
+                    // Params
+                    auto params = Pack2Exprs(*this, 4);
+                    for (auto& param : params->exprs_) {
+                        if (param->type_ != AT::DeclExpr) {
+                            throw LogErr(LogStage::Parser, std::format(
+                                "parameter of function must be a declaration, not '{}'",
+                                param->TypeName()
+                            ), param->loc_);
+                        }
+                    }
+
+                    // Return Type
+                    bool has_arrow       = !IsOptPatternEmpty(6);
+                    bool has_return_type = !IsOptPatternEmpty(7);
+                    std::unique_ptr<TypeExpr> return_type = nullptr;
+
+                    if (has_arrow && !has_return_type) {
+                        throw LogErr(LogStage::Parser, "return type expected after '->'", PatternLocGet(6));
+                    }
+                    if (!has_arrow && has_return_type) {
+                        throw LogErr(LogStage::Parser, "function return type must follow '->'", PatternLocGet(7));
+                    }
+                    
+                    if (has_return_type) {
+                        if      (IsPattern(7, AT::IdExpr)) {
+                            return_type = std::make_unique<TypeExpr>(
+                                Move<IdExpr>(7)->name_, nullptr, false
+                            );
+                        }
+                        else if (IsPattern(7, AT::TypeExpr)) {
+                            return_type = Move<TypeExpr>(7);
+                        }
+                        else if (IsPattern(7, AT::PathExpr)) {
+                            return_type = std::make_unique<TypeExpr>(
+                                PathGet(Move<PathExpr>(7)), nullptr, false
+                            );
+                        }
+                    }
+
+                    return std::make_unique<FnExpr>(
+                        name,
+                        std::move(return_type),
+                        std::move(params),
+                        Move<BlockExpr>(8)
+                    );
+                }
+            );
+        }
+
+        // └─ return expr?; -> returnsignalstmt
+        {
+            RuleAdd(
+                PATS_INIT{
+                    TT::Return,
+                    SymbolPattern::Opt(AT::Expr),
+                    TT::Semicolon
+                },
+                [this](auto) {
+                    return std::make_unique<ReturnSignalStmt>(
+                        !IsOptPatternEmpty(2) ? Move<Expr>(2) : nullptr
+                    );
+                }
+            );
+        }
+
         // Struct and Field
 
         // └─ struct id blockexpr -> structdeclexpr
@@ -656,162 +782,6 @@ namespace parser {
                     return std::make_unique<EnumDeclExpr>(
                         Move<IdExpr>(2)->name_,
                         Move<BlockExpr>(3)
-                    );
-                }
-            );
-        }
-
-        // Function and Method
-
-        // └─ fieldaccessexpr(exprs?) -> methodcallexpr
-        {
-            RuleAdd(
-                PATS_INIT{
-                    AT::FieldAccessExpr,
-                    TT::LParen,
-                    SymbolPattern::Opt({ AT::Expr, AT::Exprs}),
-                    TT::RParen
-                },
-                [this](auto) {
-                    auto access = Move<FieldAccessExpr>(1);
-                    return std::make_unique<MethodCallExpr>(
-                        std::move(access->base_),
-                        std::move(access->field_),
-                        Pack2Exprs(*this, 3)
-                    );
-                }
-            );
-        }
-
-        // └─ <id, pathexpr> (exprs?) -> fncallexpr
-        {
-            RuleAdd(
-                PATS_INIT{
-                    SymbolPattern({ AT::IdExpr, AT::PathExpr }),
-                    TT::LParen,
-                    SymbolPattern::Opt({ AT::Expr, AT::Exprs}),
-                    TT::RParen
-                },
-                [this](auto) {
-                    return std::make_unique<FnCallExpr>(
-                        Move<Expr>(1),
-                        Pack2Exprs(*this, 3)
-                    );
-                },
-                PATS_INIT{ TT::Fn }
-            );
-        }
-
-        // └─ fn id?(exprs?) -> <id, typeexpr> blockexpr -> fnexpr
-        {
-            RuleAdd(
-                PATS_INIT{
-                    TT::Fn,
-                    SymbolPattern::Opt(AT::IdExpr),
-                    TT::LParen,
-                    SymbolPattern::Opt({ AT::Expr, AT::Exprs }),
-                    TT::RParen,
-                    TT::Arrow,
-                    SymbolPattern({ AT::IdExpr, AT::TypeExpr }),
-                    AT::BlockExpr
-                },
-                [this](auto) -> ASTNODE {
-                    std::string name = "";
-                    if (!IsOptPatternEmpty(2))
-                        name = Move<IdExpr>(2)->name_;
-
-                    if (IsPattern(7, AT::IdExpr)) {
-                        return std::make_unique<FnExpr>(
-                            name,
-                            std::make_unique<TypeExpr>(
-                                Move<IdExpr>(7)->name_,
-                                nullptr,
-                                false
-                            ),
-                            Pack2Exprs(*this, 4),
-                            Move<BlockExpr>(8)
-                        );
-                    }
-                    if (IsPattern(7, AT::TypeExpr)) {
-                        return std::make_unique<FnExpr>(
-                            name,
-                            Move<TypeExpr>(7),
-                            Pack2Exprs(*this, 4),
-                            Move<BlockExpr>(8)
-                        );
-                    }
-
-                    return nullptr;
-                }
-            );
-        }
-        // └─ fn id?(exprs?) -> pathexpr blockexpr -> fnexpr
-        {
-            RuleAdd(
-                PATS_INIT{
-                    TT::Fn,
-                    SymbolPattern::Opt(AT::IdExpr),
-                    TT::LParen,
-                    SymbolPattern::Opt({ AT::Expr, AT::Exprs }),
-                    TT::RParen,
-                    TT::Arrow,
-                    AT::PathExpr,
-                    AT::BlockExpr
-                },
-                [this](auto) {
-                    std::string name = "";
-                    if (!IsOptPatternEmpty(2))
-                        name = Move<IdExpr>(2)->name_;
-
-                    return std::make_unique<FnExpr>(
-                        name,
-                        std::make_unique<TypeExpr>(
-                            PathGet(Move<PathExpr>(7)),
-                            nullptr,
-                            false
-                        ),
-                        Pack2Exprs(*this, 4),
-                        Move<BlockExpr>(8)
-                    );
-                }
-            );
-        }
-        // └─ fn id?(exprs?) blockexpr -> fnexpr
-        {
-            RuleAdd(
-                PATS_INIT{
-                    TT::Fn,
-                    SymbolPattern::Opt(AT::IdExpr),
-                    TT::LParen,
-                    SymbolPattern::Opt({ AT::Expr, AT::Exprs }),
-                    TT::RParen,
-                    AT::BlockExpr
-                },
-                [this](auto) {
-                    std::string name = "";
-                    if (!IsOptPatternEmpty(2)) name = Move<IdExpr>(2)->name_;
-
-                    return std::make_unique<FnExpr>(
-                        name,
-                        nullptr,
-                        Pack2Exprs(*this, 4),
-                        Move<BlockExpr>(6)
-                    );
-                }
-            );
-        }
-
-        // └─ return expr?; -> returnsignalstmt
-        {
-            RuleAdd(
-                PATS_INIT{
-                    TT::Return,
-                    SymbolPattern::Opt(AT::Expr),
-                    TT::Semicolon
-                },
-                [this](auto) {
-                    return std::make_unique<ReturnSignalStmt>(
-                        !IsOptPatternEmpty(2) ? Move<Expr>(2) : nullptr
                     );
                 }
             );
