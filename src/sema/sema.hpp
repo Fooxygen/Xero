@@ -10,7 +10,7 @@
 #include "common/defs/ast.hpp"
 #include "context/module.hpp"
 #include "sema/defs/type.hpp"
-#include "sema/analyzer.hpp"
+#include "sema/analyzer/analyzer.hpp"
 
 namespace sema {
 

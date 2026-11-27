@@ -3,7 +3,7 @@
 //  Copyright (c) 2026 Fooxygen.
 //  Licensed under the MIT License.
 
-#include "sema/analyzer.hpp"
+#include "sema/analyzer/analyzer.hpp"
 
 namespace sema {
 

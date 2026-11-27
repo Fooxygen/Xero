@@ -23,13 +23,13 @@ namespace sema {
         TypeScope           type_scope_;            // global type scope
         FnScope&            fn_scope_;              // global function scope
 
-        // Module
-
-        const context::Module* module_ = nullptr;
-
         // Function
 
         size_t fn_depth_ = 0;
+
+        // Llvm Module
+
+        const context::Module* module_ = nullptr;
 
         // Module Constant
 
@@ -40,17 +40,6 @@ namespace sema {
         Type* module_constant_bool_ = nullptr;
         Type* module_constant_char_ = nullptr;
 
-        bool ModuleConstantStructureCheck(Expr& node);
-        bool ModuleConstantTypeSupported(Type* type);
-
-        // Type
-
-        bool AssignableCheck(Type* from, Type* to) {
-            if (from == to) return true;
-            if (dynamic_cast<ReferenceType*>(to)) return false;
-            return TypeTable::CommonTypeGet({ from->ReferenceUnwrap(), to }) == to;
-        }
-
         // Pattern
 
         struct PatternResult {
@@ -58,8 +47,7 @@ namespace sema {
             std::optional<int64_t> case_value_   = std::nullopt;
         };
 
-        PatternResult PatternCheck(Pattern& node, Type* target_type);
-
+    private:
         // Declare
 
         void Declare(DeclExpr& node);                                           // signature of global constant
@@ -111,17 +99,33 @@ namespace sema {
         FnScope&             fn_scope()           { return fn_scope_; }
 
     public:
-        // Builtin
+        // Utility
+
+        // └─ Builtin
 
         void BuiltinFnRegister();
 
-        // Module Constant
-
-        void ModuleConstantTypeCacheInit();     // init supported type for constant
-
-        // Module
+        // └─ Llvm Module
 
         void ModuleSet(const context::Module& module) { module_ = &module; }
+
+        // └─ Module Constant
+
+        void ModuleConstantTypeCacheInit();     // init supported type for constant
+        bool ModuleConstantStructureCheck(Expr& node);
+        bool ModuleConstantTypeSupported(Type* type);
+
+        // └─ Type
+
+        bool AssignableCheck(Type* from, Type* to) {
+            if (from == to) return true;
+            if (dynamic_cast<ReferenceType*>(to)) return false;
+            return TypeTable::CommonTypeGet({ from->ReferenceUnwrap(), to }) == to;
+        }
+
+        // └─ Pattern
+
+        PatternResult PatternCheck(Pattern& node, Type* target_type);
 
         // Declare
 
