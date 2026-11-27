@@ -671,9 +671,32 @@ namespace parser {
                     AT::BlockExpr
                 },
                 [this](auto) {
+                    auto name = Move<IdExpr>(2)->name_;
+                    auto body = Move<BlockExpr>(3);
+
+                    // Members
+                    for (auto& member : body->children_) {
+                        // Method
+                        if (member->type_ == AT::FnExpr) continue;
+
+                        // Field
+                        if (member->type_ == AT::ExprStmt) {
+                            auto& stmt = (ExprStmt&)*member;
+                            if (stmt.expr_->type_ == AT::DeclExpr) continue;
+                        }
+
+                        // Field: missing semicolon
+                        if (member->type_ == AT::DeclExpr) {
+                            throw LogErr(LogStage::Parser, "struct field must end with ';'", member->loc_);
+                        }
+
+                        // Invalid
+                        throw LogErr(LogStage::Parser, "invalid struct member", member->loc_);
+                    }
+
                     return std::make_unique<StructDeclExpr>(
-                        Move<IdExpr>(2)->name_,
-                        Move<BlockExpr>(3)
+                        name,
+                        std::move(body)
                     );
                 }
             );
@@ -779,9 +802,42 @@ namespace parser {
                     AT::BlockExpr
                 },
                 [this](auto) {
+                    auto name = Move<IdExpr>(2)->name_;
+                    auto body = Move<BlockExpr>(3);
+
+                    // Members
+                    size_t variant_cnt = 0;
+
+                    for (auto& member : body->children_) {
+                        // Method
+                        if (member->type_ == AT::FnExpr) continue;
+
+                        // Variant
+                        if (member->type_ == AT::ExprStmt) {
+                            auto& stmt = (ExprStmt&)*member;
+                            if (stmt.expr_->type_ == AT::IdExpr) {
+                                variant_cnt++;
+                                continue;
+                            }
+                        }
+
+                        // Variant: missing semicolon
+                        if (member->type_ == AT::IdExpr) {
+                            throw LogErr(LogStage::Parser, "enum variant must end with ';'", member->loc_);
+                        }
+
+                        // Invalid
+                        throw LogErr(LogStage::Parser, "invalid enum member", member->loc_);
+                    }
+
+                    // Variant: empty
+                    if (variant_cnt == 0) {
+                        throw LogErr(LogStage::Parser, "enum must have at least one variant", body->loc_);
+                    }
+
                     return std::make_unique<EnumDeclExpr>(
-                        Move<IdExpr>(2)->name_,
-                        Move<BlockExpr>(3)
+                        name,
+                        std::move(body)
                     );
                 }
             );

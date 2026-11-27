@@ -353,40 +353,27 @@ namespace sema {
 
                 // Members
                 for (auto& member : struct_decl.body_->children_) {
-
-                    // Expr wrapped by ExprStmt
-                    if      (auto* stmt = dynamic_cast<ExprStmt*>(member.get())) {
-                        auto member_child = stmt->expr_.get();
-                        
-                        // Field
-                        if (member_child->type_ == AstType::DeclExpr) {
-                            auto* field_decl = dynamic_cast<DeclExpr*>(member_child);
-
-                            Process(*field_decl->bind_type_);
-                            auto* field_type  = field_decl->bind_type_->resolved_type_;
-                            auto  field_index = struct_type->fields().size();
-
-                            if (!struct_type->field_indices().emplace(field_decl->id_, field_index).second) {
-                                throw LogErr(LogStage::Sema, std::format(
-                                    "redefinition of field '{}' in type '{}'",
-                                    field_decl->id_, struct_type->name()
-                                ), field_decl->loc_);
-                            }
-                            struct_type->fields().emplace_back(StructField{field_decl->id_, field_type, field_index});
-                        }
-                    }
-
                     // Method
-                    else if (member->type_ == AstType::FnExpr) {
+                    if (member->type_ == AstType::FnExpr) {
                         Declare((FnExpr&)*member, struct_type->method_table());
                     }
 
-                    else if (member->type_ == AstType::DeclExpr) {
-                        throw LogErr(LogStage::Sema, "struct field must end with ';'", member->loc_);
-                    }
-                    
+                    // Field
                     else {
-                        throw LogErr(LogStage::Sema, "invalid struct member", member->loc_);
+                        auto& field_stmt = (ExprStmt&)*member;
+                        auto& field_decl = (DeclExpr&)*field_stmt.expr_;
+
+                        Process(*field_decl.bind_type_);
+                        auto* field_type  = field_decl.bind_type_->resolved_type_;
+                        auto  field_index = struct_type->fields().size();
+
+                        if (!struct_type->field_indices().emplace(field_decl.id_, field_index).second) {
+                            throw LogErr(LogStage::Sema, std::format(
+                                "redefinition of field '{}' in type '{}'",
+                                field_decl.id_, struct_type->name()
+                            ), field_decl.loc_);
+                        }
+                        struct_type->fields().emplace_back(StructField{field_decl.id_, field_type, field_index});
                     }
                 }
             }
@@ -403,63 +390,43 @@ namespace sema {
 
                 // Members
                 for (auto& member : enum_decl.body_->children_) {
-
-                    // Expr wrapped by ExprStmt
-                    if      (auto* stmt = dynamic_cast<ExprStmt*>(member.get())) {
-                        auto* member_child = stmt->expr_.get();
-
-                        // Variant
-                        if (auto* variant_id = dynamic_cast<IdExpr*>(member_child)) {
-                            auto variant_index = enum_type->variants().size();
-                            auto variant_max   = static_cast<size_t>(std::numeric_limits<int32_t>::max());
-                            if (variant_index >= variant_max) {
-                                throw LogErr(LogStage::Sema, std::format(
-                                    "enum '{}' expects at most {} variants, got {}",
-                                    enum_type->name(), variant_max, variant_index + 1
-                                ), variant_id->loc_);
-                            }
-                            if (!enum_type->variant_indices().emplace(variant_id->name_, variant_index).second) {
-                                throw LogErr(LogStage::Sema, std::format(
-                                    "redefinition of variant '{}' in enum '{}'",
-                                    variant_id->name_, enum_type->name()
-                                ), variant_id->loc_);
-                            }
-                            enum_type->variants().emplace_back(EnumVariant{variant_id->name_, variant_index});
-                        }
-                        else {
-                            throw LogErr(LogStage::Sema, "invalid enum member", member->loc_);
-                        }
-                    }
-
                     // Method
-                    else if (member->type_ == AstType::FnExpr) {
-                        auto& fn_expr = (FnExpr&)*member;
-                        if (fn_expr.name_ == "@copy" || fn_expr.name_ == "@release" ||
-                            fn_expr.name_ == "@eq"   || fn_expr.name_ == "@neq"     ||
-                            fn_expr.name_ == "@cast")
-                        {
+                    if (member->type_ == AstType::FnExpr) {
+                        auto& fnexpr = (FnExpr&)*member;
+                        if (fnexpr.name_ == "@copy" || fnexpr.name_ == "@release" ||
+                            fnexpr.name_ == "@eq"   || fnexpr.name_ == "@neq"     ||
+                            fnexpr.name_ == "@cast"
+                        ) {
                             throw LogErr(LogStage::Sema, std::format(
                                 "redefinition of built-in method '{}' in enum '{}'",
-                                fn_expr.name_, enum_type->name()
-                            ), fn_expr.loc_);
+                                fnexpr.name_, enum_type->name()
+                            ), fnexpr.loc_);
                         }
 
-                        Declare(fn_expr, enum_type->method_table());
+                        Declare(fnexpr, enum_type->method_table());
                     }
 
-                    else if (member->type_ == AstType::IdExpr) {
-                        throw LogErr(LogStage::Sema, "enum variant must end with ';'", member->loc_);
-                    }
-
+                    // Variant
                     else {
-                        throw LogErr(LogStage::Sema, "invalid enum member", member->loc_);
+                        auto& variant_stmt   = (ExprStmt&)*member;
+                        auto& variant_id    = (IdExpr&)*variant_stmt.expr_;
+                        auto  variant_index = enum_type->variants().size();
+                        auto  variant_max   = static_cast<size_t>(std::numeric_limits<int32_t>::max());
+                        
+                        if (variant_index >= variant_max) {
+                            throw LogErr(LogStage::Sema, std::format(
+                                "enum '{}' expects at most {} variants, got {}",
+                                enum_type->name(), variant_max, variant_index + 1
+                            ), variant_id.loc_);
+                        }
+                        if (!enum_type->variant_indices().emplace(variant_id.name_, variant_index).second) {
+                            throw LogErr(LogStage::Sema, std::format(
+                                "redefinition of variant '{}' in enum '{}'",
+                                variant_id.name_, enum_type->name()
+                            ), variant_id.loc_);
+                        }
+                        enum_type->variants().emplace_back(EnumVariant{variant_id.name_, variant_index});
                     }
-                }
-
-                if (enum_type->variants().empty()) {
-                    throw LogErr(LogStage::Sema, std::format(
-                        "enum '{}' must have at least one variant", enum_type->name()
-                    ), enum_decl.loc_);
                 }
 
                 // Built-in Methods
@@ -640,8 +607,8 @@ namespace sema {
     }
 
     void Analyzer::Process(IdExpr& node) {
-        if (auto var = var_scope_.LookupTry(node.name_)) {
-            node.resolved_type_ = var->type_;
+        if (auto variable        = var_scope_.LookupTry(node.name_)) {
+            node.resolved_type_ = variable->type_;
             return;
         }
         if (auto module_constant = module_const_scope_.LookupTry(
@@ -1028,13 +995,6 @@ namespace sema {
             std::set<std::string> initialized = {};
 
             std::function<void(FieldInitExpr*)> FieldInitProcess = [&](FieldInitExpr* init) {
-                if (!init) {
-                    throw LogErr(LogStage::Sema, std::format(
-                        "member of struct literal must be a field initializer, not '{}'",
-                        init->TypeName()
-                    ), init->loc_);
-                }
-
                 // Undefined Field
                 auto it = struct_type->field_indices().find(init->id_->name_);
                 if (it == struct_type->field_indices().end()) {
